@@ -114,6 +114,15 @@
         row.querySelector('input,select')?.focus({preventScroll:true});
       }
     }
+    const selected=el('studio-graph').querySelector('[data-step-index="'+index+'"]');
+    const scrolling=el('studio-graph-scroll');
+    if(selected && scrolling) {
+      scrolling.scrollTo({
+        top:Math.max(0,selected.offsetTop-scrolling.clientHeight/2+selected.clientHeight/2),
+        left:Math.max(0,selected.offsetLeft-scrolling.clientWidth/2+selected.clientWidth/2),
+        behavior:'smooth'
+      });
+    }
   }
   function highlightGraphRun(state) {
     for (const node of el('studio-graph').querySelectorAll('[data-step-index]')) {
