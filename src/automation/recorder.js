@@ -5,7 +5,7 @@ function allowedHosts(input) {
     .split(/[\s,;]+/).map(x => x.trim()).filter(Boolean))];
   if (!list.length || list.length > 12) throw new Error('Cần 1–12 tên miền hợp lệ');
   for (const host of list) {
-    if (!/^[a-z0-9.-]{1,253}$/.test(host) || host.includes('..') || host.startsWith('.') || host.endsWith('.')) {
+    if (!/^[a-z0-9.-]{1,253}$/.test(host) || host.includes('..') || host.startsWith('.') || host.endsWith('.') || (!host.includes('.') && host !== 'localhost')) {
       throw new Error('Tên miền chưa hợp lệ');
     }
     checkUrl('https://' + host + '/', list);
