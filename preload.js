@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  getProfileHealth: id => ipcRenderer.invoke('get-profile-health', id),
+  getAllProfileHealth: () => ipcRenderer.invoke('get-all-profile-health'),
+  exportConfigBackup: password => ipcRenderer.invoke('export-config-backup', password),
+  importConfigBackup: password => ipcRenderer.invoke('import-config-backup', password),
   studioList: () => ipcRenderer.invoke('studio-list'),
   studioSave: value => ipcRenderer.invoke('studio-save', value),
   studioDelete: id => ipcRenderer.invoke('studio-delete', id),

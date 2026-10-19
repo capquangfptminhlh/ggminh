@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -10,6 +10,8 @@ const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
 const { createWindowBrowser } = require('./src/automation/windowBrowser');
+const { checkProfile } = require('./src/health/profileHealth');
+const { ConfigBackup } = require('./src/backup/configBackup');
 
 let mainWindow = null;
 let store = null;
@@ -17,6 +19,7 @@ let launcher = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
+let configBackup = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
@@ -75,6 +78,36 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('get-profile-health', (_, id) => {
+    const profile = store.getProfile(id);
+    if (!profile) throw new Error('Không tìm thấy hồ sơ');
+    return checkProfile(profile, { settings: store.getSettings() });
+  });
+  ipcMain.handle('get-all-profile-health', () =>
+    store.getProfiles().map(profile => checkProfile(profile, { settings: store.getSettings() })));
+  ipcMain.handle('export-config-backup', async (_, passphrase) => {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Xuất bản sao lưu cấu hình được mã hóa',
+      defaultPath: 'LHM-Config-Backup-' + new Date().toISOString().slice(0, 10) + '.lhmbak',
+      filters: [{ name: 'LHM Encrypted Backup', extensions: ['lhmbak'] }]
+    });
+    if (canceled || !filePath) return { canceled: true };
+    const data = configBackup.export(passphrase);
+    fs.writeFileSync(filePath, data, { mode: 0o600, flag: 'wx' });
+    return { canceled: false, filePath };
+  });
+  ipcMain.handle('import-config-backup', async (_, passphrase) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Chọn bản sao lưu cấu hình LHM',
+      properties: ['openFile'],
+      filters: [{ name: 'LHM Encrypted Backup', extensions: ['lhmbak'] }]
+    });
+    if (canceled || !filePaths.length) return { canceled: true };
+    const stats = fs.statSync(filePaths[0]);
+    if (stats.size > 8 * 1024 * 1024) throw new Error('Tệp sao lưu quá lớn');
+    const report = configBackup.import(fs.readFileSync(filePaths[0], 'utf8'), passphrase);
+    return { canceled: false, ...report };
+  });
   ipcMain.handle('studio-list', () => workflowStore.list());
   ipcMain.handle('studio-save', (_, value) => workflowStore.save(value));
   ipcMain.handle('studio-delete', (_, id) => {
@@ -139,6 +172,7 @@ app.whenReady().then(async () => {
   launcher = new BrowserLauncher(store);
   behaviorMonitor = new BehaviorMonitor(storageDir);
   workflowStore = new WorkflowStore(storageDir);
+  configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
   initIPC();
   createWindow();
