@@ -6,6 +6,9 @@
   let current = null;
   let dragged = null;
   let recorderBusy = false;
+  let graphTicket = 0;
+  let graphDebounce = null;
+  let graphSelection = -1;
   const labels = {
     navigate: 'Mở URL', wait: 'Chờ', wait_for: 'Chờ phần tử', click: 'Nhấn CSS',
     fill: 'Điền trường', assert_text: 'Kiểm tra chữ', approval: 'Xác nhận thủ công',
@@ -92,6 +95,126 @@
       renderSteps();
     }).catch(error => alert(error.message));
   }
+  const SVG_NS='http://www.w3.org/2000/svg';
+  function svgItem(name, attributes = {}) {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+    return node;
+  }
+  function selectGraphStep(index) {
+    if (!current || index >= current.steps.length || index < 0) return;
+    graphSelection = index;
+    for (const node of el('studio-graph').querySelectorAll('[data-step-index]')) {
+      node.classList.toggle('is-current', Number(node.dataset.stepIndex) === index);
+    }
+    for (const row of el('studio-steps').querySelectorAll('[data-step-index]')) {
+      row.classList.toggle('graph-selected', Number(row.dataset.stepIndex) === index);
+      if(Number(row.dataset.stepIndex) === index) {
+        row.scrollIntoView({block:'nearest',behavior:'smooth'});
+        row.querySelector('input,select')?.focus({preventScroll:true});
+      }
+    }
+  }
+  function highlightGraphRun(state) {
+    for (const node of el('studio-graph').querySelectorAll('[data-step-index]')) {
+      const running = state.status === 'running' && Number(node.dataset.stepIndex) === state.step;
+      node.classList.toggle('is-executing', running);
+      if (running) node.setAttribute('aria-label',
+        (Number(node.dataset.stepIndex)+1)+' · Đang thực hiện');
+      else node.removeAttribute('aria-label');
+    }
+  }
+  function displayGraph(report) {
+    const surface=el('studio-graph');
+    surface.replaceChildren();
+    surface.style.width=report.width+'px';
+    surface.style.height=report.height+'px';
+    const positions=new Map(report.nodes.map(node=>[node.index,node]));
+    const svg=svgItem('svg',{
+      class:'studio-graph-lines',width:report.width,height:report.height,
+      viewBox:'0 0 '+report.width+' '+report.height,'aria-hidden':'true'
+    });
+    for (const edge of report.edges) {
+      const from=positions.get(edge.from),to=positions.get(edge.to);
+      if(!from || !to) continue;
+      const fx=from.x+from.width/2,fy=from.y+from.height;
+      const tx=to.x+to.width/2,ty=to.y;
+      let d;
+      if(ty <= fy) {
+        const routeX=Math.max(from.x+from.width,to.x+to.width)+64;
+        d='M'+fx+' '+fy+' C'+routeX+' '+(fy+16)+' '+routeX+' '+(ty-18)+' '+tx+' '+ty;
+      }else {
+        const bend=Math.min(48,Math.max(18,(ty-fy)/2));
+        d='M'+fx+' '+fy+' C'+fx+' '+(fy+bend)+' '+tx+' '+(ty-bend)+' '+tx+' '+ty;
+      }
+      const curve=svgItem('path',{d,class:'studio-graph-line','data-kind':edge.kind});
+      svg.append(curve);
+      if(edge.label && edge.kind!=='loop-back'){
+        const label=svgItem('text',{x:fx+(tx-fx)*.38+5,y:fy+Math.max(12,(ty-fy)/3),
+          class:'studio-graph-edge-label'});
+        label.textContent=edge.label;
+        svg.append(label);
+      }
+    }
+    surface.append(svg);
+    for (const node of report.nodes) {
+      const item=document.createElement(node.type === 'end' ? 'div':'button');
+      if(item.tagName==='BUTTON')item.type='button';
+      item.className='studio-graph-node';
+      item.dataset.category=node.category;
+      item.style.left=node.x+'px';
+      item.style.top=node.y+'px';
+      if(node.type !== 'end') item.dataset.stepIndex=String(node.index);
+      item.title=node.label+(node.detail ? ' — '+node.detail:'');
+      const title=document.createElement('span');
+      title.className='studio-graph-node-title';
+      title.textContent=node.type==='end' ? node.label : (node.index+1)+'. '+node.label;
+      const detail=document.createElement('span');
+      detail.className='studio-graph-node-detail';
+      detail.textContent=node.detail || (node.type==='end' ? 'Kết thúc quy trình':'Bấm để sửa bước');
+      item.append(title,detail);
+      if(node.type!=='end')item.addEventListener('click',()=>selectGraphStep(node.index));
+      surface.append(item);
+    }
+    el('studio-graph-status').classList.remove('is-error');
+    el('studio-graph-status').textContent=
+      report.nodes.length-1+' bước · tối đa '+report.worstCaseSteps+
+      ' lượt xử lý · Bấm node để chọn bước chỉnh sửa.';
+    if(graphSelection>=0 && graphSelection<current.steps.length){
+      const old=graphSelection;
+      graphSelection=-1;
+      // Keep visual selection without stealing focus on every refresh.
+      const item=surface.querySelector('[data-step-index="'+old+'"]');
+      item?.classList.add('is-current');
+      for(const row of el('studio-steps').querySelectorAll('[data-step-index]'))
+        row.classList.toggle('graph-selected',Number(row.dataset.stepIndex)===old);
+      graphSelection=old;
+    }
+  }
+  async function renderGraph() {
+    const version=++graphTicket;
+    if(!current)return;
+    try {
+      const report=await api.studioGraphPreview(current.steps);
+      if(version!==graphTicket)return;
+      displayGraph(report);
+    }catch(error) {
+      if(version!==graphTicket)return;
+      const surface=el('studio-graph');
+      surface.replaceChildren();
+      surface.style.width='800px';
+      surface.style.height='96px';
+      el('studio-graph-status').classList.add('is-error');
+      el('studio-graph-status').textContent='Cần sửa cấu trúc: '+error.message;
+    }
+  }
+  function queueGraph() {
+    if(graphDebounce!==null)clearTimeout(graphDebounce);
+    graphDebounce=setTimeout(()=>{
+      graphDebounce=null;
+      renderGraph().catch(console.error);
+    },170);
+  }
   function stepField(i, title, prop, kind = 'text') {
     const label = document.createElement('label');
     label.textContent = title;
@@ -99,7 +222,7 @@
     if (kind === 'number') input.type = 'number';
     else if (kind !== 'select') input.type = 'text';
     input.value = String(current.steps[i][prop] ?? '');
-    input.addEventListener('input', () => { current.steps[i][prop] = kind === 'number' ? Number(input.value) : input.value; });
+    input.addEventListener('input', () => { current.steps[i][prop] = kind === 'number' ? Number(input.value) : input.value; queueGraph(); });
     label.append(input);
     return label;
   }
@@ -112,6 +235,7 @@
       if (['else','end_if','end_repeat'].includes(step.type)) blockDepth = Math.max(0, blockDepth-1);
       const row = document.createElement('div');
       row.className = 'studio-step' + (['if_exists','else','end_if','repeat','end_repeat'].includes(step.type) ? ' studio-step-block' : '');
+      row.dataset.stepIndex=String(i);
       row.style.marginLeft = (blockDepth * 14) + 'px';
       row.draggable = true;
       row.addEventListener('dragstart', event => {
@@ -149,6 +273,8 @@
       row.append(heading, fields); list.append(row);
       if (['if_exists','else','repeat'].includes(step.type)) blockDepth = Math.min(2,blockDepth+1);
     });
+    graphSelection=-1;
+    queueGraph();
   }
   function move(i, delta) {
     const destination = i + delta;
@@ -176,6 +302,7 @@
     el('studio-run-state').textContent =
       (names[state.status] || state.status) + (state.status === 'running' ? ' · bước ' + (state.step+1) + '/' + state.total + ' · lượt ' + (state.executed || 0) : '');
     el('studio-stop').disabled = state.status !== 'running';
+    highlightGraphRun(state);
     el('studio-approve').hidden = !state.needsApproval;
     el('studio-approval-prompt').hidden = !state.needsApproval;
     el('studio-approval-prompt').textContent = state.approvalLabel || '';
@@ -261,6 +388,7 @@
     el('studio-close').addEventListener('click', close);
     el('studio-done').addEventListener('click', close);
     el('studio-new').addEventListener('click', createNew);
+    el('studio-graph-refresh').addEventListener('click', () => renderGraph().catch(console.error));
     el('studio-record-start').addEventListener('click', startRecording);
     el('studio-record-stop').addEventListener('click', stopRecording);
     el('studio-record-import').addEventListener('click', importRecording);
