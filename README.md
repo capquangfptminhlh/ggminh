@@ -245,3 +245,7 @@ Windows CI attempts to capture a preview PNG directly from the real Electron des
 
 ### Engine Diagnostics (v2.3)
 Health Center can check actual locally installed Chrome, Edge and Firefox executables via `--version` on explicit user request. It reports missing or unknown engines and advisory outdated versions without claiming a custom LHM browser core or making security guarantees.
+
+
+### Privacy-default and browser-path consistency (2.3)
+New profiles created through UI, Local API or the profile-template cloning action now use native browser device properties when no custom configuration is supplied. Browser startup and Health Check share the same installed Chrome/Edge/Firefox candidates, including eligible per-user installation paths. Legacy custom profiles retain existing configuration until explicitly edited.

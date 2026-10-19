@@ -25,6 +25,7 @@ const { createApiServer } = require('../src/api/server');
     store.deleteProfile(normalized.id);
     const added = store.saveProfile({ name: 'Google Ads company', group: 'Authorized', proxy: { type: 'direct' } });
     assert(added.id.startsWith('pb_'));
+    assert.strictEqual(added.fingerprint.mode, 'native');
     assert(fs.existsSync(store.dbFile));
     assert.strictEqual(store.getProfiles().length, 1);
     const app = createApiServer(store, { listActive: () => [], stop: () => ({ success: true }) }, { apiKey: 'test-secret' });

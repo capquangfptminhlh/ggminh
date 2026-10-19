@@ -74,7 +74,14 @@ class Store {
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: String(input.startUrl || old.startUrl || 'https://ads.google.com/').slice(0, 2048),
       notes: String(input.notes || old.notes || '').slice(0, 2000),
-      proxy, fingerprint: input.fingerprint || old.fingerprint || {},
+      proxy,
+      // New/API/duplicated profiles default to native device properties.
+      // Preserve explicitly customized fingerprints on pre-existing profiles.
+      fingerprint: (() => {
+        const selected = input.fingerprint ?? old.fingerprint ?? { mode: 'native' };
+        if (!selected || typeof selected !== 'object' || Array.isArray(selected)) throw new Error('Invalid fingerprint configuration');
+        return Object.keys(selected).length ? selected : { mode: 'native' };
+      })(),
       createdAt: old.createdAt || now, updatedAt: now
     };
     if (existingIndex >= 0) this.data.profiles[existingIndex] = result;

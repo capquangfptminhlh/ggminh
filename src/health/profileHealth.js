@@ -1,5 +1,6 @@
 const net = require('net');
 const fs = require('fs');
+const { optionsFor } = require('../engine/browserDiagnostics');
 
 function checkProfile(profile, options = {}) {
   const issues = [];
@@ -8,9 +9,11 @@ function checkProfile(profile, options = {}) {
   const proxy = profile?.proxy || { type: 'direct' };
   const settings = options.settings || {};
   const pathExists = options.pathExists || fs.existsSync;
+  const options = optionsFor(settings);
   const executable = engine === 'gecko'
-    ? [settings.geckoPath, 'C:\\Program Files\\Mozilla Firefox\\firefox.exe', 'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe']
-    : [settings.chromePath, 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'];
+    ? options.find(x => x.id === 'firefox').candidates
+    : [...options.find(x => x.id === 'chrome').candidates,
+       ...options.find(x => x.id === 'edge').candidates];
   if (!executable.filter(Boolean).some(pathExists)) issues.push({ level: 'error', code: 'browser_missing', message: 'Không tìm thấy chương trình trình duyệt phù hợp trên máy này.' });
   if (!name.trim()) issues.push({ level: 'error', code: 'no_name', message: 'Hồ sơ chưa có tên.' });
   try {
@@ -32,7 +35,7 @@ function checkProfile(profile, options = {}) {
   if (engine === 'chromium' && fp.userAgent && /Chrome\/(12[0-9]|13[0-9])\./.test(fp.userAgent)) issues.push({
     level: 'warning', code: 'ua_outdated', message: 'User-Agent có thể đã cũ; nên dùng giá trị trình duyệt thực tế, không giả mạo phiên bản.'
   });
-  if (engine === 'chromium') issues.push({
+  if (engine === 'chromium' && fp.mode !== 'native') issues.push({
     level: 'notice', code: 'privacy_unverified', message: 'Cơ chế Canvas/WebGL/WebRTC hiện chưa được kiểm thử xuyên phiên bản; không bảo đảm ẩn danh.'
   });
   const errors = issues.filter(i => i.level === 'error').length;

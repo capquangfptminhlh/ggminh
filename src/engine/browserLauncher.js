@@ -6,6 +6,7 @@ const { generateExtension } = require('./extensionGenerator');
 const { createLaunchArgs } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
 const { updateGeckoProxy } = require('./geckoProxy');
+const { optionsFor } = require('./browserDiagnostics');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn } = {}) {
@@ -18,17 +19,11 @@ class BrowserLauncher {
 
   findBrowserBinary(engine = 'chromium') {
     const settings = this.store.getSettings();
-    const candidates = engine === 'gecko' ? [
-      settings.geckoPath,
-      'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
-      'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe',
-      process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Mozilla Firefox', 'firefox.exe')
-    ] : [
-      settings.chromePath,
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
-    ];
+    const detected = optionsFor(settings);
+    const candidates = engine === 'gecko'
+      ? detected.find(x => x.id === 'firefox').candidates
+      : [...detected.find(x => x.id === 'chrome').candidates,
+         ...detected.find(x => x.id === 'edge').candidates];
 
     for (const bin of candidates) {
       if (bin && fs.existsSync(bin)) {

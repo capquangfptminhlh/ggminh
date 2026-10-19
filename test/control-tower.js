@@ -18,7 +18,7 @@ try {
   const clone = duplicateTemplate(store, original.id);
   assert.notStrictEqual(clone.id, original.id);
   assert.strictEqual(clone.group, original.group);
-  assert.deepStrictEqual(clone.fingerprint, {});
+  assert.deepStrictEqual(clone.fingerprint, { mode: 'native' });
   assert.strictEqual(clone.notes, '');
   assert(!fs.existsSync(path.join(dir, 'profiles', clone.id)));
   assert.throws(() => duplicateTemplate(store, '../oops'), /Invalid profile ID/);
