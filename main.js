@@ -15,6 +15,7 @@ const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
+const ProxyCenter = require('./src/proxies/proxyCenter');
 const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 
 let mainWindow = null;
@@ -25,6 +26,7 @@ let workflowStore = null;
 let automationRunner = null;
 let recorderManager = null;
 let configBackup = null;
+let proxyCenter = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
@@ -83,6 +85,16 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('proxy-center-list', () => proxyCenter.list());
+  ipcMain.handle('proxy-center-save', (_, proxy) => proxyCenter.save(proxy));
+  ipcMain.handle('proxy-center-delete', (_, id) => proxyCenter.delete(id));
+  ipcMain.handle('proxy-center-check', (_, id) => proxyCenter.verify(id));
+  ipcMain.handle('proxy-center-assign', (_, id, profileIds) => {
+    const result = proxyCenter.assign(id, profileIds);
+    for (const profileId of result.profileIds) behaviorMonitor.record('profile_save', profileId, 'manual');
+    return result;
+  });
+
   ipcMain.handle('audit-profile-isolation', () =>
     auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id) }));
   ipcMain.handle('control-tower-snapshot', () => {
@@ -173,6 +185,13 @@ function initIPC() {
   ipcMain.handle('studio-approve', () => automationRunner.approve());
   ipcMain.handle('studio-status', () => automationRunner.status());
   ipcMain.handle('save-profile', (_, profile) => {
+    if (profile?.id && launcher.isBusy(profile.id)) {
+      const old = store.getProfile(profile.id);
+      if (old && (JSON.stringify(old.proxy || {}) !== JSON.stringify(profile.proxy || {}) ||
+          (profile.engine || 'chromium') !== (old.engine || 'chromium'))) {
+        throw new Error('Đóng hồ sơ trước khi thay proxy hoặc engine, tránh sai lệch cấu hình phiên đang chạy');
+      }
+    }
     const saved = store.saveProfile(profile);
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;
@@ -227,6 +246,7 @@ app.whenReady().then(async () => {
   }
   store = new Store(storageDir);
   launcher = new BrowserLauncher(store);
+  proxyCenter = new ProxyCenter(store, launcher);
   behaviorMonitor = new BehaviorMonitor(storageDir);
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);

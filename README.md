@@ -169,3 +169,17 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
   Không kiểm tra được liên kết danh tính qua đăng nhập Google, thanh toán, IP,
   phần cứng hay dữ liệu của bên thứ ba.
 - Không cam kết ẩn danh, không phát hiện hoặc tránh các chính sách Google Ads.
+
+
+## v1.9 — Proxy Center (local-first)
+- Kho proxy riêng cho các endpoint **HTTP / SOCKS5 không yêu cầu xác thực**.
+- Thêm, sửa, xóa, đặt tên và nhóm bằng nhãn; dữ liệu cấu hình được lưu cục bộ.
+- Kiểm tra **IP thoát thực tế bằng HTTPS**, hiển thị độ trễ và so sánh IP trực tiếp
+  nếu mạng cho phép. Kết quả kiểm tra chỉ ở bộ nhớ tạm, không ghi IP công khai lên ổ đĩa.
+- Gán proxy đã lưu cho tối đa **50 hồ sơ** mỗi lần, xác thực trước toàn bộ danh sách,
+  từ chối hồ sơ đang mở, Gecko chưa hỗ trợ hoặc hồ sơ không tồn tại. Cập nhật cơ sở
+  dữ liệu trong **một giao dịch ghi tệp** có hoàn nguyên trong bộ nhớ nếu ghi thất bại.
+- Việc sửa/xóa một proxy trong kho **không tự thay đổi** cấu hình của các hồ sơ đã gán.
+- Dữ liệu nhập không cho phép lưu username, password, secret hoặc token. Không tuyên bố
+  hỗ trợ proxy có mật khẩu, cấu hình proxy Gecko hoặc đảm bảo vô danh trước nền tảng.
+- Để quản lý Google Ads nhiều khách hàng hợp lệ, dùng Google Ads MCC và OAuth được ủy quyền.
