@@ -230,3 +230,7 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
   percentages or anti-detection guarantees.
 - Legacy secondary dialogs have light theme overrides; detailed accessibility
   and real-device UI tests remain necessary before commercial release.
+
+
+### UI screenshot provenance
+Windows CI attempts to capture a preview PNG directly from the real Electron desktop renderer using a temporary, isolated dataset labeled Demo. This happens only when LHM_CI_UI_CAPTURE=1 is explicitly set. It does not represent real customer data or real Google Ads accounts. Capture is best-effort because unattended Windows runners may not expose a graphical surface. Installer builds do not depend on a screenshot.

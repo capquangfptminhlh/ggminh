@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, clipboard, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const os = require('os');
 const Store = require('./src/db/store');
 const BrowserLauncher = require('./src/engine/browserLauncher');
 const { generateFingerprint } = require('./src/engine/fingerprint');
@@ -81,6 +82,23 @@ function createWindow() {
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', event => event.preventDefault());
+  if (process.env.LHM_CI_UI_CAPTURE === '1') {
+    mainWindow.setSize(1440, 900);
+    mainWindow.webContents.once('did-finish-load', () => {
+      setTimeout(async () => {
+        try {
+          const png = await mainWindow.webContents.capturePage();
+          const output = path.join(__dirname, 'dist', 'workspace-preview.png');
+          fs.mkdirSync(path.dirname(output), { recursive: true });
+          fs.writeFileSync(output, png.toPNG());
+          console.log('[UI smoke] Saved workspace preview');
+        } catch (error) {
+          console.error('[UI smoke] Screenshot unavailable:', error);
+          process.exitCode = 1;
+        } finally { app.quit(); }
+      }, 1800);
+    });
+  }
   mainWindow.loadFile(path.join(__dirname, 'src/ui/index.html'));
   mainWindow.on('closed', () => { mainWindow = null; });
 }
@@ -253,6 +271,9 @@ function initIPC() {
 }
 
 app.whenReady().then(async () => {
+  if (process.env.LHM_CI_UI_CAPTURE === '1') {
+    app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
+  }
   const storageDir = path.join(app.getPath('userData'), 'storage');
   const legacyDir = path.join(__dirname, 'data');
   if (!fs.existsSync(path.join(storageDir, 'db.json')) &&
@@ -261,6 +282,18 @@ app.whenReady().then(async () => {
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
   store = new Store(storageDir);
+  if (process.env.LHM_CI_UI_CAPTURE === '1') {
+    const samples = [
+      ['Demo · Chiến dịch 01','Khách hàng A','chromium'],
+      ['Demo · Nội dung 02','Khách hàng B','chromium'],
+      ['Demo · Kiểm thử 03','Nội bộ','gecko'],
+      ['Demo · Đối soát 04','Khách hàng A','chromium']
+    ];
+    for (const [name,group,engine] of samples) {
+      store.saveProfile({name,group,engine,startUrl:'https://example.com',
+        fingerprint:{mode:'native'},proxy:{type:'direct'}});
+    }
+  }
   launcher = new BrowserLauncher(store);
   proxyCenter = new ProxyCenter(store, launcher);
   behaviorMonitor = new BehaviorMonitor(storageDir);
