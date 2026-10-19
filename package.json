@@ -1,0 +1,20 @@
+{
+  "name": "power-browser",
+  "version": "1.0.0",
+  "description": "High-Performance Antidetect & Multi-Profile Browser with Stealth Injection & RPA API",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/verify_engine.js"
+  },
+  "keywords": ["antidetect", "browser-automation", "stealth", "profile-manager", "rpa"],
+  "author": "Antigravity Senior Engineer",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1"
+  }
+}

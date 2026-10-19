@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerBrowser - NextGen Antidetect OS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">⚡</div>
+        <div class="brand-text">
+          <h1>PowerBrowser <span>v1.0 Pro</span></h1>
+          <p class="subtitle">Mã nguồn mở độc lập • Không giới hạn Profile • Zero-Cloud</p>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-badge">
+          <span class="stat-label">Tổng Profile:</span>
+          <span class="stat-val" id="stat-total">0</span>
+        </div>
+        <div class="stat-badge">
+          <span class="stat-label">Đang mở:</span>
+          <span class="stat-val active" id="stat-active">0</span>
+        </div>
+        <div class="stat-badge api-status">
+          <span class="dot online"></span>
+          <span class="stat-label">RPA API:</span>
+          <span class="stat-val" id="stat-api">127.0.0.1:50325</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="btn-create-profile">
+          <span class="icon">+</span> Tạo Profile Mới
+        </button>
+        <button class="btn btn-secondary" id="btn-open-rpa">
+          <span class="icon">🤖</span> Code RPA
+        </button>
+      </div>
+    </header>
+
+    <!-- Toolbar / Filter Bar -->
+    <section class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Tìm theo tên, ID, proxy hoặc group...">
+      </div>
+      <div class="filters">
+        <select id="filter-group">
+          <option value="all">Tất cả Nhóm</option>
+        </select>
+        <select id="filter-status">
+          <option value="all">Tất cả Trạng thái</option>
+          <option value="running">Đang chạy</option>
+          <option value="stopped">Đã dừng</option>
+        </select>
+        <button class="btn btn-icon" id="btn-refresh" title="Làm mới">🔄</button>
+      </div>
+    </section>
+
+    <!-- Main Content: Profiles Table -->
+    <main class="content-view">
+      <div class="table-container">
+        <table class="profile-table">
+          <thead>
+            <tr>
+              <th width="40"><input type="checkbox" id="select-all"></th>
+              <th width="80">ID</th>
+              <th>Tên Profile & Nhóm</th>
+              <th>Proxy / IP Thoát</th>
+              <th>Cấu hình Vân tay (OS / GPU / RAM)</th>
+              <th width="120">Trạng thái</th>
+              <th width="200" style="text-align: right;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="profile-list-body">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-icon">🌐</div>
+          <h3>Chưa có Profile nào</h3>
+          <p>Nhấn vào nút "Tạo Profile Mới" để bắt đầu thiết lập môi trường trình duyệt độc lập.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Create / Edit Profile -->
+  <div class="modal-overlay" id="modal-profile">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="modal-title">Tạo Profile Mới</h2>
+        <button class="btn-close" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="tab-general">1. Thông tin chung</button>
+          <button class="tab-btn" data-tab="tab-proxy">2. Proxy & Mạng</button>
+          <button class="tab-btn" data-tab="tab-fingerprint">3. Vân tay phần cứng</button>
+        </div>
+
+        <!-- Tab 1: General -->
+        <div class="tab-content active" id="tab-general">
+          <input type="hidden" id="field-id">
+          <div class="form-group">
+            <label>Tên Profile:</label>
+            <input type="text" id="field-name" placeholder="Ví dụ: Acc Facebook 01" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nhóm (Group):</label>
+              <input type="text" id="field-group" placeholder="Default" value="Default">
+            </div>
+            <div class="form-group">
+              <label>Trang mở mặc định:</label>
+              <input type="text" id="field-starturl" value="https://browserleaks.com/canvas">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ghi chú:</label>
+            <textarea id="field-notes" rows="2" placeholder="Ghi chú thêm về tài khoản này..."></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 2: Proxy -->
+        <div class="tab-content" id="tab-proxy">
+          <div class="form-group">
+            <label>Loại Proxy:</label>
+            <select id="field-proxy-type">
+              <option value="direct">Không dùng Proxy (Direct Connection)</option>
+              <option value="http">HTTP Proxy</option>
+              <option value="socks5">SOCKS5 Proxy</option>
+            </select>
+          </div>
+          <div id="proxy-fields" style="display: none;">
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label>Host / IP:</label>
+                <input type="text" id="field-proxy-host" placeholder="127.0.0.1 hoặc proxy.domain.com">
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>Port:</label>
+                <input type="number" id="field-proxy-port" placeholder="8080">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Username (nếu có):</label>
+                <input type="text" id="field-proxy-user" placeholder="User">
+              </div>
+              <div class="form-group">
+                <label>Password (nếu có):</label>
+                <input type="password" id="field-proxy-pass" placeholder="Pass">
+              </div>
+            </div>
+          </div>
+          <div class="proxy-test-box">
+            <button type="button" class="btn btn-secondary" id="btn-test-proxy">Kiểm tra kết nối Proxy</button>
+            <div id="proxy-test-result" class="test-result"></div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Fingerprint -->
+        <div class="tab-content" id="tab-fingerprint">
+          <div class="fp-header-action">
+            <span class="fp-info">Vân tay được sinh ngẫu nhiên thực tế, mô phỏng đúng cấu hình phần cứng.</span>
+            <button type="button" class="btn btn-accent" id="btn-random-fp">🎲 Randomize Vân tay</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Hệ điều hành mô phỏng:</label>
+              <select id="field-fp-os">
+                <option value="Windows">Windows 10 / 11</option>
+                <option value="macOS">macOS Sonoma / Ventura</option>
+                <option value="Linux">Linux (Ubuntu / Debian)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Độ phân giải màn hình:</label>
+              <select id="field-fp-screen">
+                <option value="1920x1080">1920 x 1080 (Chuẩn Full HD)</option>
+                <option value="2560x1440">2560 x 1440 (2K QHD)</option>
+                <option value="1536x864">1536 x 864 (Laptop 14")</option>
+                <option value="1440x900">1440 x 900 (MacBook)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Số nhân CPU (Cores):</label>
+              <select id="field-fp-cores">
+                <option value="4">4 Cores</option>
+                <option value="8" selected>8 Cores</option>
+                <option value="12">12 Cores</option>
+                <option value="16">16 Cores</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Dung lượng RAM:</label>
+              <select id="field-fp-memory">
+                <option value="4">4 GB</option>
+                <option value="8" selected>8 GB</option>
+                <option value="16">16 GB</option>
+                <option value="32">32 GB</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Card đồ họa mô phỏng (WebGL):</label>
+            <input type="text" id="field-fp-gpu" readonly>
+          </div>
+          <div class="form-group">
+            <label>User-Agent:</label>
+            <textarea id="field-fp-ua" rows="2"></textarea>
+          </div>
+          <div class="toggles-grid">
+            <label class="toggle-item">
+              <input type="checkbox" id="field-fp-canvas" checked>
+              <span>Bảo vệ Canvas (Tạo nhiễu micro-noise)</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="field-fp-audio" checked>
+              <span>Bảo vệ WebAudio (Chống hash âm thanh)</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="field-fp-webrtc" checked>
+              <span>Bảo vệ WebRTC (Chặn rò rỉ IP thật)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-cancel-modal">Hủy</button>
+        <button class="btn btn-primary" id="btn-save-profile">Lưu Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: RPA Automation Code Guide -->
+  <div class="modal-overlay" id="modal-rpa">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h2>Tự động hóa RPA & Kết nối API</h2>
+        <button class="btn-close" id="btn-close-rpa">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="rpa-desc">PowerBrowser tích hợp sẵn Local REST API (Port <code>50325</code>) tương thích hoàn toàn với script AdsPower.</p>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="rpa-python-playwright">Python (Playwright)</button>
+          <button class="tab-btn" data-tab="rpa-python-selenium">Python (Selenium)</button>
+          <button class="tab-btn" data-tab="rpa-nodejs">Node.js (Puppeteer)</button>
+          <button class="tab-btn" data-tab="rpa-api-docs">API Endpoints</button>
+        </div>
+
+        <div class="tab-content active" id="rpa-python-playwright">
+          <pre class="code-block"><code>import requests
+from playwright.sync_api import sync_playwright
+
+PROFILE_ID = "pb_xxxxx"  # Điền ID profile của bạn
+API_URL = f"http://127.0.0.1:50325/api/v1/browser/start?user_id={PROFILE_ID}"
+
+# 1. Gọi PowerBrowser khởi chạy profile
+res = requests.get(API_URL).json()
+ws_endpoint = res["data"]["ws"]["puppeteer"]
+
+# 2. Kết nối Playwright qua CDP WebSocket
+with sync_playwright() as p:
+    browser = p.chromium.connect_over_cdp(ws_endpoint)
+    page = browser.contexts[0].pages[0] if browser.contexts[0].pages else browser.new_page()
+    page.goto("https://browserleaks.com/canvas")
+    print("Page Title:", page.title())
+    # ... Thực hiện tự động hóa của bạn ...
+</code></pre>
+        </div>
+
+        <div class="tab-content" id="rpa-python-selenium">
+          <pre class="code-block"><code>import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+PROFILE_ID = "pb_xxxxx"
+API_URL = f"http://127.0.0.1:50325/api/v1/browser/start?user_id={PROFILE_ID}"
+
+res = requests.get(API_URL).json()
+debug_port = res["data"]["debug_port"]
+
+chrome_options = Options()
+chrome_options.add_experimental_option("debuggerAddress", f"127.0.0.1:{debug_port}")
+
+driver = webdriver.Chrome(options=chrome_options)
+driver.get("https://google.com")
+print("Connected successfully via Selenium!")
+</code></pre>
+        </div>
+
+        <div class="tab-content" id="rpa-nodejs">
+          <pre class="code-block"><code>const puppeteer = require('puppeteer-core');
+
+async function run() {
+  const profileId = 'pb_xxxxx';
+  const res = await fetch(`http://127.0.0.1:50325/api/v1/browser/start?user_id=${profileId}`);
+  const data = await res.json();
+  const wsEndpoint = data.data.ws.puppeteer;
+
+  const browser = await puppeteer.connect({ browserWSEndpoint: wsEndpoint });
+  const page = (await browser.pages())[0] || (await browser.newPage());
+  await page.goto('https://ipinfo.io');
+  console.log('Connected via Puppeteer!');
+}
+run();
+</code></pre>
+        </div>
+
+        <div class="tab-content" id="rpa-api-docs">
+          <div class="api-endpoint-list">
+            <div class="api-item">
+              <span class="badge get">GET</span>
+              <code>/api/v1/browser/start?user_id={id}</code>
+              <p>Mở trình duyệt cho profile và trả về WebSocket CDP endpoint.</p>
+            </div>
+            <div class="api-item">
+              <span class="badge get">GET</span>
+              <code>/api/v1/browser/stop?user_id={id}</code>
+              <p>Đóng trình duyệt của profile tương ứng.</p>
+            </div>
+            <div class="api-item">
+              <span class="badge get">GET</span>
+              <code>/api/v1/browser/active</code>
+              <p>Lấy danh sách các browser đang mở.</p>
+            </div>
+            <div class="api-item">
+              <span class="badge get">GET</span>
+              <code>/api/v1/user/list</code>
+              <p>Lấy danh sách tất cả profile đã lưu.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
