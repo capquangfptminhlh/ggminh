@@ -47,6 +47,11 @@ function clean(data, existing) {
     return step;
   });
   if (!steps.some(s => s.type === 'navigate')) throw Error('Cần bước mở URL');
+  const risky = steps.findIndex(s => s.type === 'click' || s.type === 'fill');
+  const approved = steps.findIndex(s => s.type === 'approval');
+  if (risky >= 0 && (approved < 0 || approved > risky)) {
+    throw Error('Phải đặt bước xác nhận thủ công trước khi nhấn hoặc điền biểu mẫu');
+  }
   const now = new Date().toISOString();
   return {id:existing?.id || crypto.randomUUID(),name,profileId,hosts:hosts.join(', '),steps,createdAt:existing?.createdAt || now,updatedAt:now};
 }
