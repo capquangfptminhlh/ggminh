@@ -8,9 +8,10 @@ const { uniqueIds } = require('../ops/operations');
  * A profile receives a snapshot of the selected endpoint, not a live reference.
  */
 class ProxyCenter {
-  constructor(store, launcher, { checkProxy } = {}) {
+  constructor(store, launcher, { checkProxy, vault } = {}) {
     this.store = store;
     this.launcher = launcher;
+    this.vault = vault || null;
     this.checkProxy = checkProxy || require('../engine/proxyChecker').checkProxy;
     this.lastChecks = new Map(); // Ephemeral results, excluded from disk and backups.
     if (!Array.isArray(this.store.data.proxies)) this.store.data.proxies = [];
@@ -21,6 +22,7 @@ class ProxyCenter {
       id: p.id, name: p.name, tag: p.tag || '',
       type: p.type, host: p.host, port: p.port,
       createdAt: p.createdAt, updatedAt: p.updatedAt,
+      hasCredentials: this.vault?.has(p.id) === true,
       check: this.lastChecks.get(p.id) || null,
       usageCount: this.store.data.profiles.filter(profile =>
         profile.proxy?.type === p.type &&
@@ -68,23 +70,60 @@ class ProxyCenter {
     const duplicate = this.store.data.proxies.find(p => p.id !== proxy.id &&
       p.type === proxy.type && p.host.toLowerCase() === proxy.host.toLowerCase() && p.port === proxy.port);
     if (duplicate) throw new Error('Địa chỉ proxy đã có trong kho: ' + duplicate.name);
+    const linkedProfiles=this.store.data.profiles.filter(p=>p.proxy?.authProxyId===proxy.id);
+    if (existing && linkedProfiles.length && (
+      existing.host!==proxy.host || existing.port!==proxy.port || existing.type!==proxy.type))
+      throw Error('Proxy có hồ sơ đang liên kết: hãy gán proxy khác trước khi sửa địa chỉ.');
+    const username=input?.authUsername;
+    const password=input?.authPassword;
+    const editingAuth=(username!==undefined && username!=='') || (password!==undefined && password!=='');
+    const clearAuth=input?.clearCredentials===true;
+    if(editingAuth && clearAuth)throw Error('Không thể thêm và xóa mật khẩu cùng lúc');
+    if((username===undefined||username==='') !== (password===undefined||password===''))
+      throw Error('Cần nhập cả tên đăng nhập và mật khẩu proxy');
+    if(editingAuth && proxy.type!=='http')throw Error('Chỉ hỗ trợ mật khẩu proxy HTTP; SOCKS5 có mật khẩu chưa hỗ trợ');
+    if((editingAuth||clearAuth) && !this.vault)throw Error('OS credential vault unavailable');
+    if(clearAuth && linkedProfiles.length)throw Error('Hãy gỡ proxy này khỏi các hồ sơ trước khi xóa mật khẩu.');
+    if(editingAuth && !this.vault.available())throw Error('Mã hóa mật khẩu của Windows không khả dụng');
     const original = this.store.data.proxies.slice();
+    const oldCipher=this.vault?.ciphertext(proxy.id)??null;
     if (existing) this.store.data.proxies[this.store.data.proxies.indexOf(existing)] = proxy;
     else this.store.data.proxies.push(proxy);
-    try { this.store.saveData(); }
-    catch (error) { this.store.data.proxies = original; throw error; }
+    try {
+      this.store.saveData();
+      if (editingAuth) this.vault.set(proxy.id,username,password);
+      if (clearAuth) this.vault.delete(proxy.id);
+    } catch (error) {
+      this.store.data.proxies=original;
+      try { this.store.saveData(); } catch (_) { /* surface the original save error */ }
+      if(this.vault && this.vault.ciphertext(proxy.id)!==oldCipher) {
+        try { this.vault.restore(proxy.id,oldCipher); } catch (_) { /* fail closed */ }
+      }
+      throw error;
+    }
     this.lastChecks.delete(proxy.id);
-    return { ...proxy };
+    return { ...proxy, hasCredentials: this.vault?.has(proxy.id)===true };
   }
 
   delete(id) {
     this.get(id);
-    const original = this.store.data.proxies.slice();
-    this.store.data.proxies = original.filter(p => p.id !== id);
-    try { this.store.saveData(); }
-    catch (error) { this.store.data.proxies = original; throw error; }
+    if (this.store.data.profiles.some(p=>p.proxy?.authProxyId===id))
+      throw Error('Proxy đang gắn với hồ sơ. Gán kết nối khác trước khi xóa.');
+    const original=this.store.data.proxies.slice();
+    const cipher=this.vault?.ciphertext(id)??null;
+    this.store.data.proxies=original.filter(p=>p.id!==id);
+    try {
+      this.store.saveData();
+      if(cipher!==null) this.vault.delete(id);
+    } catch(error) {
+      this.store.data.proxies=original;
+      try{this.store.saveData();}catch(_){}
+      if(cipher!==null && !this.vault.has(id)){
+        try{this.vault.restore(id,cipher);}catch(_){}
+      }
+      throw error;
+    }
     this.lastChecks.delete(id);
-    // Profiles retain their copied endpoint configuration for continuity.
     return { deleted: true, profilesKeepExistingProxy: true };
   }
 
@@ -103,7 +142,8 @@ class ProxyCenter {
     }));
     const now = new Date().toISOString();
     for (const profile of profiles) {
-      profile.proxy = { type: proxy.type, host: proxy.host, port: proxy.port };
+      profile.proxy = { type: proxy.type, host: proxy.host, port: proxy.port,
+        ...(this.vault?.has(proxy.id) ? { authProxyId: proxy.id } : {}) };
       profile.updatedAt = now;
     }
     try { this.store.saveData(); }
@@ -116,7 +156,18 @@ class ProxyCenter {
 
   async verify(id) {
     const p = this.get(id);
-    const result = await this.checkProxy({ type: p.type, host: p.host, port: p.port });
+    let gateway=null;
+    let result;
+    try {
+      if(this.vault?.has(id)){
+        if(p.type!=='http')throw Error('SOCKS5 proxy có mật khẩu chưa được hỗ trợ');
+        const auth=this.vault.get(id);
+        if(!auth)throw Error('Không tìm thấy mật khẩu proxy được mã hóa');
+        const {createAuthenticatedHttpGateway}=require('../engine/authenticatedHttpGateway');
+        gateway=await createAuthenticatedHttpGateway({...p,...auth});
+        result=await this.checkProxy({type:'http',host:'127.0.0.1',port:gateway.port});
+      }else result=await this.checkProxy({type:p.type,host:p.host,port:p.port});
+    }finally{if(gateway)await gateway.close();}
     // Limit the reported values to diagnostics; do not persist IP/location.
     const check = {
       status: result.status, ip: result.ip || null, directIp: result.directIp || null,

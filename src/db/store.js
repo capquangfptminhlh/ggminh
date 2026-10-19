@@ -66,7 +66,9 @@ class Store {
     // Only persist the explicit network fields; never serialize unknown secret keys.
     const proxy = parsedProxy.type === 'direct'
       ? { type: 'direct' }
-      : { type: parsedProxy.type, host: parsedProxy.host, port: parsedProxy.port };
+      : { type: parsedProxy.type, host: parsedProxy.host, port: parsedProxy.port,
+          ...(incomingProxy.authProxyId && /^px_[0-9a-f]{16}$/.test(incomingProxy.authProxyId)
+            ? { authProxyId: incomingProxy.authProxyId } : {}) };
     const now = new Date().toISOString();
     const result = {
       ...old, id, name,
