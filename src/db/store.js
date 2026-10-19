@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { validateProxy } = require('../health/profileHealth');
 const VALID_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 function assertId(id) {
   if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
@@ -54,11 +55,18 @@ class Store {
     if (!name || name.length > 160) throw new Error('Profile name must be 1–160 characters');
     const existingIndex = this.data.profiles.findIndex(p => p.id === id);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
-    const proxy = { ...(input.proxy || old.proxy || { type: 'direct' }) };
-    if (proxy.user || proxy.pass || proxy.password) {
+    const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
+    if (typeof incomingProxy !== 'object' || Array.isArray(incomingProxy)) throw new Error('Invalid proxy configuration');
+    const forbidden = ['user','username','pass','password','credentials','token','secret','authorization','apiKey','proxyAuthorization'];
+    if (forbidden.some(key => incomingProxy[key])) {
       throw new Error('Proxy authentication is not supported yet; credentials were not saved');
     }
-    delete proxy.user; delete proxy.pass; delete proxy.password;
+    const parsedProxy = validateProxy(incomingProxy);
+    if (!parsedProxy.ok) throw new Error(parsedProxy.message || 'Invalid proxy configuration');
+    // Only persist the explicit network fields; never serialize unknown secret keys.
+    const proxy = parsedProxy.type === 'direct'
+      ? { type: 'direct' }
+      : { type: parsedProxy.type, host: parsedProxy.host, port: parsedProxy.port };
     const now = new Date().toISOString();
     const result = {
       ...old, id, name,

@@ -11,6 +11,17 @@ const { createApiServer } = require('../src/api/server');
   try {
     assert.throws(() => store.saveProfile({ name: 'bad', id: '../escape' }), /Invalid profile ID/);
     assert.throws(() => store.saveProfile({ name: 'bad', proxy: { type: 'http', user: 'x', pass: 'p' } }), /not supported/);
+    assert.throws(() => store.saveProfile({
+      name:'Secret blocked', proxy:{type:'http',host:'proxy.test',port:8080,username:'alice'}
+    }), /not supported/);
+    assert.throws(() => store.saveProfile({
+      name:'Invalid endpoint',proxy:{type:'http',host:'https://evil.test',port:8080}
+    }), /không hợp lệ/);
+    const normalized=store.saveProfile({
+      name:'No hidden fields',proxy:{type:'http',host:'proxy.example',port:'8080',customCredential:'SHOULD_NOT_PERSIST'}
+    });
+    assert.strictEqual(normalized.proxy.port,8080);
+    assert(!fs.readFileSync(store.dbFile,'utf8').includes('SHOULD_NOT_PERSIST'));
     const added = store.saveProfile({ name: 'Google Ads company', group: 'Authorized', proxy: { type: 'direct' } });
     assert(added.id.startsWith('pb_'));
     assert(fs.existsSync(store.dbFile));
