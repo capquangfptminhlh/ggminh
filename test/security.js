@@ -22,6 +22,7 @@ const { createApiServer } = require('../src/api/server');
     });
     assert.strictEqual(normalized.proxy.port,8080);
     assert(!fs.readFileSync(store.dbFile,'utf8').includes('SHOULD_NOT_PERSIST'));
+    store.deleteProfile(normalized.id);
     const added = store.saveProfile({ name: 'Google Ads company', group: 'Authorized', proxy: { type: 'direct' } });
     assert(added.id.startsWith('pb_'));
     assert(fs.existsSync(store.dbFile));
