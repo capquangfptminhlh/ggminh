@@ -3,6 +3,8 @@ let allProfiles = [];
 let activeBrowserMap = new Map(); // profileId -> info
 let currentGeneratedFP = null;
 let apiEnabled = false;
+let behaviorAlertsSeen = new Set();
+let behaviorInitialized = false;
 
 // Elements
 const profileListBody = document.getElementById('profile-list-body');
@@ -57,7 +59,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   await loadProfiles();
   await refreshApiStatus();
+  await refreshBehaviorAlerts();
   startStatusPoller();
+  setInterval(() => refreshBehaviorAlerts().catch(console.error), 5000);
 });
 
 function setupTabs() {
@@ -86,7 +90,87 @@ async function refreshApiStatus() {
   document.getElementById('btn-api-copy').style.display = state.enabled ? '' : 'none';
 }
 
+const behaviorActions = {
+  profile_open: 'Mở hồ sơ',
+  profile_close: 'Đóng hồ sơ',
+  profile_save: 'Lưu hồ sơ',
+  profile_delete: 'Xóa hồ sơ'
+};
+function behaviorDate(at) {
+  return new Date(at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+function renderBehaviorRows(containerId, data, builder) {
+  const container = document.getElementById(containerId);
+  container.replaceChildren();
+  if (!data.length) {
+    const empty = document.createElement('p');
+    empty.className = 'behavior-empty';
+    empty.textContent = containerId === 'behavior-alert-list' ? '✅ Chưa phát hiện thao tác lặp vượt ngưỡng.' : 'Chưa ghi nhận hoạt động.';
+    container.appendChild(empty);
+    return;
+  }
+  for (const item of data) container.appendChild(builder(item));
+}
+function makeBehaviorAlert(alertItem) {
+  const row = document.createElement('div');
+  row.className = 'behavior-alert-item ' + (alertItem.level === 'high' ? 'is-high' : 'is-medium');
+  const title = document.createElement('strong');
+  title.textContent = (alertItem.level === 'high' ? '🔴 Cần kiểm tra' : '🟠 Chú ý') +
+    ' · ' + alertItem.count + ' lần / 10 phút';
+  const detail = document.createElement('p');
+  detail.textContent = alertItem.message;
+  const meta = document.createElement('small');
+  meta.textContent = (alertItem.profileId || 'Tất cả hồ sơ') + ' · ' + behaviorDate(alertItem.latestAt);
+  row.append(title, detail, meta);
+  return row;
+}
+function makeBehaviorEvent(event) {
+  const row = document.createElement('div');
+  row.className = 'behavior-event-item';
+  const action = document.createElement('span');
+  action.textContent = behaviorActions[event.action] || 'Thao tác';
+  const meta = document.createElement('small');
+  meta.textContent = event.profileId + ' · ' + (event.source === 'api' ? 'Local API' : 'Thủ công') + ' · ' + behaviorDate(event.at);
+  row.append(action, meta);
+  return row;
+}
+async function refreshBehaviorAlerts() {
+  const report = await window.api.getBehaviorReport();
+  const trigger = document.getElementById('btn-behavior-alert');
+  const counter = document.getElementById('behavior-alert-count');
+  counter.textContent = String(report.alertCount);
+  counter.hidden = report.alertCount === 0;
+  trigger.classList.toggle('has-warning', report.alertCount > 0);
+  document.getElementById('behavior-level').textContent =
+    report.level === 'high' ? 'Cần kiểm tra' : report.level === 'medium' ? 'Chú ý' : 'Bình thường';
+  document.getElementById('behavior-activities').textContent = String(report.activities10m);
+  document.getElementById('behavior-profiles').textContent = String(report.profileCount10m);
+  renderBehaviorRows('behavior-alert-list', report.alerts, makeBehaviorAlert);
+  renderBehaviorRows('behavior-event-list', report.recentEvents.slice(0, 20), makeBehaviorEvent);
+
+  const current = new Set(report.alerts.map(a => a.code + ':' + a.profileId + ':' + a.latestAt));
+  if (behaviorInitialized && report.alertCount > 0 &&
+      report.alerts.some(a => !behaviorAlertsSeen.has(a.code + ':' + a.profileId + ':' + a.latestAt))) {
+    const notice = document.getElementById('behavior-inline-notice');
+    notice.textContent = '⚠️ Có thao tác lặp lại bất thường trong phần mềm. Mở “Cảnh báo hành vi” để kiểm tra.';
+    notice.hidden = false;
+  }
+  behaviorInitialized = true;
+  behaviorAlertsSeen = current;
+}
+
 function setupEventListeners() {
+  document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
+    await refreshBehaviorAlerts();
+    document.getElementById('behavior-inline-notice').hidden = true;
+    openModal(document.getElementById('modal-behavior'));
+  });
+  document.getElementById('btn-close-behavior').addEventListener('click', () =>
+    closeModal(document.getElementById('modal-behavior')));
+  document.getElementById('btn-behavior-done').addEventListener('click', () =>
+    closeModal(document.getElementById('modal-behavior')));
+  document.getElementById('btn-refresh-behavior').addEventListener('click', refreshBehaviorAlerts);
+
   document.getElementById('btn-api-toggle').addEventListener('click', async () => {
     try {
       await window.api.setApiEnabled(!apiEnabled);
@@ -178,6 +262,7 @@ function setupEventListeners() {
     catch (error) { alert('Không lưu được hồ sơ: ' + error.message); return; }
     closeModal(modalProfile);
     await loadProfiles();
+    await refreshBehaviorAlerts();
   });
 
   // Search & Filter
@@ -360,6 +445,7 @@ function renderProfiles() {
         else await window.api.startBrowser(profile.id);
       } catch (error) { alert('Không thể mở/đóng hồ sơ: ' + error.message); }
       await loadProfiles();
+      await refreshBehaviorAlerts();
     });
 
     const btnRpa = tr.querySelector('.btn-copy-rpa');
@@ -379,6 +465,7 @@ function renderProfiles() {
       if (confirm(`Bạn có chắc chắn muốn xóa profile "${profile.name}"?`)) {
         await window.api.deleteProfile(profile.id);
         await loadProfiles();
+        await refreshBehaviorAlerts();
       }
     });
 

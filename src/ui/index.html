@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.0 Pro</span></h1>
+          <h1>LHM Ads Browser <span>v1.2</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -33,6 +33,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-secondary behavior-trigger" id="btn-behavior-alert" title="Theo dõi hành vi thao tác lặp lại trong phần mềm" aria-label="Mở cảnh báo hành vi">⚠️ Cảnh báo hành vi <span id="behavior-alert-count" class="behavior-count" hidden>0</span></button>
         <button class="btn btn-secondary" id="btn-api-toggle" title="Bật/tắt Local API">API: Tắt</button>
         <button class="btn btn-secondary" id="btn-api-copy" title="Sao chép mã truy cập API" style="display:none">Sao chép API Key</button>
         <button class="btn btn-primary" id="btn-create-profile">
@@ -43,6 +44,8 @@
         </button>
       </div>
     </header>
+
+    <p id="behavior-inline-notice" class="behavior-inline-notice" hidden role="status"></p>
 
     <!-- Toolbar / Filter Bar -->
     <section class="toolbar">
@@ -89,6 +92,33 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Local activity review: does not inspect Google account activity or fingerprint sites. -->
+  <div class="modal-overlay" id="modal-behavior">
+    <div class="modal-dialog modal-lg behavior-dialog" role="dialog" aria-modal="true" aria-labelledby="behavior-title">
+      <div class="modal-header">
+        <h2 id="behavior-title">⚠️ Cảnh báo hành vi thao tác</h2>
+        <button class="btn-close" id="btn-close-behavior" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="behavior-disclaimer">Theo dõi thao tác <strong>trong LHM Ads Browser</strong> (mở/đóng/sửa hồ sơ, gọi Local API). Không theo dõi nhấp chuột trong trang Google Ads, không biết hệ thống Google đánh giá tài khoản thế nào.</p>
+        <div class="behavior-metrics">
+          <div><span>Mức cảnh báo</span><strong id="behavior-level">Bình thường</strong></div>
+          <div><span>Hoạt động / 10 phút</span><strong id="behavior-activities">0</strong></div>
+          <div><span>Hồ sơ liên quan</span><strong id="behavior-profiles">0</strong></div>
+        </div>
+        <h3 class="behavior-heading">Cảnh báo đang có</h3>
+        <div id="behavior-alert-list" class="behavior-list" aria-live="polite">Chưa có cảnh báo.</div>
+        <h3 class="behavior-heading">Nhật ký thao tác gần đây</h3>
+        <div id="behavior-event-list" class="behavior-events">Chưa có hoạt động.</div>
+        <p class="behavior-footnote">Ngưỡng cảnh báo là quy tắc vận hành nội bộ, không phải ngưỡng phát hiện của Google. Dữ liệu lưu cục bộ tối đa 24 giờ; không lưu URL trang, cookies hay mật khẩu.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-refresh-behavior">Làm mới</button>
+        <button class="btn btn-primary" id="btn-behavior-done">Đóng</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal: Create / Edit Profile -->

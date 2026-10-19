@@ -1,11 +1,11 @@
 {
   "name": "power-browser",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Local-first multi-profile desktop browser with optional protected API",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node test/verify_engine.js && node test/security.js",
+    "test": "node test/verify_engine.js && node test/security.js && node test/behavior-monitor.js",
     "build:win": "npx --yes electron-builder@25.1.8 --win nsis --x64 --publish never"
   },
   "keywords": [

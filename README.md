@@ -86,3 +86,20 @@ with sync_playwright() as p:
 
 ## Kế hoạch tiếp theo
 Đưa vào danh sách công việc: quản lý proxy có xác thực bảo mật, backup/export dữ liệu, kiểm thử E2E trên Windows, quản lý tài khoản Google Ads hợp lệ thông qua OAuth/MCC, và dashboard web với phân quyền.
+
+
+## Cảnh báo hành vi — phiên bản 1.2
+Bấm nút **⚠️ Cảnh báo hành vi** trên thanh công cụ. Ứng dụng theo dõi cục bộ
+những thao tác được gửi qua giao diện và Local API: mở, đóng, lưu và xóa hồ sơ.
+Màn hình hiển thị nhật ký gần đây và cảnh báo mở lặp nhiều lần, mở/đóng liên tiếp,
+cập nhật liên tiếp hoặc lượng yêu cầu mở hàng loạt trong khoảng 10 phút.
+Khi xuất hiện cảnh báo mới, có thông báo ngay trên thanh giao diện.
+
+**Giới hạn:** Không theo dõi các nhấp chuột bên trong Chrome, không truy cập dữ liệu
+Google Ads và không thể biết Google có phát hiện hay đánh giá hành vi ra sao.
+Đây là bộ kiểm tra vận hành tránh thao tác ngoài ý muốn/lặp vô hạn, không phải
+cơ chế “né” hoặc đảm bảo tránh khóa tài khoản.
+
+Dữ liệu lưu **chỉ trên máy** trong \`behavior-events.json\`, chỉ chứa loại thao tác,
+ID hồ sơ, nguồn thủ công/API và thời điểm; tự giới hạn 24 giờ và tối đa 1.200 sự kiện.
+Không thu thập URL, thông tin quảng cáo, cookies hoặc nội dung web.

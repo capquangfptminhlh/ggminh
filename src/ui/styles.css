@@ -633,3 +633,81 @@ select {
   color: var(--text-secondary);
   margin-top: 4px;
 }
+
+
+/* Behavior alerts — local operational review, not Google detection scoring. */
+.behavior-trigger.has-warning {
+  border-color: #ef8a39;
+  color: #ffc88b;
+}
+.behavior-count {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  background: #c45028;
+  color: #fff;
+  padding: 2px 7px;
+}
+.behavior-count[hidden], .behavior-inline-notice[hidden] { display: none !important; }
+.behavior-inline-notice {
+  margin: 0;
+  padding: 10px 24px;
+  background: #4b321a;
+  border-bottom: 1px solid #9c5c25;
+  color: #ffd99d;
+  font-size: 13px;
+}
+.behavior-dialog { width: min(900px, 94vw); }
+.behavior-disclaimer {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.behavior-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.behavior-metrics > div {
+  padding: 14px;
+  border-radius: 10px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.behavior-metrics span { color: #a5afc1; font-size: 12px; }
+.behavior-metrics strong { font-size: 19px; }
+.behavior-heading { font-size: 15px; margin: 14px 0 12px; }
+.behavior-list, .behavior-events { display: flex; flex-direction: column; gap: 8px; }
+.behavior-alert-item {
+  border: 1px solid #a75f27;
+  border-left: 4px solid #f3ad56;
+  background: #352719;
+  padding: 12px;
+  border-radius: 9px;
+}
+.behavior-alert-item.is-high { border-color: #c03c43; border-left-color: #fb7185; background: #3c2029; }
+.behavior-alert-item strong { font-size: 13px; }
+.behavior-alert-item p { font-size: 13px; margin: 6px 0; line-height: 1.55; }
+.behavior-alert-item small { font-size: 11px; color: #d5c4b4; }
+.behavior-event-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 12px;
+  background: #1f2937;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.behavior-event-item small { color: #9ca3af; }
+.behavior-empty { color: #9ca3af; font-size: 13px; padding: 16px 0; }
+.behavior-footnote { font-size: 12px; color: #9ca3af; line-height: 1.55; margin-top: 18px; }
+@media (max-width: 1120px) {
+  .app-header { flex-wrap: wrap; gap: 12px; }
+  .header-actions { flex-wrap: wrap; }
+  .behavior-metrics { grid-template-columns: 1fr; }
+}

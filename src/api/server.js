@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { checkProxy } = require('../engine/proxyChecker');
 
-function createApiServer(store, launcher, { apiKey = '' } = {}) {
+function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null } = {}) {
   const service = express();
   service.disable('x-powered-by');
   service.use(express.json({ limit: '64kb' }));
@@ -31,6 +31,7 @@ function createApiServer(store, launcher, { apiKey = '' } = {}) {
       const id = req.query.user_id || req.query.serial_number || req.query.id;
       if (typeof id !== 'string' || !id) return res.status(400).json({ code: -1, msg: 'Missing user_id' });
       const instance = await launcher.start(id, req.query.open_url);
+      if (behaviorMonitor) behaviorMonitor.record('profile_open', id, 'api');
       const ws = instance.wsEndpoint || (instance.port ? await launcher.fetchWebSocketDebuggerUrl(instance.port, 10) : null);
       res.json({ code: 0, data: {
         ws: { puppeteer: ws, selenium: instance.port ? '127.0.0.1:' + instance.port : null },
@@ -42,7 +43,9 @@ function createApiServer(store, launcher, { apiKey = '' } = {}) {
     try {
       const id = req.query.user_id || req.query.serial_number || req.query.id;
       if (typeof id !== 'string' || !id) return res.status(400).json({ code: -1, msg: 'Missing user_id' });
-      res.json({ code: 0, data: launcher.stop(id), msg: 'success' });
+      const result = launcher.stop(id);
+      if (result.success && behaviorMonitor) behaviorMonitor.record('profile_close', id, 'api');
+      res.json({ code: 0, data: result, msg: 'success' });
     } catch (error) { fail(res, error); }
   });
   service.get('/api/v1/browser/active', (_, res) => res.json({ code: 0, data: { list: launcher.listActive() }, msg: 'success' }));
@@ -55,10 +58,20 @@ function createApiServer(store, launcher, { apiKey = '' } = {}) {
   }));
   service.get('/api/profiles', (_, res) => res.json(store.getProfiles()));
   service.post('/api/profiles', (req, res) => {
-    try { res.json(store.saveProfile(req.body)); } catch (error) { fail(res, error); }
+    try {
+      const saved = store.saveProfile(req.body);
+      if (behaviorMonitor) behaviorMonitor.record('profile_save', saved.id, 'api');
+      res.json(saved);
+    } catch (error) { fail(res, error); }
   });
   service.delete('/api/profiles/:id', (req, res) => {
-    try { launcher.stop(req.params.id); res.json({ success: store.deleteProfile(req.params.id) }); }
+    try {
+      const closed = launcher.stop(req.params.id);
+      if (closed.success && behaviorMonitor) behaviorMonitor.record('profile_close', req.params.id, 'api');
+      const success = store.deleteProfile(req.params.id);
+      if (success && behaviorMonitor) behaviorMonitor.record('profile_delete', req.params.id, 'api');
+      res.json({ success });
+    }
     catch (error) { fail(res, error); }
   });
   service.post('/api/proxy/check', async (req, res) => res.json(await checkProxy(req.body)));

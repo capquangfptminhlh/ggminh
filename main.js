@@ -7,10 +7,12 @@ const BrowserLauncher = require('./src/engine/browserLauncher');
 const { generateFingerprint } = require('./src/engine/fingerprint');
 const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
+const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 
 let mainWindow = null;
 let store = null;
 let launcher = null;
+let behaviorMonitor = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
@@ -33,7 +35,7 @@ async function setApiEnabled(enabled) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) {
     throw new Error('Invalid API port');
   }
-  const service = createApiServer(store, launcher, { apiKey });
+  const service = createApiServer(store, launcher, { apiKey, behaviorMonitor });
   try {
     await new Promise((resolve, reject) => {
       service.once('error', reject);
@@ -69,10 +71,27 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
-  ipcMain.handle('save-profile', (_, profile) => store.saveProfile(profile));
-  ipcMain.handle('delete-profile', (_, id) => { launcher.stop(id); return store.deleteProfile(id); });
-  ipcMain.handle('start-browser', (_, id) => launcher.start(id));
-  ipcMain.handle('stop-browser', (_, id) => launcher.stop(id));
+  ipcMain.handle('save-profile', (_, profile) => {
+    const saved = store.saveProfile(profile);
+    behaviorMonitor.record('profile_save', saved.id, 'manual');
+    return saved;
+  });
+  ipcMain.handle('delete-profile', (_, id) => {
+    launcher.stop(id);
+    const deleted = store.deleteProfile(id);
+    if (deleted) behaviorMonitor.record('profile_delete', id, 'manual');
+    return deleted;
+  });
+  ipcMain.handle('start-browser', async (_, id) => {
+    const opened = await launcher.start(id);
+    behaviorMonitor.record('profile_open', id, 'manual');
+    return { profileId: opened.profileId, port: opened.port, alreadyRunning: !!opened.alreadyRunning };
+  });
+  ipcMain.handle('stop-browser', (_, id) => {
+    const result = launcher.stop(id);
+    if (result.success) behaviorMonitor.record('profile_close', id, 'manual');
+    return result;
+  });
   ipcMain.handle('get-active-browsers', () => launcher.listActive());
   ipcMain.handle('check-proxy', (_, proxy) => checkProxy(proxy));
   ipcMain.handle('generate-fingerprint', (_, options) => generateFingerprint(options));
@@ -83,6 +102,7 @@ function initIPC() {
     if (['dark', 'light'].includes(settings?.theme)) allowed.theme = settings.theme;
     return store.updateSettings(allowed);
   });
+  ipcMain.handle('get-behavior-report', () => behaviorMonitor.getReport());
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
   ipcMain.handle('copy-api-key', () => {
@@ -102,6 +122,7 @@ app.whenReady().then(async () => {
   }
   store = new Store(storageDir);
   launcher = new BrowserLauncher(store);
+  behaviorMonitor = new BehaviorMonitor(storageDir);
   initIPC();
   createWindow();
   if (store.getSettings().apiEnabled === true) {

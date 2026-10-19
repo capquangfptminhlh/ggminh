@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  getBehaviorReport: () => ipcRenderer.invoke('get-behavior-report'),
   getApiStatus: () => ipcRenderer.invoke('get-api-status'),
   setApiEnabled: enabled => ipcRenderer.invoke('set-api-enabled', enabled),
   copyApiKey: () => ipcRenderer.invoke('copy-api-key'),
