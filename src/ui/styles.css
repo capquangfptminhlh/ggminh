@@ -812,3 +812,16 @@ select {
 .tower-footer p{flex:1;font-size:12px;color:#a3c9f0}
 @media(max-width:950px){.tower-columns{grid-template-columns:1fr}.tower-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.selection-toolbar{flex-direction:column;align-items:stretch}.tower-kpis{grid-template-columns:1fr 1fr}.tower-footer{flex-wrap:wrap}}
+
+
+/* v1.7 recorder inside Automation Studio */
+.studio-recorder{margin-top:15px;padding:15px 16px;background:linear-gradient(110deg,#1e263e,#152638);border:1px solid #355174;border-radius:12px}
+.studio-recorder-heading{display:flex;flex-direction:column;gap:4px}
+.studio-recorder-heading strong{font-size:14px;color:#e8f1ff}
+.studio-recorder-heading small{font-size:11px;color:#a6bad6}
+.studio-recorder-indicator{font-size:12px;color:#b6c7db;background:#23364f;padding:5px 10px;border-radius:999px}
+.studio-recorder-indicator.recording{color:#fecaca;background:#7f1d1d;box-shadow:0 0 0 3px #ef444426}
+.studio-recorder-note{font-size:12px;color:#b5c6dd;line-height:1.7;margin-bottom:13px}
+.studio-record-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.studio-record-events{background:#101b2e;border:1px solid #2d415d;border-radius:8px;padding:10px;max-height:135px;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.studio-record-event{font-size:12px;color:#bcd6f8;padding:5px 7px;background:#22334a;border-radius:6px;overflow-wrap:anywhere}

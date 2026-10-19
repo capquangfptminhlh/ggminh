@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.6</span></h1>
+          <h1>LHM Ads Browser <span>v1.7</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -457,6 +457,22 @@ run();
             </div>
           </section>
         </div>
+        <section class="studio-recorder">
+          <div class="studio-toolbar">
+            <div class="studio-recorder-heading">
+              <strong>⏺ Automation Recorder</strong>
+              <small>Ghi thao tác mẫu vào quy trình — bản thử nghiệm</small>
+            </div>
+            <span class="studio-recorder-indicator" id="studio-record-state">Chưa ghi</span>
+          </div>
+          <p class="studio-recorder-note">Chọn hồ sơ, nhập tên miền và URL ở bước Mở URL. LHM mở một cửa sổ tạm thời để ghi nút nhấn, trường nhập và trang điều hướng. Không ghi nội dung nhập hoặc thông tin đăng nhập.</p>
+          <div class="studio-record-actions">
+            <button class="btn btn-secondary" id="studio-record-start">⏺ Bắt đầu ghi</button>
+            <button class="btn btn-danger" id="studio-record-stop" disabled>■ Dừng ghi</button>
+            <button class="btn btn-primary" id="studio-record-import" disabled>↓ Đưa bước vào Studio</button>
+          </div>
+          <div class="studio-record-events" id="studio-record-events" aria-live="polite">Chưa có thao tác được ghi.</div>
+        </section>
         <div class="studio-run-info">
           <div class="studio-toolbar">
             <strong>Trạng thái: <span id="studio-run-state">Chưa chạy</span></strong>

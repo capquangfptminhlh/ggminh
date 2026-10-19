@@ -5,6 +5,7 @@
   let workflows = [];
   let current = null;
   let dragged = null;
+  let recorderBusy = false;
   const labels = {
     navigate: '🌐 Mở URL', wait: '⏱ Chờ', click: '👆 Nhấn CSS',
     fill: '✍ Điền trường', assert_text: '🔎 Kiểm tra chữ', approval: '✓ Xác nhận'
@@ -169,11 +170,76 @@
       state.logs.map(x => new Date(x.time).toLocaleTimeString('vi-VN') + '  ' + x.message).join('\n') :
       'Nhật ký sẽ xuất hiện tại đây.';
   }
+
+  async function recorderStatus() {
+    const report = await api.recorderStatus();
+    const stateLabels = { idle:'Chưa ghi', recording:'● Đang ghi', stopped:'Đã dừng ghi' };
+    const indicator = el('studio-record-state');
+    indicator.textContent = stateLabels[report.state] || 'Không xác định';
+    indicator.classList.toggle('recording', report.state === 'recording');
+    el('studio-record-start').disabled = recorderBusy || report.state === 'recording';
+    el('studio-record-stop').disabled = recorderBusy || report.state !== 'recording';
+    el('studio-record-import').disabled = recorderBusy || report.state !== 'stopped';
+    const log = el('studio-record-events');
+    log.replaceChildren();
+    const note = document.createElement('div');
+    note.className = 'studio-muted'; note.textContent = (report.notice || '') + ' · ' + report.stepCount + ' bước';
+    log.append(note);
+    for (const action of report.actions || []) {
+      const row = document.createElement('div');
+      row.className = 'studio-record-event';
+      const title = { navigate:'🌐 Mở trang',click:'👆 Nhấn nút',fill:'✍ Trường nhập',approval:'✓ Phê duyệt' }[action.type] || action.type;
+      row.textContent = title + ' · ' + action.label;
+      log.append(row);
+    }
+  }
+  async function startRecording() {
+    if (recorderBusy) return;
+    const profileId = el('studio-profile').value;
+    const hosts = el('studio-hosts').value.trim();
+    const navigation = current?.steps.find(step => step.type === 'navigate');
+    if (!navigation?.url) return alert('Cần có một bước Mở URL để làm trang bắt đầu ghi.');
+    if (!profileId) return alert('Hãy chọn hồ sơ Chromium để ghi.');
+    if (!confirm('Recorder chỉ ghi click, vị trí trường nhập và URL không có tham số. Không ghi giá trị biểu mẫu.\nChỉ sử dụng trên website bạn sở hữu hoặc được phép tự động hóa. Tiếp tục?')) return;
+    recorderBusy = true;
+    await recorderStatus();
+    try {
+      await api.recorderStart({ profileId, hosts, url: navigation.url });
+      await recorderStatus();
+    } catch (error) { alert('Không thể bắt đầu Recorder: ' + error.message); }
+    finally { recorderBusy = false; await recorderStatus(); }
+  }
+  async function stopRecording() {
+    if (recorderBusy) return;
+    recorderBusy = true;
+    try { await api.recorderStop(); }
+    catch (error) { alert('Không thể dừng Recorder: ' + error.message); }
+    finally { recorderBusy = false; await recorderStatus(); }
+  }
+  async function importRecording() {
+    if (recorderBusy) return;
+    try {
+      const draft = await api.recorderTake();
+      if (!draft.steps || draft.steps.length < 2) return alert('Không có bước nào để lấy.');
+      if (!confirm('Thay các bước hiện tại bằng ' + draft.steps.length + ' bước đã ghi?\nBạn cần tự nhập nội dung cho các bước Điền trường trước khi chạy.')) return;
+      if (!current) createNew();
+      current.steps = JSON.parse(JSON.stringify(draft.steps));
+      current.hosts = draft.hosts;
+      current.profileId = draft.profileId;
+      delete current.id;
+      el('studio-hosts').value = draft.hosts;
+      el('studio-profile').value = draft.profileId;
+      el('studio-name').value = 'Bản ghi ' + new Date().toLocaleDateString('vi-VN');
+      renderSteps();
+      alert('Đã nhập ' + draft.steps.length + ' bước. Hãy kiểm tra selector, điền nội dung phù hợp và bấm Lưu.');
+    } catch (error) { alert('Không thể lấy bản ghi: ' + error.message); }
+  }
+
   function show() {
     el('modal-studio').classList.add('open');
     updateProfiles().then(refreshList).then(() => {
       if (!current) createNew();
-      return updateStatus();
+      return Promise.all([updateStatus(), recorderStatus()]);
     }).catch(error => alert(error.message));
   }
   function close() { el('modal-studio').classList.remove('open'); }
@@ -182,6 +248,9 @@
     el('studio-close').addEventListener('click', close);
     el('studio-done').addEventListener('click', close);
     el('studio-new').addEventListener('click', createNew);
+    el('studio-record-start').addEventListener('click', startRecording);
+    el('studio-record-stop').addEventListener('click', stopRecording);
+    el('studio-record-import').addEventListener('click', importRecording);
     el('studio-add-step').addEventListener('click', () => {
       if (!current) createNew();
       if (current.steps.length >= 40) return alert('Tối đa 40 bước');
@@ -202,7 +271,10 @@
       try { await api.studioApprove(); await updateStatus(); } catch (error) { alert(error.message); }
     });
     setInterval(() => {
-      if (el('modal-studio').classList.contains('open')) updateStatus().catch(console.error);
+      if (el('modal-studio').classList.contains('open')) {
+        updateStatus().catch(console.error);
+        recorderStatus().catch(console.error);
+      }
     }, 800);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
