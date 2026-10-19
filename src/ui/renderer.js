@@ -347,6 +347,7 @@ async function openProfileModal(existingProfile = null) {
     applyFingerprintToForm(currentGeneratedFP);
   }
   geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
+  await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   openModal(modalProfile);
 }
 

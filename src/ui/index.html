@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.8</span></h1>
+          <h1>LHM Ads Browser <span>v1.9</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -33,6 +33,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-secondary" id="btn-proxy-center">🌐 Proxy Center</button>
         <button class="btn btn-primary" id="btn-control-tower">◈ Control Tower</button>
         <button class="btn btn-secondary" id="btn-profile-health" title="Chẩn đoán cấu hình hồ sơ">🛡️ Health Check</button>
         <button class="btn btn-secondary" id="btn-config-backup" title="Sao lưu cấu hình có mã hóa">🔐 Sao lưu</button>
@@ -190,6 +191,7 @@
 
         <!-- Tab 2: Proxy -->
         <div class="tab-content" id="tab-proxy">
+          <div class="form-group"><label for="field-proxy-preset">Chọn từ kho Proxy đã lưu</label><select id="field-proxy-preset"><option value="">— Tự nhập cấu hình —</option></select><p class="pc-inline-hint">Chọn một mục đã lưu để điền thông số. Để quản lý kho, dùng nút Proxy Center trên thanh công cụ.</p></div>
           <div class="form-group">
             <label>Loại Proxy:</label>
             <select id="field-proxy-type">
@@ -599,9 +601,70 @@ run();
     </div>
   </div>
 
+
+  <!-- Local-first Proxy Center: no credential storage, no stealth guarantees -->
+  <div class="modal-overlay" id="modal-proxy-center">
+    <div class="modal-dialog proxy-center-dialog" role="dialog" aria-modal="true" aria-labelledby="pc-heading">
+      <div class="modal-header">
+        <div>
+          <h2 id="pc-heading">🌐 LHM Proxy Center</h2>
+          <p class="pc-subtitle">Kho kết nối cục bộ · xác minh IP thoát · gán an toàn cho nhiều hồ sơ</p>
+        </div>
+        <button class="btn-close" id="pc-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <section class="pc-stats" aria-label="Thống kê proxy">
+          <div><span>Proxy đã lưu</span><strong id="pc-total">0</strong></div>
+          <div><span>Đã xác minh phiên này</span><strong id="pc-verified">0</strong></div>
+          <div><span>Hồ sơ đang sử dụng proxy</span><strong id="pc-used">0</strong></div>
+        </section>
+        <div class="pc-columns">
+          <section class="pc-form-panel">
+            <h3>Thêm / sửa Proxy</h3>
+            <input type="hidden" id="pc-id">
+            <label for="pc-name">Tên gợi nhớ</label>
+            <input id="pc-name" maxlength="100" placeholder="Ví dụ: Văn phòng - Kết nối A">
+            <label for="pc-tag">Nhãn / Nhóm</label>
+            <input id="pc-tag" maxlength="60" placeholder="Ví dụ: Agency / Dự án">
+            <div class="pc-compact-fields">
+              <div><label for="pc-type">Giao thức</label>
+                <select id="pc-type"><option value="http">HTTP</option><option value="socks5">SOCKS5</option></select>
+              </div>
+              <div><label for="pc-port">Cổng</label><input id="pc-port" type="number" min="1" max="65535" placeholder="8080"></div>
+            </div>
+            <label for="pc-host">IP hoặc hostname</label>
+            <input id="pc-host" maxlength="253" placeholder="proxy.example.com">
+            <div class="pc-form-actions">
+              <button class="btn btn-primary" id="pc-save">Lưu Proxy</button>
+              <button class="btn btn-secondary" id="pc-reset">Tạo mới</button>
+            </div>
+            <div id="pc-message" class="pc-message" role="status"></div>
+            <p class="pc-info">Phiên bản này hỗ trợ proxy HTTP/SOCKS5 không mật khẩu. Không lưu user/pass hay token. Mỗi hồ sơ giữ một bản cấu hình riêng; cập nhật kho proxy không tự đổi proxy đã gán.</p>
+          </section>
+          <section class="pc-list-panel">
+            <div class="pc-list-heading">
+              <h3>Danh sách kết nối</h3>
+              <input id="pc-search" type="search" placeholder="Tìm tên, IP, nhóm..." aria-label="Tìm proxy">
+            </div>
+            <div id="pc-list" class="pc-list" aria-live="polite"></div>
+          </section>
+        </div>
+        <div class="pc-footer-note">
+          ℹ️           Việc xác minh gửi yêu cầu HTTPS tới api.ipify.org qua proxy. IP trả về không lưu vào cơ sở dữ liệu. Proxy không bảo đảm các tài khoản quảng cáo không bị liên kết.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span id="pc-selection-info" class="pc-selection-info">Chọn hồ sơ trong bảng chính để gán proxy.</span>
+        <button class="btn btn-secondary" id="pc-refresh">↻ Làm mới</button>
+        <button class="btn btn-primary" id="pc-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>
   <script src="controlTower.js"></script>
+  <script src="proxyCenter.js"></script>
 </body>
 </html>
