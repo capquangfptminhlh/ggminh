@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('api', {
   deleteSavedProxy: id => ipcRenderer.invoke('proxy-center-delete', id),
   checkSavedProxy: id => ipcRenderer.invoke('proxy-center-check', id),
   assignSavedProxy: (id, profileIds) => ipcRenderer.invoke('proxy-center-assign', id, profileIds),
+  diagnoseBrowserEngines: () => ipcRenderer.invoke('diagnose-browser-engines'),
   getProfiles: () => ipcRenderer.invoke('get-profiles'),
   saveProfile: (profile) => ipcRenderer.invoke('save-profile', profile),
   deleteProfile: (id) => ipcRenderer.invoke('delete-profile', id),

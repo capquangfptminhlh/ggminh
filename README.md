@@ -241,3 +241,7 @@ Windows CI attempts to capture a preview PNG directly from the real Electron des
 - LHM preserves other existing Firefox user preferences, rewrites only its own bounded block and resets proxy preferences when returning to Direct.
 - Proxy Center can assign saved proxies to Firefox profiles with the same closed-profile check as Chromium.
 - Gecko still uses **installed Firefox**, not an LHM-built engine, and credentials, CDP, cloud sync and high-assurance anonymity are not supported.
+
+
+### Engine Diagnostics (v2.3)
+Health Center can check actual locally installed Chrome, Edge and Firefox executables via `--version` on explicit user request. It reports missing or unknown engines and advisory outdated versions without claiming a custom LHM browser core or making security guarantees.

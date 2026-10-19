@@ -290,3 +290,9 @@ select option{background:white;color:#263347}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* Native binary diagnostics */
+.engine-diagnostics{margin-top:16px;padding:14px;border:1px solid #e2e7ef;border-radius:9px;background:#fbfcfe}
+.engine-diagnostics-results{display:flex;flex-direction:column;gap:8px}
+.engine-diagnostics-line{padding:10px;border:1px solid #e8edf3;border-radius:7px;background:#fff;display:flex;flex-direction:column;gap:4px}
+.engine-diagnostics-name{font-size:12px;font-weight:650;color:#334964}

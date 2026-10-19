@@ -17,6 +17,7 @@ const { checkProfile } = require('./src/health/profileHealth');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
+const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
@@ -105,6 +106,7 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
   ipcMain.handle('inspect-fingerprint', (_, input) => inspectFingerprint(input));
 
   ipcMain.handle('proxy-center-list', () => proxyCenter.list());

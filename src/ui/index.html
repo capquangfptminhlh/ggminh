@@ -607,6 +607,14 @@ run();
           <div><span>Cảnh báo</span><strong id="health-warnings">0</strong></div>
         </div>
         <div id="health-items" class="health-list"></div>
+        <section class="engine-diagnostics">
+          <div class="isolation-audit-head">
+            <strong>Browser Engine Diagnostics</strong>
+            <button type="button" class="btn btn-sm btn-secondary" id="health-check-engines">Kiểm tra Chrome / Edge / Firefox</button>
+          </div>
+          <div id="health-engines-results" role="status" class="engine-diagnostics-results">Bấm kiểm tra để đọc phiên bản trình duyệt đang cài trên máy.</div>
+          <p class="health-footnote">Kiểm tra chỉ dùng lệnh --version với chương trình tìm được, không mở website hoặc đăng nhập tài khoản.</p>
+        </section>
         <div class="isolation-audit">
           <div class="isolation-audit-head">
             <strong>🔐 Kiểm tra cách ly dữ liệu cục bộ</strong>
