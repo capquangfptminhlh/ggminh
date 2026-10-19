@@ -138,3 +138,20 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
   CSV Injection; không xuất cookie, tài khoản đăng nhập hay nội dung website.
 - Để tránh thay đổi ngoài ý muốn, việc đóng nhiều hồ sơ cần xác nhận của người dùng.
 - Dashboard dựa trên dữ liệu local, **không** thể biết Google đánh giá tài khoản ra sao.
+
+
+## v1.7 — Automation Recorder (thử nghiệm)
+- Trong Automation Studio chọn hồ sơ Chromium, tên miền được phép, và URL
+  khởi đầu, sau đó bấm **Ghi thao tác**.
+- Cửa sổ Recorder **riêng và tạm thời** sẽ mở: không dùng chung cookie/phiên
+  Chrome, Firefox hoặc các hồ sơ Automation Studio khác; không lưu phiên trình duyệt.
+- Hỗ trợ ghi chuyển trang cùng tên miền đã duyệt, click nút/link, chọn vị trí
+  trường nhập. **Không lưu các giá trị đã gõ**; bước điền biểu mẫu để trống và
+  người dùng phải tự điền dữ liệu không nhạy cảm trước khi chạy lại.
+- Nút **Dừng ghi** sau đó **Đưa bước vào Studio** để sửa selector và lưu workflow.
+  Quy trình có bước yêu cầu phê duyệt trước bất kỳ thao tác click/fill nào.
+- Không ghi thao tác trang Google Ads, đăng nhập Google hoặc thanh toán Google.
+  Những công việc quản trị Google Ads cần OAuth/MCC/API chính thức.
+- Chưa hỗ trợ iframe, shadow DOM, các webapp SPA phức tạp hoặc ghi chính xác
+  mọi tương tác. Những website hạn chế trình duyệt nhúng có thể không hoạt động.
+- Không dùng kỹ thuật che giấu dấu hiệu tự động hóa để vượt kiểm soát nền tảng.

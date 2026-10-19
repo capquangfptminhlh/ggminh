@@ -10,6 +10,8 @@ const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
 const { createWindowBrowser } = require('./src/automation/windowBrowser');
+const { RecorderManager } = require('./src/automation/recorder');
+const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
@@ -20,6 +22,7 @@ let launcher = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
+let recorderManager = null;
 let configBackup = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -152,7 +155,17 @@ function initIPC() {
     if (automationRunner.status().status === 'running' && automationRunner.status().workflowId === id) throw Error('Hãy dừng quy trình trước khi xóa');
     return workflowStore.delete(id);
   });
-  ipcMain.handle('studio-run', (_, id) => automationRunner.run(id));
+  ipcMain.handle('studio-run', (_, id) => {
+    if (recorderManager.status().state === 'recording') throw new Error('Dừng Recorder trước khi chạy Automation Studio');
+    return automationRunner.run(id);
+  });
+  ipcMain.handle('recorder-start', async (_, options) => {
+    if (automationRunner.status().status === 'running') throw new Error('Hãy dừng workflow đang chạy trước khi ghi thao tác');
+    return recorderManager.start(options);
+  });
+  ipcMain.handle('recorder-status', () => recorderManager.status());
+  ipcMain.handle('recorder-stop', () => recorderManager.stop());
+  ipcMain.handle('recorder-take', () => recorderManager.takeSteps());
   ipcMain.handle('studio-stop', () => automationRunner.stop());
   ipcMain.handle('studio-approve', () => automationRunner.approve());
   ipcMain.handle('studio-status', () => automationRunner.status());
@@ -212,6 +225,7 @@ app.whenReady().then(async () => {
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
+  recorderManager = new RecorderManager(store, createRecorderWindow);
   initIPC();
   createWindow();
   if (store.getSettings().apiEnabled === true) {
@@ -231,6 +245,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   if (automationRunner) automationRunner.stop();
+  if (recorderManager?.status().state === 'recording') recorderManager.stop();
   if (launcher) for (const active of launcher.listActive()) launcher.stop(active.profileId);
   if (apiServer) apiServer.close();
 });
