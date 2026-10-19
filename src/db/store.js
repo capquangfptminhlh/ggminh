@@ -1,113 +1,93 @@
 const fs = require('fs');
 const path = require('path');
-
+const crypto = require('crypto');
+const VALID_ID = /^[a-zA-Z0-9_-]{1,64}$/;
+function assertId(id) {
+  if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
+  return id;
+}
 class Store {
   constructor(baseDir) {
     this.baseDir = baseDir || path.resolve(__dirname, '../../data');
     this.dbFile = path.join(this.baseDir, 'db.json');
-    this.ensureDirs();
+    fs.mkdirSync(path.join(this.baseDir, 'profiles'), { recursive: true });
     this.data = this.load();
   }
-
-  ensureDirs() {
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir, { recursive: true });
-    }
-    const profilesDir = path.join(this.baseDir, 'profiles');
-    if (!fs.existsSync(profilesDir)) {
-      fs.mkdirSync(profilesDir, { recursive: true });
-    }
-  }
-
   load() {
-    try {
-      if (fs.existsSync(this.dbFile)) {
-        const raw = fs.readFileSync(this.dbFile, 'utf-8');
-        return JSON.parse(raw);
-      }
-    } catch (err) {
-      console.error('[Store] Error loading DB, falling back to default:', err.message);
+    if (fs.existsSync(this.dbFile)) {
+      // Never silently overwrite damaged customer profiles.
+      const parsed = JSON.parse(fs.readFileSync(this.dbFile, 'utf8'));
+      if (!Array.isArray(parsed.profiles)) throw new Error('Invalid profile database');
+      return parsed;
     }
-
-    const defaultData = {
+    const initial = {
       settings: {
         chromePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        apiPort: 50325,
-        defaultGroup: 'Default',
-        theme: 'dark'
-      },
-      proxies: [],
-      profiles: []
+        apiPort: 50325, apiEnabled: false, defaultGroup: 'Default', theme: 'dark'
+      }, proxies: [], profiles: []
     };
-    this.saveData(defaultData);
-    return defaultData;
+    this.saveData(initial);
+    return initial;
   }
-
-  saveData(dataToSave) {
-    const data = dataToSave || this.data;
-    const tempFile = `${this.dbFile}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+  saveData(data = this.data) {
+    const tempFile = this.dbFile + '.tmp';
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), { encoding: 'utf8', mode: 0o600 });
     fs.renameSync(tempFile, this.dbFile);
   }
-
-  // --- Profile CRUD ---
-  getProfiles() {
-    return this.data.profiles || [];
+  publicProfile(profile) {
+    const result = { ...profile, proxy: { ...(profile.proxy || {}) } };
+    delete result.proxy.pass;
+    delete result.proxy.password;
+    delete result.proxy.user;
+    return result;
   }
-
+  getProfiles() { return this.data.profiles.map(p => this.publicProfile(p)); }
   getProfile(id) {
-    return (this.data.profiles || []).find(p => p.id === id);
+    assertId(id);
+    const found = this.data.profiles.find(p => p.id === id);
+    return found ? this.publicProfile(found) : undefined;
   }
-
-  saveProfile(profile) {
-    const existingIndex = (this.data.profiles || []).findIndex(p => p.id === profile.id);
-    if (existingIndex >= 0) {
-      this.data.profiles[existingIndex] = {
-        ...this.data.profiles[existingIndex],
-        ...profile,
-        updatedAt: new Date().toISOString()
-      };
-    } else {
-      if (!profile.id) {
-        profile.id = 'pb_' + Math.random().toString(36).substring(2, 9);
-      }
-      profile.createdAt = new Date().toISOString();
-      profile.updatedAt = new Date().toISOString();
-      this.data.profiles.push(profile);
+  saveProfile(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid profile');
+    const id = input.id ? assertId(input.id) : 'pb_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+    const name = String(input.name || '').trim();
+    if (!name || name.length > 160) throw new Error('Profile name must be 1–160 characters');
+    const existingIndex = this.data.profiles.findIndex(p => p.id === id);
+    const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
+    const proxy = { ...(input.proxy || old.proxy || { type: 'direct' }) };
+    if (proxy.user || proxy.pass || proxy.password) {
+      throw new Error('Proxy authentication is not supported yet; credentials were not saved');
     }
+    delete proxy.user; delete proxy.pass; delete proxy.password;
+    const now = new Date().toISOString();
+    const result = {
+      ...old, id, name,
+      group: String(input.group || old.group || 'Default').slice(0, 100),
+      startUrl: String(input.startUrl || old.startUrl || 'https://ads.google.com/').slice(0, 2048),
+      notes: String(input.notes || old.notes || '').slice(0, 2000),
+      proxy, fingerprint: input.fingerprint || old.fingerprint || {},
+      createdAt: old.createdAt || now, updatedAt: now
+    };
+    if (existingIndex >= 0) this.data.profiles[existingIndex] = result;
+    else this.data.profiles.push(result);
     this.saveData();
-    return profile;
+    return this.publicProfile(result);
   }
-
   deleteProfile(id) {
-    const initialLen = this.data.profiles.length;
+    assertId(id);
+    const prev = this.data.profiles.length;
     this.data.profiles = this.data.profiles.filter(p => p.id !== id);
-    if (this.data.profiles.length !== initialLen) {
-      this.saveData();
-      // Optionally clean up profile data dir
-      const profileDataDir = path.join(this.baseDir, 'profiles', id);
-      if (fs.existsSync(profileDataDir)) {
-        try {
-          fs.rmSync(profileDataDir, { recursive: true, force: true });
-        } catch (e) {
-          console.warn('[Store] Could not delete profile dir:', e.message);
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-
-  // --- Settings ---
-  getSettings() {
-    return this.data.settings || {};
-  }
-
-  updateSettings(newSettings) {
-    this.data.settings = { ...this.data.settings, ...newSettings };
+    if (prev === this.data.profiles.length) return false;
     this.saveData();
-    return this.data.settings;
+    const directory = path.join(this.baseDir, 'profiles', id);
+    if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
+    return true;
+  }
+  getSettings() { return { ...(this.data.settings || {}) }; }
+  updateSettings(settings) {
+    this.data.settings = { ...this.data.settings, ...settings };
+    this.saveData();
+    return this.getSettings();
   }
 }
-
 module.exports = Store;

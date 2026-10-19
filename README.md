@@ -1,10 +1,12 @@
-# ⚡ PowerBrowser - NextGen Antidetect & Multi-Profile OS
+> **Cập nhật 1.1:** dự án là trình quản lý nhiều hồ sơ trình duyệt dành cho những tài khoản được phép quản trị, không phải công cụ bảo đảm vượt phát hiện hay né đình chỉ Google Ads. Không thể cam kết tương thích 100% AdsPower.
+
+# LHM Ads Browser — Local-first Windows Browser Manager
 
 Phần mềm quản lý đa hồ sơ trình duyệt (Multi-profile Browser) chạy 100% cục bộ (Local-First), không giới hạn số lượng profile, miễn phí vĩnh viễn và không phụ thuộc vào bất kỳ máy chủ đám mây nào.
 
 ---
 
-## 🚀 Tính năng vượt trội so với AdsPower
+## Tính năng và giới hạn
 
 | Tính năng | AdsPower truyền thống | **PowerBrowser** |
 | :--- | :--- | :--- |
@@ -64,3 +66,23 @@ with sync_playwright() as p:
     page.goto("https://browserleaks.com/canvas")
     print("Page Title:", page.title())
 ```
+
+
+## Bản cài đặt Windows
+- Vào **GitHub → Actions → Build Windows EXE**. Mỗi lần cập nhật nhánh main sẽ chạy kiểm thử và dựng installer.
+- Tải artifact **LHM-Ads-Browser-Windows-x64** khi workflow thành công và giải nén để lấy file Setup.exe.
+- Có thể dựng tại máy Windows bằng `npm ci` rồi `npm run build:win`.
+- Chạy bản nguồn bằng `npm ci` và `npm start`. Cần Chrome hoặc Edge cài đặt sẵn.
+
+## Quyền riêng tư và API
+- Hồ sơ được lưu trong thư mục dữ liệu ứng dụng của Windows, không lưu trong thư mục cài đặt.
+- Khi mới cài, Local API **tắt mặc định**; chỉ chạy trên `127.0.0.1` nếu bật bằng nút API của ứng dụng.
+- Mỗi phiên chạy có API Key ngẫu nhiên. Chọn **Sao chép API Key**, sau đó gửi header `X-API-Key: <key>` hoặc `Authorization: Bearer <key>`.
+- API không cung cấp CORS và từ chối request có header Origin. Cổng DevTools chỉ mở khi bật chế độ API.
+- Khi bật API, mọi ứng dụng trên chính máy tính có API Key đều có thể thao tác; hãy bảo vệ key và khóa máy tính.
+- Proxy có username/password **chưa hỗ trợ** trong bản này. Kiểm tra proxy hiện chỉ kiểm tra TCP, **chưa** xác minh IP thoát.
+- Các mẫu gọi API ở phần đầu README là lịch sử; cần thêm header xác thực như mô tả trên.
+- Các module thay đổi fingerprint chưa được kiểm định về hiệu quả hay tính tương thích với Google; không sử dụng để vượt chính sách nền tảng.
+
+## Kế hoạch tiếp theo
+Đưa vào danh sách công việc: quản lý proxy có xác thực bảo mật, backup/export dữ liệu, kiểm thử E2E trên Windows, quản lý tài khoản Google Ads hợp lệ thông qua OAuth/MCC, và dashboard web với phân quyền.

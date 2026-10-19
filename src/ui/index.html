@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PowerBrowser - NextGen Antidetect OS</title>
+  <title>LHM Ads Browser - NextGen Antidetect OS</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,8 +13,8 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>PowerBrowser <span>v1.0 Pro</span></h1>
-          <p class="subtitle">Mã nguồn mở độc lập • Không giới hạn Profile • Zero-Cloud</p>
+          <h1>LHM Ads Browser <span>v1.0 Pro</span></h1>
+          <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
       <div class="header-stats">
@@ -29,10 +29,12 @@
         <div class="stat-badge api-status">
           <span class="dot online"></span>
           <span class="stat-label">RPA API:</span>
-          <span class="stat-val" id="stat-api">127.0.0.1:50325</span>
+          <span class="stat-val" id="stat-api">Đang tắt</span>
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-secondary" id="btn-api-toggle" title="Bật/tắt Local API">API: Tắt</button>
+        <button class="btn btn-secondary" id="btn-api-copy" title="Sao chép mã truy cập API" style="display:none">Sao chép API Key</button>
         <button class="btn btn-primary" id="btn-create-profile">
           <span class="icon">+</span> Tạo Profile Mới
         </button>
@@ -108,7 +110,7 @@
           <input type="hidden" id="field-id">
           <div class="form-group">
             <label>Tên Profile:</label>
-            <input type="text" id="field-name" placeholder="Ví dụ: Acc Facebook 01" required>
+            <input type="text" id="field-name" placeholder="Ví dụ: Google Ads - Công ty A" required>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -117,7 +119,7 @@
             </div>
             <div class="form-group">
               <label>Trang mở mặc định:</label>
-              <input type="text" id="field-starturl" value="https://browserleaks.com/canvas">
+              <input type="text" id="field-starturl" value="https://ads.google.com/">
             </div>
           </div>
           <div class="form-group">
@@ -159,6 +161,7 @@
             </div>
           </div>
           <div class="proxy-test-box">
+              <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">Lưu ý: bài kiểm tra proxy chỉ xác minh kết nối TCP; chưa xác nhận IP truy cập Internet. Proxy có mật khẩu chưa được hỗ trợ.</p>
             <button type="button" class="btn btn-secondary" id="btn-test-proxy">Kiểm tra kết nối Proxy</button>
             <div id="proxy-test-result" class="test-result"></div>
           </div>
@@ -248,7 +251,7 @@
         <button class="btn-close" id="btn-close-rpa">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="rpa-desc">PowerBrowser tích hợp sẵn Local REST API (Port <code>50325</code>) tương thích hoàn toàn với script AdsPower.</p>
+        <p class="rpa-desc">LHM Ads Browser tích hợp sẵn Local REST API (Port <code>50325</code>) hỗ trợ một số endpoint AdsPower. Phải bật API và gửi header <code>X-API-Key</code> cho mọi yêu cầu.</p>
         <div class="tabs">
           <button class="tab-btn active" data-tab="rpa-python-playwright">Python (Playwright)</button>
           <button class="tab-btn" data-tab="rpa-python-selenium">Python (Selenium)</button>
@@ -262,16 +265,17 @@ from playwright.sync_api import sync_playwright
 
 PROFILE_ID = "pb_xxxxx"  # Điền ID profile của bạn
 API_URL = f"http://127.0.0.1:50325/api/v1/browser/start?user_id={PROFILE_ID}"
+API_KEY = __import__('os').environ['LHM_API_KEY']
 
-# 1. Gọi PowerBrowser khởi chạy profile
-res = requests.get(API_URL).json()
+# 1. Gọi LHM Ads Browser khởi chạy profile
+res = requests.get(API_URL, headers={'X-API-Key': API_KEY}).json()
 ws_endpoint = res["data"]["ws"]["puppeteer"]
 
 # 2. Kết nối Playwright qua CDP WebSocket
 with sync_playwright() as p:
     browser = p.chromium.connect_over_cdp(ws_endpoint)
     page = browser.contexts[0].pages[0] if browser.contexts[0].pages else browser.new_page()
-    page.goto("https://browserleaks.com/canvas")
+    page.goto("https://ads.google.com/")
     print("Page Title:", page.title())
     # ... Thực hiện tự động hóa của bạn ...
 </code></pre>
@@ -285,7 +289,7 @@ from selenium.webdriver.chrome.options import Options
 PROFILE_ID = "pb_xxxxx"
 API_URL = f"http://127.0.0.1:50325/api/v1/browser/start?user_id={PROFILE_ID}"
 
-res = requests.get(API_URL).json()
+res = requests.get(API_URL, headers={'X-API-Key': API_KEY}).json()
 debug_port = res["data"]["debug_port"]
 
 chrome_options = Options()
@@ -302,7 +306,7 @@ print("Connected successfully via Selenium!")
 
 async function run() {
   const profileId = 'pb_xxxxx';
-  const res = await fetch(`http://127.0.0.1:50325/api/v1/browser/start?user_id=${profileId}`);
+  const res = await fetch(`http://127.0.0.1:50325/api/v1/browser/start?user_id=${profileId}`, { headers: { 'X-API-Key': process.env.LHM_API_KEY } });
   const data = await res.json();
   const wsEndpoint = data.data.ws.puppeteer;
 

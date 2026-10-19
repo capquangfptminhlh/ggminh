@@ -44,9 +44,9 @@ async function checkProxy(proxyConfig) {
         const latency = Date.now() - startTime;
         socket.destroy();
         resolve({
-          status: 'success',
+          status: 'reachable',
           ip: `${host}:${port}`,
-          country: 'Proxy OK',
+          country: 'TCP reachable; exit IP unverified',
           latency,
           type: proxyConfig.type
         });

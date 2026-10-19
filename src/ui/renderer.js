@@ -2,6 +2,7 @@
 let allProfiles = [];
 let activeBrowserMap = new Map(); // profileId -> info
 let currentGeneratedFP = null;
+let apiEnabled = false;
 
 // Elements
 const profileListBody = document.getElementById('profile-list-body');
@@ -55,6 +56,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
   setupEventListeners();
   await loadProfiles();
+  await refreshApiStatus();
   startStatusPoller();
 });
 
@@ -76,7 +78,26 @@ function setupTabs() {
   });
 }
 
+async function refreshApiStatus() {
+  const state = await window.api.getApiStatus();
+  apiEnabled = state.enabled;
+  document.getElementById('stat-api').textContent = state.enabled ? '127.0.0.1:' + state.port : 'Đang tắt';
+  document.getElementById('btn-api-toggle').textContent = state.enabled ? 'API: Bật' : 'API: Tắt';
+  document.getElementById('btn-api-copy').style.display = state.enabled ? '' : 'none';
+}
+
 function setupEventListeners() {
+  document.getElementById('btn-api-toggle').addEventListener('click', async () => {
+    try {
+      await window.api.setApiEnabled(!apiEnabled);
+      await refreshApiStatus();
+      alert(apiEnabled ? 'Đã bật API chỉ trên máy này. Dùng nút Sao chép API Key để kết nối.' : 'Local API đã tắt.');
+    } catch (error) { alert('Không thể thay đổi API: ' + error.message); }
+  });
+  document.getElementById('btn-api-copy').addEventListener('click', async () => {
+    try { await window.api.copyApiKey(); alert('Đã sao chép API Key vào clipboard. Không chia sẻ với người khác.'); }
+    catch (error) { alert(error.message); }
+  });
   // Proxy Type Toggle
   fieldProxyType.addEventListener('change', () => {
     proxyFields.style.display = fieldProxyType.value === 'direct' ? 'none' : 'block';
@@ -109,9 +130,9 @@ function setupEventListeners() {
       pass: fieldProxyPass.value.trim()
     };
     const res = await window.api.checkProxy(proxyConfig);
-    if (res.status === 'success') {
+    if (res.status === 'success' || res.status === 'reachable') {
       proxyTestResult.className = 'test-result success';
-      proxyTestResult.textContent = `✅ Thành công! IP: ${res.ip} (${res.country || 'N/A'}) - Độ trễ: ${res.latency}ms`;
+      proxyTestResult.textContent = res.status === 'reachable' ? `⚠️ Proxy có phản hồi TCP: ${res.ip}; chưa kiểm tra IP thoát thực tế (${res.latency}ms)` : `✅ Kết nối trực tiếp: ${res.ip} (${res.country || 'N/A'}) - ${res.latency}ms`;
     } else {
       proxyTestResult.className = 'test-result error';
       proxyTestResult.textContent = `❌ Lỗi: ${res.message}`;
@@ -153,7 +174,8 @@ function setupEventListeners() {
       }
     };
 
-    await window.api.saveProfile(profile);
+    try { await window.api.saveProfile(profile); }
+    catch (error) { alert('Không lưu được hồ sơ: ' + error.message); return; }
     closeModal(modalProfile);
     await loadProfiles();
   });
@@ -291,8 +313,8 @@ function renderProfiles() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="checkbox" data-id="${profile.id}"></td>
-      <td><code>${profile.id}</code></td>
+      <td><input type="checkbox" data-id="${escapeHtml(profile.id)}"></td>
+      <td><code>${escapeHtml(profile.id)}</code></td>
       <td>
         <div class="profile-name-box">
           <span class="p-name">${escapeHtml(profile.name)}</span>
@@ -301,7 +323,7 @@ function renderProfiles() {
       </td>
       <td>
         <span class="proxy-badge">
-          ${profile.proxy?.type === 'direct' || !profile.proxy?.host ? '🌐 Direct (IP Máy)' : `🔒 ${profile.proxy.type.toUpperCase()}: ${profile.proxy.host}:${profile.proxy.port}`}
+          ${profile.proxy?.type === 'direct' || !profile.proxy?.host ? '🌐 Direct (IP Máy)' : `🔒 ${escapeHtml(String(profile.proxy.type || '').toUpperCase())}: ${escapeHtml(profile.proxy.host || '')}:${escapeHtml(String(profile.proxy.port || ''))}`}
         </span>
       </td>
       <td>
@@ -319,12 +341,12 @@ function renderProfiles() {
       </td>
       <td style="text-align: right;">
         <div class="actions-cell">
-          <button class="btn btn-sm ${isRunning ? 'btn-danger' : 'btn-success'} btn-toggle-run" data-id="${profile.id}">
+          <button class="btn btn-sm ${isRunning ? 'btn-danger' : 'btn-success'} btn-toggle-run" data-id="${escapeHtml(profile.id)}">
             ${isRunning ? '⏹ Dừng' : '▶ Mở'}
           </button>
-          <button class="btn btn-sm btn-secondary btn-copy-rpa" data-id="${profile.id}" title="Lấy code RPA">🤖</button>
-          <button class="btn btn-sm btn-secondary btn-edit" data-id="${profile.id}">✏️</button>
-          <button class="btn btn-sm btn-danger btn-delete" data-id="${profile.id}">🗑</button>
+          <button class="btn btn-sm btn-secondary btn-copy-rpa" data-id="${escapeHtml(profile.id)}" title="Lấy code RPA">🤖</button>
+          <button class="btn btn-sm btn-secondary btn-edit" data-id="${escapeHtml(profile.id)}">✏️</button>
+          <button class="btn btn-sm btn-danger btn-delete" data-id="${escapeHtml(profile.id)}">🗑</button>
         </div>
       </td>
     `;
@@ -333,11 +355,10 @@ function renderProfiles() {
     const btnToggle = tr.querySelector('.btn-toggle-run');
     btnToggle.addEventListener('click', async () => {
       btnToggle.disabled = true;
-      if (isRunning) {
-        await window.api.stopBrowser(profile.id);
-      } else {
-        await window.api.startBrowser(profile.id);
-      }
+      try {
+        if (isRunning) await window.api.stopBrowser(profile.id);
+        else await window.api.startBrowser(profile.id);
+      } catch (error) { alert('Không thể mở/đóng hồ sơ: ' + error.message); }
       await loadProfiles();
     });
 

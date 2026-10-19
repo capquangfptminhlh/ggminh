@@ -17,7 +17,6 @@ class BrowserLauncher {
       settings.chromePath,
       'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
       'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Users\\nskka\\AppData\\Roaming\\adspower_global\\cwd_global\\chrome_151\\SunBrowser.exe',
       'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
     ];
 
@@ -57,7 +56,7 @@ class BrowserLauncher {
     return null;
   }
 
-  async start(profileId, customUrl = 'https://browserleaks.com/canvas') {
+  async start(profileId, customUrl = null) {
     if (this.activeProcesses.has(profileId)) {
       return {
         success: true,
@@ -72,7 +71,9 @@ class BrowserLauncher {
     }
 
     const browserBin = this.findBrowserBinary();
-    const port = await this.findAvailablePort(9222 + Math.floor(Math.random() * 500));
+    // Manual browsing does not require a remotely controllable DevTools endpoint.
+    const port = this.store.getSettings().apiEnabled === true ?
+      await this.findAvailablePort(9222 + Math.floor(Math.random() * 500)) : null;
 
     // Prepare profile directory
     const profileDir = path.join(this.baseDataDir, 'profiles', profile.id);
@@ -89,8 +90,7 @@ class BrowserLauncher {
 
     const args = [
       `--user-data-dir=${profileDir}`,
-      `--remote-debugging-port=${port}`,
-      '--disable-blink-features=AutomationControlled',
+
       `--load-extension=${extDir}`,
       '--no-first-run',
       '--no-default-browser-check',
@@ -99,6 +99,10 @@ class BrowserLauncher {
       '--flag-switches-begin',
       '--flag-switches-end'
     ];
+    if (port) {
+      args.push('--remote-debugging-address=127.0.0.1');
+      args.push(`--remote-debugging-port=${port}`);
+    }
 
     if (fp.userAgent) {
       args.push(`--user-agent=${fp.userAgent}`);
@@ -114,12 +118,24 @@ class BrowserLauncher {
       args.push(`--proxy-server=${type}://${profile.proxy.host}:${profile.proxy.port}`);
     }
 
-    args.push(customUrl);
+    const startUrl = customUrl || profile.startUrl || 'https://ads.google.com/';
+    if (typeof startUrl !== 'string' || !/^https?:\/\//i.test(startUrl)) {
+      throw new Error('Start URL must be HTTP or HTTPS');
+    }
+    if (profile.proxy?.user || profile.proxy?.pass) {
+      throw new Error('Authenticated proxy is not supported by this launcher');
+    }
+    args.push(startUrl);
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);
     const proc = spawn(browserBin, args, {
       detached: false,
       stdio: 'ignore'
+    });
+
+    await new Promise((resolve, reject) => {
+      proc.once('spawn', resolve);
+      proc.once('error', reject);
     });
 
     const instanceInfo = {
@@ -139,7 +155,7 @@ class BrowserLauncher {
     this.activeProcesses.set(profile.id, { process: proc, ...instanceInfo });
 
     // Background fetch ws endpoint for RPA
-    this.fetchWebSocketDebuggerUrl(port).then(ws => {
+    if (port) this.fetchWebSocketDebuggerUrl(port).then(ws => {
       if (ws && this.activeProcesses.has(profile.id)) {
         this.activeProcesses.get(profile.id).wsEndpoint = ws;
       }

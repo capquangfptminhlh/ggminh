@@ -1,13 +1,20 @@
 {
   "name": "power-browser",
-  "version": "1.0.0",
-  "description": "High-Performance Antidetect & Multi-Profile Browser with Stealth Injection & RPA API",
+  "version": "1.1.0",
+  "description": "Local-first multi-profile desktop browser with optional protected API",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node test/verify_engine.js"
+    "test": "node test/verify_engine.js && node test/security.js",
+    "build:win": "npx --yes electron-builder@25.1.8 --win nsis --x64"
   },
-  "keywords": ["antidetect", "browser-automation", "stealth", "profile-manager", "rpa"],
+  "keywords": [
+    "antidetect",
+    "browser-automation",
+    "stealth",
+    "profile-manager",
+    "rpa"
+  ],
   "author": "Antigravity Senior Engineer",
   "license": "MIT",
   "dependencies": {
@@ -16,5 +23,37 @@
   },
   "devDependencies": {
     "electron": "^33.2.1"
+  },
+  "build": {
+    "appId": "vn.lhm.adsbrowser",
+    "productName": "LHM Ads Browser",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!data/**",
+      "!data_test/**",
+      "!dist/**",
+      "!test/**",
+      "!*.log"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "LHM-Ads-Browser-${version}-Setup-${arch}.${ext}"
+    }
   }
 }
