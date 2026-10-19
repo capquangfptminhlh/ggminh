@@ -4,7 +4,7 @@ const path = require('path');
 const html = fs.readFileSync(path.join(__dirname,'../src/ui/index.html'),'utf8');
 const js = fs.readFileSync(path.join(__dirname,'../src/ui/dashboard.js'),'utf8');
 const requiredIds=[
-  'dashboard-view','lhm-dashboard-refresh','lhm-dashboard-status',
+  'lhm-dashboard-refresh','lhm-dashboard-status',
   'lhm-kpi-total','lhm-kpi-active','lhm-kpi-attention','lhm-kpi-workflows',
   'lhm-workflow-state','lhm-native-count','lhm-experimental-count',
   'lhm-error-count','lhm-health-ring','lhm-health-ready',
@@ -20,6 +20,7 @@ for(const route of [
   'btn-create-profile','btn-proxy-center','btn-open-studio',
   'btn-control-tower','btn-profile-health','btn-behavior-alert','btn-config-backup'
 ]) assert(html.includes('id="'+route+'"'), 'Missing action route '+route);
+assert(html.includes('id="dashboard-view"'));
 assert(html.includes('<script src="dashboard.js"></script>'));
 assert(html.includes('data-view="dashboard"'));
 assert(js.includes('api.dashboardOverview()'));
