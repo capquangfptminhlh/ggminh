@@ -93,7 +93,7 @@ function initIPC() {
     });
     if (canceled || !filePath) return { canceled: true };
     const data = configBackup.export(passphrase);
-    fs.writeFileSync(filePath, data, { mode: 0o600, flag: 'wx' });
+    fs.writeFileSync(filePath, data, { mode: 0o600 });
     return { canceled: false, filePath };
   });
   ipcMain.handle('import-config-backup', async (_, passphrase) => {

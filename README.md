@@ -116,3 +116,11 @@ Chi tiết xem \`docs/GECKO_BROWSER_PLAN.md\`.
 ## v1.4 — LHM Automation Studio
 
 Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độc lập theo profile. Hỗ trợ mở URL, chờ, click CSS, điền form, kiểm tra văn bản, yêu cầu phê duyệt; có nhật ký và dừng khẩn cấp. Chỉ được chạy trên danh sách tên miền được cấu hình, mặc định chặn trang Google Ads, đăng nhập và thanh toán Google trong Studio. Đối với Google Ads, ưu tiên MCC/OAuth và API chính thức. Studio không thể tự động qua mặt bảo vệ bot, và không chia sẻ cookie với Chrome/Gecko đang mở thủ công.
+
+
+## v1.5 — Profile Health, real proxy IP check, encrypted config backup
+- **Health Check:** kiểm tra trình duyệt, URL, proxy, engine và cảnh báo User-Agent; không đánh giá Google Ads có phát hiện người dùng hay không.
+- **Proxy diagnostic:** khi bấm "Kiểm tra kết nối Proxy", phần mềm kiểm tra IP công khai thông qua kết nối HTTPS (api.ipify.org) đi xuyên HTTP CONNECT hoặc SOCKS5. Chứng chỉ TLS được xác minh, lỗi mạng sẽ hiển thị lỗi thay vì báo thành công giả. Nếu kết nối trực tiếp hoạt động, có so sánh IP proxy với IP máy.
+- **Sao lưu .lhmbak:** AES-256-GCM, mật khẩu từ 12 ký tự; khôi phục bằng cách nhập thêm cấu hình hồ sơ và workflow. Không bao gồm cookie, mật khẩu, phiên Google, bản quyền, hoặc dữ liệu duyệt web.
+- **Chưa có:** proxy có user/password, tự động hóa Gecko, trình duyệt Gecko do LHM tự biên dịch, SaaS và Google Ads API/MCC.
+- Công cụ kiểm tra IP liên hệ api.ipify.org theo yêu cầu của người dùng; sẽ chia sẻ địa chỉ IP với dịch vụ kiểm tra.
