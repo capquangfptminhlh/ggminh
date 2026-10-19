@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const net = require('net');
 const { generateExtension } = require('./extensionGenerator');
+const { createLaunchArgs } = require('./launchArgs');
 
 class BrowserLauncher {
   constructor(store) {
@@ -11,9 +12,14 @@ class BrowserLauncher {
     this.baseDataDir = store.baseDir;
   }
 
-  findBrowserBinary() {
+  findBrowserBinary(engine = 'chromium') {
     const settings = this.store.getSettings();
-    const candidates = [
+    const candidates = engine === 'gecko' ? [
+      settings.geckoPath,
+      'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
+      'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe',
+      process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Mozilla Firefox', 'firefox.exe')
+    ] : [
       settings.chromePath,
       'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
       'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
@@ -25,7 +31,9 @@ class BrowserLauncher {
         return bin;
       }
     }
-    throw new Error('Chromium/Chrome binary not found. Please specify Chrome path in settings.');
+    throw new Error(engine === 'gecko'
+      ? 'Cannot find Firefox/Gecko. Install Firefox or configure Gecko executable in settings.'
+      : 'Cannot find Chromium/Chrome/Edge. Configure Chrome path in settings.');
   }
 
   async findAvailablePort(startPort = 9222) {
@@ -70,62 +78,29 @@ class BrowserLauncher {
       throw new Error(`Profile not found: ${profileId}`);
     }
 
-    const browserBin = this.findBrowserBinary();
+    const engine = profile.engine === 'gecko' ? 'gecko' : 'chromium';
+    const browserBin = this.findBrowserBinary(engine);
     // Manual browsing does not require a remotely controllable DevTools endpoint.
-    const port = this.store.getSettings().apiEnabled === true ?
+    const port = engine === 'chromium' && this.store.getSettings().apiEnabled === true ?
       await this.findAvailablePort(9222 + Math.floor(Math.random() * 500)) : null;
 
-    // Prepare profile directory
-    const profileDir = path.join(this.baseDataDir, 'profiles', profile.id);
-    if (!fs.existsSync(profileDir)) {
-      fs.mkdirSync(profileDir, { recursive: true });
+    // Gecko and Chromium must never share browser profile files.
+    // Preserve the original Chromium location for existing customers.
+    const profileDir = engine === 'gecko'
+      ? path.join(this.baseDataDir, 'gecko-profiles', profile.id)
+      : path.join(this.baseDataDir, 'profiles', profile.id);
+    fs.mkdirSync(profileDir, { recursive: true });
+
+    let extDir = null;
+    if (engine === 'chromium') {
+      extDir = path.join(this.baseDataDir, 'extensions', profile.id);
+      generateExtension(profile, extDir);
     }
-
-    // Generate per-profile stealth extension
-    const extDir = path.join(this.baseDataDir, 'extensions', profile.id);
-    generateExtension(profile, extDir);
-
-    const fp = profile.fingerprint || {};
-    const screen = fp.screen || {};
-
-    const args = [
-      `--user-data-dir=${profileDir}`,
-
-      `--load-extension=${extDir}`,
-      '--no-first-run',
-      '--no-default-browser-check',
-      '--password-store=basic',
-      `--window-size=${screen.width || 1280},${screen.height || 800}`,
-      '--flag-switches-begin',
-      '--flag-switches-end'
-    ];
-    if (port) {
-      args.push('--remote-debugging-address=127.0.0.1');
-      args.push(`--remote-debugging-port=${port}`);
-    }
-
-    if (fp.userAgent) {
-      args.push(`--user-agent=${fp.userAgent}`);
-    }
-
-    if (fp.languages && fp.languages[0]) {
-      args.push(`--lang=${fp.languages[0]}`);
-    }
-
-    // Configure Proxy
-    if (profile.proxy && profile.proxy.host && profile.proxy.port) {
-      const type = profile.proxy.type || 'http';
-      args.push(`--proxy-server=${type}://${profile.proxy.host}:${profile.proxy.port}`);
-    }
-
     const startUrl = customUrl || profile.startUrl || 'https://ads.google.com/';
-    if (typeof startUrl !== 'string' || !/^https?:\/\//i.test(startUrl)) {
-      throw new Error('Start URL must be HTTP or HTTPS');
-    }
-    if (profile.proxy?.user || profile.proxy?.pass) {
-      throw new Error('Authenticated proxy is not supported by this launcher');
-    }
-    args.push(startUrl);
+    const args = createLaunchArgs({
+      engine, profileDir, url: startUrl, fingerprint: profile.fingerprint || {},
+      proxy: profile.proxy || {}, extensionDir: extDir, port
+    });
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);
     const proc = spawn(browserBin, args, {
@@ -140,6 +115,7 @@ class BrowserLauncher {
 
     const instanceInfo = {
       profileId: profile.id,
+      engine,
       name: profile.name,
       port,
       pid: proc.pid,
@@ -192,6 +168,7 @@ class BrowserLauncher {
     for (const [id, info] of this.activeProcesses.entries()) {
       list.push({
         profileId: id,
+        engine: info.engine || 'chromium',
         name: info.name,
         port: info.port,
         pid: info.pid,

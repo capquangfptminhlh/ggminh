@@ -62,6 +62,7 @@ class Store {
     const now = new Date().toISOString();
     const result = {
       ...old, id, name,
+      engine: input.engine === 'gecko' ? 'gecko' : 'chromium',
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: String(input.startUrl || old.startUrl || 'https://ads.google.com/').slice(0, 2048),
       notes: String(input.notes || old.notes || '').slice(0, 2000),
@@ -81,6 +82,8 @@ class Store {
     this.saveData();
     const directory = path.join(this.baseDir, 'profiles', id);
     if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
+    const geckoDirectory = path.join(this.baseDir, 'gecko-profiles', id);
+    if (fs.existsSync(geckoDirectory)) fs.rmSync(geckoDirectory, { recursive: true, force: true });
     return true;
   }
   getSettings() { return { ...(this.data.settings || {}) }; }

@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.2</span></h1>
+          <h1>LHM Ads Browser <span>v1.3</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -76,7 +76,7 @@
               <th width="80">ID</th>
               <th>Tên Profile & Nhóm</th>
               <th>Proxy / IP Thoát</th>
-              <th>Cấu hình Vân tay (OS / GPU / RAM)</th>
+              <th>Engine / Cấu hình hồ sơ</th>
               <th width="120">Trạng thái</th>
               <th width="200" style="text-align: right;">Thao tác</th>
             </tr>
@@ -137,6 +137,19 @@
 
         <!-- Tab 1: General -->
         <div class="tab-content active" id="tab-general">
+          <div class="form-group">
+            <label for="field-browser-engine">Công nghệ trình duyệt</label>
+            <select id="field-browser-engine">
+              <option value="chromium">Chrome / Edge — tương thích bản hiện tại</option>
+              <option value="gecko">Gecko — Firefox (không dùng Chromium)</option>
+            </select>
+            <p style="margin-top:7px;font-size:12px;color:#9ca3af">Gecko đang ở chế độ thử nghiệm, mở bằng Firefox cài trên máy. Bản browser engine độc lập thương hiệu LHM cần được build riêng.</p>
+          </div>
+          <div class="form-group" id="gecko-path-control" hidden>
+            <label for="field-gecko-path">Đường dẫn Firefox / Gecko exe (có thể để trống nếu cài đặt chuẩn)</label>
+            <input id="field-gecko-path" type="text" placeholder="C:\Program Files\Mozilla Firefox\firefox.exe">
+            <p style="margin-top:6px;font-size:12px;color:#dba66f">Chế độ Gecko hiện hỗ trợ sử dụng thủ công, chưa dùng CDP/RPA và chưa hỗ trợ proxy trong LHM.</p>
+          </div>
           <input type="hidden" id="field-id">
           <div class="form-group">
             <label>Tên Profile:</label>

@@ -28,6 +28,9 @@ const btnSaveProfile = document.getElementById('btn-save-profile');
 
 // Form Elements
 const fieldId = document.getElementById('field-id');
+const fieldBrowserEngine = document.getElementById('field-browser-engine');
+const fieldGeckoPath = document.getElementById('field-gecko-path');
+const geckoPathControl = document.getElementById('gecko-path-control');
 const fieldName = document.getElementById('field-name');
 const fieldGroup = document.getElementById('field-group');
 const fieldStartUrl = document.getElementById('field-starturl');
@@ -160,6 +163,9 @@ async function refreshBehaviorAlerts() {
 }
 
 function setupEventListeners() {
+  fieldBrowserEngine.addEventListener('change', () => {
+    geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
+  });
   document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
     await refreshBehaviorAlerts();
     document.getElementById('behavior-inline-notice').hidden = true;
@@ -235,6 +241,7 @@ function setupEventListeners() {
     const profile = {
       id: fieldId.value || undefined,
       name,
+      engine: fieldBrowserEngine.value,
       group: fieldGroup.value.trim() || 'Default',
       startUrl: fieldStartUrl.value.trim() || 'https://browserleaks.com/canvas',
       notes: fieldNotes.value.trim(),
@@ -258,7 +265,12 @@ function setupEventListeners() {
       }
     };
 
-    try { await window.api.saveProfile(profile); }
+    try {
+      if (fieldBrowserEngine.value === 'gecko' && fieldGeckoPath.value.trim()) {
+        await window.api.saveSettings({ geckoPath: fieldGeckoPath.value.trim() });
+      }
+      await window.api.saveProfile(profile);
+    }
     catch (error) { alert('Không lưu được hồ sơ: ' + error.message); return; }
     closeModal(modalProfile);
     await loadProfiles();
@@ -282,9 +294,12 @@ function closeModal(modal) {
 
 async function openProfileModal(existingProfile = null) {
   proxyTestResult.textContent = '';
+  const settings = await window.api.getSettings();
+  fieldGeckoPath.value = settings.geckoPath || '';
   if (existingProfile) {
     document.getElementById('modal-title').textContent = 'Chỉnh sửa Profile';
     fieldId.value = existingProfile.id;
+    fieldBrowserEngine.value = existingProfile.engine === 'gecko' ? 'gecko' : 'chromium';
     fieldName.value = existingProfile.name;
     fieldGroup.value = existingProfile.group || 'Default';
     fieldStartUrl.value = existingProfile.startUrl || 'https://browserleaks.com/canvas';
@@ -303,6 +318,7 @@ async function openProfileModal(existingProfile = null) {
   } else {
     document.getElementById('modal-title').textContent = 'Tạo Profile Mới';
     fieldId.value = '';
+    fieldBrowserEngine.value = 'chromium';
     fieldName.value = `Profile_${allProfiles.length + 1}`;
     fieldGroup.value = 'Default';
     fieldStartUrl.value = 'https://browserleaks.com/canvas';
@@ -313,6 +329,7 @@ async function openProfileModal(existingProfile = null) {
     currentGeneratedFP = await window.api.generateFingerprint({ os: 'Windows' });
     applyFingerprintToForm(currentGeneratedFP);
   }
+  geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
   openModal(modalProfile);
 }
 
@@ -413,6 +430,7 @@ function renderProfiles() {
       </td>
       <td>
         <div class="fp-badge-row">
+          <span class="fp-pill">${profile.engine === 'gecko' ? '🦊 Gecko' : '🌐 Chromium'}</span>
           <span class="fp-pill">💻 ${fp.os || 'Windows'}</span>
           <span class="fp-pill">⚡ ${fp.hardwareConcurrency || 8} Cores</span>
           <span class="fp-pill">🧠 ${fp.deviceMemory || 8} GB</span>
@@ -449,6 +467,10 @@ function renderProfiles() {
     });
 
     const btnRpa = tr.querySelector('.btn-copy-rpa');
+    if (profile.engine === 'gecko') {
+      btnRpa.disabled = true;
+      btnRpa.title = 'RPA qua Chromium CDP chưa hỗ trợ với Gecko';
+    }
     btnRpa.addEventListener('click', () => {
       openModal(modalRPA);
       // Update code examples with this profile's ID

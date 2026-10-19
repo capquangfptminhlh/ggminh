@@ -30,6 +30,8 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null 
     try {
       const id = req.query.user_id || req.query.serial_number || req.query.id;
       if (typeof id !== 'string' || !id) return res.status(400).json({ code: -1, msg: 'Missing user_id' });
+      const profile = store.getProfile(id);
+      if (profile?.engine === 'gecko') return res.status(409).json({ code: -1, msg: 'Gecko profile is manual-only; CDP API is not supported.' });
       const instance = await launcher.start(id, req.query.open_url);
       if (behaviorMonitor) behaviorMonitor.record('profile_open', id, 'api');
       const ws = instance.wsEndpoint || (instance.port ? await launcher.fetchWebSocketDebuggerUrl(instance.port, 10) : null);

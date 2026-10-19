@@ -103,3 +103,12 @@ cơ chế “né” hoặc đảm bảo tránh khóa tài khoản.
 Dữ liệu lưu **chỉ trên máy** trong \`behavior-events.json\`, chỉ chứa loại thao tác,
 ID hồ sơ, nguồn thủ công/API và thời điểm; tự giới hạn 24 giờ và tối đa 1.200 sự kiện.
 Không thu thập URL, thông tin quảng cáo, cookies hoặc nội dung web.
+
+
+## v1.3 — Hai browser engine
+Trang tạo/sửa hồ sơ cho phép chọn **Chromium** hoặc **Gecko**. Chế độ Gecko sử dụng
+Firefox cài trên máy, mỗi hồ sơ có profile độc lập trong \`storage/gecko-profiles/\`.
+Gecko chưa được đóng gói hoặc fork thành trình duyệt LHM riêng; đây là nền tảng tích hợp
+để chuyển dần sang Gecko engine và hỗ trợ đường dẫn bản Gecko được tự build trong tương lai.
+Chế độ Gecko hiện chạy thủ công, không hỗ trợ Chromium CDP/RPA hoặc proxy trong LHM.
+Chi tiết xem \`docs/GECKO_BROWSER_PLAN.md\`.

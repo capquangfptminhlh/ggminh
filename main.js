@@ -99,6 +99,7 @@ function initIPC() {
   ipcMain.handle('save-settings', (_, settings) => {
     const allowed = {};
     if (typeof settings?.chromePath === 'string') allowed.chromePath = settings.chromePath;
+    if (typeof settings?.geckoPath === 'string') allowed.geckoPath = settings.geckoPath;
     if (['dark', 'light'].includes(settings?.theme)) allowed.theme = settings.theme;
     return store.updateSettings(allowed);
   });
