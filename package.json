@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node test/verify_engine.js && node test/security.js",
-    "build:win": "npx --yes electron-builder@25.1.8 --win nsis --x64"
+    "build:win": "npx --yes electron-builder@25.1.8 --win nsis --x64 --publish never"
   },
   "keywords": [
     "antidetect",
