@@ -3,37 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LHM Ads Browser — Mission Control</title>
+  <title>LHM Browser — Workspace</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="workspace.css">
 </head>
-<body data-view="dashboard">
+<body data-view="profiles">
 
   <aside class="lhm-side-nav" aria-label="Điều hướng LHM Browser">
     <div class="lhm-nav-identity">
-      <div class="lhm-nav-logo">L</div>
-      <div class="lhm-nav-identity-text"><strong>LHM<span> Browser</span></strong><small>MISSION CONTROL</small></div>
+      <div class="lhm-nav-logo" aria-hidden="true">L</div>
+      <div class="lhm-nav-identity-text"><strong>LHM Browser</strong><small>Workspace</small></div>
     </div>
-    <div class="lhm-nav-heading">WORKSPACE</div>
-    <button type="button" class="lhm-nav-btn is-current" data-lhm-target="dashboard"><span class="lhm-nav-icon">◈</span><span class="lhm-nav-label">Tổng quan</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="profiles"><span class="lhm-nav-icon">▤</span><span class="lhm-nav-label">Hồ sơ trình duyệt</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="proxy"><span class="lhm-nav-icon">◎</span><span class="lhm-nav-label">Proxy Center</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="automation"><span class="lhm-nav-icon">⌘</span><span class="lhm-nav-label">Automation Studio</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="tower"><span class="lhm-nav-icon">▦</span><span class="lhm-nav-label">Control Tower</span></button>
-    <div class="lhm-nav-heading">SECURITY & DATA</div>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span class="lhm-nav-icon">◇</span><span class="lhm-nav-label">Profile Health</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="behavior"><span class="lhm-nav-icon">⚑</span><span class="lhm-nav-label">Cảnh báo hoạt động</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="backup"><span class="lhm-nav-icon">◉</span><span class="lhm-nav-label">Sao lưu mã hóa</span></button>
-    <div class="lhm-nav-bottom"><span class="lhm-nav-local">● Lưu trữ trên máy</span><small>v2.1 • Local-first</small></div>
+    <div class="lhm-nav-heading">QUẢN LÝ</div>
+    <button type="button" class="lhm-nav-btn is-current" data-lhm-target="profiles"><span data-lhm-icon="panels-top-left" class="lhm-nav-icon"></span><span class="lhm-nav-label">Hồ sơ trình duyệt</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="dashboard"><span data-lhm-icon="layout-dashboard" class="lhm-nav-icon"></span><span class="lhm-nav-label">Tổng quan</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="proxy"><span data-lhm-icon="network" class="lhm-nav-icon"></span><span class="lhm-nav-label">Proxy Center</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="automation"><span data-lhm-icon="workflow" class="lhm-nav-icon"></span><span class="lhm-nav-label">Automation Studio</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="tower"><span data-lhm-icon="layers" class="lhm-nav-icon"></span><span class="lhm-nav-label">Control Tower</span></button>
+    <div class="lhm-nav-heading">BẢO MẬT & DỮ LIỆU</div>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="behavior"><span data-lhm-icon="activity" class="lhm-nav-icon"></span><span class="lhm-nav-label">Nhật ký hoạt động</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="backup"><span data-lhm-icon="database-backup" class="lhm-nav-icon"></span><span class="lhm-nav-label">Sao lưu dữ liệu</span></button>
+    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Browser · 2.2</small></div>
   </aside>
 
   <div class="app-container">
     <!-- Top Header -->
     <header class="app-header">
       <div class="brand">
-        <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v2.1</span></h1>
-          <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
+          <h1>LHM Browser <span>2.2</span></h1>
+          <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
       <div class="header-stats">
@@ -52,20 +52,18 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-secondary" id="btn-proxy-center">🌐 Proxy Center</button>
-        <button class="btn btn-primary" id="btn-control-tower">◈ Control Tower</button>
-        <button class="btn btn-secondary" id="btn-profile-health" title="Chẩn đoán cấu hình hồ sơ">🛡️ Health Check</button>
-        <button class="btn btn-secondary" id="btn-config-backup" title="Sao lưu cấu hình có mã hóa">🔐 Sao lưu</button>
-        <button class="btn btn-accent" id="btn-open-studio">⚙️ Automation Studio</button>
-        <button class="btn btn-secondary behavior-trigger" id="btn-behavior-alert" title="Theo dõi hành vi thao tác lặp lại trong phần mềm" aria-label="Mở cảnh báo hành vi">⚠️ Cảnh báo hành vi <span id="behavior-alert-count" class="behavior-count" hidden>0</span></button>
-        <button class="btn btn-secondary" id="btn-api-toggle" title="Bật/tắt Local API">API: Tắt</button>
-        <button class="btn btn-secondary" id="btn-api-copy" title="Sao chép mã truy cập API" style="display:none">Sao chép API Key</button>
-        <button class="btn btn-primary" id="btn-create-profile">
-          <span class="icon">+</span> Tạo Profile Mới
-        </button>
-        <button class="btn btn-secondary" id="btn-open-rpa">
-          <span class="icon">🤖</span> Code RPA
-        </button>
+        <div class="lhm-hidden-actions" aria-hidden="true">
+          <button id="btn-proxy-center">Proxy Center</button>
+          <button id="btn-control-tower">Control Tower</button>
+          <button id="btn-profile-health">Kiểm tra hồ sơ</button>
+          <button id="btn-config-backup">Sao lưu</button>
+          <button id="btn-open-studio">Automation Studio</button>
+          <button id="btn-behavior-alert">Cảnh báo hành vi <span id="behavior-alert-count" hidden>0</span></button>
+          <button id="btn-open-rpa">Code RPA</button>
+          <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
+        </div>
+        <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
       </div>
     </header>
 
@@ -74,33 +72,33 @@
 
     <section class="lhm-dashboard" id="dashboard-view" aria-label="LHM Mission Control">
       <div class="lhm-dashboard-heading">
-        <div><p class="lhm-eyebrow">WORKSPACE / OVERVIEW</p><h2>Mission Control <span>2.1</span></h2><p>Quản lý đa hồ sơ, kết nối và tự động hóa trong một không gian.</p></div>
+        <div><p class="lhm-eyebrow">WORKSPACE / OVERVIEW</p><h2>Tổng quan <span></span></h2><p>Quản lý đa hồ sơ, kết nối và tự động hóa trong một không gian.</p></div>
         <div class="lhm-dashboard-heading-actions">
-          <span class="lhm-realtime-indicator">● Số liệu từ máy này</span>
-          <button type="button" class="lhm-action lhm-outline" id="lhm-dashboard-refresh">↻ Làm mới</button>
+          <span class="lhm-realtime-indicator">Số liệu cục bộ</span>
+          <button type="button" class="lhm-action lhm-outline" id="lhm-dashboard-refresh">Làm mới</button>
         </div>
       </div>
       <div class="lhm-hero">
         <div class="lhm-hero-copy">
-          <span class="lhm-hero-label">LHM BROWSER · LOCAL-FIRST WORKSPACE</span>
-          <h3>Kiểm soát mọi hồ sơ.<br><span>Tự động hóa có trách nhiệm.</span></h3>
-          <p>Từ quản trị kết nối đến giám sát cấu hình — mọi số liệu hiển thị đều dựa trên dữ liệu thực tế trong ứng dụng.</p>
+          <span class="lhm-hero-label">LHM BROWSER</span>
+          <h3>Thông tin vận hành tập trung</h3>
+          <p>Theo dõi hồ sơ, proxy, quy trình và cảnh báo từ dữ liệu thực tế.</p>
           <div class="lhm-hero-actions">
-            <button type="button" class="lhm-action lhm-primary" data-lhm-target="profiles">▤ Quản lý hồ sơ</button>
-            <button type="button" class="lhm-action lhm-outline" data-lhm-target="automation">⌘ Mở Automation Studio</button>
+            <button type="button" class="lhm-action lhm-primary" data-lhm-target="profiles">Quản lý hồ sơ</button>
+            <button type="button" class="lhm-action lhm-outline" data-lhm-target="automation">Automation Studio</button>
           </div>
         </div>
-        <div class="lhm-hero-art" aria-hidden="true"><div class="lhm-hero-orbit"><div class="lhm-hero-center">LHM</div></div><span class="lhm-orbit-mark lhm-o1">◈</span><span class="lhm-orbit-mark lhm-o2">⌘</span><span class="lhm-orbit-mark lhm-o3">◎</span></div>
+        
       </div>
       <div class="lhm-kpi-grid" aria-label="Chỉ số thực tế">
-        <article class="lhm-kpi lhm-kpi-violet"><span class="lhm-kpi-icon">▤</span><span class="lhm-kpi-label">Tổng hồ sơ</span><strong id="lhm-kpi-total">—</strong><span class="lhm-kpi-foot">Dữ liệu đang lưu cục bộ</span></article>
-        <article class="lhm-kpi lhm-kpi-blue"><span class="lhm-kpi-icon">◉</span><span class="lhm-kpi-label">Đang hoạt động</span><strong id="lhm-kpi-active">—</strong><span class="lhm-kpi-foot">Cửa sổ trình duyệt được quản lý</span></article>
-        <article class="lhm-kpi lhm-kpi-amber"><span class="lhm-kpi-icon">◇</span><span class="lhm-kpi-label">Cần kiểm tra</span><strong id="lhm-kpi-attention">—</strong><span class="lhm-kpi-foot">Lỗi và cảnh báo cấu hình</span></article>
-        <article class="lhm-kpi lhm-kpi-teal"><span class="lhm-kpi-icon">⌘</span><span class="lhm-kpi-label">Quy trình đã lưu</span><strong id="lhm-kpi-workflows">—</strong><span class="lhm-kpi-foot" id="lhm-workflow-state">Đang tải trạng thái…</span></article>
+        <article class="lhm-kpi lhm-kpi-violet"><span class="lhm-kpi-icon"></span><span class="lhm-kpi-label">Tổng hồ sơ</span><strong id="lhm-kpi-total">—</strong><span class="lhm-kpi-foot">Dữ liệu đang lưu cục bộ</span></article>
+        <article class="lhm-kpi lhm-kpi-blue"><span class="lhm-kpi-icon"></span><span class="lhm-kpi-label">Đang hoạt động</span><strong id="lhm-kpi-active">—</strong><span class="lhm-kpi-foot">Cửa sổ trình duyệt được quản lý</span></article>
+        <article class="lhm-kpi lhm-kpi-amber"><span class="lhm-kpi-icon"></span><span class="lhm-kpi-label">Cần kiểm tra</span><strong id="lhm-kpi-attention">—</strong><span class="lhm-kpi-foot">Lỗi và cảnh báo cấu hình</span></article>
+        <article class="lhm-kpi lhm-kpi-teal"><span class="lhm-kpi-icon"></span><span class="lhm-kpi-label">Quy trình đã lưu</span><strong id="lhm-kpi-workflows">—</strong><span class="lhm-kpi-foot" id="lhm-workflow-state">Đang tải trạng thái…</span></article>
       </div>
       <div class="lhm-dashboard-grid">
         <article class="lhm-dash-panel lhm-profile-panel">
-          <div class="lhm-panel-heading"><div><span class="lhm-eyebrow">PROFILE OPERATIONS</span><h3>Sức khỏe hồ sơ</h3></div><button type="button" class="lhm-link-btn" data-lhm-target="health">Xem tất cả ↗</button></div>
+          <div class="lhm-panel-heading"><div><span class="lhm-eyebrow">PROFILE OPERATIONS</span><h3>Sức khỏe hồ sơ</h3></div><button type="button" class="lhm-link-btn" data-lhm-target="health">Xem tất cả </button></div>
           <div class="lhm-profile-health">
             <div class="lhm-health-ring" id="lhm-health-ring"><strong id="lhm-health-ready">—</strong><span>không báo lỗi</span></div>
             <div class="lhm-health-breakdown"><div><span>● Thông số gốc</span><strong id="lhm-native-count">—</strong></div><div><span>● Cấu hình thử nghiệm</span><strong id="lhm-experimental-count">—</strong></div><div><span>● Lỗi cấu hình</span><strong id="lhm-error-count">—</strong></div></div>
@@ -109,7 +107,7 @@
         </article>
         <article class="lhm-dash-panel lhm-proxy-panel">
           <div class="lhm-panel-heading"><div><span class="lhm-eyebrow">NETWORK MANAGEMENT</span><h3>Proxy Center</h3></div><button type="button" class="lhm-link-btn" data-lhm-target="proxy">Mở kho proxy ↗</button></div>
-          <div class="lhm-network-graphic" aria-hidden="true"><div class="lhm-network-globe">◎</div><div class="lhm-network-line"></div><div class="lhm-network-node">◉</div></div>
+          
           <div class="lhm-proxy-readings"><div><span>Proxy đã lưu</span><strong id="lhm-proxy-total">—</strong></div><div><span>Đã xác minh IP trong phiên</span><strong id="lhm-proxy-verified">—</strong></div></div>
           <p class="lhm-panel-note">Chỉ kiểm tra IP qua proxy khi bạn yêu cầu. Không hiển thị IP giả hoặc mức độ ẩn danh không thể xác minh.</p>
         </article>
@@ -125,17 +123,28 @@
         </article>
       </div>
       <div class="lhm-dashboard-bottom">
-        <div class="lhm-bottom-left"><strong>◈ LHM WORKSPACE</strong><span>Thiết kế để quản trị minh bạch, dữ liệu trên máy của bạn.</span></div>
-        <div class="lhm-bottom-actions"><button type="button" class="lhm-action lhm-outline" data-lhm-target="backup">◉ Sao lưu</button><button type="button" class="lhm-action lhm-primary" data-lhm-target="create">+ Tạo hồ sơ</button></div>
+        <div class="lhm-bottom-left"><strong>LHM WORKSPACE</strong><span>Thiết kế để quản trị minh bạch, dữ liệu trên máy của bạn.</span></div>
+        <div class="lhm-bottom-actions"><button type="button" class="lhm-action lhm-outline" data-lhm-target="backup">Sao lưu</button><button type="button" class="lhm-action lhm-primary" data-lhm-target="create">Tạo hồ sơ</button></div>
       </div>
       <p class="lhm-dashboard-status" id="lhm-dashboard-status" role="status">Đang kết nối dữ liệu cục bộ…</p>
     </section>
 
+    <section class="lhm-profiles-heading" aria-label="Quản lý hồ sơ">
+      <div>
+        <p class="lhm-breadcrumb">Workspace / Hồ sơ</p>
+        <h2>Hồ sơ trình duyệt</h2>
+        <p class="lhm-page-subtitle">Quản lý phiên, nhóm hồ sơ và kết nối proxy trong một nơi.</p>
+      </div>
+      <div class="lhm-profiles-overview">
+        <span><strong id="lhm-profiles-total">0</strong> hồ sơ</span>
+        <span><span class="lhm-status-dot"></span> <strong id="lhm-profiles-running">0</strong> đang chạy</span>
+      </div>
+    </section>
     <!-- Toolbar / Filter Bar -->
     <section class="toolbar">
       <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="search-input" placeholder="Tìm theo tên, ID, proxy hoặc group...">
+        <span data-lhm-icon="search" class="search-icon"></span>
+        <input type="text" id="search-input" placeholder="Tìm theo tên, ID, nhóm hoặc proxy...">
       </div>
       <div class="filters">
         <select id="filter-group">
@@ -146,7 +155,7 @@
           <option value="running">Đang chạy</option>
           <option value="stopped">Đã dừng</option>
         </select>
-        <button class="btn btn-icon" id="btn-refresh" title="Làm mới">🔄</button>
+        <button class="btn btn-icon" id="btn-refresh" title="Làm mới" aria-label="Làm mới danh sách"><span data-lhm-icon="refresh-cw"></span></button>
       </div>
     </section>
 
@@ -155,10 +164,10 @@
         <strong id="selected-count">0</strong> hồ sơ được chọn
       </div>
       <div class="selection-actions">
-        <button class="btn btn-sm btn-secondary" id="selection-duplicate">⧉ Nhân bản mẫu</button>
-        <button class="btn btn-sm btn-secondary" id="selection-health">🛡️ Kiểm tra</button>
-        <button class="btn btn-sm btn-secondary" id="selection-export">↓ Xuất CSV</button>
-        <button class="btn btn-sm btn-danger" id="selection-stop">■ Đóng đã chọn</button>
+        <button class="btn btn-sm btn-secondary" id="selection-duplicate">Nhân bản mẫu</button>
+        <button class="btn btn-sm btn-secondary" id="selection-health">Kiểm tra</button>
+        <button class="btn btn-sm btn-secondary" id="selection-export">Xuất CSV</button>
+        <button class="btn btn-sm btn-danger" id="selection-stop">Đóng đã chọn</button>
         <button class="btn btn-sm btn-secondary" id="selection-clear">Bỏ chọn</button>
       </div>
     </section>
@@ -170,12 +179,12 @@
           <thead>
             <tr>
               <th width="40"><input type="checkbox" id="select-all"></th>
-              <th width="80">ID</th>
-              <th>Tên Profile & Nhóm</th>
-              <th>Proxy / IP Thoát</th>
-              <th>Engine / Cấu hình hồ sơ</th>
+              <th width="150">Mã hồ sơ</th>
+              <th>Tên hồ sơ</th>
+              <th>Proxy</th>
+              <th>Trình duyệt</th>
               <th width="120">Trạng thái</th>
-              <th width="200" style="text-align: right;">Thao tác</th>
+              <th width="196" style="text-align: right;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="profile-list-body">
@@ -183,9 +192,9 @@
           </tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display: none;">
-          <div class="empty-icon">🌐</div>
-          <h3>Chưa có Profile nào</h3>
-          <p>Nhấn vào nút "Tạo Profile Mới" để bắt đầu thiết lập môi trường trình duyệt độc lập.</p>
+          <div class="empty-icon"><span data-lhm-icon="panels-top-left"></span></div>
+          <h3>Chưa có hồ sơ</h3>
+          <p>Tạo hồ sơ đầu tiên để quản lý các phiên trình duyệt.</p>
         </div>
       </div>
     </main>
@@ -755,6 +764,7 @@ run();
     </div>
   </div>
 
+  <script src="icons.js"></script>
   <script src="renderer.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>

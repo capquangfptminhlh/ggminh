@@ -451,6 +451,8 @@ async function loadProfiles() {
 function updateStats() {
   statTotal.textContent = allProfiles.length;
   statActive.textContent = activeBrowserMap.size;
+  document.getElementById('lhm-profiles-total').textContent = allProfiles.length;
+  document.getElementById('lhm-profiles-running').textContent = activeBrowserMap.size;
 }
 
 function renderProfiles() {
@@ -492,45 +494,21 @@ function renderProfiles() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="checkbox" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
-      <td><code>${escapeHtml(profile.id)}</code></td>
-      <td>
-        <div class="profile-name-box">
-          <span class="p-name">${escapeHtml(profile.name)}</span>
-          <span class="p-group">📁 ${escapeHtml(profile.group || 'Default')}</span>
-        </div>
-      </td>
-      <td>
-        <span class="proxy-badge">
-          ${profile.proxy?.type === 'direct' || !profile.proxy?.host ? '🌐 Direct (IP Máy)' : `🔒 ${escapeHtml(String(profile.proxy.type || '').toUpperCase())}: ${escapeHtml(profile.proxy.host || '')}:${escapeHtml(String(profile.proxy.port || ''))}`}
-        </span>
-      </td>
-      <td>
-        <div class="fp-badge-row">
-          <span class="fp-pill">${profile.engine === 'gecko' ? '🦊 Gecko' : '🌐 Chromium'}</span>
-          <span class="fp-pill">💻 ${escapeHtml(String(fp.os || 'Windows'))}</span>
-          <span class="fp-pill">⚡ ${escapeHtml(String(fp.hardwareConcurrency || 8))} Cores</span>
-          <span class="fp-pill">🧠 ${escapeHtml(String(fp.deviceMemory || 8))} GB</span>
-          <span class="fp-pill">🖥️ ${escapeHtml(String(fp.screen?.width || 1920))}x${escapeHtml(String(fp.screen?.height || 1080))}</span>
-        </div>
-      </td>
-      <td>
-        <span class="status-pill ${isRunning ? 'running' : 'stopped'}">
-          ${isRunning ? (activeInfo?.port ? `● Port ${escapeHtml(String(activeInfo.port))}` : '● Đang chạy') : '○ Đã dừng'}
-        </span>
-      </td>
-      <td style="text-align: right;">
-        <div class="actions-cell">
-          <button class="btn btn-sm ${isRunning ? 'btn-danger' : 'btn-success'} btn-toggle-run" data-id="${escapeHtml(profile.id)}">
-            ${isRunning ? '⏹ Dừng' : '▶ Mở'}
-          </button>
-          <button class="btn btn-sm btn-secondary btn-health" data-id="${escapeHtml(profile.id)}" title="Kiểm tra sức khỏe hồ sơ">🛡️</button>
-          <button class="btn btn-sm btn-secondary btn-copy-rpa" data-id="${escapeHtml(profile.id)}" title="Lấy code RPA">🤖</button>
-          <button class="btn btn-sm btn-secondary btn-edit" data-id="${escapeHtml(profile.id)}">✏️</button>
-          <button class="btn btn-sm btn-danger btn-delete" data-id="${escapeHtml(profile.id)}">🗑</button>
-        </div>
-      </td>
+      <td><input type="checkbox" aria-label="Chọn hồ sơ" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
+      <td><code class="profile-id">${escapeHtml(profile.id)}</code></td>
+      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span></div></td>
+      <td><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
+      <td><div class="browser-info"><span class="browser-engine">${profile.engine === 'gecko' ? 'Firefox / Gecko' : 'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
+      <td><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
+      <td><div class="actions-cell">
+        <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
+        <button type="button" class="btn btn-sm btn-secondary btn-health lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Kiểm tra cấu hình" aria-label="Kiểm tra cấu hình"><span data-lhm-icon="shield-check"></span></button>
+        <button type="button" class="btn btn-sm btn-secondary btn-copy-rpa lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Tùy chọn RPA" aria-label="Tùy chọn RPA"><span data-lhm-icon="terminal"></span></button>
+        <button type="button" class="btn btn-sm btn-secondary btn-edit lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Sửa hồ sơ" aria-label="Sửa hồ sơ"><span data-lhm-icon="edit"></span></button>
+        <button type="button" class="btn btn-sm btn-secondary btn-delete lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Xóa hồ sơ" aria-label="Xóa hồ sơ"><span data-lhm-icon="trash"></span></button>
+      </div></td>
     `;
+    window.LHMIcons?.decorate(tr);
 
     // Selection remains stable during live status polling and filtering.
     tr.querySelector('input[type="checkbox"][data-id]').addEventListener('change', event => {

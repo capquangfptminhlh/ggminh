@@ -164,8 +164,8 @@
       button.addEventListener('click', () => navigate(button.dataset.lhmTarget));
     }
     $('lhm-dashboard-refresh').addEventListener('click', refresh);
-    document.body.dataset.view = 'dashboard';
-    selectedNav('dashboard');
+    document.body.dataset.view = 'profiles';
+    selectedNav('profiles');
     refresh();
     setInterval(() => {
       if (document.body.dataset.view === 'dashboard' &&
