@@ -220,9 +220,9 @@ function setupEventListeners() {
       pass: fieldProxyPass.value.trim()
     };
     const res = await window.api.checkProxy(proxyConfig);
-    if (res.status === 'success' || res.status === 'reachable') {
-      proxyTestResult.className = 'test-result success';
-      proxyTestResult.textContent = res.status === 'reachable' ? `⚠️ Proxy có phản hồi TCP: ${res.ip}; chưa kiểm tra IP thoát thực tế (${res.latency}ms)` : `✅ Kết nối trực tiếp: ${res.ip} (${res.country || 'N/A'}) - ${res.latency}ms`;
+    if (['success', 'verified', 'warning'].includes(res.status)) {
+      proxyTestResult.className = res.status === 'warning' ? 'test-result error' : 'test-result success';
+      proxyTestResult.textContent = res.status === 'warning' ? `⚠️ ${res.message} IP: ${res.ip}` : res.status === 'verified' ? `✅ ${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `✅ IP trực tiếp: ${res.ip} (${res.latency}ms)`;
     } else {
       proxyTestResult.className = 'test-result error';
       proxyTestResult.textContent = `❌ Lỗi: ${res.message}`;
@@ -447,6 +447,7 @@ function renderProfiles() {
           <button class="btn btn-sm ${isRunning ? 'btn-danger' : 'btn-success'} btn-toggle-run" data-id="${escapeHtml(profile.id)}">
             ${isRunning ? '⏹ Dừng' : '▶ Mở'}
           </button>
+          <button class="btn btn-sm btn-secondary btn-health" data-id="${escapeHtml(profile.id)}" title="Kiểm tra sức khỏe hồ sơ">🛡️</button>
           <button class="btn btn-sm btn-secondary btn-copy-rpa" data-id="${escapeHtml(profile.id)}" title="Lấy code RPA">🤖</button>
           <button class="btn btn-sm btn-secondary btn-edit" data-id="${escapeHtml(profile.id)}">✏️</button>
           <button class="btn btn-sm btn-danger btn-delete" data-id="${escapeHtml(profile.id)}">🗑</button>
@@ -466,6 +467,7 @@ function renderProfiles() {
       await refreshBehaviorAlerts();
     });
 
+    tr.querySelector('.btn-health').addEventListener('click', () => window.LHMMaintenance.showHealth(profile.id));
     const btnRpa = tr.querySelector('.btn-copy-rpa');
     if (profile.engine === 'gecko') {
       btnRpa.disabled = true;
