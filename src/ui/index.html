@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.3</span></h1>
+          <h1>LHM Ads Browser <span>v1.4</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -33,6 +33,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-accent" id="btn-open-studio">⚙️ Automation Studio</button>
         <button class="btn btn-secondary behavior-trigger" id="btn-behavior-alert" title="Theo dõi hành vi thao tác lặp lại trong phần mềm" aria-label="Mở cảnh báo hành vi">⚠️ Cảnh báo hành vi <span id="behavior-alert-count" class="behavior-count" hidden>0</span></button>
         <button class="btn btn-secondary" id="btn-api-toggle" title="Bật/tắt Local API">API: Tắt</button>
         <button class="btn btn-secondary" id="btn-api-copy" title="Sao chép mã truy cập API" style="display:none">Sao chép API Key</button>
@@ -390,6 +391,70 @@ run();
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-studio">
+    <div class="modal-dialog studio-dialog" role="dialog" aria-modal="true" aria-labelledby="studio-heading">
+      <div class="modal-header">
+        <div>
+          <h2 id="studio-heading">⚙️ LHM Automation Studio</h2>
+          <p class="studio-sub">Thiết kế & chạy quy trình web được cấp quyền ngay trong ứng dụng</p>
+        </div>
+        <button class="btn-close" id="studio-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body studio-content">
+        <p class="studio-warning">Studio chạy trong cửa sổ Electron có phiên độc lập; không chia sẻ cookie với Chrome/Gecko. Không tự động hóa Google Ads, đăng nhập Google, thanh toán hoặc CAPTCHA. Không lưu mật khẩu/OTP vào quy trình.</p>
+        <div class="studio-grid">
+          <aside class="studio-sidebar">
+            <div class="studio-toolbar">
+              <strong>Quy trình đã lưu</strong>
+              <button class="btn btn-sm btn-primary" id="studio-new">+ Mới</button>
+            </div>
+            <div id="studio-workflows" class="studio-saved-list"></div>
+          </aside>
+          <section class="studio-editor">
+            <div class="studio-form-row">
+              <label>Tên quy trình<input id="studio-name" type="text" maxlength="100" placeholder="Ví dụ: Kiểm tra website"></label>
+              <label>Hồ sơ<select id="studio-profile"></select></label>
+            </div>
+            <label class="studio-domain-label">Tên miền được phép, phân cách bằng dấu phẩy
+              <input id="studio-hosts" type="text" placeholder="example.com, mysite.vn">
+            </label>
+            <div class="studio-toolbar studio-step-header">
+              <strong>Các bước thực hiện</strong>
+              <span class="studio-muted">Kéo từng bước để sắp xếp</span>
+            </div>
+            <div id="studio-steps" class="studio-steps"></div>
+            <div class="studio-toolbar studio-add-row">
+              <select id="studio-add-type" aria-label="Loại bước">
+                <option value="navigate">Mở URL</option>
+                <option value="wait">Chờ</option>
+                <option value="click">Nhấn phần tử</option>
+                <option value="fill">Điền trường</option>
+                <option value="assert_text">Kiểm tra văn bản</option>
+                <option value="approval">Xác nhận thủ công</option>
+              </select>
+              <button class="btn btn-secondary" id="studio-add-step">+ Thêm bước</button>
+            </div>
+            <div class="studio-action-row">
+              <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>
+              <button class="btn btn-primary" id="studio-run">▶ Lưu & chạy</button>
+              <button class="btn btn-danger" id="studio-stop" disabled>■ Dừng khẩn cấp</button>
+            </div>
+          </section>
+        </div>
+        <div class="studio-run-info">
+          <div class="studio-toolbar">
+            <strong>Trạng thái: <span id="studio-run-state">Chưa chạy</span></strong>
+            <button class="btn btn-success" id="studio-approve" hidden>✓ Tôi xác nhận tiếp tục</button>
+          </div>
+          <p id="studio-approval-prompt" class="studio-muted" hidden></p>
+          <div class="studio-log" id="studio-log" aria-live="polite">Nhật ký sẽ xuất hiện tại đây.</div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" id="studio-done">Đóng</button></div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
+  <script src="workflowStudio.js"></script>
 </body>
 </html>
