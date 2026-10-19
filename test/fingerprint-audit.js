@@ -30,11 +30,11 @@ try {
   const profile={id:'pb_fpunit',fingerprint:{mode:'custom', canvasNoiseSeed:0,audioNoiseSeed:0}};
   generateExtension(profile,path.join(dir,'extension-off'));
   let code=fs.readFileSync(path.join(dir,'extension-off','stealth.js'),'utf8');
-  assert(code.includes('if (false) try {\\n    const seed = 0;'));
-  assert(code.includes('if (false) try {\\n    const audioSeed = 0;'));
+  assert(code.includes('if (false) try {\n    const seed = 0;'));
+  assert(code.includes('if (false) try {\n    const audioSeed = 0;'));
   generateExtension({id:'pb_fpunit',fingerprint:{canvasNoiseSeed:17,audioNoiseSeed:5}},path.join(dir,'extension-on'));
   code=fs.readFileSync(path.join(dir,'extension-on','stealth.js'),'utf8');
-  assert(code.includes('if (true) try {\\n    const seed = 17;'));
-  assert(code.includes('if (true) try {\\n    const audioSeed = 5;'));
+  assert(code.includes('if (true) try {\n    const seed = 17;'));
+  assert(code.includes('if (true) try {\n    const audioSeed = 5;'));
   console.log('Fingerprint mode, Canvas OFF/ON and transparent diagnostics tests passed');
 }finally{fs.rmSync(dir,{recursive:true,force:true});}
