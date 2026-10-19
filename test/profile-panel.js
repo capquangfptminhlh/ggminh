@@ -20,7 +20,7 @@ assert(renderer.includes("window.LHMProfileContextData"));
 assert(renderer.includes("window.LHMProfilePanel?.refresh()"));
 assert(js.includes('window.LHMProfilePanel={refresh:render,select}'));
 assert(js.includes("filter.dispatchEvent(new Event('change'"));
-assert(js.includes("btn.click()"),'Actions must reuse original row handlers');
+assert(js.includes("button.click()"),'Actions must reuse original row handlers');
 assert(js.includes('textContent'),'No dynamic unsafe HTML from profile data');
 assert(!js.includes('innerHTML'),'Never insert profile data as HTML');
 for(const status of ['all','running','stopped'])assert(html.includes('data-lhm-status="'+status+'"'));
