@@ -24,7 +24,7 @@
     <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="behavior"><span data-lhm-icon="activity" class="lhm-nav-icon"></span><span class="lhm-nav-label">Nhật ký hoạt động</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="backup"><span data-lhm-icon="database-backup" class="lhm-nav-icon"></span><span class="lhm-nav-label">Sao lưu dữ liệu</span></button>
-    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Browser · 2.6</small></div>
+    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Browser · 2.7</small></div>
   </aside>
 
   <div class="app-container">
@@ -79,7 +79,7 @@
     <header class="app-header">
       <div class="brand">
         <div class="brand-text">
-          <h1>LHM Browser <span>2.6</span></h1>
+          <h1>LHM Browser <span>2.7</span></h1>
           <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
@@ -815,12 +815,21 @@ run();
             </div>
             <label for="pc-host">IP hoặc hostname</label>
             <input id="pc-host" maxlength="253" placeholder="proxy.example.com">
+            <fieldset class="pc-credential-fields">
+              <legend>Xác thực HTTP (tùy chọn)</legend>
+              <label for="pc-auth-user">Tên đăng nhập</label>
+              <input id="pc-auth-user" maxlength="128" autocomplete="off" placeholder="Tên tài khoản proxy">
+              <label for="pc-auth-pass">Mật khẩu</label>
+              <input id="pc-auth-pass" type="password" maxlength="256" autocomplete="new-password" placeholder="Mật khẩu mã hóa bởi Windows">
+              <label class="pc-credential-clear"><input type="checkbox" id="pc-clear-auth"> Xóa thông tin xác thực đã lưu</label>
+              <p id="pc-credential-info" class="pc-inline-hint">Nhập cả hai trường để tạo hoặc thay mật khẩu. Để trống sẽ giữ mật khẩu đã lưu.</p>
+            </fieldset>
             <div class="pc-form-actions">
               <button class="btn btn-primary" id="pc-save">Lưu Proxy</button>
               <button class="btn btn-secondary" id="pc-reset">Tạo mới</button>
             </div>
             <div id="pc-message" class="pc-message" role="status"></div>
-            <p class="pc-info">Chỉ hỗ trợ proxy HTTP/SOCKS5 không mật khẩu. Hồ sơ đã gán giữ cấu hình riêng khi chỉnh sửa kho proxy.</p>
+            <p class="pc-info">HTTP hỗ trợ tài khoản/mật khẩu mã hóa bởi Windows; SOCKS5 chỉ hỗ trợ không mật khẩu. Không xuất mật khẩu cùng cấu hình hồ sơ.</p>
           </section>
           <section class="pc-list-panel">
             <div class="pc-list-heading">

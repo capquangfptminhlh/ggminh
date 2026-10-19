@@ -280,3 +280,15 @@ New profiles created through UI, Local API or the profile-template cloning actio
 
 ### Technical architecture decision
 See [ADR-0001: LHM Browser Runtime](docs/ADR-0001-browser-runtime.md) for the planned managed engine, security/update acceptance criteria and why the current Electron application is not a Chromium C++ fork.
+
+## v2.7 — Windows-encrypted authenticated HTTP proxy (beta)
+
+- Windows Electron safeStorage encrypts a separate credentials file under local app storage. No plaintext fallback.
+- Proxy Center accepts HTTP proxy username/password; the ordinary profile database, Local API and configuration backups do not contain passwords.
+- Each authenticated HTTP proxy is opened via a per-profile gateway listening only on 127.0.0.1 with an ephemeral port. Gateway sends upstream Basic authorization for HTTPS CONNECT. Browser command-line arguments never contain credentials.
+- Missing or invalid credentials cause browser launch to fail. No fallback to a direct connection.
+- The gateway intentionally rejects regular HTTP proxy requests. HTTPS CONNECT is supported, but browser compatibility and upstream providers require real Windows tests.
+- SOCKS5 with authentication is NOT implemented; SOCKS5 without authentication remains supported.
+- Credentials are bound to the current Windows user/device, are not included in backups, and must be entered again after migration.
+- Local processes can use the gateway while a profile is open. Localhost binding prevents network-external access but is not a process-level boundary.
+- No guarantees of anonymity or avoiding account restrictions.

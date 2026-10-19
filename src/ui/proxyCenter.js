@@ -31,6 +31,10 @@
     for (const key of ['pc-id','pc-name','pc-tag','pc-host','pc-port']) el(key).value = '';
     el('pc-type').value = 'http';
     activeId = null;
+    el('pc-auth-user').value='';
+    el('pc-auth-pass').value='';
+    el('pc-clear-auth').checked=false;
+    el('pc-credential-info').textContent='Nhập cả hai trường để thêm mật khẩu. Mật khẩu được mã hóa trên thiết bị.';
     notice('');
   }
   function fillForm(proxy) {
@@ -41,6 +45,10 @@
     el('pc-type').value = proxy.type;
     el('pc-host').value = proxy.host;
     el('pc-port').value = proxy.port;
+    el('pc-auth-user').value='';
+    el('pc-auth-pass').value='';
+    el('pc-clear-auth').checked=false;
+    el('pc-credential-info').textContent=proxy.hasCredentials ? 'Đã có mật khẩu mã hóa. Để trống sẽ giữ nguyên; nhập cả hai để thay.' : 'Chưa lưu mật khẩu.';
     notice('Đang sửa: ' + proxy.name);
     el('pc-name').focus();
   }
@@ -62,7 +70,7 @@
     row.dataset.proxyId = proxy.id;
     const name = cell('td', 'pc-name-cell');
     const title = cell('strong', '', proxy.name);
-    const tag = cell('small', '', proxy.tag || 'Chưa phân nhóm');
+    const tag = cell('small', '', (proxy.tag || 'Chưa phân nhóm') + (proxy.hasCredentials ? ' · Có mật khẩu' : ''));
     name.append(title, tag);
     const endpoint = cell('td','pc-endpoint-cell');
     endpoint.append(cell('strong','',proxy.host + ':' + proxy.port));
@@ -174,7 +182,10 @@
         tag:el('pc-tag').value.trim(),
         type:el('pc-type').value,
         host:el('pc-host').value.trim(),
-        port:Number(el('pc-port').value)
+        port:Number(el('pc-port').value),
+        authUsername:el('pc-auth-user').value,
+        authPassword:el('pc-auth-pass').value,
+        clearCredentials:el('pc-clear-auth').checked
       };
       const result=await api.saveSavedProxy(payload);
       clearForm();
@@ -199,6 +210,12 @@
     // Search is local; no network/IPC request for each keystroke.
     el('pc-search').addEventListener('input',render);
     el('field-proxy-preset').addEventListener('change',presetChange);
+    el('pc-type').addEventListener('change',()=>{
+      const socks=el('pc-type').value==='socks5';
+      el('pc-auth-user').disabled=socks;
+      el('pc-auth-pass').disabled=socks;
+      el('pc-credential-info').textContent=socks ? 'SOCKS5 có mật khẩu chưa được hỗ trợ.' : 'Để trống sẽ giữ nguyên thông tin đã lưu.';
+    });
   }
   window.LHMProxyCenter={show,refresh,refreshPresets};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);

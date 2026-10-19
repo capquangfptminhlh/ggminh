@@ -581,3 +581,11 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
  #modal-studio .studio-grid{grid-template-columns:1fr!important}
  #modal-studio .studio-saved-list{max-height:170px}
 }
+
+/* v2.7 — local OS-backed HTTP proxy credentials */
+#modal-proxy-center .pc-credential-fields{border:1px solid #e5ebf1;background:#fafcff;border-radius:8px;padding:10px 12px;margin:15px 0 8px;min-width:0}
+#modal-proxy-center .pc-credential-fields legend{font-size:11px;color:#48637d;font-weight:700;padding:0 5px}
+#modal-proxy-center .pc-credential-fields label{display:block;font-size:11px;margin:10px 0 5px}
+#modal-proxy-center .pc-credential-fields .pc-credential-clear{display:flex;align-items:center;gap:8px;line-height:1.5}
+#modal-proxy-center .pc-credential-clear input{width:14px!important;accent-color:#25acd2}
+#modal-proxy-center .pc-credential-fields .pc-inline-hint{font-size:10px;color:#8b9aad;line-height:1.6;margin:8px 0 0}
