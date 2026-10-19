@@ -7,8 +7,10 @@
   let dragged = null;
   let recorderBusy = false;
   const labels = {
-    navigate: '🌐 Mở URL', wait: '⏱ Chờ', wait_for: '🔎 Chờ phần tử', click: '👆 Nhấn CSS',
-    fill: '✍ Điền trường', assert_text: '🔎 Kiểm tra chữ', approval: '✓ Xác nhận'
+    navigate: 'Mở URL', wait: 'Chờ', wait_for: 'Chờ phần tử', click: 'Nhấn CSS',
+    fill: 'Điền trường', assert_text: 'Kiểm tra chữ', approval: 'Xác nhận thủ công',
+    if_exists: 'Nếu phần tử tồn tại', else: 'Nếu không', end_if: 'Kết thúc nếu',
+    repeat: 'Lặp (2–5 lần)', end_repeat: 'Kết thúc lặp'
   };
   const drafts = {
     navigate: () => ({ type: 'navigate', url: 'https://example.com/' }),
@@ -17,7 +19,12 @@
     click: () => ({ type: 'click', selector: 'button' }),
     fill: () => ({ type: 'fill', selector: 'input[name="q"]', value: '' }),
     assert_text: () => ({ type: 'assert_text', selector: 'h1', text: 'Example Domain' }),
-    approval: () => ({ type: 'approval', label: 'Tôi đã kiểm tra và đồng ý tiếp tục' })
+    approval: () => ({ type: 'approval', label: 'Tôi đã kiểm tra và đồng ý tiếp tục' }),
+    if_exists: () => ({ type: 'if_exists', selector: 'h1' }),
+    else: () => ({ type: 'else' }),
+    end_if: () => ({ type: 'end_if' }),
+    repeat: () => ({ type: 'repeat', count: 2 }),
+    end_repeat: () => ({ type: 'end_repeat' })
   };
   function button(title, css, handler) {
     const b = document.createElement('button');
@@ -121,7 +128,7 @@
       });
       const heading = document.createElement('div'); heading.className = 'studio-step-main';
       const grip = document.createElement('span'); grip.textContent = '⠿'; grip.title = 'Kéo để sắp xếp';
-      const name = document.createElement('strong'); name.textContent = (i+1) + '. ' + labels[step.type];
+      const name = document.createElement('strong'); name.textContent = (i+1) + '. ' + (labels[step.type] || step.type);
       heading.append(grip, name);
       heading.append(button('↑', 'btn btn-sm btn-secondary', () => move(i, -1)));
       heading.append(button('↓', 'btn btn-sm btn-secondary', () => move(i, 1)));
@@ -131,7 +138,8 @@
       const fields = document.createElement('div'); fields.className = 'studio-step-contents';
       if (step.type === 'navigate') fields.append(stepField(i, 'URL', 'url'));
       if (step.type === 'wait' || step.type === 'wait_for') fields.append(stepField(i, 'Thời gian tối đa (ms)', 'ms', 'number'));
-      if (['click', 'fill', 'assert_text','wait_for'].includes(step.type)) fields.append(stepField(i, 'CSS selector', 'selector'));
+      if (['click', 'fill', 'assert_text','wait_for','if_exists'].includes(step.type)) fields.append(stepField(i, 'CSS selector', 'selector'));
+      if (step.type === 'repeat') fields.append(stepField(i, 'Số lần (2–5)', 'count', 'number'));
       if (step.type === 'fill') fields.append(stepField(i, 'Văn bản (không nhập mật khẩu)', 'value'));
       if (step.type === 'assert_text') fields.append(stepField(i, 'Phải chứa văn bản', 'text'));
       if (step.type === 'approval') fields.append(stepField(i, 'Câu hỏi xác nhận', 'label'));
@@ -162,7 +170,7 @@
       stopped:'Đã dừng',failed:'Thất bại'
     };
     el('studio-run-state').textContent =
-      (names[state.status] || state.status) + (state.status === 'running' ? ' · bước ' + (state.step+1) + '/' + state.total : '');
+      (names[state.status] || state.status) + (state.status === 'running' ? ' · bước ' + (state.step+1) + '/' + state.total + ' · lượt ' + (state.executed || 0) : '');
     el('studio-stop').disabled = state.status !== 'running';
     el('studio-approve').hidden = !state.needsApproval;
     el('studio-approval-prompt').hidden = !state.needsApproval;

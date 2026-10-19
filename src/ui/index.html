@@ -542,7 +542,7 @@ run();
               <strong>Các bước thực hiện</strong>
               <span class="studio-muted">Kéo từng bước để sắp xếp</span>
             </div>
-            <div id="studio-steps" class="studio-steps"></div>
+            <div id="studio-steps" class="studio-steps"></div><p class="studio-branch-guide">Điều kiện: <strong>Nếu phần tử tồn tại → [bước] → Nếu không (tùy chọn) → [bước] → Kết thúc nếu</strong>. Vòng lặp: <strong>Lặp → [bước] → Kết thúc lặp</strong>. Tối đa 2 tầng và 160 lượt xử lý. Các thao tác nhấn/điền phải có bước xác nhận nằm bên ngoài, trước các nhánh.</p>
             <div class="studio-toolbar studio-add-row">
               <select id="studio-add-type" aria-label="Loại bước">
                 <option value="navigate">Mở URL</option>
@@ -552,6 +552,11 @@ run();
                 <option value="fill">Điền trường</option>
                 <option value="assert_text">Kiểm tra văn bản</option>
                 <option value="approval">Xác nhận thủ công</option>
+                <option value="if_exists">Nếu phần tử tồn tại</option>
+                <option value="else">Nếu không</option>
+                <option value="end_if">Kết thúc nếu</option>
+                <option value="repeat">Lặp 2–5 lần</option>
+                <option value="end_repeat">Kết thúc lặp</option>
               </select>
               <button class="btn btn-secondary" id="studio-add-step">+ Thêm bước</button>
             </div>

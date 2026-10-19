@@ -296,3 +296,7 @@ select option{background:white;color:#263347}
 .engine-diagnostics-results{display:flex;flex-direction:column;gap:8px}
 .engine-diagnostics-line{padding:10px;border:1px solid #e8edf3;border-radius:7px;background:#fff;display:flex;flex-direction:column;gap:4px}
 .engine-diagnostics-name{font-size:12px;font-weight:650;color:#334964}
+
+/* Bounded RPA blocks */
+.studio-branch-guide{font-size:11px;line-height:1.7;color:#728196;padding:10px 12px;background:#f5f7fb;border:1px solid #e3e9f2;border-radius:8px;margin:10px 0}
+.studio-branch-guide strong{color:#3e526c;font-weight:600}

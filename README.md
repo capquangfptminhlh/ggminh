@@ -249,3 +249,11 @@ Health Center can check actual locally installed Chrome, Edge and Firefox execut
 
 ### Privacy-default and browser-path consistency (2.3)
 New profiles created through UI, Local API or the profile-template cloning action now use native browser device properties when no custom configuration is supplied. Browser startup and Health Check share the same installed Chrome/Edge/Firefox candidates, including eligible per-user installation paths. Legacy custom profiles retain existing configuration until explicitly edited.
+
+
+## v2.4 — Automation Studio: conditions and bounded loops
+- Workflow designer includes if_exists / else / end_if and counted repeat / end_repeat blocks, checking CSS element presence only on allowlisted websites.
+- Max 2 nested blocks, 2–5 repeats, 40 stored steps and conservative limit of 160 executions. Malformed blocks are rejected.
+- Manual approval at top-level must precede clicks/fills and control blocks when a workflow contains click/fill. Emergency Stop is supported.
+- Google Ads login/payment and nonallowlisted hosts stay blocked. No unrestricted script execution, arbitrary jumps or indefinite loop.
+- Studio is not yet a graph/canvas RPA designer, task scheduler or AI Agent.
