@@ -108,7 +108,7 @@ class BrowserLauncher {
     const profileDir = ensureIsolatedDirectory(this.baseDataDir, paths.profileDir);
 
     let extDir = null;
-    if (engine === 'chromium') {
+    if (engine === 'chromium' && profile.fingerprint?.mode !== 'native') {
       extDir = ensureIsolatedDirectory(this.baseDataDir, paths.extensionDir);
       generateExtension(profile, extDir);
     }

@@ -60,6 +60,11 @@ function getRandomInt(min, max) {
 }
 
 function generateFingerprint(options = {}) {
+  // Native mode does not invent a UA, device model, GPU or Canvas identifier.
+  if (options.mode === 'native') return {
+    mode: 'native', userAgent: '', canvasNoiseSeed: 0,
+    audioNoiseSeed: 0, webrtc: 'real'
+  };
   const os = options.os || 'Windows';
   const chromeVer = getRandomItem(CHROME_VERSIONS);
   const gpu = getRandomItem(GPU_PROFILES);

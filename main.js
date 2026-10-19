@@ -15,6 +15,7 @@ const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
+const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 
@@ -85,6 +86,8 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('inspect-fingerprint', (_, input) => inspectFingerprint(input));
+
   ipcMain.handle('proxy-center-list', () => proxyCenter.list());
   ipcMain.handle('proxy-center-save', (_, proxy) => proxyCenter.save(proxy));
   ipcMain.handle('proxy-center-delete', (_, id) => proxyCenter.delete(id));

@@ -30,7 +30,7 @@ function createLaunchArgs({ engine, profileDir, url, fingerprint = {}, proxy = {
     args.push('--remote-debugging-address=127.0.0.1');
     args.push('--remote-debugging-port=' + port);
   }
-  if (fingerprint.userAgent) args.push('--user-agent=' + fingerprint.userAgent);
+  if (fingerprint.mode !== 'native' && fingerprint.userAgent) args.push('--user-agent=' + fingerprint.userAgent);
   if (fingerprint.languages?.[0]) args.push('--lang=' + fingerprint.languages[0]);
   if (proxy.host || proxy.port) {
     if (!proxy.host || !/^[A-Za-z0-9_.:-]+$/.test(proxy.host)) throw new Error('Invalid proxy hostname');

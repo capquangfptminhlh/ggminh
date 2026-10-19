@@ -12,8 +12,8 @@ Phần mềm quản lý đa hồ sơ trình duyệt (Multi-profile Browser) ch�
 | :--- | :--- | :--- |
 | **Giới hạn Profile** | 2-5 profile (Bản Free) / Trả phí đắt | **Không giới hạn (Vĩnh viễn)** |
 | **Lưu trữ dữ liệu** | Đẩy lên Cloud AdsPower | **100% Cục bộ trên máy bạn** |
-| **Bảo vệ vân tay** | Cloud-based | **Manifest V3 + MAIN World Injection** |
-| **Kháng phát hiện** | Dễ bị quét qua CDP | **Loại bỏ hoàn toàn cờ Automation** |
+| **Bảo vệ vân tay** | Cloud-based | **Chế độ bản địa + chẩn đoán, mã thử nghiệm cũ chưa xác minh** |
+| **Kháng phát hiện** | Dễ bị quét qua CDP | **Không bảo đảm qua mặt bất cứ cơ chế phát hiện nào** |
 | **RPA API** | Cần Token / Rate limit | **Port 50325 chuẩn (Plug & Play)** |
 | **Chi phí** | Hàng tháng / năm | **0đ - Hoàn toàn miễn phí** |
 
@@ -23,10 +23,10 @@ Phần mềm quản lý đa hồ sơ trình duyệt (Multi-profile Browser) ch�
 
 - `main.js`: Tiến trình Electron chính, quản lý IPC và chạy nền Local REST API.
 - `preload.js`: Cầu nối contextBridge bảo mật giữa Renderer và hệ thống.
-- `src/engine/fingerprint.js`: Bộ sinh vân tay thực tế (WebGL, Canvas noise, AudioContext, Cores, RAM, Màn hình, UserAgent).
-- `src/engine/extensionGenerator.js`: Sinh extension tàng hình động (chạy ở `world: MAIN` trước khi website tải).
+- `src/engine/fingerprint.js`: Bộ tạo cấu hình vân tay thử nghiệm (WebGL, Canvas noise, AudioContext, Cores, RAM, Màn hình, UserAgent).
+- `src/engine/extensionGenerator.js`: Sinh extension tùy chỉnh thử nghiệm (không xác nhận chống phát hiện) (chạy ở `world: MAIN` trước khi website tải).
 - `src/engine/browserLauncher.js`: Khởi chạy Chromium/Chrome độc lập với `--user-data-dir` riêng biệt, gán proxy và mở cổng CDP.
-- `src/api/server.js`: API tương thích 100% với các script tự động hóa viết cho AdsPower (Port 50325).
+- `src/api/server.js`: API hỗ trợ một tập con endpoint tương thích cú pháp AdsPower (Port 50325).
 - `src/ui/`: Giao diện người dùng Dark Mode trực quan, quản lý danh sách profile, test proxy và lấy code RPA.
 
 ---
@@ -190,3 +190,17 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
   to reduce brittle fixed delays on authorized websites.
 - Wait is interruptible by Emergency Stop, limited to the workflow allowlist,
   and refuses navigation outside permitted hosts.
+
+
+## v2.0 — Native Privacy & Fingerprint Inspector
+- Mặc định tạo hồ sơ Chromium ở chế độ **thông số gốc trình duyệt**:
+  không tải extension thay đổi WebGL/Canvas/navigator; không ép User-Agent giả.
+- Các hồ sơ cũ vẫn dùng cấu hình cũ; phần mềm hiển thị **cảnh báo rõ ràng** về
+  dữ liệu sai lệch, phiên bản UA cũ, GPU/OS không thống nhất, hiệu ứng Canvas,
+  WebRTC chưa được chứng thực. Có thể chọn Native và lưu để bỏ cấu hình này.
+- Khắc phục lỗi Canvas/WebAudio: khi người dùng tắt nhiễu (seed bằng 0), bản vá
+  tương ứng không chạy. Các bản vá thử nghiệm cũ không được coi là kỹ thuật ẩn danh.
+- Inspector chỉ phân tích **cấu hình khai báo**. Không đo header gửi tới Google,
+  tín hiệu mạng/thiết bị thực tế hoặc hệ thống đánh giá tài khoản.
+- Sử dụng nhiều tài khoản Google Ads hợp lệ qua MCC và OAuth được ủy quyền;
+  không có bảo đảm tránh liên kết tài khoản hay đình chỉ.

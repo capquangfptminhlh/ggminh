@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   controlTowerStop: ids => ipcRenderer.invoke('control-tower-stop', ids),
   controlTowerExport: ids => ipcRenderer.invoke('control-tower-export', ids),
   auditProfileIsolation: () => ipcRenderer.invoke('audit-profile-isolation'),
+  inspectFingerprint: value => ipcRenderer.invoke('inspect-fingerprint', value),
   getProfileHealth: id => ipcRenderer.invoke('get-profile-health', id),
   getAllProfileHealth: () => ipcRenderer.invoke('get-all-profile-health'),
   exportConfigBackup: password => ipcRenderer.invoke('export-config-backup', password),

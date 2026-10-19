@@ -124,8 +124,8 @@ function generateExtension(profile, outputDir) {
   } catch (e) {}
 
   // --- 5. Canvas Noise (Per-profile consistent micro-noise) ---
-  try {
-    const seed = ${fp.canvasNoiseSeed || 42};
+  if (${Number(fp.canvasNoiseSeed) > 0}) try {
+    const seed = ${Number(fp.canvasNoiseSeed) || 0};
     function pseudoRandom(x, y) {
       const val = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
       return (val - Math.floor(val));
@@ -161,8 +161,8 @@ function generateExtension(profile, outputDir) {
   } catch (e) {}
 
   // --- 6. WebAudio Noise (Subtle frequency perturbation) ---
-  try {
-    const audioSeed = ${fp.audioNoiseSeed || 99};
+  if (${Number(fp.audioNoiseSeed) > 0}) try {
+    const audioSeed = ${Number(fp.audioNoiseSeed) || 0};
     if (window.AnalyserNode) {
       const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
       AnalyserNode.prototype.getFloatFrequencyData = function(array) {
