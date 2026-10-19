@@ -455,15 +455,15 @@ function renderProfiles() {
       <td>
         <div class="fp-badge-row">
           <span class="fp-pill">${profile.engine === 'gecko' ? '🦊 Gecko' : '🌐 Chromium'}</span>
-          <span class="fp-pill">💻 ${fp.os || 'Windows'}</span>
-          <span class="fp-pill">⚡ ${fp.hardwareConcurrency || 8} Cores</span>
-          <span class="fp-pill">🧠 ${fp.deviceMemory || 8} GB</span>
-          <span class="fp-pill">🖥️ ${fp.screen?.width || 1920}x${fp.screen?.height || 1080}</span>
+          <span class="fp-pill">💻 ${escapeHtml(String(fp.os || 'Windows'))}</span>
+          <span class="fp-pill">⚡ ${escapeHtml(String(fp.hardwareConcurrency || 8))} Cores</span>
+          <span class="fp-pill">🧠 ${escapeHtml(String(fp.deviceMemory || 8))} GB</span>
+          <span class="fp-pill">🖥️ ${escapeHtml(String(fp.screen?.width || 1920))}x${escapeHtml(String(fp.screen?.height || 1080))}</span>
         </div>
       </td>
       <td>
         <span class="status-pill ${isRunning ? 'running' : 'stopped'}">
-          ${isRunning ? `● Port ${activeInfo.port}` : '○ Đã dừng'}
+          ${isRunning ? (activeInfo?.port ? `● Port ${escapeHtml(String(activeInfo.port))}` : '● Đang chạy') : '○ Đã dừng'}
         </span>
       </td>
       <td style="text-align: right;">
@@ -557,6 +557,6 @@ function startStatusPoller() {
 }
 
 function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
