@@ -4,10 +4,13 @@ const path = require('path');
 const net = require('net');
 const { generateExtension } = require('./extensionGenerator');
 const { createLaunchArgs } = require('./launchArgs');
+const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
 
 class BrowserLauncher {
-  constructor(store) {
+  constructor(store, { spawnProcess = spawn } = {}) {
     this.store = store;
+    this.spawnProcess = spawnProcess;
+    this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
     this.baseDataDir = store.baseDir;
   }
@@ -64,7 +67,22 @@ class BrowserLauncher {
     return null;
   }
 
+  isBusy(profileId) {
+    return this.pendingStarts.has(profileId) || this.activeProcesses.has(profileId);
+  }
+
   async start(profileId, customUrl = null) {
+    if (this.pendingStarts.has(profileId)) return this.pendingStarts.get(profileId);
+    const task = this._startInternal(profileId, customUrl);
+    this.pendingStarts.set(profileId, task);
+    try { return await task; }
+    finally {
+      if (this.pendingStarts.get(profileId) === task) this.pendingStarts.delete(profileId);
+    }
+  }
+
+  async _startInternal(profileId, customUrl = null) {
+    if (this.activeProcesses.get(profileId)?.stopping) throw new Error('Hồ sơ đang đóng, vui lòng đợi tiến trình thoát');
     if (this.activeProcesses.has(profileId)) {
       return {
         success: true,
@@ -86,14 +104,12 @@ class BrowserLauncher {
 
     // Gecko and Chromium must never share browser profile files.
     // Preserve the original Chromium location for existing customers.
-    const profileDir = engine === 'gecko'
-      ? path.join(this.baseDataDir, 'gecko-profiles', profile.id)
-      : path.join(this.baseDataDir, 'profiles', profile.id);
-    fs.mkdirSync(profileDir, { recursive: true });
+    const paths = isolatedPaths(this.baseDataDir, profile.id, engine);
+    const profileDir = ensureIsolatedDirectory(this.baseDataDir, paths.profileDir);
 
     let extDir = null;
     if (engine === 'chromium') {
-      extDir = path.join(this.baseDataDir, 'extensions', profile.id);
+      extDir = ensureIsolatedDirectory(this.baseDataDir, paths.extensionDir);
       generateExtension(profile, extDir);
     }
     const startUrl = customUrl || profile.startUrl || 'https://ads.google.com/';
@@ -103,7 +119,7 @@ class BrowserLauncher {
     });
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);
-    const proc = spawn(browserBin, args, {
+    const proc = this.spawnProcess(browserBin, args, {
       detached: false,
       stdio: 'ignore'
     });
@@ -125,10 +141,11 @@ class BrowserLauncher {
 
     proc.on('exit', (code) => {
       console.log(`[BrowserLauncher] Profile ${profile.name} exited with code ${code}`);
-      this.activeProcesses.delete(profile.id);
+      const current = this.activeProcesses.get(profile.id);
+      if (current?.process === proc) this.activeProcesses.delete(profile.id);
     });
 
-    this.activeProcesses.set(profile.id, { process: proc, ...instanceInfo });
+    this.activeProcesses.set(profile.id, { process: proc, stopping: false, ...instanceInfo });
 
     // Background fetch ws endpoint for RPA
     if (port) this.fetchWebSocketDebuggerUrl(port).then(ws => {
@@ -141,22 +158,30 @@ class BrowserLauncher {
   }
 
   stop(profileId) {
-    if (!this.activeProcesses.has(profileId)) {
-      return { success: false, message: 'Browser is not running' };
+    if (this.pendingStarts.has(profileId)) {
+      return { success: false, message: 'Browser is still starting' };
     }
-
-    const { process: proc } = this.activeProcesses.get(profileId);
+    const active = this.activeProcesses.get(profileId);
+    if (!active) return { success: false, message: 'Browser is not running' };
+    if (active.stopping) return { success: false, message: 'Browser is already stopping' };
+    const proc = active.process;
     try {
-      proc.kill('SIGTERM');
-      setTimeout(() => {
-        try { proc.kill('SIGKILL'); } catch (e) {}
-      }, 1000);
-    } catch (e) {
-      console.warn(`[BrowserLauncher] Error killing process ${profileId}:`, e.message);
+      const sent = proc.kill('SIGTERM');
+      if (sent === false) return { success: false, message: 'Could not stop browser process' };
+      active.stopping = true;
+      const killer = setTimeout(() => {
+        if (this.activeProcesses.get(profileId)?.process !== proc) return;
+        try { proc.kill('SIGKILL'); } catch (error) {
+          console.warn('[BrowserLauncher] Could not force-stop:', error.message);
+        }
+      }, 1200);
+      killer.unref?.();
+      // Keep the profile locked until the child emits 'exit'.
+      return { success: true, pendingExit: true };
+    } catch (error) {
+      console.warn('[BrowserLauncher] Error killing process:', error.message);
+      return { success: false, message: error.message };
     }
-
-    this.activeProcesses.delete(profileId);
-    return { success: true };
   }
 
   getActive(profileId) {
@@ -173,6 +198,7 @@ class BrowserLauncher {
         port: info.port,
         pid: info.pid,
         startedAt: info.startedAt,
+        stopping: !!info.stopping,
         wsEndpoint: info.wsEndpoint
       });
     }

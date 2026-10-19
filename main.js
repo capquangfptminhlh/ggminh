@@ -14,6 +14,7 @@ const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const { ConfigBackup } = require('./src/backup/configBackup');
+const { auditIsolation } = require('./src/privacy/isolation');
 const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 
 let mainWindow = null;
@@ -82,6 +83,8 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('audit-profile-isolation', () =>
+    auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id) }));
   ipcMain.handle('control-tower-snapshot', () => {
     const profiles = store.getProfiles();
     const reports = profiles.map(profile => checkProfile(profile, { settings: store.getSettings() }));
@@ -175,7 +178,10 @@ function initIPC() {
     return saved;
   });
   ipcMain.handle('delete-profile', (_, id) => {
-    launcher.stop(id);
+    if (launcher.isBusy(id)) throw new Error('Hãy đóng hồ sơ và đợi tiến trình thoát trước khi xóa dữ liệu');
+    const state = automationRunner.status();
+    if (state.status === 'running' && state.profileId === id) throw new Error('Hồ sơ đang được Automation Studio sử dụng');
+    if (recorderManager.status().state === 'recording' && recorderManager.status().profileId === id) throw new Error('Hồ sơ đang được Recorder sử dụng');
     const deleted = store.deleteProfile(id);
     if (deleted) behaviorMonitor.record('profile_delete', id, 'manual');
     return deleted;

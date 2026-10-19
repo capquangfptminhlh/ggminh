@@ -3,6 +3,7 @@ const path = require('path');
 function safeWebUrl(value) {
   if (typeof value !== 'string' || value.length > 2048) throw new Error('Invalid start URL');
   const url = new URL(value);
+  if (url.username || url.password) throw new Error('Start URL must not contain credentials');
   if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('Start URL must be http(s)');
   return url.toString();
 }
@@ -21,7 +22,7 @@ function createLaunchArgs({ engine, profileDir, url, fingerprint = {}, proxy = {
     '--user-data-dir=' + profileDir,
     '--no-first-run',
     '--no-default-browser-check',
-    '--password-store=basic',
+    '--disable-sync', // Avoid accidentally syncing Chrome browser data between managed profiles.
     '--window-size=' + (size.width || 1280) + ',' + (size.height || 800)
   ];
   if (extensionDir) args.push('--load-extension=' + extensionDir);

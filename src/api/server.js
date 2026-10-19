@@ -68,8 +68,9 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null 
   });
   service.delete('/api/profiles/:id', (req, res) => {
     try {
-      const closed = launcher.stop(req.params.id);
-      if (closed.success && behaviorMonitor) behaviorMonitor.record('profile_close', req.params.id, 'api');
+      if (launcher.isBusy?.(req.params.id) || launcher.getActive?.(req.params.id)) {
+        return res.status(409).json({ code: -1, msg: 'Stop browser and wait for exit before deleting profile' });
+      }
       const success = store.deleteProfile(req.params.id);
       if (success && behaviorMonitor) behaviorMonitor.record('profile_delete', req.params.id, 'api');
       res.json({ success });

@@ -155,3 +155,17 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
 - Chưa hỗ trợ iframe, shadow DOM, các webapp SPA phức tạp hoặc ghi chính xác
   mọi tương tác. Những website hạn chế trình duyệt nhúng có thể không hoạt động.
 - Không dùng kỹ thuật che giấu dấu hiệu tự động hóa để vượt kiểm soát nền tảng.
+
+
+## v1.8 — Local profile isolation
+- Mỗi ID sử dụng thư mục dữ liệu Chromium hoặc Gecko độc lập. Kiểm tra và
+  từ chối liên kết thư mục qua symlink/junction nơi có thể phát hiện.
+- Không cho chạy hai tiến trình cùng một hồ sơ khi lệnh mở xảy ra đồng thời.
+  Khi đóng, chờ hệ điều hành xác nhận tiến trình thoát trước khi cho phép
+  xóa hồ sơ, nhằm tránh mất hoặc trộn dữ liệu phiên.
+- Chrome khởi chạy với sync trình duyệt bị vô hiệu hóa và không ép dùng
+  kho mật khẩu 'basic' thay cho cơ chế lưu trữ mặc định của OS.
+- Nút kiểm tra cách ly hiển thị tình trạng **tách thư mục lưu trữ** từng hồ sơ.
+  Không kiểm tra được liên kết danh tính qua đăng nhập Google, thanh toán, IP,
+  phần cứng hay dữ liệu của bên thứ ba.
+- Không cam kết ẩn danh, không phát hiện hoặc tránh các chính sách Google Ads.
