@@ -303,3 +303,39 @@ select option{background:white;color:#263347}
 
 .studio-step-block{border-left:2px solid #7591ba!important;background:#f8fafc!important}
 .studio-step-block .studio-step-main strong{color:#36557e!important}
+
+
+/* RPA 2.5 — visual graph driven by the same control-flow compiler as the runner */
+.studio-visual-section{margin:14px 0 17px;border:1px solid #e1e6ee;background:#fff;border-radius:10px;overflow:hidden}
+.studio-visual-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid #e5eaf0}
+.studio-visual-heading strong{font-size:13px;color:#263951}
+.studio-visual-heading p{font-size:11px;color:#8997a8;line-height:1.5;margin:4px 0 0}
+.studio-graph-scroll{height:352px;overflow:auto;background-color:#f8fafc;
+background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-size:20px 20px;overscroll-behavior:contain}
+.studio-graph-scroll:focus-visible{outline:2px solid #3664b9;outline-offset:-2px}
+.studio-graph{position:relative;min-width:800px;min-height:100px}
+.studio-graph-lines{position:absolute;inset:0;overflow:visible;pointer-events:none}
+.studio-graph-line{fill:none;stroke:#a3b2c5;stroke-width:1.65;opacity:.88}
+.studio-graph-line[data-kind="false"]{stroke:#c08c56;stroke-dasharray:5 4}
+.studio-graph-line[data-kind="true"]{stroke:#398f74}
+.studio-graph-line[data-kind="loop-back"]{stroke:#5c7dba;stroke-dasharray:5 4}
+.studio-graph-line[data-kind="loop-exit"]{stroke:#6b8097;stroke-dasharray:3 4}
+.studio-graph-edge-label{font-size:10px;fill:#66788f;font-family:inherit}
+.studio-graph-node{
+ position:absolute;width:218px;min-height:58px;padding:9px 12px;border:1px solid #dce3ed;
+ border-left:3px solid #93a5bc;background:#fff;box-shadow:0 2px 6px #1e293b0d;
+ border-radius:9px;text-align:left;display:flex;flex-direction:column;gap:3px;
+ cursor:pointer;color:#233550;font:inherit;align-items:stretch;justify-content:center
+}
+.studio-graph-node:hover{border-color:#567fbe;background:#f5f8fe}
+.studio-graph-node:focus-visible{outline:2px solid #315bb7;outline-offset:2px}
+.studio-graph-node[data-category="control"]{border-left-color:#638bbd;background:#f8fbff}
+.studio-graph-node[data-category="approval"]{border-left-color:#ac8151;background:#fffbf5}
+.studio-graph-node[data-category="end"]{border-left-color:#6e9b88;background:#f5faf7;cursor:default}
+.studio-graph-node.is-current{border-color:#2e63be;box-shadow:0 0 0 2px #4b81d638}
+.studio-graph-node-title{font-size:12px;font-weight:700;color:#28405c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.studio-graph-node-detail{font-size:10px;color:#8d9aa8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.studio-graph-status{font-size:11px;color:#7d8c9d;line-height:1.45;padding:9px 14px;margin:0;border-top:1px solid #e6eaf0}
+.studio-graph-status.is-error{color:#a45732}
+.studio-step.graph-selected{border-color:#4074bd!important;box-shadow:0 0 0 2px #a4c1f062!important}
+@media(max-width:900px){.studio-visual-heading{flex-wrap:wrap}.studio-graph-scroll{height:290px}}

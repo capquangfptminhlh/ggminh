@@ -10,6 +10,7 @@ const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
+const { graphForSteps } = require('./src/automation/flowGraph');
 const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
@@ -201,6 +202,7 @@ function initIPC() {
     return { canceled: false, ...report };
   });
   ipcMain.handle('studio-list', () => workflowStore.list());
+  ipcMain.handle('studio-graph-preview', (_, steps) => graphForSteps(steps));
   ipcMain.handle('studio-save', (_, value) => workflowStore.save(value));
   ipcMain.handle('studio-delete', (_, id) => {
     if (automationRunner.status().status === 'running' && automationRunner.status().workflowId === id) throw Error('Hãy dừng quy trình trước khi xóa');

@@ -538,6 +538,16 @@ run();
             <label class="studio-domain-label">Tên miền được phép, phân cách bằng dấu phẩy
               <input id="studio-hosts" type="text" placeholder="example.com, mysite.vn">
             </label>
+            <section class="studio-visual-section" aria-labelledby="studio-visual-heading">
+              <div class="studio-visual-heading">
+                <div><strong id="studio-visual-heading">Sơ đồ quy trình</strong><p>Sơ đồ đọc trực tiếp từ các bước đã tạo. Chọn một node để sửa bước tương ứng.</p></div>
+                <button type="button" class="btn btn-sm btn-secondary" id="studio-graph-refresh">Cập nhật sơ đồ</button>
+              </div>
+              <div class="studio-graph-scroll" id="studio-graph-scroll" tabindex="0" aria-label="Sơ đồ node có thể cuộn">
+                <div class="studio-graph" id="studio-graph" role="group" aria-label="Sơ đồ các bước"></div>
+              </div>
+              <p id="studio-graph-status" class="studio-graph-status" role="status">Đang chuẩn bị sơ đồ…</p>
+            </section>
             <div class="studio-toolbar studio-step-header">
               <strong>Các bước thực hiện</strong>
               <span class="studio-muted">Kéo từng bước để sắp xếp</span>

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('api', {
   recorderStop: () => ipcRenderer.invoke('recorder-stop'),
   recorderTake: () => ipcRenderer.invoke('recorder-take'),
   studioList: () => ipcRenderer.invoke('studio-list'),
+  studioGraphPreview: steps => ipcRenderer.invoke('studio-graph-preview', steps),
   studioSave: value => ipcRenderer.invoke('studio-save', value),
   studioDelete: id => ipcRenderer.invoke('studio-delete', id),
   studioRun: id => ipcRenderer.invoke('studio-run', id),

@@ -257,3 +257,10 @@ New profiles created through UI, Local API or the profile-template cloning actio
 - Manual approval at top-level must precede clicks/fills and control blocks when a workflow contains click/fill. Emergency Stop is supported.
 - Google Ads login/payment and nonallowlisted hosts stay blocked. No unrestricted script execution, arbitrary jumps or indefinite loop.
 - Studio is not yet a graph/canvas RPA designer, task scheduler or AI Agent.
+
+
+## v2.5 — Visual Automation Flow
+- Adds a scrollable node-and-connector canvas to the real Automation Studio for each workflow. It renders the branches validated by the same bounded control-flow compiler as the executor.
+- Nodes, loop-back links, true/false paths and manual approval nodes support selecting the corresponding editable step. The running step is highlighted with the existing status API.
+- Renderer receives a read-only graph from Electron IPC; it uses textContent for user content. Secret form values are masked in the preview. The canvas does not execute arbitrary scripts.
+- v2.5 is a structured workflow visualization, not arbitrary connectable graph execution, scheduling or AI generation.
