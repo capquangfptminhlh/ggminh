@@ -9,11 +9,11 @@ function checkProfile(profile, options = {}) {
   const proxy = profile?.proxy || { type: 'direct' };
   const settings = options.settings || {};
   const pathExists = options.pathExists || fs.existsSync;
-  const options = optionsFor(settings);
+  const engines = optionsFor(settings);
   const executable = engine === 'gecko'
-    ? options.find(x => x.id === 'firefox').candidates
-    : [...options.find(x => x.id === 'chrome').candidates,
-       ...options.find(x => x.id === 'edge').candidates];
+    ? engines.find(x => x.id === 'firefox').candidates
+    : [...engines.find(x => x.id === 'chrome').candidates,
+       ...engines.find(x => x.id === 'edge').candidates];
   if (!executable.filter(Boolean).some(pathExists)) issues.push({ level: 'error', code: 'browser_missing', message: 'Không tìm thấy chương trình trình duyệt phù hợp trên máy này.' });
   if (!name.trim()) issues.push({ level: 'error', code: 'no_name', message: 'Hồ sơ chưa có tên.' });
   try {

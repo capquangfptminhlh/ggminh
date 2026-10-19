@@ -110,7 +110,7 @@ Trang tạo/sửa hồ sơ cho phép chọn **Chromium** hoặc **Gecko**. Chế
 Firefox cài trên máy, mỗi hồ sơ có profile độc lập trong \`storage/gecko-profiles/\`.
 Gecko chưa được đóng gói hoặc fork thành trình duyệt LHM riêng; đây là nền tảng tích hợp
 để chuyển dần sang Gecko engine và hỗ trợ đường dẫn bản Gecko được tự build trong tương lai.
-Chế độ Gecko hiện chạy thủ công, không hỗ trợ Chromium CDP/RPA hoặc proxy trong LHM.
+Chế độ Gecko hiện chạy thủ công, không hỗ trợ Chromium CDP/RPA. Proxy HTTP/SOCKS5 không mật khẩu đã được hỗ trợ từ v2.3.
 Chi tiết xem \`docs/GECKO_BROWSER_PLAN.md\`.
 
 ## v1.4 — LHM Automation Studio
@@ -177,11 +177,11 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
 - Kiểm tra **IP thoát thực tế bằng HTTPS**, hiển thị độ trễ và so sánh IP trực tiếp
   nếu mạng cho phép. Kết quả kiểm tra chỉ ở bộ nhớ tạm, không ghi IP công khai lên ổ đĩa.
 - Gán proxy đã lưu cho tối đa **50 hồ sơ** mỗi lần, xác thực trước toàn bộ danh sách,
-  từ chối hồ sơ đang mở, Gecko chưa hỗ trợ hoặc hồ sơ không tồn tại. Cập nhật cơ sở
+  từ chối hồ sơ đang mở hoặc hồ sơ không tồn tại. Cập nhật cơ sở
   dữ liệu trong **một giao dịch ghi tệp** có hoàn nguyên trong bộ nhớ nếu ghi thất bại.
 - Việc sửa/xóa một proxy trong kho **không tự thay đổi** cấu hình của các hồ sơ đã gán.
 - Dữ liệu nhập không cho phép lưu username, password, secret hoặc token. Không tuyên bố
-  hỗ trợ proxy có mật khẩu, cấu hình proxy Gecko hoặc đảm bảo vô danh trước nền tảng.
+  hỗ trợ proxy có mật khẩu hoặc đảm bảo vô danh trước nền tảng.
 - Để quản lý Google Ads nhiều khách hàng hợp lệ, dùng Google Ads MCC và OAuth được ủy quyền.
 
 
