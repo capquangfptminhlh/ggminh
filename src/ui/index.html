@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.4</span></h1>
+          <h1>LHM Ads Browser <span>v1.5</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -33,6 +33,8 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-secondary" id="btn-profile-health" title="Chẩn đoán cấu hình hồ sơ">🛡️ Health Check</button>
+        <button class="btn btn-secondary" id="btn-config-backup" title="Sao lưu cấu hình có mã hóa">🔐 Sao lưu</button>
         <button class="btn btn-accent" id="btn-open-studio">⚙️ Automation Studio</button>
         <button class="btn btn-secondary behavior-trigger" id="btn-behavior-alert" title="Theo dõi hành vi thao tác lặp lại trong phần mềm" aria-label="Mở cảnh báo hành vi">⚠️ Cảnh báo hành vi <span id="behavior-alert-count" class="behavior-count" hidden>0</span></button>
         <button class="btn btn-secondary" id="btn-api-toggle" title="Bật/tắt Local API">API: Tắt</button>
@@ -205,7 +207,7 @@
             </div>
           </div>
           <div class="proxy-test-box">
-              <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">Lưu ý: bài kiểm tra proxy chỉ xác minh kết nối TCP; chưa xác nhận IP truy cập Internet. Proxy có mật khẩu chưa được hỗ trợ.</p>
+              <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">Kiểm tra IP thoát bằng HTTPS qua api.ipify.org, so sánh IP trực tiếp nếu có thể. Proxy có mật khẩu chưa được hỗ trợ.</p>
             <button type="button" class="btn btn-secondary" id="btn-test-proxy">Kiểm tra kết nối Proxy</button>
             <div id="proxy-test-result" class="test-result"></div>
           </div>
@@ -454,7 +456,61 @@ run();
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-health">
+    <div class="modal-dialog modal-lg health-dialog" role="dialog" aria-modal="true" aria-labelledby="health-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="health-title">🛡️ Profile Health Center</h2>
+          <p class="health-intro">Chẩn đoán cấu hình, không phải điểm đánh giá Google Ads.</p>
+        </div>
+        <button class="btn-close" id="health-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="health-metrics">
+          <div><span>Hồ sơ</span><strong id="health-total">0</strong></div>
+          <div><span>Cần xử lý</span><strong id="health-errors">0</strong></div>
+          <div><span>Cảnh báo</span><strong id="health-warnings">0</strong></div>
+        </div>
+        <div id="health-items" class="health-list"></div>
+        <p class="health-footnote">Đây chỉ là kiểm tra cấu hình: binary, URL, proxy, engine và User-Agent. Không khẳng định vô danh hoặc tránh bị phát hiện. Để đo IP thoát, bấm Kiểm tra proxy trong phần sửa hồ sơ.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="health-refresh">Quét lại</button>
+        <button class="btn btn-primary" id="health-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modal-backup">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="backup-title">
+      <div class="modal-header">
+        <h2 id="backup-title">🔐 Sao lưu cấu hình LHM</h2>
+        <button class="btn-close" id="backup-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="backup-intro">Sao lưu AES-256-GCM gồm danh sách hồ sơ và quy trình Automation Studio. <strong>Không có cookie, phiên Google hay mật khẩu.</strong> Nhập lại sẽ tạo hồ sơ mới, không ghi đè dữ liệu cũ.</p>
+        <div class="form-group">
+          <label for="backup-mode">Hành động</label>
+          <select id="backup-mode">
+            <option value="export">Xuất cấu hình đã mã hóa</option>
+            <option value="import">Nhập và gộp cấu hình</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="backup-password">Mật khẩu bản sao lưu (tối thiểu 12 ký tự)</label>
+          <input id="backup-password" type="password" autocomplete="new-password" minlength="12" placeholder="Mật khẩu riêng của bản sao lưu">
+        </div>
+        <p class="backup-note">Quên mật khẩu sẽ không giải mã được tệp. Không nên sử dụng mật khẩu Google.</p>
+        <p id="backup-result" class="backup-result" role="status"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="backup-cancel">Hủy</button>
+        <button class="btn btn-primary" id="backup-execute">Thực hiện</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
   <script src="workflowStudio.js"></script>
+  <script src="maintenance.js"></script>
 </body>
 </html>

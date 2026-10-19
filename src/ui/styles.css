@@ -744,3 +744,26 @@ select {
 .studio-run-info .studio-toolbar strong{font-size:13px}
 #studio-approval-prompt{color:#f4c878;margin:6px 0}
 @media(max-width:920px){.studio-grid{grid-template-columns:1fr}.studio-saved-list{max-height:110px}.studio-form-row{grid-template-columns:1fr}.studio-step-contents{grid-template-columns:1fr}}
+
+
+/* v1.5 profile maintenance */
+.health-dialog{width:min(940px,95vw)}
+.health-intro,.backup-intro,.health-footnote,.backup-note{color:#aab6c6;font-size:12px;line-height:1.6;margin-top:6px}
+.health-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.health-metrics>div{background:#192439;border:1px solid #37445b;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:5px}
+.health-metrics span{font-size:12px;color:#9ca3af}.health-metrics strong{font-size:25px}
+.health-list{display:flex;flex-direction:column;gap:10px;max-height:370px;overflow-y:auto}
+.health-item{border:1px solid #37445b;background:#1a2435;border-radius:10px;padding:12px}
+.health-item-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.health-name{font-weight:700;font-size:13px}
+.health-status{display:inline-flex;align-items:center;font-size:12px;padding:4px 9px;border-radius:999px}
+.health-status.ready{background:#123d35;color:#6ee7b7}
+.health-status.warning{background:#4d3a20;color:#fcd34d}
+.health-status.error{background:#531e2d;color:#fda4af}
+.health-issues{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.health-issue{font-size:12px;color:#b8c3d3;line-height:1.5}
+.health-issue.error{color:#fda4af}.health-issue.warning{color:#fcd34d}
+.health-footnote{margin-top:18px}.backup-intro{margin-bottom:18px}.backup-note{margin-bottom:12px;color:#edc58c}
+.backup-result{color:#93c5fd;white-space:pre-wrap;font-size:12px;line-height:1.6}
+.btn-health{padding:5px 9px;white-space:nowrap}
+@media(max-width:650px){.health-metrics{grid-template-columns:1fr}.health-item-head{align-items:flex-start;flex-direction:column}}
