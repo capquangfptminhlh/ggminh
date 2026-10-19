@@ -8,11 +8,15 @@ const { generateFingerprint } = require('./src/engine/fingerprint');
 const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
+const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
+const { createWindowBrowser } = require('./src/automation/windowBrowser');
 
 let mainWindow = null;
 let store = null;
 let launcher = null;
 let behaviorMonitor = null;
+let workflowStore = null;
+let automationRunner = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
@@ -71,6 +75,16 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('studio-list', () => workflowStore.list());
+  ipcMain.handle('studio-save', (_, value) => workflowStore.save(value));
+  ipcMain.handle('studio-delete', (_, id) => {
+    if (automationRunner.status().status === 'running' && automationRunner.status().workflowId === id) throw Error('Hãy dừng quy trình trước khi xóa');
+    return workflowStore.delete(id);
+  });
+  ipcMain.handle('studio-run', (_, id) => automationRunner.run(id));
+  ipcMain.handle('studio-stop', () => automationRunner.stop());
+  ipcMain.handle('studio-approve', () => automationRunner.approve());
+  ipcMain.handle('studio-status', () => automationRunner.status());
   ipcMain.handle('save-profile', (_, profile) => {
     const saved = store.saveProfile(profile);
     behaviorMonitor.record('profile_save', saved.id, 'manual');
@@ -124,6 +138,8 @@ app.whenReady().then(async () => {
   store = new Store(storageDir);
   launcher = new BrowserLauncher(store);
   behaviorMonitor = new BehaviorMonitor(storageDir);
+  workflowStore = new WorkflowStore(storageDir);
+  automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
   initIPC();
   createWindow();
   if (store.getSettings().apiEnabled === true) {
@@ -142,6 +158,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', () => {
+  if (automationRunner) automationRunner.stop();
   if (launcher) for (const active of launcher.listActive()) launcher.stop(active.profileId);
   if (apiServer) apiServer.close();
 });

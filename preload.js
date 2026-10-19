@@ -1,6 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  studioList: () => ipcRenderer.invoke('studio-list'),
+  studioSave: value => ipcRenderer.invoke('studio-save', value),
+  studioDelete: id => ipcRenderer.invoke('studio-delete', id),
+  studioRun: id => ipcRenderer.invoke('studio-run', id),
+  studioStop: () => ipcRenderer.invoke('studio-stop'),
+  studioApprove: () => ipcRenderer.invoke('studio-approve'),
+  studioStatus: () => ipcRenderer.invoke('studio-status'),
   getBehaviorReport: () => ipcRenderer.invoke('get-behavior-report'),
   getApiStatus: () => ipcRenderer.invoke('get-api-status'),
   setApiEnabled: enabled => ipcRenderer.invoke('set-api-enabled', enabled),

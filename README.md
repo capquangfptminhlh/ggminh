@@ -112,3 +112,7 @@ Gecko chưa được đóng gói hoặc fork thành trình duyệt LHM riêng; �
 để chuyển dần sang Gecko engine và hỗ trợ đường dẫn bản Gecko được tự build trong tương lai.
 Chế độ Gecko hiện chạy thủ công, không hỗ trợ Chromium CDP/RPA hoặc proxy trong LHM.
 Chi tiết xem \`docs/GECKO_BROWSER_PLAN.md\`.
+
+## v1.4 — LHM Automation Studio
+
+Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độc lập theo profile. Hỗ trợ mở URL, chờ, click CSS, điền form, kiểm tra văn bản, yêu cầu phê duyệt; có nhật ký và dừng khẩn cấp. Chỉ được chạy trên danh sách tên miền được cấu hình, mặc định chặn trang Google Ads, đăng nhập và thanh toán Google trong Studio. Đối với Google Ads, ưu tiên MCC/OAuth và API chính thức. Studio không thể tự động qua mặt bảo vệ bot, và không chia sẻ cookie với Chrome/Gecko đang mở thủ công.
