@@ -183,3 +183,10 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
 - Dữ liệu nhập không cho phép lưu username, password, secret hoặc token. Không tuyên bố
   hỗ trợ proxy có mật khẩu, cấu hình proxy Gecko hoặc đảm bảo vô danh trước nền tảng.
 - Để quản lý Google Ads nhiều khách hàng hợp lệ, dùng Google Ads MCC và OAuth được ủy quyền.
+
+
+### RPA Studio improvements (1.9)
+- Adds a **Wait For Element** step with a bounded timeout (100–15,000 ms)
+  to reduce brittle fixed delays on authorized websites.
+- Wait is interruptible by Emergency Stop, limited to the workflow allowlist,
+  and refuses navigation outside permitted hosts.

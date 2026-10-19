@@ -7,12 +7,13 @@
   let dragged = null;
   let recorderBusy = false;
   const labels = {
-    navigate: '🌐 Mở URL', wait: '⏱ Chờ', click: '👆 Nhấn CSS',
+    navigate: '🌐 Mở URL', wait: '⏱ Chờ', wait_for: '🔎 Chờ phần tử', click: '👆 Nhấn CSS',
     fill: '✍ Điền trường', assert_text: '🔎 Kiểm tra chữ', approval: '✓ Xác nhận'
   };
   const drafts = {
     navigate: () => ({ type: 'navigate', url: 'https://example.com/' }),
     wait: () => ({ type: 'wait', ms: 1000 }),
+    wait_for: () => ({ type:'wait_for', selector:'h1', ms:5000 }),
     click: () => ({ type: 'click', selector: 'button' }),
     fill: () => ({ type: 'fill', selector: 'input[name="q"]', value: '' }),
     assert_text: () => ({ type: 'assert_text', selector: 'h1', text: 'Example Domain' }),
@@ -129,8 +130,8 @@
       }));
       const fields = document.createElement('div'); fields.className = 'studio-step-contents';
       if (step.type === 'navigate') fields.append(stepField(i, 'URL', 'url'));
-      if (step.type === 'wait') fields.append(stepField(i, 'Thời gian (ms)', 'ms', 'number'));
-      if (['click', 'fill', 'assert_text'].includes(step.type)) fields.append(stepField(i, 'CSS selector', 'selector'));
+      if (step.type === 'wait' || step.type === 'wait_for') fields.append(stepField(i, 'Thời gian tối đa (ms)', 'ms', 'number'));
+      if (['click', 'fill', 'assert_text','wait_for'].includes(step.type)) fields.append(stepField(i, 'CSS selector', 'selector'));
       if (step.type === 'fill') fields.append(stepField(i, 'Văn bản (không nhập mật khẩu)', 'value'));
       if (step.type === 'assert_text') fields.append(stepField(i, 'Phải chứa văn bản', 'text'));
       if (step.type === 'approval') fields.append(stepField(i, 'Câu hỏi xác nhận', 'label'));

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const TYPES = new Set(['navigate','wait','click','fill','assert_text','approval']);
+const TYPES = new Set(['navigate','wait','wait_for','click','fill','assert_text','approval']);
 const DENIED = new Set(['ads.google.com','accounts.google.com','payments.google.com','myaccount.google.com','admin.google.com']);
 const HOST = /^[a-z0-9.-]{1,253}$/i;
 function checkUrl(value, hosts) {
@@ -26,7 +26,7 @@ function clean(data, existing) {
     if (!raw || !TYPES.has(raw.type)) throw Error('Bước ' + (i+1) + ' không hợp lệ');
     const step = {type:raw.type};
     if (step.type === 'navigate') step.url = checkUrl(String(raw.url || ''),hosts);
-    if (['click','fill','assert_text'].includes(step.type)) {
+    if (['click','fill','assert_text','wait_for'].includes(step.type)) {
       step.selector = String(raw.selector || '').trim();
       if (!step.selector || step.selector.length > 250) throw Error('CSS selector không hợp lệ ở bước '+(i+1));
     }
@@ -39,7 +39,7 @@ function clean(data, existing) {
       step.text = String(raw.text || '').trim();
       if (!step.text || step.text.length > 150) throw Error('Nội dung kiểm tra không hợp lệ');
     }
-    if (step.type === 'wait') {
+    if (step.type === 'wait' || step.type === 'wait_for') {
       step.ms = Number(raw.ms);
       if (!Number.isInteger(step.ms) || step.ms < 100 || step.ms > 15000) throw Error('Thời gian chờ: 100–15000ms');
     }
@@ -92,7 +92,7 @@ function delay(ms, signal) {
     signal.addEventListener('abort',cancel,{once:true});
   });
 }
-const NAMES={navigate:'Mở trang',wait:'Chờ',click:'Nhấn',fill:'Nhập',assert_text:'Kiểm tra',approval:'Phê duyệt'};
+const NAMES={navigate:'Mở trang',wait:'Chờ',wait_for:'Chờ phần tử',click:'Nhấn',fill:'Nhập',assert_text:'Kiểm tra',approval:'Phê duyệt'};
 class AutomationRunner {
   constructor(workflows, profiles, createBrowser) {
     this.workflows=workflows;this.profiles=profiles;this.createBrowser=createBrowser;
@@ -133,6 +133,19 @@ class AutomationRunner {
           await browser.open(checkUrl(step.url,hosts));
           await this.guard(browser,hosts);
         }else if(step.type==='wait') await delay(step.ms,task.controller.signal);
+        else if(step.type==='wait_for'){
+          await this.guard(browser,hosts);
+          const started=Date.now();
+          let found=false;
+          while(Date.now()-started < step.ms){
+            if(task.controller.signal.aborted)throw Error('Đã dừng');
+            await this.guard(browser,hosts);
+            found=await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(step.selector)+'))');
+            if(found === true) break;
+            await delay(Math.min(200,Math.max(50,step.ms-(Date.now()-started))),task.controller.signal);
+          }
+          if(!found)throw Error('Không tìm thấy phần tử trong '+step.ms+'ms: '+step.selector);
+        }
         else if(step.type==='approval')await this.approval(step.label,task);
         else{
           await this.guard(browser,hosts);

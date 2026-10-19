@@ -49,6 +49,15 @@ async function until(check){
     runner.stop();
     await until(()=>runner.status().status==='stopped');
     assert(workflows.delete(stopFlow.id));
+    const waitFlow=workflows.save({
+      name:'Wait for element',profileId:profile.id,hosts:'example.com',
+      steps:[{type:'navigate',url:'https://example.com/'},{type:'wait_for',selector:'h1',ms:500}]
+    });
+    runner.run(waitFlow.id);
+    await until(()=>runner.status().status==='completed');
+    const invalid={name:'Bad wait',profileId:profile.id,hosts:'example.com',
+      steps:[{type:'navigate',url:'https://example.com/'},{type:'wait_for',selector:'h1',ms:18000}]};
+    assert.throws(()=>workflows.save(invalid),/100–15000ms/);
     console.log('Studio workflow tests passed');
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
