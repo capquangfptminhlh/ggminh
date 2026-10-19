@@ -767,3 +767,48 @@ select {
 .backup-result{color:#93c5fd;white-space:pre-wrap;font-size:12px;line-height:1.6}
 .btn-health{padding:5px 9px;white-space:nowrap}
 @media(max-width:650px){.health-metrics{grid-template-columns:1fr}.health-item-head{align-items:flex-start;flex-direction:column}}
+
+
+/* Control Tower v1.6 — operations, not an anti-detection guarantee. */
+.selection-toolbar[hidden]{display:none!important}
+.selection-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 24px;background:linear-gradient(90deg,#182c4a,#181f37);border-bottom:1px solid #3868a3}
+.selection-counter{font-size:13px;color:#c5d8f1}
+.selection-counter strong{font-size:18px;color:#7bc7ff;margin-right:3px}
+.selection-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tower-dialog{width:min(1190px,96vw)!important;max-width:96vw;max-height:94vh}
+.tower-heading{display:flex;align-items:center;gap:12px}
+.tower-logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:linear-gradient(145deg,#147bca,#7751da);font-size:29px;color:white;box-shadow:0 5px 21px #2f72ca4d}
+.tower-subtitle,.tower-muted{color:#91a5c5;font-size:12px;margin-top:5px}
+.tower-content{padding:21px 24px}
+.tower-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.tower-kpi{background:linear-gradient(150deg,#192942,#141d30);border:1px solid #314867;border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.tower-kpi span{font-size:12px;color:#b2c4dc;font-weight:600}
+.tower-kpi strong{font-size:32px;line-height:1.1;letter-spacing:-.02em;color:#f6f9ff;font-variant-numeric:tabular-nums}
+.tower-kpi small{font-size:11px;color:#7694b7}
+.tower-kpi.is-error{border-color:#743950}.tower-kpi.is-error strong{color:#ff91a9}
+.tower-kpi.is-warning{border-color:#755738}.tower-kpi.is-warning strong{color:#ffd08f}
+.tower-columns{display:grid;grid-template-columns:1fr 1.2fr;gap:14px;margin-bottom:14px;min-width:0}
+.tower-panel{background:#141e30;border:1px solid #2c405b;border-radius:13px;padding:15px;min-width:0}
+.tower-panel-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.tower-panel-header h3{font-size:14px;font-weight:700}
+.tower-group-list,.tower-attention-list{display:flex;flex-direction:column;gap:9px;max-height:255px;overflow-y:auto}
+.tower-group{display:flex;flex-direction:column;gap:8px;border:1px solid #30445e;border-radius:10px;padding:12px;background:#1b2940;color:#e0edff;text-align:left;cursor:pointer}
+.tower-group:hover{border-color:#3b82f6;background:#203451}
+.tower-group-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.tower-group-top small{color:#a7bddb}
+.tower-bar{height:6px;border-radius:999px;background:#344159;overflow:hidden}
+.tower-bar-fill{height:100%;background:linear-gradient(90deg,#38bdf8,#6366f1);border-radius:999px;transition:width .15s}
+.tower-attention{border:1px solid #46374d;background:#272234;border-radius:9px;padding:11px;display:flex;flex-direction:column;gap:6px}
+.tower-attention strong{font-size:13px;color:#f1d2e4}
+.tower-attention p{font-size:12px;color:#c5b7c6;line-height:1.5}
+.tower-attention.is-error{border-left:3px solid #f87171}
+.tower-attention.is-warning{border-left:3px solid #fbbf24}
+.tower-events{display:flex;flex-direction:column;gap:0;max-height:150px;overflow-y:auto}
+.tower-event{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:10px;border-top:1px solid #273852;font-size:12px}
+.tower-event small{color:#92a6bf;white-space:nowrap}
+.tower-empty{padding:13px 6px;font-size:13px;color:#90a6c4}
+.tower-disclaimer{font-size:11px;color:#8ea1c1;margin-top:16px;line-height:1.6}
+.tower-footer{align-items:center}
+.tower-footer p{flex:1;font-size:12px;color:#a3c9f0}
+@media(max-width:950px){.tower-columns{grid-template-columns:1fr}.tower-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.selection-toolbar{flex-direction:column;align-items:stretch}.tower-kpis{grid-template-columns:1fr 1fr}.tower-footer{flex-wrap:wrap}}

@@ -5,6 +5,12 @@ let currentGeneratedFP = null;
 let apiEnabled = false;
 let behaviorAlertsSeen = new Set();
 let behaviorInitialized = false;
+const selectedProfileIds = new Set();
+window.LHMProfileSelection = {
+  getSelected: () => [...selectedProfileIds],
+  clear: () => { selectedProfileIds.clear(); renderProfiles(); },
+  refresh: () => renderProfiles()
+};
 
 // Elements
 const profileListBody = document.getElementById('profile-list-body');
@@ -277,6 +283,17 @@ function setupEventListeners() {
     await refreshBehaviorAlerts();
   });
 
+  // Select all currently visible (filtered) profiles.
+  document.getElementById('select-all').addEventListener('change', event => {
+    const boxes = [...profileListBody.querySelectorAll('input[type="checkbox"][data-id]')];
+    for (const input of boxes) {
+      if (event.target.checked) selectedProfileIds.add(input.dataset.id);
+      else selectedProfileIds.delete(input.dataset.id);
+      input.checked = event.target.checked;
+    }
+    window.LHMControlTower?.updateSelection();
+  });
+
   // Search & Filter
   searchInput.addEventListener('input', renderProfiles);
   filterGroup.addEventListener('change', renderProfiles);
@@ -356,12 +373,15 @@ function applyFingerprintToForm(fp) {
 
 async function loadProfiles() {
   allProfiles = await window.api.getProfiles();
+  const freshIds = new Set(allProfiles.map(p => p.id));
+  for (const id of selectedProfileIds) if (!freshIds.has(id)) selectedProfileIds.delete(id);
   const activeList = await window.api.getActiveBrowsers();
   activeBrowserMap.clear();
   activeList.forEach(item => activeBrowserMap.set(item.profileId, item));
 
   // Populate Groups
   const groups = new Set(allProfiles.map(p => p.group || 'Default'));
+  const priorGroup = filterGroup.value;
   filterGroup.innerHTML = '<option value="all">Tất cả Nhóm</option>';
   groups.forEach(g => {
     const opt = document.createElement('option');
@@ -370,6 +390,7 @@ async function loadProfiles() {
     filterGroup.appendChild(opt);
   });
 
+  if (groups.has(priorGroup)) filterGroup.value = priorGroup;
   renderProfiles();
   updateStats();
 }
@@ -404,6 +425,9 @@ function renderProfiles() {
 
   if (filtered.length === 0) {
     emptyState.style.display = 'block';
+    document.getElementById('select-all').checked = false;
+    document.getElementById('select-all').indeterminate = false;
+    window.LHMControlTower?.updateSelection();
     return;
   }
   emptyState.style.display = 'none';
@@ -415,7 +439,7 @@ function renderProfiles() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="checkbox" data-id="${escapeHtml(profile.id)}"></td>
+      <td><input type="checkbox" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
       <td><code>${escapeHtml(profile.id)}</code></td>
       <td>
         <div class="profile-name-box">
@@ -455,6 +479,12 @@ function renderProfiles() {
       </td>
     `;
 
+    // Selection remains stable during live status polling and filtering.
+    tr.querySelector('input[type="checkbox"][data-id]').addEventListener('change', event => {
+      if (event.target.checked) selectedProfileIds.add(profile.id);
+      else selectedProfileIds.delete(profile.id);
+      window.LHMControlTower?.updateSelection();
+    });
     // Row Actions
     const btnToggle = tr.querySelector('.btn-toggle-run');
     btnToggle.addEventListener('click', async () => {
@@ -495,6 +525,11 @@ function renderProfiles() {
 
     profileListBody.appendChild(tr);
   });
+  const visible = [...profileListBody.querySelectorAll('input[type="checkbox"][data-id]')];
+  const selectAll = document.getElementById('select-all');
+  selectAll.checked = visible.length > 0 && visible.every(x => x.checked);
+  selectAll.indeterminate = visible.some(x => x.checked) && !selectAll.checked;
+  window.LHMControlTower?.updateSelection();
 }
 
 function startStatusPoller() {

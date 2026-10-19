@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.5</span></h1>
+          <h1>LHM Ads Browser <span>v1.6</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -33,6 +33,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-primary" id="btn-control-tower">◈ Control Tower</button>
         <button class="btn btn-secondary" id="btn-profile-health" title="Chẩn đoán cấu hình hồ sơ">🛡️ Health Check</button>
         <button class="btn btn-secondary" id="btn-config-backup" title="Sao lưu cấu hình có mã hóa">🔐 Sao lưu</button>
         <button class="btn btn-accent" id="btn-open-studio">⚙️ Automation Studio</button>
@@ -66,6 +67,19 @@
           <option value="stopped">Đã dừng</option>
         </select>
         <button class="btn btn-icon" id="btn-refresh" title="Làm mới">🔄</button>
+      </div>
+    </section>
+
+    <section class="selection-toolbar" id="selection-toolbar" hidden role="region" aria-label="Thao tác hồ sơ đã chọn">
+      <div class="selection-counter">
+        <strong id="selected-count">0</strong> hồ sơ được chọn
+      </div>
+      <div class="selection-actions">
+        <button class="btn btn-sm btn-secondary" id="selection-duplicate">⧉ Nhân bản mẫu</button>
+        <button class="btn btn-sm btn-secondary" id="selection-health">🛡️ Kiểm tra</button>
+        <button class="btn btn-sm btn-secondary" id="selection-export">↓ Xuất CSV</button>
+        <button class="btn btn-sm btn-danger" id="selection-stop">■ Đóng đã chọn</button>
+        <button class="btn btn-sm btn-secondary" id="selection-clear">Bỏ chọn</button>
       </div>
     </section>
 
@@ -509,8 +523,62 @@ run();
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-control-tower">
+    <div class="modal-dialog tower-dialog" role="dialog" aria-modal="true" aria-labelledby="tower-title">
+      <div class="modal-header">
+        <div class="tower-heading">
+          <div class="tower-logo">◈</div>
+          <div>
+            <h2 id="tower-title">LHM Control Tower</h2>
+            <p class="tower-subtitle">Trung tâm vận hành đa hồ sơ · dữ liệu cục bộ</p>
+          </div>
+        </div>
+        <button class="btn-close" id="tower-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body tower-content">
+        <section class="tower-kpis" aria-label="Chỉ số vận hành">
+          <div class="tower-kpi"><span>Hồ sơ</span><strong id="tower-total">0</strong><small>Đã tạo</small></div>
+          <div class="tower-kpi"><span>Đang mở</span><strong id="tower-active">0</strong><small>Browser sessions</small></div>
+          <div class="tower-kpi is-error"><span>Cần xử lý</span><strong id="tower-errors">0</strong><small>Lỗi cấu hình</small></div>
+          <div class="tower-kpi is-warning"><span>Cảnh báo</span><strong id="tower-warnings">0</strong><small>Health + hành vi</small></div>
+        </section>
+        <div class="tower-columns">
+          <section class="tower-panel">
+            <div class="tower-panel-header">
+              <h3>Nhóm & trạng thái</h3>
+              <span class="tower-muted">Chọn nhóm để lọc</span>
+            </div>
+            <div id="tower-groups" class="tower-group-list"></div>
+          </section>
+          <section class="tower-panel">
+            <div class="tower-panel-header">
+              <h3>Ưu tiên xử lý</h3>
+              <button class="btn btn-sm btn-secondary" id="tower-open-health">Xem Health Check</button>
+            </div>
+            <div id="tower-attention" class="tower-attention-list"></div>
+          </section>
+        </div>
+        <section class="tower-panel tower-log-panel">
+          <div class="tower-panel-header">
+            <h3>Nhật ký hoạt động gần đây</h3>
+            <span class="tower-muted">Chỉ thao tác trong LHM, không đọc lịch sử trang web</span>
+          </div>
+          <div id="tower-events" class="tower-events"></div>
+        </section>
+        <p class="tower-disclaimer">Các chỉ số này phản ánh vận hành của LHM Browser, không thể kết luận Google đã phát hiện hay đánh giá các tài khoản Google Ads.</p>
+      </div>
+      <div class="modal-footer tower-footer">
+        <p id="tower-status" role="status"></p>
+        <button class="btn btn-secondary" id="tower-export-all">↓ Xuất danh sách CSV</button>
+        <button class="btn btn-secondary" id="tower-refresh">↻ Làm mới</button>
+        <button class="btn btn-primary" id="tower-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>
+  <script src="controlTower.js"></script>
 </body>
 </html>
