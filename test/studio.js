@@ -16,6 +16,11 @@ async function until(check){
     const workflows=new WorkflowStore(dir);
     assert.throws(()=>checkUrl('file:///etc/passwd',['example.com']),/HTTP/);
     assert.throws(()=>checkUrl('https://ads.google.com',['ads.google.com']),/Google Ads/);
+    assert.throws(() => workflows.save({name:'Unsafe',profileId:profile.id,hosts:'example.com',
+      steps:[{type:'navigate',url:'https://example.com'},{type:'click',selector:'button'}]}),/xác nhận thủ công/);
+    assert.throws(() => workflows.save({name:'OTP',profileId:profile.id,hosts:'example.com',
+      steps:[{type:'navigate',url:'https://example.com'},{type:'approval'},
+        {type:'fill',selector:'input[name="otp"]',value:'123456'}]}),/mật khẩu/);
     const data=workflows.save({
       name:'Demo',profileId:profile.id,hosts:'example.com',
       steps:[{type:'navigate',url:'https://example.com/'},

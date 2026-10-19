@@ -139,7 +139,7 @@ class AutomationRunner {
           let js;
           const selector=JSON.stringify(step.selector);
           if(step.type==='click') js='(()=>{const el=document.querySelector('+selector+');if(!el)throw Error("Không tìm thấy phần tử");el.click();return true})()';
-          if(step.type==='fill')js='(()=>{const el=document.querySelector('+selector+');if(!el||!("value" in el))throw Error("Không tìm thấy trường");el.focus();el.value='+JSON.stringify(step.value)+';el.dispatchEvent(new Event("input",{bubbles:true}));el.dispatchEvent(new Event("change",{bubbles:true}));return true})()';
+          if(step.type==='fill')js='(()=>{const el=document.querySelector('+selector+');if(!el||!("value" in el))throw Error("Không tìm thấy trường");if(el.type==="password"||/one-time-code|current-password|new-password/.test(el.autocomplete||""))throw Error("Không hỗ trợ trường bí mật");el.focus();el.value='+JSON.stringify(step.value)+';el.dispatchEvent(new Event("input",{bubbles:true}));el.dispatchEvent(new Event("change",{bubbles:true}));return true})()';
           if(step.type==='assert_text')js='(()=>{const el=document.querySelector('+selector+');return !!el&&(el.textContent||"").includes('+JSON.stringify(step.text)+')})()';
           const result=await browser.evaluate(js);
           if(result!==true)throw Error('Điều kiện chưa đạt');
