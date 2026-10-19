@@ -9,8 +9,9 @@ const { updateGeckoProxy } = require('./geckoProxy');
 const { optionsFor } = require('./browserDiagnostics');
 
 class BrowserLauncher {
-  constructor(store, { spawnProcess = spawn } = {}) {
+  constructor(store, { spawnProcess = spawn, proxyVault = null } = {}) {
     this.store = store;
+    this.proxyVault = proxyVault;
     this.spawnProcess = spawnProcess;
     this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
@@ -103,17 +104,35 @@ class BrowserLauncher {
     const paths = isolatedPaths(this.baseDataDir, profile.id, engine);
     const profileDir = ensureIsolatedDirectory(this.baseDataDir, paths.profileDir);
 
-    if (engine === 'gecko') updateGeckoProxy(profileDir, profile.proxy || { type: 'direct' });
+    // Apply Gecko proxy preferences after the credential gateway is ready.
 
+    let gateway=null;
+    let effectiveProxy=profile.proxy || {type:'direct'};
+    if(effectiveProxy.authProxyId){
+      const proxyId=effectiveProxy.authProxyId;
+      if(!this.proxyVault)throw Error('Kho mật khẩu proxy chưa được khởi tạo');
+      const saved=this.store.data.proxies?.find(p=>p.id===proxyId);
+      if(!saved || saved.type!=='http' ||
+         saved.host!==effectiveProxy.host || saved.port!==Number(effectiveProxy.port)){
+        throw Error('Proxy đã thay đổi hoặc bị xóa. Hãy gán lại từ Proxy Center.');
+      }
+      const credentials=this.proxyVault.get(proxyId);
+      if(!credentials)throw Error('Không tìm thấy mật khẩu proxy. Hãy nhập lại trong Proxy Center.');
+      const { createAuthenticatedHttpGateway }=require('./authenticatedHttpGateway');
+      gateway=await createAuthenticatedHttpGateway({...saved,...credentials});
+      effectiveProxy={type:'http',host:'127.0.0.1',port:gateway.port};
+    }
+    try {
     let extDir = null;
     if (engine === 'chromium' && profile.fingerprint?.mode !== 'native') {
       extDir = ensureIsolatedDirectory(this.baseDataDir, paths.extensionDir);
       generateExtension(profile, extDir);
     }
     const startUrl = customUrl || profile.startUrl || 'https://ads.google.com/';
+    if (engine === 'gecko') updateGeckoProxy(profileDir, effectiveProxy);
     const args = createLaunchArgs({
       engine, profileDir, url: startUrl, fingerprint: profile.fingerprint || {},
-      proxy: profile.proxy || {}, extensionDir: extDir, port
+      proxy: effectiveProxy, extensionDir: extDir, port
     });
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);
@@ -141,6 +160,7 @@ class BrowserLauncher {
       console.log(`[BrowserLauncher] Profile ${profile.name} exited with code ${code}`);
       const current = this.activeProcesses.get(profile.id);
       if (current?.process === proc) this.activeProcesses.delete(profile.id);
+      if (gateway)gateway.close().catch(()=>{});
     });
 
     this.activeProcesses.set(profile.id, { process: proc, stopping: false, ...instanceInfo });
@@ -153,6 +173,10 @@ class BrowserLauncher {
     });
 
     return instanceInfo;
+    } catch(error) {
+      if(gateway)await gateway.close().catch(()=>{});
+      throw error;
+    }
   }
 
   stop(profileId) {

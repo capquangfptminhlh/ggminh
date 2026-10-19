@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, clipboard, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -32,6 +33,7 @@ let automationRunner = null;
 let recorderManager = null;
 let configBackup = null;
 let proxyCenter = null;
+let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
@@ -298,8 +300,9 @@ app.whenReady().then(async () => {
         fingerprint:{mode:'native'},proxy:{type:'direct'}});
     }
   }
-  launcher = new BrowserLauncher(store);
-  proxyCenter = new ProxyCenter(store, launcher);
+  proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
+  launcher = new BrowserLauncher(store,{proxyVault});
+  proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);
