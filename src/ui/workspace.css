@@ -300,3 +300,6 @@ select option{background:white;color:#263347}
 /* Bounded RPA blocks */
 .studio-branch-guide{font-size:11px;line-height:1.7;color:#728196;padding:10px 12px;background:#f5f7fb;border:1px solid #e3e9f2;border-radius:8px;margin:10px 0}
 .studio-branch-guide strong{color:#3e526c;font-weight:600}
+
+.studio-step-block{border-left:2px solid #7591ba!important;background:#f8fafc!important}
+.studio-step-block .studio-step-main strong{color:#36557e!important}

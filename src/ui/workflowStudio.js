@@ -107,9 +107,12 @@
     const list = el('studio-steps');
     list.replaceChildren();
     if (!current) return;
+    let blockDepth = 0;
     current.steps.forEach((step, i) => {
+      if (['else','end_if','end_repeat'].includes(step.type)) blockDepth = Math.max(0, blockDepth-1);
       const row = document.createElement('div');
-      row.className = 'studio-step';
+      row.className = 'studio-step' + (['if_exists','else','end_if','repeat','end_repeat'].includes(step.type) ? ' studio-step-block' : '');
+      row.style.marginLeft = (blockDepth * 14) + 'px';
       row.draggable = true;
       row.addEventListener('dragstart', event => {
         dragged = i; row.classList.add('dragging');
@@ -144,6 +147,7 @@
       if (step.type === 'assert_text') fields.append(stepField(i, 'Phải chứa văn bản', 'text'));
       if (step.type === 'approval') fields.append(stepField(i, 'Câu hỏi xác nhận', 'label'));
       row.append(heading, fields); list.append(row);
+      if (['if_exists','else','repeat'].includes(step.type)) blockDepth = Math.min(2,blockDepth+1);
     });
   }
   function move(i, delta) {
