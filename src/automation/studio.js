@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { compileFlow } = require('./controlFlow');
 
-const TYPES = new Set(['navigate','wait','wait_for','click','fill','assert_text','approval']);
+const TYPES = new Set(['navigate','wait','wait_for','click','fill','assert_text','approval','if_exists','else','end_if','repeat','end_repeat']);
 const DENIED = new Set(['ads.google.com','accounts.google.com','payments.google.com','myaccount.google.com','admin.google.com']);
 const HOST = /^[a-z0-9.-]{1,253}$/i;
 function checkUrl(value, hosts) {
@@ -26,7 +27,7 @@ function clean(data, existing) {
     if (!raw || !TYPES.has(raw.type)) throw Error('Bước ' + (i+1) + ' không hợp lệ');
     const step = {type:raw.type};
     if (step.type === 'navigate') step.url = checkUrl(String(raw.url || ''),hosts);
-    if (['click','fill','assert_text','wait_for'].includes(step.type)) {
+    if (['click','fill','assert_text','wait_for','if_exists'].includes(step.type)) {
       step.selector = String(raw.selector || '').trim();
       if (!step.selector || step.selector.length > 250) throw Error('CSS selector không hợp lệ ở bước '+(i+1));
     }
@@ -44,12 +45,16 @@ function clean(data, existing) {
       if (!Number.isInteger(step.ms) || step.ms < 100 || step.ms > 15000) throw Error('Thời gian chờ: 100–15000ms');
     }
     if (step.type === 'approval') step.label = String(raw.label || 'Xác nhận tiếp tục').slice(0,160);
+    if (step.type === 'repeat') step.count = Number(raw.count);
     return step;
   });
   if (!steps.some(s => s.type === 'navigate')) throw Error('Cần bước mở URL');
+  if (steps[0].type !== 'navigate') throw Error('Quy trình phải bắt đầu bằng bước Mở URL');
+  const program = compileFlow(steps);
   const risky = steps.findIndex(s => s.type === 'click' || s.type === 'fill');
-  const approved = steps.findIndex(s => s.type === 'approval');
-  if (risky >= 0 && (approved < 0 || approved > risky)) {
+  const approved = steps.findIndex((s,i) => s.type === 'approval' && program.depths[i] === 0);
+  const firstControl = steps.findIndex(s => s.type === 'if_exists' || s.type === 'repeat');
+  if (risky >= 0 && (approved < 0 || approved > risky || (firstControl >= 0 && approved > firstControl))) {
     throw Error('Phải đặt bước xác nhận thủ công trước khi nhấn hoặc điền biểu mẫu');
   }
   const now = new Date().toISOString();
@@ -92,7 +97,7 @@ function delay(ms, signal) {
     signal.addEventListener('abort',cancel,{once:true});
   });
 }
-const NAMES={navigate:'Mở trang',wait:'Chờ',wait_for:'Chờ phần tử',click:'Nhấn',fill:'Nhập',assert_text:'Kiểm tra',approval:'Phê duyệt'};
+const NAMES={navigate:'Mở trang',wait:'Chờ',wait_for:'Chờ phần tử',click:'Nhấn',fill:'Nhập',assert_text:'Kiểm tra',approval:'Phê duyệt',if_exists:'Nếu tìm thấy',else:'Nếu không',end_if:'Kết thúc nếu',repeat:'Lặp có giới hạn',end_repeat:'Kết thúc lặp'};
 class AutomationRunner {
   constructor(workflows, profiles, createBrowser) {
     this.workflows=workflows;this.profiles=profiles;this.createBrowser=createBrowser;
@@ -124,11 +129,45 @@ class AutomationRunner {
     try {
       browser=await this.createBrowser(flow.profileId,hosts);
       task.browser=browser;
-      for(let i=0;i<flow.steps.length;i++){
+      const program=compileFlow(flow.steps);
+      let i=0, executed=0;
+      const frames=[];
+      while(i<flow.steps.length){
+        if(++executed>160)throw Error('Đã đạt giới hạn lượt xử lý');
+        this.state.executed=executed;
         if(task.controller.signal.aborted)throw Error('Đã dừng');
         this.state.step=i;
         const step=flow.steps[i];
         this.log('Bước '+(i+1)+': '+NAMES[step.type]);
+        if(step.type==='if_exists'){
+          await this.guard(browser,hosts);
+          const found=await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(step.selector)+'))');
+          if(task.controller.signal.aborted)throw Error('Đã dừng');
+          const pair=program.conditions.get(i);
+          if(found===true) i++;
+          else i=(pair.elseIndex>=0 ? pair.elseIndex+1 : pair.endIndex+1);
+          this.log(found===true?'Điều kiện đúng':'Điều kiện sai; bỏ qua nhánh');
+          continue;
+        }
+        if(step.type==='else'){
+          i=program.elseEnds.get(i)+1;
+          continue;
+        }
+        if(step.type==='end_if'){i++;continue;}
+        if(step.type==='repeat'){
+          frames.push({start:i,end:program.repeats.get(i),count:step.count,iteration:1});
+          i++;continue;
+        }
+        if(step.type==='end_repeat'){
+          const frame=frames[frames.length-1];
+          if(!frame || frame.end!==i)throw Error('Vòng lặp không hợp lệ');
+          if(frame.iteration<frame.count){
+            frame.iteration++;
+            this.log('Vòng '+frame.iteration+'/'+frame.count);
+            i=frame.start+1;
+          }else{frames.pop();i++;}
+          continue;
+        }
         if(step.type==='navigate'){
           await browser.open(checkUrl(step.url,hosts));
           await this.guard(browser,hosts);
@@ -157,6 +196,7 @@ class AutomationRunner {
           const result=await browser.evaluate(js);
           if(result!==true)throw Error('Điều kiện chưa đạt');
         }
+        i++;
       }
     }finally{
       if(browser)browser.close();
