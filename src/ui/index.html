@@ -568,7 +568,7 @@ run();
     <div class="modal-dialog studio-dialog" role="dialog" aria-modal="true" aria-labelledby="studio-heading">
       <div class="modal-header">
         <div>
-          <h2 id="studio-heading">⚙️ LHM Automation Studio</h2>
+          <h2 id="studio-heading">Automation Studio</h2>
           <p class="studio-sub">Thiết kế & chạy quy trình web được cấp quyền ngay trong ứng dụng</p>
         </div>
         <button class="btn-close" id="studio-close" aria-label="Đóng">&times;</button>
@@ -625,31 +625,31 @@ run();
             </div>
             <div class="studio-action-row">
               <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>
-              <button class="btn btn-primary" id="studio-run">▶ Lưu & chạy</button>
-              <button class="btn btn-danger" id="studio-stop" disabled>■ Dừng khẩn cấp</button>
+              <button class="btn btn-primary" id="studio-run">Lưu và chạy</button>
+              <button class="btn btn-danger" id="studio-stop" disabled>Dừng khẩn cấp</button>
             </div>
           </section>
         </div>
         <section class="studio-recorder">
           <div class="studio-toolbar">
             <div class="studio-recorder-heading">
-              <strong>⏺ Automation Recorder</strong>
+              <strong>Ghi thao tác</strong>
               <small>Ghi thao tác mẫu vào quy trình — bản thử nghiệm</small>
             </div>
             <span class="studio-recorder-indicator" id="studio-record-state">Chưa ghi</span>
           </div>
           <p class="studio-recorder-note">Chọn hồ sơ, nhập tên miền và URL ở bước Mở URL. LHM mở một cửa sổ tạm thời để ghi nút nhấn, trường nhập và trang điều hướng. Không ghi nội dung nhập hoặc thông tin đăng nhập.</p>
           <div class="studio-record-actions">
-            <button class="btn btn-secondary" id="studio-record-start">⏺ Bắt đầu ghi</button>
-            <button class="btn btn-danger" id="studio-record-stop" disabled>■ Dừng ghi</button>
-            <button class="btn btn-primary" id="studio-record-import" disabled>↓ Đưa bước vào Studio</button>
+            <button class="btn btn-secondary" id="studio-record-start">Bắt đầu ghi</button>
+            <button class="btn btn-danger" id="studio-record-stop" disabled>Dừng ghi</button>
+            <button class="btn btn-primary" id="studio-record-import" disabled>Đưa vào Studio</button>
           </div>
           <div class="studio-record-events" id="studio-record-events" aria-live="polite">Chưa có thao tác được ghi.</div>
         </section>
         <div class="studio-run-info">
           <div class="studio-toolbar">
             <strong>Trạng thái: <span id="studio-run-state">Chưa chạy</span></strong>
-            <button class="btn btn-success" id="studio-approve" hidden>✓ Tôi xác nhận tiếp tục</button>
+            <button class="btn btn-success" id="studio-approve" hidden>Xác nhận tiếp tục</button>
           </div>
           <p id="studio-approval-prompt" class="studio-muted" hidden></p>
           <div class="studio-log" id="studio-log" aria-live="polite">Nhật ký sẽ xuất hiện tại đây.</div>
