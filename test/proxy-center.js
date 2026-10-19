@@ -36,7 +36,7 @@ const ProxyCenter = require('../src/proxies/proxyCenter');
     assert.strictEqual(result.updated,2);
     assert.strictEqual(store.getProfile(profileA.id).proxy.host,'proxy.example');
     assert.strictEqual(store.getProfile(profileB.id).proxy.port,8888);
-    assert.strictEqual(manager.list()[0].usageCount,2);
+    assert.strictEqual(manager.list()[0].usageCount,3); // Chromium A/B plus Gecko G
     const checked=await manager.verify(proxy.id);
     assert.strictEqual(checked.verified,true);
     assert.strictEqual(probes,1);
