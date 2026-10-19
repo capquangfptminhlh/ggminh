@@ -22,7 +22,8 @@ for(const route of [
 ]) assert(html.includes('id="'+route+'"'), 'Missing action route '+route);
 assert(html.includes('id="dashboard-view"'));
 assert(html.includes('<script src="dashboard.js"></script>'));
-assert(html.includes('data-view="dashboard"'));
+assert(html.includes('data-view="profiles"'));
+assert(js.includes("selectedNav('profiles')"));
 assert(js.includes('api.dashboardOverview()'));
 assert(!js.includes('innerHTML ='));
 assert(!html.includes('100% Safe'));
