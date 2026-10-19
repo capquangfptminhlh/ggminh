@@ -270,3 +270,9 @@ New profiles created through UI, Local API or the profile-template cloning actio
 - Compact monochrome icon rail, restrained cyan call-to-action and a functional left-side selected-profile details panel, with full operational table at right. Visual inspiration is a user-provided light SaaS screenshot; business-specific invoices and data in the screenshot are **not** copied.
 - Clicking an actual profile row updates local details and available actions, reusing existing open/edit/health handlers. Data comes from local profiles, not decorative mock statistics.
 - Narrower screens hide the information pane while retaining the profile table and navigation.
+
+
+## v2.6 — Consistent operational UI
+- Proxy Center uses an actual accessible endpoint/status table (not decorative cards), search within the locally loaded data and explicit add/edit/delete/check/assign actions.
+- Automation Studio uses a restrained white/light-gray/cyan surface system, a searchable workflow library, validated graph visualization, editable steps, execution log and emergency stop.
+- Existing workflow execution rules, host allowlist and manual approvals are unchanged. These are operational interface improvements, not fingerprint-evasion guarantees.

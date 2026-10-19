@@ -578,12 +578,14 @@ run();
         <div class="studio-grid">
           <aside class="studio-sidebar">
             <div class="studio-toolbar">
-              <strong>Quy trình đã lưu</strong>
-              <button class="btn btn-sm btn-primary" id="studio-new">+ Mới</button>
+              <strong>Thư viện quy trình</strong>
+              <button class="btn btn-sm btn-primary" id="studio-new">Tạo mới</button>
             </div>
-            <div id="studio-workflows" class="studio-saved-list"></div>
+            <label class="studio-search-label" for="studio-workflow-search">Tìm quy trình</label>
+            <input id="studio-workflow-search" class="studio-workflow-search" type="search" maxlength="100" placeholder="Tên quy trình..." autocomplete="off">
+            <div id="studio-workflows" class="studio-saved-list" aria-live="polite"></div>
           </aside>
-          <section class="studio-editor">
+          <section class="studio-editor" aria-label="Thiết kế quy trình">
             <div class="studio-form-row">
               <label>Tên quy trình<input id="studio-name" type="text" maxlength="100" placeholder="Ví dụ: Kiểm tra website"></label>
               <label>Hồ sơ<select id="studio-profile"></select></label>
@@ -603,7 +605,7 @@ run();
             </section>
             <div class="studio-toolbar studio-step-header">
               <strong>Các bước thực hiện</strong>
-              <span class="studio-muted">Kéo từng bước để sắp xếp</span>
+              <span class="studio-muted">Các bước có thể sắp xếp lại</span>
             </div>
             <div id="studio-steps" class="studio-steps"></div><p class="studio-branch-guide">Điều kiện: <strong>Nếu phần tử tồn tại → [bước] → Nếu không (tùy chọn) → [bước] → Kết thúc nếu</strong>. Vòng lặp: <strong>Lặp → [bước] → Kết thúc lặp</strong>. Tối đa 2 tầng và 160 lượt xử lý. Các thao tác nhấn/điền phải có bước xác nhận nằm bên ngoài, trước các nhánh.</p>
             <div class="studio-toolbar studio-add-row">
@@ -621,7 +623,7 @@ run();
                 <option value="repeat">Lặp 2–5 lần</option>
                 <option value="end_repeat">Kết thúc lặp</option>
               </select>
-              <button class="btn btn-secondary" id="studio-add-step">+ Thêm bước</button>
+              <button class="btn btn-secondary" id="studio-add-step">Thêm bước</button>
             </div>
             <div class="studio-action-row">
               <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>

@@ -63,10 +63,14 @@
       empty.className = 'studio-muted'; empty.textContent = 'Chưa có quy trình nào.';
       list.append(empty);
     }
+    const query=el('studio-workflow-search').value.trim().toLowerCase();
+    let shown=0;
     for (const flow of workflows) {
+      if(query && !flow.name.toLowerCase().includes(query))continue;
+      shown++;
       const row = document.createElement('div'); row.className = 'studio-saved-item';
       row.append(button(flow.name, 'btn btn-sm btn-secondary', () => load(flow)));
-      row.append(button('🗑', 'btn btn-sm btn-danger', async () => {
+      row.append(button('Xóa', 'btn btn-sm btn-secondary studio-delete-workflow', async () => {
         if (!confirm('Xóa quy trình "' + flow.name + '"?')) return;
         try {
           await api.studioDelete(flow.id);
@@ -75,6 +79,12 @@
         } catch (error) { alert(error.message); }
       }));
       list.append(row);
+    }
+    if(workflows.length && shown===0) {
+      const none=document.createElement('p');
+      none.className='studio-muted';
+      none.textContent='Không tìm thấy quy trình phù hợp.';
+      list.append(none);
     }
   }
   function createNew() {
@@ -397,6 +407,7 @@
     el('studio-close').addEventListener('click', close);
     el('studio-done').addEventListener('click', close);
     el('studio-new').addEventListener('click', createNew);
+    el('studio-workflow-search').addEventListener('input',()=>refreshList().catch(console.error));
     el('studio-graph-refresh').addEventListener('click', () => renderGraph().catch(console.error));
     el('studio-record-start').addEventListener('click', startRecording);
     el('studio-record-stop').addEventListener('click', stopRecording);
