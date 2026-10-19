@@ -82,6 +82,8 @@ class ProxyCenter {
     if((username===undefined||username==='') !== (password===undefined||password===''))
       throw Error('Cần nhập cả tên đăng nhập và mật khẩu proxy');
     if(editingAuth && proxy.type!=='http')throw Error('Chỉ hỗ trợ mật khẩu proxy HTTP; SOCKS5 có mật khẩu chưa hỗ trợ');
+    if(proxy.type!=='http' && this.vault?.has(proxy.id) && !clearAuth)
+      throw Error('Proxy có mật khẩu: hãy chọn xóa mật khẩu trước khi đổi sang SOCKS5.');
     if((editingAuth||clearAuth) && !this.vault)throw Error('OS credential vault unavailable');
     if(clearAuth && linkedProfiles.length)throw Error('Hãy gỡ proxy này khỏi các hồ sơ trước khi xóa mật khẩu.');
     if(editingAuth && !this.vault.available())throw Error('Mã hóa mật khẩu của Windows không khả dụng');
