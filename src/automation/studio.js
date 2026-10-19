@@ -110,7 +110,7 @@ class AutomationRunner {
     const controller=new AbortController();
     const task={controller,browser:null,approve:null};
     this.task=task;
-    this.state={status:'running',workflowId:id,workflowName:flow.name,step:-1,total:flow.steps.length,needsApproval:false,logs:[]};
+    this.state={status:'running',workflowId:id,workflowName:flow.name,profileId:flow.profileId,step:-1,total:flow.steps.length,needsApproval:false,logs:[]};
     this.log('Bắt đầu: '+flow.name);
     this.execute(flow,task).then(
       ()=>{this.state.status='completed';this.log('Hoàn thành');},

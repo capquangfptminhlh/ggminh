@@ -92,7 +92,9 @@ function initIPC() {
   ipcMain.handle('control-tower-stop', (_, ids) => {
     const selected = uniqueIds(ids);
     const status = automationRunner.status();
-    if (status.status === 'running' && selected.includes(status.profileId)) {
+    const inUseProfile = status.status === 'running'
+      ? (workflowStore.get(status.workflowId)?.profileId || status.profileId) : null;
+    if (inUseProfile && selected.includes(inUseProfile)) {
       throw new Error('Hãy dừng Automation Studio trước khi đóng hồ sơ đang chạy quy trình');
     }
     return batchStop(store, launcher, selected, behaviorMonitor);

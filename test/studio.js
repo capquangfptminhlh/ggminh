@@ -37,6 +37,7 @@ async function until(check){
     });
     const runner=new AutomationRunner(workflows,store,make);
     runner.run(data.id);
+    assert.strictEqual(runner.status().profileId, profile.id);
     await until(()=>runner.status().needsApproval);
     runner.approve();
     await until(()=>runner.status().status==='completed');
