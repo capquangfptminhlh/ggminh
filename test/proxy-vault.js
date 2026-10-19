@@ -44,6 +44,10 @@ const codec={
     assert.strictEqual(manager.assign(p.id,[prof.id]).updated,1);
     const assigned=store.getProfile(prof.id);
     assert.strictEqual(assigned.proxy.authProxyId,p.id);
+    const edited=store.saveProfile({...assigned,name:'Client edited',proxy:{
+      type:assigned.proxy.type,host:assigned.proxy.host,port:assigned.proxy.port
+    }});
+    assert.strictEqual(edited.proxy.authProxyId,p.id,'Editing a profile must preserve credentials reference');
     assert(!JSON.stringify(assigned).includes('test-account'));
     assert(!exportCsv(store.getProfiles(),[],[]).includes('test-account'));
     const duplicate=duplicateTemplate(store,prof.id);

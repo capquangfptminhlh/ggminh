@@ -64,11 +64,19 @@ class Store {
     const parsedProxy = validateProxy(incomingProxy);
     if (!parsedProxy.ok) throw new Error(parsedProxy.message || 'Invalid proxy configuration');
     // Only persist the explicit network fields; never serialize unknown secret keys.
+    // Preserve a credential reference if a user edits only the profile name,
+    // fingerprint or notes. Never silently downgrade to an unauthenticated proxy.
+    const preserveAuth = old.proxy?.authProxyId &&
+      old.proxy.type === parsedProxy.type &&
+      old.proxy.host === parsedProxy.host &&
+      old.proxy.port === parsedProxy.port;
+    const authProxyId = incomingProxy.authProxyId ||
+      (preserveAuth ? old.proxy.authProxyId : null);
     const proxy = parsedProxy.type === 'direct'
       ? { type: 'direct' }
       : { type: parsedProxy.type, host: parsedProxy.host, port: parsedProxy.port,
-          ...(incomingProxy.authProxyId && /^px_[0-9a-f]{16}$/.test(incomingProxy.authProxyId)
-            ? { authProxyId: incomingProxy.authProxyId } : {}) };
+          ...(authProxyId && /^px_[0-9a-f]{16}$/.test(authProxyId)
+            ? { authProxyId } : {}) };
     const now = new Date().toISOString();
     const result = {
       ...old, id, name,

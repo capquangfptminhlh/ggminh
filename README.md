@@ -292,3 +292,7 @@ See [ADR-0001: LHM Browser Runtime](docs/ADR-0001-browser-runtime.md) for the pl
 - Credentials are bound to the current Windows user/device, are not included in backups, and must be entered again after migration.
 - Local processes can use the gateway while a profile is open. Localhost binding prevents network-external access but is not a process-level boundary.
 - No guarantees of anonymity or avoiding account restrictions.
+
+Profile edits that leave the proxy endpoint unchanged preserve the encrypted credential reference. The profile form directs users to Proxy Center instead of accepting raw proxy passwords.
+
+Note: standard HTTP proxy Basic authentication is not encrypted on the network hop between LHM and a remote HTTP proxy. Use a trusted proxy provider and network; Windows encryption protects secrets at rest only.
