@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.7</span></h1>
+          <h1>LHM Ads Browser <span>v1.8</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -502,6 +502,13 @@ run();
           <div><span>Cảnh báo</span><strong id="health-warnings">0</strong></div>
         </div>
         <div id="health-items" class="health-list"></div>
+        <div class="isolation-audit">
+          <div class="isolation-audit-head">
+            <strong>🔐 Kiểm tra cách ly dữ liệu cục bộ</strong>
+            <button class="btn btn-sm btn-secondary" id="health-isolation-audit">Quét thư mục hồ sơ</button>
+          </div>
+          <div id="isolation-audit-results" role="status" class="isolation-audit-results">Chưa chạy kiểm tra. Chỉ kiểm tra việc tách thư mục lưu trữ, không kiểm tra danh tính Google.</div>
+        </div>
         <p class="health-footnote">Đây chỉ là kiểm tra cấu hình: binary, URL, proxy, engine và User-Agent. Không khẳng định vô danh hoặc tránh bị phát hiện. Để đo IP thoát, bấm Kiểm tra proxy trong phần sửa hồ sơ.</p>
       </div>
       <div class="modal-footer">

@@ -825,3 +825,13 @@ select {
 .studio-record-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
 .studio-record-events{background:#101b2e;border:1px solid #2d415d;border-radius:8px;padding:10px;max-height:135px;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
 .studio-record-event{font-size:12px;color:#bcd6f8;padding:5px 7px;background:#22334a;border-radius:6px;overflow-wrap:anywhere}
+
+
+/* Local storage audit - not Google account unlinkability scoring */
+.isolation-audit{padding:14px;margin-top:17px;border:1px solid #35516f;border-radius:10px;background:#15243a}
+.isolation-audit-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;font-size:13px}
+.isolation-audit-results{display:flex;flex-direction:column;gap:7px;max-height:240px;overflow-y:auto}
+.isolation-overview{font-size:13px;font-weight:700;color:#bddbfc;margin-bottom:4px}
+.isolation-entry{border:1px solid #344862;padding:9px;border-radius:8px;display:flex;flex-direction:column;gap:4px}
+.isolation-name{font-size:12px;font-weight:600}
+.isolation-disclaimer{font-size:11px;color:#91a6c2;margin-top:8px;line-height:1.5}

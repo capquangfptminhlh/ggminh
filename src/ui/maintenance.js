@@ -52,6 +52,31 @@
     try { await updateHealth(); }
     catch (error) { el('health-items').replaceChildren(labeled('health-issue error', 'Không kiểm tra được: ' + error.message)); }
   }
+  async function auditIsolation() {
+    const container = el('isolation-audit-results');
+    container.replaceChildren(labeled('health-issue', 'Đang kiểm tra...'));
+    try {
+      const report = await api.auditProfileIsolation();
+      container.replaceChildren();
+      container.append(labeled('isolation-overview',
+        (report.storageSeparate ? '✓ Các đường dẫn lưu trữ đã kiểm tra không trùng nhau.' :
+          '⚠ Phát hiện trùng hoặc liên kết thư mục cần xử lý.') + ' Đã kiểm tra: ' + report.checked + ' hồ sơ.'));
+      for (const entry of report.entries) {
+        const line = document.createElement('div');
+        line.className = 'isolation-entry';
+        line.append(labeled('isolation-name',
+          (entry.storageSeparate ? '✓ ' : '⚠ ') + entry.name + ' · ' + entry.engine));
+        line.append(labeled('health-issue',
+          entry.issues.length ? entry.issues.join('; ') :
+            entry.storageInitialized ? 'Có thư mục riêng; ' + (entry.running ? 'đang sử dụng' : 'chưa mở') :
+              'Có đường dẫn riêng; thư mục sẽ được tạo khi mở lần đầu'));
+        container.append(line);
+      }
+      container.append(labeled('isolation-disclaimer', report.disclaimer));
+    } catch (error) {
+      container.replaceChildren(labeled('health-issue error','Không kiểm tra được: ' + error.message));
+    }
+  }
   function showBackup() {
     el('backup-password').value = '';
     el('backup-result').textContent = '';
@@ -84,6 +109,7 @@
     el('health-close').addEventListener('click', () => close('modal-health'));
     el('health-done').addEventListener('click', () => close('modal-health'));
     el('health-refresh').addEventListener('click', () => updateHealth().catch(console.error));
+    el('health-isolation-audit').addEventListener('click', auditIsolation);
     el('btn-config-backup').addEventListener('click', showBackup);
     el('backup-close').addEventListener('click', () => close('modal-backup'));
     el('backup-cancel').addEventListener('click', () => close('modal-backup'));
