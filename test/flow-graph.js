@@ -34,4 +34,11 @@ assert(!JSON.stringify(hide).includes('DO_NOT_EXPOSE_ON_GRAPH'));
 assert.strictEqual(hide.edges[hide.edges.length-1].to,3);
 assert.throws(()=>graphForSteps([{type:'else'}]),/Nếu không/);
 assert.throws(()=>graphForSteps([{type:'repeat',count:11},{type:'end_repeat'}]),/2–5/);
+
+// Layout: false branch stays visually distinct, but data is never exposed.
+assert(g.nodes[6].x > g.nodes[4].x);
+assert(g.nodes.some(n=>n.category==='approval'));
+assert(g.edges.some(e=>e.kind==='false' && e.label==='Sai'));
+assert(!g.edges.some(e=>e.from===4 && e.to===6));
+
 console.log('Graph projection: branches, loops, secret masking and malformed blocks passed');
