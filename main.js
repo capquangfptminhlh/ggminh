@@ -18,6 +18,7 @@ const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
+const { buildDashboardSummary } = require('./src/ops/dashboard');
 
 let mainWindow = null;
 let store = null;
@@ -100,6 +101,18 @@ function initIPC() {
 
   ipcMain.handle('audit-profile-isolation', () =>
     auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id) }));
+  ipcMain.handle('dashboard-overview', () => {
+    const profiles = store.getProfiles();
+    return buildDashboardSummary({
+      profiles,
+      active: launcher.listActive(),
+      healthReports: profiles.map(profile => checkProfile(profile, { settings: store.getSettings() })),
+      proxies: proxyCenter.list(),
+      workflows: workflowStore.list(),
+      automation: automationRunner.status(),
+      behavior: behaviorMonitor.getReport()
+    });
+  });
   ipcMain.handle('control-tower-snapshot', () => {
     const profiles = store.getProfiles();
     const reports = profiles.map(profile => checkProfile(profile, { settings: store.getSettings() }));

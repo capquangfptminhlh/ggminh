@@ -204,3 +204,14 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
   tín hiệu mạng/thiết bị thực tế hoặc hệ thống đánh giá tài khoản.
 - Sử dụng nhiều tài khoản Google Ads hợp lệ qua MCC và OAuth được ủy quyền;
   không có bảo đảm tránh liên kết tài khoản hay đình chỉ.
+
+
+## v2.1 — LHM Mission Control dashboard
+- A premium, keyboard-accessible navigation shell with real-time local counts.
+- Dashboard totals come from actual saved profiles, running browsers, native/experimental
+  configurations, local Health Check, Proxy Center, recorded activities, and workflows.
+- Actions take the user to the existing working Profile Manager, Automation Studio,
+  Proxy Center, Health Center, Control Tower and Backup dialogs.
+- All dashboard data is calculated locally via a dedicated read-only IPC call,
+  without new cloud services or fabricated anti-detection/security scores.
+- A dashboard concept image is a visual proposal, not a live application screenshot.

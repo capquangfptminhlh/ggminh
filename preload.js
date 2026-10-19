@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  dashboardOverview: () => ipcRenderer.invoke('dashboard-overview'),
   controlTowerSnapshot: () => ipcRenderer.invoke('control-tower-snapshot'),
   controlTowerDuplicate: id => ipcRenderer.invoke('control-tower-duplicate', id),
   controlTowerStop: ids => ipcRenderer.invoke('control-tower-stop', ids),
