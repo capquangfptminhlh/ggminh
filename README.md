@@ -234,3 +234,10 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
 
 ### UI screenshot provenance
 Windows CI attempts to capture a preview PNG directly from the real Electron desktop renderer using a temporary, isolated dataset labeled Demo. This happens only when LHM_CI_UI_CAPTURE=1 is explicitly set. It does not represent real customer data or real Google Ads accounts. Capture is best-effort because unattended Windows runners may not expose a graphical surface. Installer builds do not depend on a screenshot.
+
+
+## v2.3 — Firefox/Gecko proxy parity
+- Isolated Firefox profiles now support non-authenticated HTTP and SOCKS5 proxy settings in a managed `user.js` block. SOCKS5 remote DNS is enabled.
+- LHM preserves other existing Firefox user preferences, rewrites only its own bounded block and resets proxy preferences when returning to Direct.
+- Proxy Center can assign saved proxies to Firefox profiles with the same closed-profile check as Chromium.
+- Gecko still uses **installed Firefox**, not an LHM-built engine, and credentials, CDP, cloud sync and high-assurance anonymity are not supported.

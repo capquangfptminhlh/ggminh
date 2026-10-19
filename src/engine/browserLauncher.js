@@ -5,6 +5,7 @@ const net = require('net');
 const { generateExtension } = require('./extensionGenerator');
 const { createLaunchArgs } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
+const { updateGeckoProxy } = require('./geckoProxy');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn } = {}) {
@@ -106,6 +107,8 @@ class BrowserLauncher {
     // Preserve the original Chromium location for existing customers.
     const paths = isolatedPaths(this.baseDataDir, profile.id, engine);
     const profileDir = ensureIsolatedDirectory(this.baseDataDir, paths.profileDir);
+
+    if (engine === 'gecko') updateGeckoProxy(profileDir, profile.proxy || { type: 'direct' });
 
     let extDir = null;
     if (engine === 'chromium' && profile.fingerprint?.mode !== 'native') {

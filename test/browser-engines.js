@@ -21,7 +21,7 @@ try {
   assert(args.includes('--new-window'));
   assert(!args.some(x => x.includes('--load-extension') || x.includes('--remote-debugging')));
   assert.throws(() => createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', port: 9222 }), /CDP/);
-  assert.throws(() => createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', proxy: { type: 'http', host: '127.0.0.1', port: '8080' } }), /proxy/);
+  assert(createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', proxy: { type: 'http', host: '127.0.0.1', port: '8080' } }).includes('--profile'));
   assert.throws(() => safeWebUrl('file:///etc/passwd'), /http/);
   const chrome = data.saveProfile({ name: 'existing' });
   assert.strictEqual(chrome.engine, 'chromium');

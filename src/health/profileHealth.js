@@ -19,8 +19,8 @@ function checkProfile(profile, options = {}) {
   } catch (_) { issues.push({ level: 'error', code: 'invalid_starturl', message: 'URL trang mặc định không hợp lệ.' }); }
   const config = validateProxy(proxy);
   if (!config.ok) issues.push({ level: 'error', code: 'proxy_invalid', message: config.message });
-  if (engine === 'gecko' && config.type !== 'direct') issues.push({
-    level: 'error', code: 'gecko_proxy_unsupported', message: 'Gecko hiện chưa được tích hợp cấu hình proxy vào trình duyệt.'
+  if (engine === 'gecko' && config.ok && config.type !== 'direct') issues.push({
+    level: 'notice', code: 'gecko_proxy_profile', message: 'HTTP/SOCKS5 sẽ áp dụng bằng Firefox user.js khi mở hồ sơ. Chưa hỗ trợ proxy xác thực.'
   });
   if (engine === 'gecko') issues.push({
     level: 'notice', code: 'gecko_experimental', message: 'Gecko cần Firefox cài ngoài; RPA/CDP và cấu hình mặt nạ Chromium không có hiệu lực.'

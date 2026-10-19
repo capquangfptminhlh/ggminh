@@ -46,7 +46,7 @@ const { checkProxy, parseRemoteIp } = require('../src/engine/proxyChecker');
       settings: store.getSettings(), pathExists: () => false
     });
     assert.strictEqual(bad.status, 'error');
-    assert(bad.issues.some(i => i.code === 'gecko_proxy_unsupported'));
+    assert(bad.issues.some(i => i.code === 'gecko_proxy_profile'));
     workflows.save({ name: 'QA Workflow', profileId: profile.id, hosts: 'example.com',
       steps: [{ type:'navigate', url:'https://example.com' }, { type:'approval', label:'Ok' }] });
     const backup = new ConfigBackup(store, workflows);

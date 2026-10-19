@@ -94,7 +94,6 @@ class ProxyCenter {
     const profiles = chosen.map(profileId => {
       const profile = this.store.data.profiles.find(p => p.id === profileId);
       if (!profile) throw new Error('Không tìm thấy hồ sơ: ' + profileId);
-      if (profile.engine === 'gecko') throw new Error('Proxy Gecko chưa được hỗ trợ: ' + profile.name);
       if (this.launcher.isBusy(profileId)) throw new Error('Đóng hồ sơ trước khi thay proxy: ' + profile.name);
       return profile;
     });

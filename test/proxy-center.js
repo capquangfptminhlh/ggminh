@@ -30,7 +30,7 @@ const ProxyCenter = require('../src/proxies/proxyCenter');
     assert.throws(() => manager.assign(proxy.id,[profileA.id,profileB.id]), /Đóng hồ sơ/);
     assert.strictEqual(store.getProfile(profileA.id).proxy.type,'direct');
     busyId=null;
-    assert.throws(() => manager.assign(proxy.id,[profileA.id,profileG.id]), /Gecko/);
+    assert.strictEqual(manager.assign(proxy.id,[profileG.id]).updated,1);
     assert.strictEqual(store.getProfile(profileA.id).proxy.type,'direct');
     const result=manager.assign(proxy.id,[profileA.id,profileB.id]);
     assert.strictEqual(result.updated,2);

@@ -12,7 +12,7 @@ function createLaunchArgs({ engine, profileDir, url, fingerprint = {}, proxy = {
   if (!path.isAbsolute(profileDir)) throw new Error('Profile directory must be absolute');
   const startUrl = safeWebUrl(url);
   if (engine === 'gecko') {
-    if (proxy.host || proxy.port) throw new Error('Gecko proxy settings are not implemented. Use direct connection.');
+    // Gecko network preferences are applied to the isolated Firefox user.js by BrowserLauncher.
     if (port) throw new Error('Gecko does not support Chromium CDP endpoints');
     return ['--no-remote', '--profile', profileDir, '--new-window', startUrl];
   }
