@@ -6,6 +6,7 @@ let apiEnabled = false;
 let behaviorAlertsSeen = new Set();
 let behaviorInitialized = false;
 const selectedProfileIds = new Set();
+window.LHMProfileContextData = () => ({profiles:allProfiles,activeIds:[...activeBrowserMap.keys()]});
 window.LHMProfileSelection = {
   getSelected: () => [...selectedProfileIds],
   clear: () => { selectedProfileIds.clear(); renderProfiles(); },
@@ -450,6 +451,7 @@ async function loadProfiles() {
 
 function updateStats() {
   statTotal.textContent = allProfiles.length;
+  window.LHMProfilePanel?.refresh();
   statActive.textContent = activeBrowserMap.size;
   document.getElementById('lhm-profiles-total').textContent = allProfiles.length;
   document.getElementById('lhm-profiles-running').textContent = activeBrowserMap.size;
@@ -493,6 +495,7 @@ function renderProfiles() {
     const fp = profile.fingerprint || {};
 
     const tr = document.createElement('tr');
+    tr.dataset.profileId=profile.id;
     tr.innerHTML = `
       <td><input type="checkbox" aria-label="Chọn hồ sơ" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
       <td><code class="profile-id">${escapeHtml(profile.id)}</code></td>

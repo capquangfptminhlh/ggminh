@@ -24,15 +24,62 @@
     <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="behavior"><span data-lhm-icon="activity" class="lhm-nav-icon"></span><span class="lhm-nav-label">Nhật ký hoạt động</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="backup"><span data-lhm-icon="database-backup" class="lhm-nav-icon"></span><span class="lhm-nav-label">Sao lưu dữ liệu</span></button>
-    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Browser · 2.4</small></div>
+    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Browser · 2.5</small></div>
   </aside>
 
   <div class="app-container">
+
+    <aside id="lhm-profile-panel" class="lhm-context-panel" aria-labelledby="lhm-context-title">
+      <div class="lhm-context-head">
+        <div class="lhm-context-heading"><span class="lhm-context-overline">HỒ SƠ ĐÃ CHỌN</span><h2 id="lhm-context-title">Thông tin hồ sơ</h2></div>
+        <button type="button" class="lhm-context-more" id="lhm-context-refresh" title="Làm mới thông tin hồ sơ" aria-label="Làm mới thông tin hồ sơ"><span data-lhm-icon="refresh-cw"></span></button>
+      </div>
+      <div id="lhm-context-empty" class="lhm-context-empty">Chọn một hồ sơ ở bảng để xem chi tiết.</div>
+      <div id="lhm-context-content" class="lhm-context-content" hidden>
+        <div class="lhm-context-identity">
+          <span class="lhm-context-avatar" data-lhm-icon="panels-top-left"></span>
+          <div class="lhm-context-namebox">
+            <strong id="lhm-detail-name">—</strong>
+            <span id="lhm-detail-group">—</span>
+          </div>
+          <span class="lhm-context-status" id="lhm-detail-status">—</span>
+        </div>
+        <div class="lhm-context-actions">
+          <button type="button" class="btn btn-primary" id="lhm-detail-open">Mở hồ sơ</button>
+          <button type="button" class="btn btn-secondary" id="lhm-detail-edit"><span data-lhm-icon="edit"></span> Sửa</button>
+        </div>
+        <section class="lhm-context-block">
+          <h3>Thông tin</h3>
+          <dl class="lhm-context-kv">
+            <div><dt>Mã hồ sơ</dt><dd id="lhm-detail-id">—</dd></div>
+            <div><dt>Nhóm</dt><dd id="lhm-detail-group-value">—</dd></div>
+            <div><dt>Trình duyệt</dt><dd id="lhm-detail-engine">—</dd></div>
+            <div><dt>Thông số thiết bị</dt><dd id="lhm-detail-fingerprint">—</dd></div>
+          </dl>
+        </section>
+        <section class="lhm-context-block">
+          <div class="lhm-context-block-head"><h3>Kết nối</h3><button type="button" id="lhm-detail-health" class="lhm-context-link">Kiểm tra</button></div>
+          <div class="lhm-context-network">
+            <span class="lhm-context-network-icon" data-lhm-icon="network"></span>
+            <div><strong id="lhm-detail-proxy-type">—</strong><small id="lhm-detail-proxy-address">—</small></div>
+          </div>
+          <dl class="lhm-context-kv">
+            <div><dt>Trang khởi động</dt><dd id="lhm-detail-url">—</dd></div>
+          </dl>
+        </section>
+        <section class="lhm-context-block">
+          <h3>Ghi chú</h3>
+          <p class="lhm-context-notes" id="lhm-detail-notes">Chưa có ghi chú.</p>
+        </section>
+      </div>
+      <div class="lhm-context-footer"><span class="lhm-context-local-dot"></span> Dữ liệu được lưu trên máy này</div>
+    </aside>
+
     <!-- Top Header -->
     <header class="app-header">
       <div class="brand">
         <div class="brand-text">
-          <h1>LHM Browser <span>2.4</span></h1>
+          <h1>LHM Browser <span>2.5</span></h1>
           <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
@@ -129,6 +176,7 @@
       <p class="lhm-dashboard-status" id="lhm-dashboard-status" role="status">Đang kết nối dữ liệu cục bộ…</p>
     </section>
 
+    <div class="lhm-profile-crumbs">Workspace <span>›</span> Hồ sơ trình duyệt</div>
     <section class="lhm-profiles-heading" aria-label="Quản lý hồ sơ">
       <div>
         <p class="lhm-breadcrumb">Workspace / Hồ sơ</p>
@@ -140,6 +188,11 @@
         <span><span class="lhm-status-dot"></span> <strong id="lhm-profiles-running">0</strong> đang chạy</span>
       </div>
     </section>
+    <div class="lhm-list-tabs" role="group" aria-label="Bộ lọc trạng thái hồ sơ">
+      <button type="button" class="lhm-list-tab is-current" data-lhm-status="all">Tất cả hồ sơ</button>
+      <button type="button" class="lhm-list-tab" data-lhm-status="running">Đang chạy</button>
+      <button type="button" class="lhm-list-tab" data-lhm-status="stopped">Đã dừng</button>
+    </div>
     <!-- Toolbar / Filter Bar -->
     <section class="toolbar">
       <div class="search-box">
@@ -794,5 +847,6 @@ run();
   <script src="controlTower.js"></script>
   <script src="proxyCenter.js"></script>
   <script src="dashboard.js"></script>
+  <script src="profilePanel.js"></script>
 </body>
 </html>

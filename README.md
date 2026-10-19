@@ -264,3 +264,9 @@ New profiles created through UI, Local API or the profile-template cloning actio
 - Nodes, loop-back links, true/false paths and manual approval nodes support selecting the corresponding editable step. The running step is highlighted with the existing status API.
 - Renderer receives a read-only graph from Electron IPC; it uses textContent for user content. Secret form values are masked in the preview. The canvas does not execute arbitrary scripts.
 - v2.5 is a structured workflow visualization, not arbitrary connectable graph execution, scheduling or AI generation.
+
+
+### UI reference-inspired layout (2.5)
+- Compact monochrome icon rail, restrained cyan call-to-action and a functional left-side selected-profile details panel, with full operational table at right. Visual inspiration is a user-provided light SaaS screenshot; business-specific invoices and data in the screenshot are **not** copied.
+- Clicking an actual profile row updates local details and available actions, reusing existing open/edit/health handlers. Data comes from local profiles, not decorative mock statistics.
+- Narrower screens hide the information pane while retaining the profile table and navigation.
