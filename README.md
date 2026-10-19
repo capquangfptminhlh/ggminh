@@ -215,3 +215,18 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
 - All dashboard data is calculated locally via a dedicated read-only IPC call,
   without new cloud services or fabricated anti-detection/security scores.
 - A dashboard concept image is a visual proposal, not a live application screenshot.
+
+
+## v2.2 — Workspace UI overhaul
+- The actual desktop app opens directly to **Profiles**, not an illustration-first dashboard.
+- New restrained light UI: white/grayscale surfaces, one blue accent, 16–18px
+  bundled line icons (no third-party CDN, emoji or inconsistent brands in the
+  primary workspace).
+- More compact professional profile rows: name, group, proxy endpoint, actual
+  configured browser type, native/custom fingerprint status and live running state.
+- Existing IPC, profile CRUD, real Proxy Center, Health, Control Tower and
+  Automation Studio remain functional through existing buttons and navigation.
+- Dashboard remains a separate tab with real local counts. No fake safety
+  percentages or anti-detection guarantees.
+- Legacy secondary dialogs have light theme overrides; detailed accessibility
+  and real-device UI tests remain necessary before commercial release.
