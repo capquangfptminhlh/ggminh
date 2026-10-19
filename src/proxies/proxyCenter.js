@@ -18,7 +18,10 @@ class ProxyCenter {
 
   list() {
     return this.store.data.proxies.map(p => ({
-      ...p, check: this.lastChecks.get(p.id) || null,
+      id: p.id, name: p.name, tag: p.tag || '',
+      type: p.type, host: p.host, port: p.port,
+      createdAt: p.createdAt, updatedAt: p.updatedAt,
+      check: this.lastChecks.get(p.id) || null,
       usageCount: this.store.data.profiles.filter(profile =>
         profile.proxy?.type === p.type &&
         profile.proxy?.host === p.host &&

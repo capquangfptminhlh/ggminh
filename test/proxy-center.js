@@ -41,6 +41,11 @@ const ProxyCenter = require('../src/proxies/proxyCenter');
     assert.strictEqual(checked.verified,true);
     assert.strictEqual(probes,1);
     assert.strictEqual(manager.list()[0].check.ip,'203.0.113.6');
+    // A legacy db.json containing nonstandard fields must never reveal secrets
+    // via the Proxy Center IPC/public list.
+    store.data.proxies[0].password = 'LEGACY_SECRET_DO_NOT_LEAK';
+    assert(!JSON.stringify(manager.list()).includes('LEGACY_SECRET_DO_NOT_LEAK'));
+    delete store.data.proxies[0].password;
     const newStore=new Store(dir);
     assert.strictEqual(newStore.data.proxies[0].name,'Agency Main');
     assert(!JSON.stringify(newStore.data).includes('203.0.113.6'));
