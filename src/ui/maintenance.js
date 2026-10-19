@@ -14,7 +14,9 @@
   async function updateHealth() {
     const [profiles, statuses] = await Promise.all([api.getProfiles(), api.getAllProfileHealth()]);
     const names = new Map(profiles.map(p => [p.id, p.name]));
-    const results = selectedProfile ? statuses.filter(s => s.profileId === selectedProfile) : statuses;
+    const results = Array.isArray(selectedProfile)
+      ? statuses.filter(s => selectedProfile.includes(s.profileId))
+      : selectedProfile ? statuses.filter(s => s.profileId === selectedProfile) : statuses;
     el('health-total').textContent = String(results.length);
     el('health-errors').textContent = String(results.filter(s => s.status === 'error').length);
     el('health-warnings').textContent = String(results.filter(s => s.status === 'warning').length);
