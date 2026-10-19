@@ -124,3 +124,17 @@ Studio chạy trong cửa sổ Electron riêng (sandbox) với phiên lưu độ
 - **Sao lưu .lhmbak:** AES-256-GCM, mật khẩu từ 12 ký tự; khôi phục bằng cách nhập thêm cấu hình hồ sơ và workflow. Không bao gồm cookie, mật khẩu, phiên Google, bản quyền, hoặc dữ liệu duyệt web.
 - **Chưa có:** proxy có user/password, tự động hóa Gecko, trình duyệt Gecko do LHM tự biên dịch, SaaS và Google Ads API/MCC.
 - Công cụ kiểm tra IP liên hệ api.ipify.org theo yêu cầu của người dùng; sẽ chia sẻ địa chỉ IP với dịch vụ kiểm tra.
+
+
+## v1.6 — LHM Control Tower
+- **Tổng quan quản trị:** hiển thị số hồ sơ, đang mở, lỗi cấu hình, cảnh báo,
+  phân bố theo nhóm, hoạt động gần đây từ nhật ký cục bộ.
+- **Chọn nhiều hồ sơ:** chạy Health Check từ dashboard, đóng hàng loạt với xác nhận
+  riêng và báo kết quả từng hồ sơ. Không có thao tác mở đồng loạt không giới hạn.
+- **Nhân bản mẫu:** sao chép tên/nhóm/URL/cấu hình proxy không mật khẩu, nhưng luôn
+  tạo ID mới và phiên trình duyệt trống; không sao chép cookies, mật khẩu hay
+  fingerprint giả lập từ hồ sơ nguồn.
+- **Báo cáo CSV:** xuất các trường metadata được chọn, Excel UTF-8, chống công thức
+  CSV Injection; không xuất cookie, tài khoản đăng nhập hay nội dung website.
+- Để tránh thay đổi ngoài ý muốn, việc đóng nhiều hồ sơ cần xác nhận của người dùng.
+- Dashboard dựa trên dữ liệu local, **không** thể biết Google đánh giá tài khoản ra sao.

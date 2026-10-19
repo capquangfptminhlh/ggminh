@@ -12,6 +12,7 @@ const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
 const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { checkProfile } = require('./src/health/profileHealth');
 const { ConfigBackup } = require('./src/backup/configBackup');
+const { duplicateTemplate, batchStop, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 
 let mainWindow = null;
 let store = null;
@@ -78,6 +79,41 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('control-tower-snapshot', () => {
+    const profiles = store.getProfiles();
+    const reports = profiles.map(profile => checkProfile(profile, { settings: store.getSettings() }));
+    return overview(profiles, launcher.listActive(), reports, behaviorMonitor.getReport());
+  });
+  ipcMain.handle('control-tower-duplicate', (_, id) => {
+    const newProfile = duplicateTemplate(store, id);
+    behaviorMonitor.record('profile_save', newProfile.id, 'manual');
+    return newProfile;
+  });
+  ipcMain.handle('control-tower-stop', (_, ids) => {
+    const selected = uniqueIds(ids);
+    const status = automationRunner.status();
+    if (status.status === 'running' && selected.includes(status.profileId)) {
+      throw new Error('Hãy dừng Automation Studio trước khi đóng hồ sơ đang chạy quy trình');
+    }
+    return batchStop(store, launcher, selected, behaviorMonitor);
+  });
+  ipcMain.handle('control-tower-export', async (_, ids) => {
+    const all = store.getProfiles();
+    const profiles = Array.isArray(ids) && ids.length
+      ? (() => { const chosen = uniqueIds(ids); return all.filter(p => chosen.includes(p.id)); })()
+      : all;
+    if (!profiles.length) throw new Error('Không có hồ sơ để xuất');
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Xuất báo cáo danh sách hồ sơ (không có mật khẩu)',
+      defaultPath: 'LHM-Profiles-' + new Date().toISOString().slice(0, 10) + '.csv',
+      filters: [{ name: 'CSV (Excel)', extensions: ['csv'] }]
+    });
+    if (canceled || !filePath) return { canceled: true };
+    const reports = profiles.map(p => checkProfile(p, { settings: store.getSettings() }));
+    const report = exportCsv(profiles, reports, launcher.listActive());
+    fs.writeFileSync(filePath, report, 'utf8');
+    return { canceled: false, count: profiles.length };
+  });
   ipcMain.handle('get-profile-health', (_, id) => {
     const profile = store.getProfile(id);
     if (!profile) throw new Error('Không tìm thấy hồ sơ');
