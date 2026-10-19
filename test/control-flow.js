@@ -92,7 +92,7 @@ function envelope(profileId,steps) {
       assert(html.includes('value="'+type+'"'),'Missing UI option '+type);
       assert(studioJs.includes(type+': () =>'),'Missing editor draft '+type);
     }
-    assert(html.includes('LHM Browser <span>2.4</span>'));
+    assert(html.includes('id="studio-add-type"')); // Verify the functional RPA editor, not a historical UI version
     assert(studioJs.includes('blockDepth * 14'));
     console.log('Studio 2.4 condition/else/loops, safety, stop and editor tests passed');
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
