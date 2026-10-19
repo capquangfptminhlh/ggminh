@@ -63,6 +63,11 @@ const codec={
     const so=manager.save({name:'SOCKS',type:'socks5',host:'socks.example',port:1080});
     assert.throws(()=>manager.save({...so,authUsername:'a',authPassword:'b'}),/SOCKS5/);
     assert.strictEqual(manager.delete(so.id).deleted,true);
+    const switching=manager.save({name:'Proto guard',type:'http',host:'switch.example',port:9000,authUsername:'a',authPassword:'b'});
+    assert.throws(()=>manager.save({...switching,type:'socks5'}),/xóa mật khẩu/);
+    assert.strictEqual(manager.save({...switching,type:'socks5',clearCredentials:true}).type,'socks5');
+    assert.strictEqual(vault.has(switching.id),false);
+    manager.delete(switching.id);
     const deny=new ProxyCredentialVault(dir,{...codec,isEncryptionAvailable:()=>false});
     assert.throws(()=>deny.set('px_0123456789abcdef','x','y'),/không khả dụng/);
     // A failed OS-encryption write must not insert the proxy's metadata.
