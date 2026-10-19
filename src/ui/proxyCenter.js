@@ -2,161 +2,189 @@
   'use strict';
   const api = window.api;
   const el = id => document.getElementById(id);
+  const cell = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = String(text);
+    return node;
+  };
   let cached = [];
   let busy = false;
   let initialized = false;
+  let activeId = null;
 
-  function message(text, error = false) {
+  function notice(text, error = false) {
     const item = el('pc-message');
     item.classList.toggle('is-error', error);
     item.textContent = text;
   }
-  function node(type, className, text) {
-    const out = document.createElement(type);
-    if (className) out.className = className;
-    if (text !== undefined) out.textContent = String(text);
-    return out;
-  }
   function selectedIds() { return window.LHMProfileSelection?.getSelected() || []; }
+  function lock(value) {
+    busy = value;
+    for (const button of el('modal-proxy-center').querySelectorAll(
+      '#pc-save,#pc-reset,#pc-refresh,#pc-list button')) button.disabled = value;
+    el('pc-selection-info').textContent =
+      value ? 'Đang xử lý yêu cầu…'
+        : selectedIds().length + ' hồ sơ được chọn trong bảng chính';
+  }
   function clearForm() {
-    el('pc-id').value = '';
-    el('pc-name').value = '';
-    el('pc-tag').value = '';
+    for (const key of ['pc-id','pc-name','pc-tag','pc-host','pc-port']) el(key).value = '';
     el('pc-type').value = 'http';
-    el('pc-host').value = '';
-    el('pc-port').value = '';
-    message('');
+    activeId = null;
+    notice('');
   }
-  function fillForm(p) {
-    el('pc-id').value = p.id;
-    el('pc-name').value = p.name;
-    el('pc-tag').value = p.tag || '';
-    el('pc-type').value = p.type;
-    el('pc-host').value = p.host;
-    el('pc-port').value = p.port;
-    message('Đang sửa: ' + p.name);
+  function fillForm(proxy) {
+    activeId = proxy.id;
+    el('pc-id').value = proxy.id;
+    el('pc-name').value = proxy.name;
+    el('pc-tag').value = proxy.tag || '';
+    el('pc-type').value = proxy.type;
+    el('pc-host').value = proxy.host;
+    el('pc-port').value = proxy.port;
+    notice('Đang sửa: ' + proxy.name);
+    el('pc-name').focus();
   }
-  function tinyButton(name, style, callback) {
-    const button = node('button','btn btn-sm ' + style,name);
+  function action(label, className, callback) {
+    const button = cell('button', 'btn btn-sm ' + className, label);
     button.type='button';
     button.addEventListener('click', callback);
     return button;
   }
-  function makeCard(proxy) {
-    const card=node('div','pc-card');
-    const head=node('div','pc-card-head');
-    head.append(node('strong','',proxy.name));
-    head.append(node('small','',proxy.tag || 'Chưa gắn nhãn'));
-    card.append(head,node('div','pc-card-endpoint',proxy.type.toUpperCase()+' · '+proxy.host+':'+proxy.port));
-    card.append(node('div','pc-card-meta','Đang dùng trong '+proxy.usageCount+' hồ sơ'));
-    const verify = proxy.check;
-    card.append(node('div','pc-card-status '+(!verify?'':verify.status === 'verified'?'ok':verify.status==='warning'?'warning':'error'),
-      !verify?'Chưa kiểm tra trong phiên làm việc này':
-      (verify.verified ? '✓ IP thoát: '+verify.ip+' · '+verify.latency+' ms':'✖ '+(verify.message||'Không kết nối được'))));
-    const row=node('div','pc-card-actions');
-    row.append(tinyButton('🔍 Kiểm tra IP','btn-secondary', async ()=>{
-      if(busy)return;
-      busy=true;message('Đang kiểm tra IP thoát của '+proxy.name+'...');
-      try {
-        const outcome=await api.checkSavedProxy(proxy.id);
-        message(outcome.verified?'Đã kiểm tra IP thoát.':'Không xác minh được IP: '+(outcome.message||'Lỗi proxy'), !outcome.verified);
-        await refresh(false);
-      }catch(error){message(error.message,true);} finally{busy=false;}
-    }));
-    row.append(tinyButton('Gán hồ sơ đã chọn','btn-primary', async ()=>{
-      if(busy)return;
-      const ids=selectedIds();
-      if(!ids.length)return message('Chọn một hoặc nhiều hồ sơ trong bảng chính trước khi gán.',true);
-      if(!confirm('Gán proxy '+proxy.name+' cho '+ids.length+' hồ sơ?\nChỉ các hồ sơ đã đóng mới được sửa. Đây là thay đổi cấu hình kết nối, không bảo đảm ẩn danh.'))return;
-      busy=true;
-      try{
-        const outcome=await api.assignSavedProxy(proxy.id,ids);
-        message('✓ Đã gán proxy cho '+outcome.updated+' hồ sơ.');
-        await refresh(false);
-        if(typeof loadProfiles==='function') await loadProfiles();
-      }catch(error){message('Không thể gán: '+error.message,true);}finally{busy=false;}
-    }));
-    row.append(tinyButton('Sửa','btn-secondary',()=>fillForm(proxy)));
-    row.append(tinyButton('Xóa','btn-danger',async ()=>{
-      if(busy)return;
-      if(!confirm('Xóa '+proxy.name+' khỏi kho? Các hồ sơ đã gán vẫn giữ cấu hình hiện có.'))return;
-      busy=true;
-      try {await api.deleteSavedProxy(proxy.id);clearForm();await refresh(false);message('Đã xóa khỏi kho.');}
-      catch(error){message(error.message,true);}finally{busy=false;}
-    }));
-    card.append(row);
-    return card;
+  async function runAction(work, onError='Không thể hoàn tất') {
+    if (busy) return;
+    lock(true);
+    try { await work(); }
+    catch (error) { notice(onError + ': ' + error.message, true); }
+    finally { lock(false); }
   }
-  async function refresh(showError = true) {
-    try {
-      cached=await api.listSavedProxies();
-      const search=el('pc-search').value.trim().toLowerCase();
-      const list=el('pc-list');
-      list.replaceChildren();
-      const found=cached.filter(p=>
-        [p.name,p.tag,p.host,p.type].some(value=>String(value||'').toLowerCase().includes(search)));
-      if(!found.length)list.append(node('p','tower-empty',cached.length?'Không tìm thấy proxy phù hợp.':'Kho proxy trống. Hãy thêm kết nối đầu tiên.'));
-      else for(const p of found) list.append(makeCard(p));
-      el('pc-total').textContent=String(cached.length);
-      el('pc-verified').textContent=String(cached.filter(p=>p.check?.verified===true).length);
-      el('pc-used').textContent=String(cached.reduce((count,p)=>count+(p.usageCount||0),0));
-      const n=selectedIds().length;
-      el('pc-selection-info').textContent=n?('Đang chọn '+n+' hồ sơ trên bảng chính'):'Chọn hồ sơ ở bảng chính trước khi gán proxy.';
-      refreshPresets();
-      initialized=true;
-    }catch(error){if(showError)message('Không thể tải kho proxy: '+error.message,true);}
+  function makeRow(proxy) {
+    const row = cell('tr', 'pc-table-row');
+    row.dataset.proxyId = proxy.id;
+    const name = cell('td', 'pc-name-cell');
+    const title = cell('strong', '', proxy.name);
+    const tag = cell('small', '', proxy.tag || 'Chưa phân nhóm');
+    name.append(title, tag);
+    const endpoint = cell('td','pc-endpoint-cell');
+    endpoint.append(cell('strong','',proxy.host + ':' + proxy.port));
+    endpoint.append(cell('small','',proxy.type.toUpperCase()));
+    const used = cell('td','pc-used-cell',proxy.usageCount + ' hồ sơ');
+    const verify=proxy.check;
+    const state = cell('td', 'pc-state-cell');
+    const badge = cell('span', 'pc-check-badge ' +
+       (!verify ? 'pending' : verify.verified ? 'verified' : 'failed'));
+    badge.textContent= !verify ? 'Chưa kiểm tra' : verify.verified ? 'Đã xác minh' : 'Không xác minh';
+    state.append(badge);
+    if (verify) state.append(cell('small','',
+      verify.verified ? ('IP thoát: ' + (verify.ip || '—')) : (verify.message || 'Lỗi kết nối')));
+    const actions=cell('td','pc-action-cell');
+    const wrapper=cell('div','pc-row-actions');
+    wrapper.append(action('Kiểm tra', 'btn-secondary', () => runAction(async () => {
+      notice('Đang kiểm tra IP thoát: ' + proxy.name);
+      const outcome = await api.checkSavedProxy(proxy.id);
+      await refresh();
+      notice(outcome.verified ? 'IP thoát đã xác minh cho ' + proxy.name :
+        'Chưa xác minh được IP: ' + (outcome.message||'Không phản hồi'), !outcome.verified);
+    },'Lỗi kiểm tra IP')));
+    wrapper.append(action('Gán', 'btn-secondary', () => {
+      const ids=selectedIds();
+      if (!ids.length) { notice('Hãy chọn hồ sơ trong danh sách chính trước khi gán.',true); return; }
+      if (!confirm('Gán ' + proxy.name + ' cho ' + ids.length +
+          ' hồ sơ đã chọn? Chỉ hồ sơ đã đóng mới được thay đổi.')) return;
+      runAction(async () => {
+        const result=await api.assignSavedProxy(proxy.id,ids);
+        await refresh();
+        if(typeof loadProfiles === 'function') await loadProfiles();
+        window.LHMProfilePanel?.refresh();
+        notice('Đã gán proxy cho ' + result.updated + ' hồ sơ.');
+      },'Không thể gán proxy');
+    }));
+    wrapper.append(action('Sửa','btn-secondary',()=>fillForm(proxy)));
+    const del=action('Xóa','btn-secondary pc-danger',()=>{
+      if(!confirm('Xóa "'+proxy.name+'" khỏi kho? Hồ sơ đã gán vẫn giữ cấu hình hiện tại.'))return;
+      runAction(async () => {
+        await api.deleteSavedProxy(proxy.id);
+        if(activeId===proxy.id)clearForm();
+        await refresh();
+        notice('Đã xóa proxy khỏi kho.');
+      },'Không thể xóa proxy');
+    });
+    del.setAttribute('aria-label','Xóa proxy '+proxy.name);
+    wrapper.append(del);
+    actions.append(wrapper);
+    row.append(name,endpoint,used,state,actions);
+    return row;
+  }
+  function render() {
+    const search=el('pc-search').value.trim().toLowerCase();
+    const list=el('pc-list');
+    list.replaceChildren();
+    const items=cached.filter(p => [p.name,p.tag,p.host,p.type].some(
+      v=>String(v||'').toLowerCase().includes(search)));
+    for(const p of items)list.append(makeRow(p));
+    el('pc-no-results').hidden = items.length>0;
+    el('pc-no-results').textContent = cached.length ?
+      'Không có proxy nào khớp từ khóa.' : 'Chưa có proxy. Thêm kết nối ở bảng bên trái.';
+    el('pc-total').textContent=cached.length;
+    el('pc-verified').textContent=cached.filter(p=>p.check?.verified).length;
+    el('pc-used').textContent=cached.reduce((sum,p)=>sum+(p.usageCount||0),0);
+    el('pc-selection-info').textContent=selectedIds().length + ' hồ sơ được chọn trong bảng chính';
+    refreshPresets();
+  }
+  async function refresh() {
+    cached=await api.listSavedProxies();
+    initialized=true;
+    render();
   }
   async function refreshPresets(existingProxy = null) {
     if(!initialized) {
-      try { cached=await api.listSavedProxies();initialized=true; } catch(_) {return;}
+      try {cached=await api.listSavedProxies();initialized=true;}
+      catch (_) {return;}
     }
     const select=el('field-proxy-preset');
     if(!select)return;
-    const previously=select.value;
-    select.replaceChildren(node('option','','— Tự nhập cấu hình —'));
-    select.firstChild.value='';
-    for(const p of cached){
-      const option=node('option','',p.name+' · '+p.type.toUpperCase()+' · '+p.host+':'+p.port);
+    const previous=select.value;
+    const placeholder=cell('option','','Tự nhập cấu hình');
+    placeholder.value='';
+    select.replaceChildren(placeholder);
+    for(const p of cached) {
+      const option=cell('option','',p.name + ' · ' + p.type.toUpperCase() + ' · ' + p.host + ':' + p.port);
       option.value=p.id;select.append(option);
     }
-    if(existingProxy){
-      const match=cached.find(p=>p.type===existingProxy.type&&p.host===existingProxy.host&&Number(p.port)===Number(existingProxy.port));
-      select.value=match?.id||'';
-    }else if(cached.some(p=>p.id===previously)) select.value=previously;
-    else select.value='';
+    if(existingProxy) {
+      const matching=cached.find(p=>p.type===existingProxy.type &&
+        p.host===existingProxy.host && Number(p.port)===Number(existingProxy.port));
+      select.value=matching?.id||'';
+    }else select.value=cached.some(p=>p.id===previous) ? previous : '';
   }
   function presetChange() {
-    const selected=cached.find(p=>p.id===el('field-proxy-preset').value);
-    if(!selected)return;
-    el('field-proxy-type').value=selected.type;
-    el('field-proxy-host').value=selected.host;
-    el('field-proxy-port').value=selected.port;
+    const p=cached.find(entry=>entry.id===el('field-proxy-preset').value);
+    if(!p)return;
+    el('field-proxy-type').value=p.type;
+    el('field-proxy-host').value=p.host;
+    el('field-proxy-port').value=p.port;
     el('field-proxy-user').value='';
     el('field-proxy-pass').value='';
     el('field-proxy-type').dispatchEvent(new Event('change'));
   }
-  async function save() {
-    if(busy)return;
-    busy=true;el('pc-save').disabled=true;
-    try {
-      const draft={
+  function save() {
+    runAction(async () => {
+      const payload={
         id:el('pc-id').value||undefined,
-        name:el('pc-name').value,
-        tag:el('pc-tag').value,
+        name:el('pc-name').value.trim(),
+        tag:el('pc-tag').value.trim(),
         type:el('pc-type').value,
         host:el('pc-host').value.trim(),
         port:Number(el('pc-port').value)
       };
-      const saved=await api.saveSavedProxy(draft);
+      const result=await api.saveSavedProxy(payload);
       clearForm();
-      await refresh(false);
-      message('✓ Đã lưu '+saved.name);
-    }catch(error){message(error.message,true);}
-    finally {busy=false;el('pc-save').disabled=false;}
+      await refresh();
+      notice('Đã lưu ' + result.name);
+    },'Không lưu được proxy');
   }
   function show() {
     el('modal-proxy-center').classList.add('open');
-    refresh();
+    refresh().catch(error=>notice('Không đọc được kho proxy: '+error.message,true));
   }
   function close() {el('modal-proxy-center').classList.remove('open');}
   function bind() {
@@ -165,11 +193,14 @@
     el('pc-done').addEventListener('click',close);
     el('pc-save').addEventListener('click',save);
     el('pc-reset').addEventListener('click',clearForm);
-    el('pc-refresh').addEventListener('click',()=>refresh());
-    el('pc-search').addEventListener('input',()=>refresh(false));
+    el('pc-refresh').addEventListener('click',()=>{
+      runAction(async()=>{await refresh();notice('Danh sách đã được cập nhật.');});
+    });
+    // Search is local; no network/IPC request for each keystroke.
+    el('pc-search').addEventListener('input',render);
     el('field-proxy-preset').addEventListener('change',presetChange);
   }
-  window.LHMProxyCenter={show,refreshPresets};
+  window.LHMProxyCenter={show,refresh,refreshPresets};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);
   else bind();
 })();

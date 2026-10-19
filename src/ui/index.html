@@ -786,8 +786,8 @@ run();
     <div class="modal-dialog proxy-center-dialog" role="dialog" aria-modal="true" aria-labelledby="pc-heading">
       <div class="modal-header">
         <div>
-          <h2 id="pc-heading">🌐 LHM Proxy Center</h2>
-          <p class="pc-subtitle">Kho kết nối cục bộ · xác minh IP thoát · gán an toàn cho nhiều hồ sơ</p>
+          <h2 id="pc-heading">Proxy Center</h2>
+          <p class="pc-subtitle">Danh sách proxy được lưu trên máy · kết nối HTTP và SOCKS5</p>
         </div>
         <button class="btn-close" id="pc-close" aria-label="Đóng">&times;</button>
       </div>
@@ -799,7 +799,7 @@ run();
         </section>
         <div class="pc-columns">
           <section class="pc-form-panel">
-            <h3>Thêm / sửa Proxy</h3>
+            <h3>Thông tin kết nối</h3>
             <input type="hidden" id="pc-id">
             <label for="pc-name">Tên gợi nhớ</label>
             <input id="pc-name" maxlength="100" placeholder="Ví dụ: Văn phòng - Kết nối A">
@@ -818,23 +818,29 @@ run();
               <button class="btn btn-secondary" id="pc-reset">Tạo mới</button>
             </div>
             <div id="pc-message" class="pc-message" role="status"></div>
-            <p class="pc-info">Phiên bản này hỗ trợ proxy HTTP/SOCKS5 không mật khẩu. Không lưu user/pass hay token. Mỗi hồ sơ giữ một bản cấu hình riêng; cập nhật kho proxy không tự đổi proxy đã gán.</p>
+            <p class="pc-info">Chỉ hỗ trợ proxy HTTP/SOCKS5 không mật khẩu. Hồ sơ đã gán giữ cấu hình riêng khi chỉnh sửa kho proxy.</p>
           </section>
           <section class="pc-list-panel">
             <div class="pc-list-heading">
-              <h3>Danh sách kết nối</h3>
+              <h3>Kho proxy</h3>
               <input id="pc-search" type="search" placeholder="Tìm tên, IP, nhóm..." aria-label="Tìm proxy">
             </div>
-            <div id="pc-list" class="pc-list" aria-live="polite"></div>
+            <div class="pc-list" role="region" aria-label="Bảng proxy" tabindex="0">
+              <table class="pc-table">
+                <thead><tr><th>Tên kết nối</th><th>Địa chỉ</th><th>Đang dùng</th><th>Trạng thái IP</th><th>Thao tác</th></tr></thead>
+                <tbody id="pc-list"></tbody>
+              </table>
+              <p id="pc-no-results" class="pc-no-results" hidden>Chưa có proxy.</p>
+            </div>
           </section>
         </div>
         <div class="pc-footer-note">
-          ℹ️           Việc xác minh gửi yêu cầu HTTPS tới api.ipify.org qua proxy. IP trả về không lưu vào cơ sở dữ liệu. Proxy không bảo đảm các tài khoản quảng cáo không bị liên kết.
+          Kiểm tra IP thực hiện qua HTTPS. Kết quả chỉ lưu trong phiên ứng dụng, không chứng minh khả năng ẩn danh hoặc tránh liên kết tài khoản.
         </div>
       </div>
       <div class="modal-footer">
         <span id="pc-selection-info" class="pc-selection-info">Chọn hồ sơ trong bảng chính để gán proxy.</span>
-        <button class="btn btn-secondary" id="pc-refresh">↻ Làm mới</button>
+        <button class="btn btn-secondary" id="pc-refresh">Làm mới</button>
         <button class="btn btn-primary" id="pc-done">Đóng</button>
       </div>
     </div>
