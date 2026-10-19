@@ -276,3 +276,7 @@ New profiles created through UI, Local API or the profile-template cloning actio
 - Proxy Center uses an actual accessible endpoint/status table (not decorative cards), search within the locally loaded data and explicit add/edit/delete/check/assign actions.
 - Automation Studio uses a restrained white/light-gray/cyan surface system, a searchable workflow library, validated graph visualization, editable steps, execution log and emergency stop.
 - Existing workflow execution rules, host allowlist and manual approvals are unchanged. These are operational interface improvements, not fingerprint-evasion guarantees.
+
+
+### Technical architecture decision
+See [ADR-0001: LHM Browser Runtime](docs/ADR-0001-browser-runtime.md) for the planned managed engine, security/update acceptance criteria and why the current Electron application is not a Chromium C++ fork.
