@@ -58,6 +58,9 @@ const fieldFpCores = document.getElementById('field-fp-cores');
 const fieldFpMemory = document.getElementById('field-fp-memory');
 const fieldFpGpu = document.getElementById('field-fp-gpu');
 const fieldFpUa = document.getElementById('field-fp-ua');
+const fieldFpMode = document.getElementById('field-fp-mode');
+const fpCustomFields = document.getElementById('fingerprint-custom-fields');
+const fpAuditResults = document.getElementById('fp-audit-results');
 const fieldFpCanvas = document.getElementById('field-fp-canvas');
 const fieldFpAudio = document.getElementById('field-fp-audio');
 const fieldFpWebrtc = document.getElementById('field-fp-webrtc');
@@ -169,8 +172,42 @@ async function refreshBehaviorAlerts() {
 }
 
 function setupEventListeners() {
+  fieldFpMode.addEventListener('change', () => {
+    const native = fieldFpMode.value === 'native';
+    fpCustomFields.hidden = native;
+    if (native) currentGeneratedFP = { mode: 'native' };
+    else window.api.generateFingerprint({ os: fieldFpOs.value }).then(applyFingerprintToForm).catch(console.error);
+    fpAuditResults.textContent = 'Cấu hình đã thay đổi. Nhấn Kiểm tra cấu hình để xem cảnh báo.';
+  });
+  document.getElementById('btn-fp-inspect').addEventListener('click', async () => {
+    fpAuditResults.textContent = 'Đang chẩn đoán...';
+    try {
+      const audit = await window.api.inspectFingerprint({
+        engine: fieldBrowserEngine.value, fingerprint: selectedFingerprintConfig()
+      });
+      fpAuditResults.replaceChildren();
+      const title = document.createElement('div');
+      title.className = 'fp-audit-summary';
+      title.textContent = audit.mode === 'native'
+        ? 'Thông số gốc — không cần giả lập UA/Canvas'
+        : 'Tùy chỉnh thử nghiệm — ' + audit.warningCount + ' cảnh báo';
+      fpAuditResults.append(title);
+      for (const issue of audit.issues) {
+        const row = document.createElement('div');
+        row.className = 'fp-audit-item ' + issue.level;
+        row.textContent = (issue.level === 'warning' ? '⚠ ' : 'ℹ ') + issue.message;
+        fpAuditResults.append(row);
+      }
+      const footer = document.createElement('p');
+      footer.textContent = audit.explanation;
+      fpAuditResults.append(footer);
+    } catch (error) { fpAuditResults.textContent = 'Kiểm tra thất bại: ' + error.message; }
+  });
   fieldBrowserEngine.addEventListener('change', () => {
-    geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
+    const gecko = fieldBrowserEngine.value === 'gecko';
+    geckoPathControl.hidden = !gecko;
+    if (gecko) setFingerprintMode('native');
+    fieldFpMode.disabled = gecko;
   });
   document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
     await refreshBehaviorAlerts();
@@ -258,17 +295,7 @@ function setupEventListeners() {
         user: fieldProxyUser.value.trim(),
         pass: fieldProxyPass.value.trim()
       },
-      fingerprint: {
-        ...(currentGeneratedFP || {}),
-        os: fieldFpOs.value,
-        userAgent: fieldFpUa.value.trim(),
-        hardwareConcurrency: Number(fieldFpCores.value),
-        deviceMemory: Number(fieldFpMemory.value),
-        screen: { width: scrW, height: scrH, availWidth: scrW, availHeight: scrH - 40, colorDepth: 24 },
-        canvasNoiseSeed: fieldFpCanvas.checked ? (currentGeneratedFP?.canvasNoiseSeed || Math.random() * 1000) : 0,
-        audioNoiseSeed: fieldFpAudio.checked ? (currentGeneratedFP?.audioNoiseSeed || Math.random() * 1000) : 0,
-        webrtc: fieldFpWebrtc.checked ? 'spoof' : 'real'
-      }
+      fingerprint: selectedFingerprintConfig()
     };
 
     try {
@@ -330,8 +357,9 @@ async function openProfileModal(existingProfile = null) {
     fieldProxyPass.value = pxy.pass || '';
     proxyFields.style.display = fieldProxyType.value === 'direct' ? 'none' : 'block';
 
-    currentGeneratedFP = existingProfile.fingerprint || (await window.api.generateFingerprint());
-    applyFingerprintToForm(currentGeneratedFP);
+    currentGeneratedFP = existingProfile.fingerprint || { mode: 'native' };
+    if (currentGeneratedFP.mode !== 'native') applyFingerprintToForm(currentGeneratedFP);
+    setFingerprintMode(currentGeneratedFP.mode === 'native' ? 'native' : 'experimental');
   } else {
     document.getElementById('modal-title').textContent = 'Tạo Profile Mới';
     fieldId.value = '';
@@ -343,12 +371,36 @@ async function openProfileModal(existingProfile = null) {
     fieldProxyType.value = 'direct';
     proxyFields.style.display = 'none';
 
-    currentGeneratedFP = await window.api.generateFingerprint({ os: 'Windows' });
-    applyFingerprintToForm(currentGeneratedFP);
+    currentGeneratedFP = { mode: 'native' };
+    setFingerprintMode('native');
   }
   geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
+  fieldFpMode.disabled = fieldBrowserEngine.value === 'gecko';
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   openModal(modalProfile);
+}
+
+function selectedFingerprintConfig() {
+  if (fieldFpMode.value === 'native' || fieldBrowserEngine.value === 'gecko')
+    return { mode: 'native' };
+  const [width,height] = fieldFpScreen.value.split('x').map(Number);
+  return {
+    ...(currentGeneratedFP || {}),
+    mode: 'experimental',
+    os: fieldFpOs.value,
+    userAgent: fieldFpUa.value.trim(),
+    hardwareConcurrency: Number(fieldFpCores.value),
+    deviceMemory: Number(fieldFpMemory.value),
+    screen: { width, height, availWidth: width, availHeight: height - 40, colorDepth: 24 },
+    canvasNoiseSeed: fieldFpCanvas.checked ? (Number(currentGeneratedFP?.canvasNoiseSeed) || 1) : 0,
+    audioNoiseSeed: fieldFpAudio.checked ? (Number(currentGeneratedFP?.audioNoiseSeed) || 1) : 0,
+    webrtc: fieldFpWebrtc.checked ? 'spoof' : 'real'
+  };
+}
+function setFingerprintMode(mode) {
+  fieldFpMode.value = mode === 'native' ? 'native' : 'experimental';
+  fpCustomFields.hidden = fieldFpMode.value === 'native';
+  fpAuditResults.textContent = 'Nhấn Kiểm tra cấu hình để xem phân tích.';
 }
 
 function applyFingerprintToForm(fp) {

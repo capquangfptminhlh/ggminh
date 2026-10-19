@@ -871,3 +871,16 @@ select {
 .pc-footer-note{font-size:11px;color:#9dabc1;line-height:1.55;margin-top:13px}
 .pc-selection-info{font-size:12px;color:#a4bbd5;margin-right:auto}
 @media(max-width:880px){.pc-columns{grid-template-columns:1fr}.pc-list{max-height:300px}.pc-stats{grid-template-columns:1fr}}
+
+
+/* v2.0 privacy-by-default fingerprint inspector */
+.fp-mode-help{font-size:12px;line-height:1.65;color:#abbacf;margin:8px 0 15px}
+#fingerprint-custom-fields[hidden]{display:none!important}
+.fp-diagnostics{border:1px solid #3b546f;background:linear-gradient(130deg,#152439,#1b2640);border-radius:11px;padding:14px;margin-top:12px}
+.fp-audit-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.fp-audit-heading strong{font-size:13px}
+#fp-audit-results{font-size:12px;line-height:1.55;color:#acbfd8}
+.fp-audit-item{padding:8px 10px;margin:5px 0;border-radius:7px;background:#1d2b40;border-left:3px solid #3b82f6}
+.fp-audit-item.warning{border-left-color:#f9bd57;color:#ffd89a}
+.fp-audit-item.notice{border-left-color:#54a4da;color:#c0d9f5}
+.fp-audit-summary{font-size:13px;font-weight:650;color:#f5f8ff;margin-bottom:9px}

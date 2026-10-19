@@ -13,7 +13,7 @@
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div class="brand-text">
-          <h1>LHM Ads Browser <span>v1.9</span></h1>
+          <h1>LHM Ads Browser <span>v2.0</span></h1>
           <p class="subtitle">Local-first • Trình duyệt riêng • Google Ads Workspace</p>
         </div>
       </div>
@@ -231,9 +231,18 @@
 
         <!-- Tab 3: Fingerprint -->
         <div class="tab-content" id="tab-fingerprint">
+          <div class="form-group">
+            <label for="field-fp-mode">Chế độ thông số trình duyệt</label>
+            <select id="field-fp-mode">
+              <option value="native">Thông số gốc (khuyên dùng) — UA, Canvas, WebGL của trình duyệt thực</option>
+              <option value="experimental">Tùy chỉnh thử nghiệm (cũ) — có thể gây sai lệch hoặc lỗi website</option>
+            </select>
+            <p class="fp-mode-help">Thông số gốc không dùng extension can thiệp fingerprint. Không có tùy chọn nào bảo đảm Google không liên kết các tài khoản.</p>
+          </div>
+          <div id="fingerprint-custom-fields">
           <div class="fp-header-action">
-            <span class="fp-info">Vân tay được sinh ngẫu nhiên thực tế, mô phỏng đúng cấu hình phần cứng.</span>
-            <button type="button" class="btn btn-accent" id="btn-random-fp">🎲 Randomize Vân tay</button>
+            <span class="fp-info">Các giá trị tùy chỉnh dưới đây chỉ là thử nghiệm, không chứng minh tính tương thích hoặc ẩn danh.</span>
+            <button type="button" class="btn btn-accent" id="btn-random-fp">🎲 Tạo cấu hình thử nghiệm</button>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -285,17 +294,22 @@
           <div class="toggles-grid">
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-canvas" checked>
-              <span>Bảo vệ Canvas (Tạo nhiễu micro-noise)</span>
+              <span>Nhiễu Canvas thử nghiệm (có thể làm sai ảnh)</span>
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-audio" checked>
-              <span>Bảo vệ WebAudio (Chống hash âm thanh)</span>
+              <span>Nhiễu WebAudio thử nghiệm</span>
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-webrtc" checked>
-              <span>Bảo vệ WebRTC (Chặn rò rỉ IP thật)</span>
+              <span>Sửa WebRTC thử nghiệm (không bảo đảm chặn rò rỉ)</span>
             </label>
           </div>
+          </div><!-- fingerprint-custom-fields -->
+          <section class="fp-diagnostics">
+            <div class="fp-audit-heading"><strong>🧪 Fingerprint Inspector</strong><button class="btn btn-sm btn-secondary" id="btn-fp-inspect" type="button">Kiểm tra cấu hình</button></div>
+            <div id="fp-audit-results" role="status">Chưa kiểm tra. Báo cáo chỉ đánh giá cấu hình LHM, không đo tín hiệu Google.</div>
+          </section>
         </div>
       </div>
       <div class="modal-footer">
