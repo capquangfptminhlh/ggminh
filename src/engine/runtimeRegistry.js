@@ -16,6 +16,8 @@ function validatePath(engine,filename,{platform=process.platform}={}){
   throw Error('Choose an absolute browser executable path');
  const ext=path.extname(filename).toLowerCase();
  if(platform==='win32'){
+  if(!/^[a-zA-Z]:[\\/]/.test(filename))
+   throw Error('Only local Windows drive paths are permitted');
   if(!allowedWindowsNames[engine].has(path.basename(filename).toLowerCase()))
    throw Error('Only official Chrome/Edge or Firefox executable names are accepted');
  }else if(!['.exe',''].includes(ext)){
@@ -28,17 +30,17 @@ function inspectBinary(engine,filename,opts={}){
  const stat=fs.lstatSync(filename);
  if(!stat.isFile()||stat.isSymbolicLink()||stat.size<MIN_BINARY||stat.size>MAX_BINARY)
   throw Error('Executable must be a regular file between 4 KB and 512 MB');
- // Do not silently follow symlinked executable or a linked parent directory.
- let real=fs.realpathSync.native(filename);
- // Node's Win32 realpath may return the extended-length \\?\C:\... form,
- // even for a regular file. Normalize the prefix, but never follow actual
- // symlinks/junctions silently.
- if((opts.platform||process.platform)==='win32'){
-  if(real.startsWith('\\\\?\\UNC\\'))real='\\\\'+real.slice(8);
-  else if(real.startsWith('\\\\?\\'))real=real.slice(4);
+ // Inspect each ancestor directly. Windows realpath strings can differ due to
+ // volume aliases, 8.3 names, and \\?\ device prefixes even for ordinary files.
+ // Parent symlinks/junctions and executable symlinks are still rejected.
+ const root=path.parse(filename).root;
+ let folder=root;
+ const relative=path.relative(root,path.dirname(filename));
+ for(const segment of relative.split(path.sep).filter(Boolean)){
+  folder=path.join(folder,segment);
+  if(fs.lstatSync(folder).isSymbolicLink())
+   throw Error('Symlink/junction-linked browser paths are not accepted');
  }
- if(path.normalize(real).toLowerCase()!==path.normalize(filename).toLowerCase())
-  throw Error('Symbolic/junction-linked executable locations are not accepted');
  if((opts.platform||process.platform)==='win32'){
   const fd=fs.openSync(filename,'r');
   try{
