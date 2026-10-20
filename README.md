@@ -617,3 +617,10 @@ for server-side authenticated role-based access and audit-backed billing.
 - Rebuilt the default Profiles workspace with a slender icon rail, warm/light SaaS surfaces, actual local KPI cards for total/active profiles, proxy verification and saved workflows, searchable data grid and compact dark AI control panel. The existing profile handlers, proxy tools, Automation Studio and AI Advisor are reused; no stock/mock account data is shown outside screenshot fixtures.
 - Added real keyboard search (Ctrl+K), quick shortcuts, staggered profile-row entrance, panel transitions, hover micro-interactions, page fade, counter updates and responsive layout. `prefers-reduced-motion` disables nonessential motion, and the UI retains original button/IPC IDs for backwards compatibility.
 - Indicators show local known configuration health only, not third-party anti-bot scores or claims. The AI panel is a manual entry point; it does not autonomously operate ads.
+
+
+## v5.7 — Functional premium workspace controls
+- **Lệnh nhanh** opens an operator-only keyboard command palette (Ctrl+Shift+P, Cmd+Shift+P); local existing profile metadata and safe navigational actions can be searched with keyboard arrows and Enter, without opening or modifying an account automatically. All names are inserted with textContent, no HTML interpolation or remote queries.
+- **Thu gọn bảng AI** toggles a full-width profile data grid. Ctrl+B toggles only outside text fields, and the UI preference persists locally on this computer. The right-side panel and data remain fully available after reopening.
+- Accessible command list and keyboard focus, subtle spring-like entrance animation and reduced-motion support. Original buttons/IPC handlers remain operational.
+- Package version and Electron runtime UI are now aligned at v5.7.0. Screenshots in Windows CI remain from the actual Electron app, not visual mockups.
