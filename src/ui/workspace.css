@@ -679,3 +679,8 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .profile-table.lhm-table-compact .lhm-profile-tags{display:none}
 @media(max-width:1180px){.lhm-table-options{margin-left:282px}}
 @media(max-width:900px){.lhm-table-options{margin-left:15px;margin-right:15px}}
+
+
+/* v3.8 CSV metadata edit preview */
+#modal-profile-csv-update .form-group textarea{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;resize:vertical;width:100%}
+#profile-update-status{font-size:12px;color:#456489;white-space:pre-wrap;line-height:1.6;margin-top:10px}

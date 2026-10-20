@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const os = require('os');
 const Store = require('./src/db/store');
 const {inspectProfilesCsv,importProfilesCsv} = require('./src/ops/profileCsvImport');
+const {inspectProfilesCsvUpdate,updateProfilesFromCsv} = require('./src/ops/profileCsvUpdate');
 const BrowserLauncher = require('./src/engine/browserLauncher');
 const { generateFingerprint } = require('./src/engine/fingerprint');
 const { checkProxy } = require('./src/engine/proxyChecker');
@@ -118,6 +119,13 @@ function initIPC() {
   ipcMain.handle('profile-import-preview', (_, csv) => inspectProfilesCsv(store,csv));
   ipcMain.handle('profile-import-commit', (_, csv) => {
     const result=importProfilesCsv(store,csv);
+    for(const id of result.profileIds)behaviorMonitor.record('profile_save',id,'manual');
+    return result;
+  });
+  ipcMain.handle('profile-update-preview', (_, csv) =>
+    inspectProfilesCsvUpdate(store,launcher,csv));
+  ipcMain.handle('profile-update-commit', (_, csv) => {
+    const result=updateProfilesFromCsv(store,launcher,csv);
     for(const id of result.profileIds)behaviorMonitor.record('profile_save',id,'manual');
     return result;
   });

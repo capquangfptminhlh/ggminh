@@ -111,6 +111,7 @@
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
         <button class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
+        <button class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
         <button class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
         <button class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
         <button class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
@@ -386,6 +387,29 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="trash-dialog-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update existing profile metadata from a validated CSV, never sessions or credentials. -->
+  <div class="modal-overlay" id="modal-profile-csv-update">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="profile-update-title">
+      <div class="modal-header">
+        <h2 id="profile-update-title">Cập nhật hồ sơ từ CSV</h2>
+        <button type="button" class="btn-close" id="profile-update-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Sửa tối đa 200 hồ sơ trong một lượt. Cột <strong>id</strong> bắt buộc, có thể sửa name, group, tags, notes, startUrls. Chỉ cập nhật những cột được đưa vào file. Tag và URL phân tách bằng dấu |. Để trống tags/notes để xóa nội dung. Các hồ sơ đang chạy phải được đóng trước.</p>
+        <div class="form-group"><label for="profile-update-file">Chọn CSV / TXT (tối đa 256 KB)</label><input id="profile-update-file" type="file" accept=".csv,.txt,text/plain,text/csv"></div>
+        <div class="form-group"><label for="profile-update-text">Hoặc dán CSV</label><textarea id="profile-update-text" rows="9" spellcheck="false" placeholder="id,name,group,tags,notes,startUrls"></textarea></div>
+        <button type="button" class="btn btn-secondary" id="profile-update-example">Điền mẫu từ hồ sơ đang có</button>
+        <p class="lhm-bulk-help">Không thay đổi trình duyệt, cấu hình proxy, cookie, tài khoản hay mã xác thực. Kiểm tra toàn bộ dữ liệu trước khi lưu.</p>
+        <p id="profile-update-status" role="status" aria-live="polite">Chọn hoặc dán CSV để xem trước.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="profile-update-cancel">Hủy</button>
+        <button type="button" class="btn btn-secondary" id="profile-update-preview">Xem trước</button>
+        <button type="button" class="btn btn-primary" id="profile-update-commit" disabled>Áp dụng sửa đổi</button>
       </div>
     </div>
   </div>
@@ -1039,6 +1063,7 @@ run();
   <script src="renderer.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>
+  <script src="profileCsvUpdate.js"></script>
   <script src="tablePreferences.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>

@@ -393,3 +393,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Toolbar adds **Tùy biến bảng** to hide/show ID, proxy, engine and status columns individually. Profile name, selection and actions remain visible.
 - Switch between comfortable and compact row density. Settings persist in this local desktop renderer's localStorage and do not modify profile information.
 - The user's column preferences are reapplied every time live status polling re-renders the profile rows. Reset restores the default full view.
+
+
+## v3.8 — Mass update existing profile metadata from CSV
+- **Sửa CSV** in the top toolbar previews and updates 1–200 existing profiles in one all-or-nothing database write, identified by their immutable profile ID.
+- Supported columns: `id` (required), `name`, `group`, `tags`, `notes`, `startUrls`. Empty tags/notes clear the field; blank name/group/URLs preserve prior values.
+- Duplicate/unknown IDs, invalid URLs and unexpected columns (including cookies/credentials) fail validation for the entire batch. Updating a running browser's profile is disallowed even if only metadata changes.
+- This does not reconfigure proxies or change engine, sessions, passwords, security properties or fingerprint values. The preview makes no persistent changes; commit validates again to catch status changes.

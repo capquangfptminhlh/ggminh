@@ -23,7 +23,7 @@ function delimiterFor(header) {
   return Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
 }
 
-function parseDelimited(input){
+function parseDelimited(input,{allowedColumns=COLUMNS,requiredColumn='name'}={}){
   if(typeof input!=='string' || Buffer.byteLength(input,'utf8')>MAX_BYTES)
     throw Error('File CSV/TXT must be text, at most 256 KB');
   const text=input.replace(/^\uFEFF/,'');
@@ -62,10 +62,10 @@ function parseDelimited(input){
   if(row.length || value || closed)commit();
   if(rows.length<2)throw Error('CSV must contain a header and at least one profile');
   const header=rows.shift().map(x=>x.replace(/[\s_-]+/g,'').toLowerCase());
-  if(!header.includes('name'))throw Error('CSV needs a "name" column');
+  if(!header.includes(requiredColumn))throw Error('CSV needs a "'+requiredColumn+'" column');
   if(new Set(header).size!==header.length)throw Error('Duplicate CSV header columns');
-  if(header.some(c=>!COLUMNS.has(c)))
-    throw Error('Unsupported CSV column: '+header.find(c=>!COLUMNS.has(c))+
+  if(header.some(c=>!allowedColumns.has(c)))
+    throw Error('Unsupported CSV column: '+header.find(c=>!allowedColumns.has(c))+
       '. Cookies, passwords, 2FA and tokens cannot be imported.');
   if(rows.length>MAX_ROWS)throw Error('Maximum 200 profiles per import');
   return rows.map((cells,index)=>{

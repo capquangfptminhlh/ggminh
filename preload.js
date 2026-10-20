@@ -51,6 +51,8 @@ contextBridge.exposeInMainWorld('api', {
   bulkCreateProfiles: options => ipcRenderer.invoke('bulk-create-profiles', options),
   previewProfileCsv: text => ipcRenderer.invoke('profile-import-preview',text),
   importProfilesCsv: text => ipcRenderer.invoke('profile-import-commit',text),
+  previewProfileUpdateCsv: text => ipcRenderer.invoke('profile-update-preview',text),
+  updateProfilesCsv: text => ipcRenderer.invoke('profile-update-commit',text),
   deleteProfile: (id) => ipcRenderer.invoke('delete-profile', id),
   listTrashedProfiles: () => ipcRenderer.invoke('list-trashed-profiles'),
   restoreTrashedProfile: id => ipcRenderer.invoke('restore-trashed-profile',id),
