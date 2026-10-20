@@ -1,0 +1,122 @@
+[
+  {
+    "id": "profile-engine",
+    "name": "Isolated profile browser cores",
+    "state": "partial",
+    "evidence": "Distinct Chromium/Gecko profile directories; Chrome/Firefox external engines",
+    "gaps": "No maintained native Chromium/Firefox fork or reliable per-profile OS/kernel emulation",
+    "acceptance": "Verified engine-level isolation on actual Windows Chrome, Edge and Firefox"
+  },
+  {
+    "id": "profile-lifecycle",
+    "name": "Profile management and mass operations",
+    "state": "partial",
+    "evidence": "Group, tag, search, multi-start URLs, quick create, CSV import/update, recycle bin",
+    "gaps": "No selective revocable profile sharing, Cookie import, account linkage or full workbook parity",
+    "acceptance": "Functional bulk CRUD and crash/rollback tests with real browser state"
+  },
+  {
+    "id": "fingerprint",
+    "name": "Native fingerprint controls",
+    "state": "partial",
+    "evidence": "Native defaults, configuration diagnostics and experimental extension-based controls",
+    "gaps": "No source-level browser implementation of timezone, WebRTC, GPU/Canvas/WebGPU, device identity, OS feature consistency or TLS controls",
+    "acceptance": "Cross-context browser-engine fingerprint consistency, device tests and native-source review"
+  },
+  {
+    "id": "proxy",
+    "name": "Proxy Center",
+    "state": "partial",
+    "evidence": "HTTP/SOCKS5 auth gateway, OS-encrypted passwords, verify and bulk assign",
+    "gaps": "Missing SSH/HTTPS variants, rotation scheduler, location/ASN targeting, vendor integration",
+    "acceptance": "End-to-end real proxy network tests with failure/rotation conditions"
+  },
+  {
+    "id": "extensions",
+    "name": "Extension Center",
+    "state": "partial",
+    "evidence": "Local trusted unpacked MV3 catalog, assign, remove",
+    "gaps": "Chrome/Edge command line activation not verified; no ZIP, Web Store, cloud distribution or Firefox add-ons",
+    "acceptance": "Packaged Windows activation tests with real Chrome/Edge versions"
+  },
+  {
+    "id": "synchronizer",
+    "name": "Multiwindow Synchronizer",
+    "state": "partial",
+    "evidence": "Win32 foreground, grid, cascade and shared startup URLs",
+    "gaps": "No master/slave click/input/scroll/tab synchronization, multi-monitor layout or keyboard shortcuts",
+    "acceptance": "Real desktop synchronized interactions tested with explicit user authorization"
+  },
+  {
+    "id": "rpa",
+    "name": "RPA Plus and workflow marketplace",
+    "state": "partial",
+    "evidence": "Approval-gated Studio, conditional/repeat steps, recording, local schedules, flow diagram",
+    "gaps": "No mature drag-drop editor, cross-profile execution, template marketplace or multi-user permissioning",
+    "acceptance": "Editor, scheduler and audit end-to-end tests and independent human approvals"
+  },
+  {
+    "id": "ai-agent",
+    "name": "AI Agent",
+    "state": "partial",
+    "evidence": "OS-encrypted OpenRouter Advisor, aggregate opt-in sharing and manual workflow drafts",
+    "gaps": "No bounded multi-step autonomous agent, tool approvals, reliable browser interaction, cost ledger or recovery checkpoints",
+    "acceptance": "Audited tool policies, explicit approvals, budget guard and real test workflows"
+  },
+  {
+    "id": "api-cli",
+    "name": "Local API and CLI",
+    "state": "partial",
+    "evidence": "Loopback authenticated Local API and source Node CLI",
+    "gaps": "Not complete AdsPower API parity; no standalone Windows CLI; MCP intentionally not exposed",
+    "acceptance": "Documented versioned API contract, authorization and e2e compatibility tests"
+  },
+  {
+    "id": "teams",
+    "name": "Team roles, permissions and activity logging",
+    "state": "missing",
+    "evidence": "Only local activity/reporting, no remote identities",
+    "gaps": "No team authentication, RBAC, scoped profile groups, invitations or per-member audit",
+    "acceptance": "Independent account RBAC and tenant isolation penetration tests"
+  },
+  {
+    "id": "cloud-sync",
+    "name": "Secure multi-device cloud sync",
+    "state": "missing",
+    "evidence": "Local-only data; encrypted configuration backup does not include browser sessions",
+    "gaps": "No encrypted sync server, snapshot conflict resolution, revocation, history or migration",
+    "acceptance": "Encrypted transport/rest, cross-device conflict tests, recovery and secure sharing"
+  },
+  {
+    "id": "device-settings",
+    "name": "Team and device safety settings",
+    "state": "partial",
+    "evidence": "Local engine settings, health checks, OS vault, startup safeguards",
+    "gaps": "No per-role IP allowlist, enterprise 2FA, full bandwidth/media or device settings",
+    "acceptance": "Windows-level settings verification and enterprise policy tests"
+  },
+  {
+    "id": "cache-restore",
+    "name": "Cache snapshots and recovery",
+    "state": "partial",
+    "evidence": "Explicit preview and cache-only cleanup for stopped profiles",
+    "gaps": "No encrypted browser-session snapshot restore, cloud caches, granular storage-class deletion",
+    "acceptance": "Session recovery and data-integrity checks after crash"
+  },
+  {
+    "id": "commercial",
+    "name": "Billing, plans and integrated providers",
+    "state": "missing",
+    "evidence": "No billing system",
+    "gaps": "No subscriptions, proxy marketplace, entitlements, purchases or credits",
+    "acceptance": "Payment compliance, entitlement, chargeback and accounting verification"
+  },
+  {
+    "id": "cloud-phone",
+    "name": "Cloud Phone integration",
+    "state": "missing",
+    "evidence": "No cloud-phone account connector",
+    "gaps": "No third-party cloud-phone support or device lifecycle integration",
+    "acceptance": "Provider contract tests and permissioned device sessions"
+  }
+]

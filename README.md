@@ -455,3 +455,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - The model proposes strictly structured JSON with 1–12 steps; existing Automation Studio validation rejects denied login/Google Ads/payment domains, out-of-allowlist navigation, forbidden secret-input selectors and workflows lacking a mandatory approval step before clicks or filling fields.
 - The proposal is only displayed as plain text for review. **Lưu bản nháp vào Studio** is a distinct human action; saving does not execute a workflow. Execution still requires an intentional action in Automation Studio.
 - AI output can be wrong or incompatible. Reject and retry invalid proposals; never treat model text as an instruction to the operating system.
+
+
+## Feature parity / acceptance gate
+- See `docs/FEATURE_PARITY.md` and the machine-readable `docs/feature-parity.json`. Full parity with AdsPower is **NOT achieved**. Some advanced domains require independent browser core development and real Windows, cloud and security verification.
+- `npm run parity:report`: print progress and gaps without failing CI.
+- `npm run parity:gate`: enforce full-scope acceptance; it deliberately exits nonzero when requirements remain partial/missing.
+- A successful Windows EXE build is **not** the same as AdsPower feature completeness.
