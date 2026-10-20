@@ -604,3 +604,10 @@ generator refuses to overwrite an existing HTML output file.
 
 This is **not** a public customer portal, cloud dashboard or a substitute
 for server-side authenticated role-based access and audit-backed billing.
+
+
+## v5.5 — App identity and real runtime version in the workspace
+- The workspace header and left navigation no longer hard-code a stale version. They display `app.getVersion()` from the Electron **main process** via a narrow, read-only preload bridge, and update the page title.
+- **Công cụ → Thông tin phần mềm** shows the actual running version, Windows architecture, portable/development packaging indicator and current local license/trial status. No license token, user-data path, secret or fingerprint is transmitted by this endpoint.
+- The Windows UI screenshot smoke test checks the DOM reports the actual `app.getVersion()` **before** saving `workspace-preview.png`, preventing old version labels from being published in CI previews.
+- A passing screenshot and Windows EXE build do **not** imply full feature parity or fraud-detection invisibility.

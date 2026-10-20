@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LHM Browser — Workspace</title>
+  <title>LHM Ads Browser — Workspace</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="workspace.css">
 </head>
@@ -24,7 +24,7 @@
     <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="behavior"><span data-lhm-icon="activity" class="lhm-nav-icon"></span><span class="lhm-nav-label">Nhật ký hoạt động</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="backup"><span data-lhm-icon="database-backup" class="lhm-nav-icon"></span><span class="lhm-nav-label">Sao lưu dữ liệu</span></button>
-    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Browser · 2.8</small></div>
+    <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Ads Browser · <span id="lhm-nav-version" aria-label="Phiên bản">Đang tải…</span></small></div>
   </aside>
 
   <div class="app-container">
@@ -79,7 +79,7 @@
     <header class="app-header">
       <div class="brand">
         <div class="brand-text">
-          <h1>LHM Browser <span>2.8</span></h1>
+          <h1>LHM Ads Browser <span id="lhm-header-version" aria-label="Phiên bản ứng dụng">Đang tải…</span></h1>
           <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
@@ -114,6 +114,7 @@
           <div class="lhm-tools-panel">
             <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
             <button type="button" class="btn btn-secondary" id="btn-api-copy" style="display:none">Sao chép API Key</button>
+            <button type="button" class="btn btn-secondary" id="btn-app-about">Thông tin phần mềm</button>
             <button type="button" class="btn btn-secondary" id="btn-license-center">Giấy phép & gia hạn</button>
             <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
             <button type="button" class="btn btn-secondary" id="btn-session-snapshots">Snapshots</button>
@@ -646,6 +647,31 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="license-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- About dialog: runtime truth rather than a hard-coded release label. -->
+  <div class="modal-overlay" id="modal-app-about">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="lhm-about-title">
+      <div class="modal-header">
+        <h2 id="lhm-about-title">Thông tin LHM Ads Browser</h2>
+        <button type="button" class="btn-close" id="lhm-about-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Thông số được lấy trực tiếp từ chương trình đang chạy, không dựa trên số phiên bản viết sẵn trong giao diện.</p>
+        <dl class="lhm-about-metrics">
+          <div><dt>Phiên bản đang chạy</dt><dd id="lhm-about-version">Đang tải…</dd></div>
+          <div><dt>Nền tảng</dt><dd id="lhm-about-platform">—</dd></div>
+          <div><dt>Bản phát hành</dt><dd id="lhm-about-build">—</dd></div>
+          <div><dt>Chế độ cấp phép</dt><dd id="lhm-about-license">—</dd></div>
+        </dl>
+        <p class="lhm-bulk-help">Ứng dụng quản lý hồ sơ trình duyệt cục bộ, proxy và các quy trình được phê duyệt. Việc kiểm thử đóng gói không chứng minh phần mềm có khả năng vượt qua phát hiện của website hoặc đầy đủ tính năng của sản phẩm khác.</p>
+        <p id="lhm-about-message" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="lhm-about-refresh">Làm mới</button>
+        <button type="button" class="btn btn-primary" id="lhm-about-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1337,6 +1363,7 @@ run();
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
+  <script src="appIdentity.js"></script>
   <script src="aiAdvisor.js"></script>
   <script src="cacheManager.js"></script>
   <script src="sessionSnapshots.js"></script>

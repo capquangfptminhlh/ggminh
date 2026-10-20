@@ -140,6 +140,13 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('get-app-info', () => ({
+    name:'LHM Ads Browser',
+    version:app.getVersion(),
+    platform:process.platform,
+    arch:process.arch,
+    packaged:app.isPackaged
+  }));
   ipcMain.handle('license-center-status', () => licensePolicy.status());
   ipcMain.handle('license-center-verify-online', async () => {
     const result=await onlineLicenseVerifier.verifyNow();

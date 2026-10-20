@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('api', {
   assignExtensionProfiles: (id,ids,enabled) => ipcRenderer.invoke('extension-assign',id,ids,enabled),
   removeInstalledExtension: id => ipcRenderer.invoke('extension-remove',id),
   getProfiles: () => ipcRenderer.invoke('get-profiles'),
+  getAppInfo: () => ipcRenderer.invoke('get-app-info'),
   getLicenseStatus: () => ipcRenderer.invoke('license-center-status'),
   verifyLicenseOnline: () => ipcRenderer.invoke('license-center-verify-online'),
   activateLicense: token => ipcRenderer.invoke('license-center-activate',token),
