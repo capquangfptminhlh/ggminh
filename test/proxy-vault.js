@@ -61,11 +61,13 @@ const codec={
     assert.throws(()=>manager.save({...p,authUsername:'one',authPassword:''}),/cả tên đăng nhập/);
     assert.throws(()=>manager.save({...p,authUsername:'x',authPassword:'y',clearCredentials:true}),/cùng lúc/);
     const so=manager.save({name:'SOCKS',type:'socks5',host:'socks.example',port:1080});
-    assert.throws(()=>manager.save({...so,authUsername:'a',authPassword:'b'}),/SOCKS5/);
+    assert.strictEqual(manager.save({...so,authUsername:'a',authPassword:'b'}).hasCredentials,true);
+    assert.strictEqual(vault.get(so.id).pass,'b');
     assert.strictEqual(manager.delete(so.id).deleted,true);
     const switching=manager.save({name:'Proto guard',type:'http',host:'switch.example',port:9000,authUsername:'a',authPassword:'b'});
-    assert.throws(()=>manager.save({...switching,type:'socks5'}),/xóa mật khẩu/);
-    assert.strictEqual(manager.save({...switching,type:'socks5',clearCredentials:true}).type,'socks5');
+    assert.strictEqual(manager.save({...switching,type:'socks5'}).type,'socks5');
+    assert.strictEqual(vault.get(switching.id).pass,'b');
+    assert.strictEqual(manager.save({...switching,type:'socks5',clearCredentials:true}).hasCredentials,false);
     assert.strictEqual(vault.has(switching.id),false);
     manager.delete(switching.id);
     const deny=new ProxyCredentialVault(dir,{...codec,isEncryptionAvailable:()=>false});
