@@ -589,3 +589,13 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 #modal-proxy-center .pc-credential-fields .pc-credential-clear{display:flex;align-items:center;gap:8px;line-height:1.5}
 #modal-proxy-center .pc-credential-clear input{width:14px!important;accent-color:#25acd2}
 #modal-proxy-center .pc-credential-fields .pc-inline-hint{font-size:10px;color:#8b9aad;line-height:1.6;margin:8px 0 0}
+
+/* 2.8 — restrained bulk proxy tools */
+#modal-proxy-center .pc-batch-row{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+#modal-proxy-center .pc-batch-row span{font-size:10px;color:#96a6b4}
+#modal-proxy-center .pc-batch-row button{font-size:11px}
+#modal-proxy-center .pc-import-section{border:1px solid #e7edf2;border-radius:8px;padding:11px 13px;margin-bottom:12px;background:#fbfdfe}
+#modal-proxy-center .pc-import-section summary{cursor:pointer;font-size:11px;font-weight:700;color:#416077}
+#modal-proxy-center .pc-import-section p{font-size:10px;color:#8798a8;line-height:1.6;margin:10px 0}
+#modal-proxy-center .pc-import-section textarea{font-family:ui-monospace,Consolas,monospace;width:100%;resize:vertical;min-height:85px;max-height:180px;border:1px solid #dfe8ee;border-radius:7px;background:white;padding:9px;font-size:11px;color:#36495e}
+#modal-proxy-center .pc-import-section button{margin-top:8px;font-size:11px}

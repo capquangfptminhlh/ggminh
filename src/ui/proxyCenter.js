@@ -22,7 +22,7 @@
   function lock(value) {
     busy = value;
     for (const button of el('modal-proxy-center').querySelectorAll(
-      '#pc-save,#pc-reset,#pc-refresh,#pc-list button')) button.disabled = value;
+      '#pc-save,#pc-reset,#pc-refresh,#pc-check-batch,#pc-import-csv,#pc-list button')) button.disabled = value;
     el('pc-selection-info').textContent =
       value ? 'Đang xử lý yêu cầu…'
         : selectedIds().length + ' hồ sơ được chọn trong bảng chính';
@@ -209,6 +209,31 @@
     });
     // Search is local; no network/IPC request for each keystroke.
     el('pc-search').addEventListener('input',render);
+    el('pc-import-csv').addEventListener('click',()=>{
+      const csv=el('pc-csv-input').value.trim();
+      if(!csv){notice('Hãy nhập nội dung CSV trước.',true);return;}
+      if(!confirm('Nhập danh sách proxy công khai? CSV không được chứa mật khẩu.'))return;
+      runAction(async()=>{
+        const result=await api.importSavedProxiesCsv(csv);
+        el('pc-csv-input').value='';
+        await refresh();
+        notice('Đã nhập '+result.imported+' proxy, bỏ qua '+result.skipped+' địa chỉ trùng.');
+      },'CSV không hợp lệ');
+    });
+    el('pc-check-batch').addEventListener('click',()=>{
+      const search=el('pc-search').value.trim().toLowerCase();
+      const matching=cached.filter(p=>[p.name,p.tag,p.host,p.type].some(
+        v=>String(v||'').toLowerCase().includes(search)));
+      const ids=matching.slice(0,20).map(p=>p.id);
+      if(!ids.length){notice('Không có proxy để kiểm tra.',true);return;}
+      if(!confirm('Kiểm tra IP của '+ids.length+' proxy đầu tiên đang hiển thị?'))return;
+      runAction(async()=>{
+        notice('Đang kiểm tra '+ids.length+' proxy…');
+        const outcome=await api.checkSavedProxyBatch(ids);
+        await refresh();
+        notice('Đã kiểm tra '+outcome.checked+': xác minh '+outcome.verified+', chưa xác minh '+outcome.failures+'.');
+      },'Không kiểm tra được danh sách proxy');
+    });
     el('field-proxy-preset').addEventListener('change',presetChange);
     el('pc-type').addEventListener('change',()=>{
       el('pc-credential-info').textContent='HTTP/SOCKS5: nhập cả hai trường để đặt mật khẩu, để trống giữ nguyên.';

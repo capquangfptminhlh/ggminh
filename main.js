@@ -116,6 +116,8 @@ function initIPC() {
   ipcMain.handle('proxy-center-save', (_, proxy) => proxyCenter.save(proxy));
   ipcMain.handle('proxy-center-delete', (_, id) => proxyCenter.delete(id));
   ipcMain.handle('proxy-center-check', (_, id) => proxyCenter.verify(id));
+  ipcMain.handle('proxy-center-import', (_, csv) => proxyCenter.importCsv(csv));
+  ipcMain.handle('proxy-center-check-batch', (_, ids) => proxyCenter.verifyBatch(ids));
   ipcMain.handle('proxy-center-assign', (_, id, profileIds) => {
     const result = proxyCenter.assign(id, profileIds);
     for (const profileId of result.profileIds) behaviorMonitor.record('profile_save', profileId, 'manual');

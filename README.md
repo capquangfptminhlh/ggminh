@@ -305,3 +305,8 @@ Note: standard HTTP proxy Basic authentication is not encrypted on the network h
 - Health reports warn when a configured authenticated endpoint differs from the saved proxy, its credential is missing, or Windows encryption is unavailable.
 - Gateway supports HTTPS CONNECT only; HTTP URLs and UDP are deliberately unsupported in this beta.
 - Security limit: the local loopback port can be used by other processes under the same OS account while the browser is open. Authenticated SOCKS5 traffic beyond the local machine is not end-to-end encrypted by SOCKS5 itself.
+
+
+### Proxy Center batch tools (2.8)
+- Import up to 100 endpoint-only CSV records per action: header `name,type,host,port,tag`. No usernames/passwords are accepted in CSV. Inputs are validated and committed atomically in one database write; duplicates are skipped.
+- Verify at most 20 visible proxy entries per action with a concurrency limit of 3. Results represent HTTPS egress checks, not platform anti-fraud visibility.

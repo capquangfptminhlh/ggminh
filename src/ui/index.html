@@ -836,6 +836,16 @@ run();
               <h3>Kho proxy</h3>
               <input id="pc-search" type="search" placeholder="Tìm tên, IP, nhóm..." aria-label="Tìm proxy">
             </div>
+            <div class="pc-batch-row">
+              <button type="button" id="pc-check-batch" class="btn btn-sm btn-secondary">Kiểm tra tối đa 20 proxy</button>
+              <span>Kiểm tra đồng thời tối đa 3 kết nối</span>
+            </div>
+            <details class="pc-import-section">
+              <summary>Nhập nhiều proxy bằng CSV (không chứa mật khẩu)</summary>
+              <p>5 cột bắt buộc: name,type,host,port,tag. Tối đa 100 proxy/lần, bỏ qua địa chỉ trùng.</p>
+              <textarea id="pc-csv-input" rows="4" spellcheck="false" placeholder="name,type,host,port,tag&#10;Proxy A,http,proxy.example,8080,Agency&#10;Proxy B,socks5,socks.example,1080,Agency"></textarea>
+              <button type="button" id="pc-import-csv" class="btn btn-sm btn-secondary">Kiểm tra và nhập CSV</button>
+            </details>
             <div class="pc-list" role="region" aria-label="Bảng proxy" tabindex="0">
               <table class="pc-table">
                 <thead><tr><th>Tên kết nối</th><th>Địa chỉ</th><th>Đang dùng</th><th>Trạng thái IP</th><th>Thao tác</th></tr></thead>
