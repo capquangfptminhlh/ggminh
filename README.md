@@ -468,3 +468,8 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - In **Công cụ → Cửa sổ**, select up to ten profiles and choose **Mở tab trên hồ sơ đang chạy** to open a validated HTTP(S) URL in newly created tabs of *running Chromium* sessions. Firefox and profiles without an active DevTools port are skipped.
 - Chromium debugging must have been explicitly enabled **before opening** the browser through the existing Local API setting. Requests use only a checked numeric port from this application's live process map, `127.0.0.1` and the documented `PUT /json/new?{url}` Chromium endpoint. No web page content is read or cookies copied.
 - This feature is **not full click, keyboard or scroll synchronization**. Browser version restrictions may prevent a tab opening; the per-profile result reports those errors instead of weakening any security setting. Real Windows browser tests are still needed.
+
+
+### Real Windows browser smoke coverage
+- The `windows-exe.yml` workflow now runs `node test/real-chromium-smoke.js` against **installed Chrome or Edge on Windows-latest**. It uses only a disposable temporary user-data directory and confirms startup with the local DevTools port and active shared-URL tab creation. The test fails the build if no browser is installed or tab creation is rejected.
+- This is a single-host browser launch/navigation test, **not** a fingerprint, proxy, full Synchronizer or multi-device production validation. A separate real workstation acceptance test remains necessary.

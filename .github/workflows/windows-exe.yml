@@ -31,6 +31,8 @@ jobs:
           if ($result.mode -ne 'focus' -or @($result.results).Count -ne 1) {
             throw "Window manager helper produced invalid response"
           }
+      - name: Smoke real Chrome or Edge profile and active tab
+        run: node test/real-chromium-smoke.js
       - name: Build Windows installer
         run: npm run build:win
       - name: Verify packaged Win32 helper is unpacked
