@@ -436,3 +436,7 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Explicit `XOA CACHE` confirmation is required for cleanup. The tool only removes allowlisted cache directories beneath the selected browser's isolated profile folder and checks all paths against symlinks before deletion.
 - **Never** removes the profile root, Cookies, Login Data, Local Storage, IndexedDB, extension state, passwords or tokens. It does not wipe an account or guarantee disk space recovery.
 - This destructive operation is not atomic (one directory may fail to delete after another succeeded); individual folder failures are reported. Profile(s) must be stopped before preview and cleanup.
+
+
+### Workspace usability
+- The increasingly crowded toolbar now groups Local API, Cache, Extensions, Window Manager, Trash and CSV actions into a keyboard-accessible **Công cụ** menu. Quick Create and Create Profile remain visible. No feature has been removed.

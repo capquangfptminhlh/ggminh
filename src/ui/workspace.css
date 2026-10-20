@@ -716,3 +716,15 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .lhm-cache-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lhm-cache-row small{font-size:11px;color:#63758a;flex-shrink:0}
 #cache-result{font-size:12px;color:#395e84;white-space:pre-wrap;line-height:1.6}
+
+
+/* v4.2 header consolidation: accessible, keyboard-openable native details menu. */
+.lhm-tools-menu{position:relative;z-index:81;display:inline-flex;align-items:center}
+.lhm-tools-menu>summary{list-style:none;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:9px}
+.lhm-tools-menu>summary::-webkit-details-marker{display:none}
+.lhm-tools-chevron{font-size:11px;opacity:.75}
+.lhm-tools-menu[open] .lhm-tools-chevron{transform:rotate(180deg)}
+.lhm-tools-panel{position:absolute;right:0;top:calc(100% + 10px);min-width:212px;z-index:82;display:grid;gap:6px;background:#fff;border:1px solid #dfe5ee;border-radius:11px;padding:10px;box-shadow:0 16px 40px #1f293733}
+.lhm-tools-panel .btn{width:100%;min-height:35px;display:flex;align-items:center;justify-content:flex-start;gap:8px;font-size:12px;padding:8px 12px;white-space:nowrap}
+.lhm-tools-panel .lhm-icon{flex-shrink:0}
+@media(max-width:600px){.lhm-tools-panel{right:auto;left:0;min-width:192px}}

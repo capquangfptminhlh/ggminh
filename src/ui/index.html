@@ -109,15 +109,20 @@
           <button id="btn-open-rpa">Code RPA</button>
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
-        <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
-        <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
-        <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
-        <button class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
-        <button class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
-        <button class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
-        <button class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
-        <button class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
-        <button class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
+        <details class="lhm-tools-menu" id="lhm-tools-menu">
+          <summary class="btn btn-secondary" aria-label="Mở menu công cụ quản lý">Công cụ <span class="lhm-tools-chevron" aria-hidden="true">▾</span></summary>
+          <div class="lhm-tools-panel">
+            <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+            <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
+            <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
+            <button type="button" class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
+            <button type="button" class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
+            <button type="button" class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
+            <button type="button" class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
+          </div>
+        </details>
+        <button type="button" class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
+        <button type="button" class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
       </div>
     </header>
 
@@ -1156,6 +1161,7 @@ run();
   <script src="tablePreferences.js"></script>
   <script src="windowManager.js"></script>
   <script src="extensionCenter.js"></script>
+  <script src="toolMenu.js"></script>
   <script src="cacheManager.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
