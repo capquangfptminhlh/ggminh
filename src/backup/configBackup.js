@@ -116,8 +116,9 @@ class ConfigBackup {
         ...w,id:undefined,profileId:mapped.get(w.profileId),steps:cleanSteps
       });
     }
-    this.store.licensePolicy?.assertCapacity(
-      this.store.getProfiles().length,decoded.profiles.length);
+    if(decoded.profiles.length)
+      this.store.licensePolicy?.assertCapacity(
+        this.store.getProfiles().length,decoded.profiles.length);
     // One durable write per database; rollback on an I/O error. This protects
     // against validation/write failures, but is NOT a cross-file crash-proof
     // transaction if Windows loses power between the two renames.

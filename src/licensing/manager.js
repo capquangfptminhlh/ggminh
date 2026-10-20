@@ -136,8 +136,8 @@ class LicenseManager{
  deactivate(){
   // Local deactivation does not revoke a license on other devices;
   // revocation requires an online entitlement service.
-  this.token=null;
   writeAtomic(this.tokenFile,{version:1,token:null});
+  this.token=null;
   return this.status();
  }
 }

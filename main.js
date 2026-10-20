@@ -37,6 +37,7 @@ const {ExtensionManager} = require('./src/extensions/manager');
 const {AIAdvisor} = require('./src/ai/advisor');
 const {proposeWorkflow} = require('./src/ai/workflowDraft');
 const {LicenseManager} = require('./src/licensing/manager');
+const {LicensePolicy} = require('./src/licensing/enforcement');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -56,6 +57,7 @@ let proxyCenter = null;
 let extensionManager = null;
 let aiAdvisor = null;
 let licenseManager = null;
+let licensePolicy = null;
 let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -74,12 +76,13 @@ async function setApiEnabled(enabled) {
     store.updateSettings({ apiEnabled: false });
     return apiStatus();
   }
+  licensePolicy.require('api');
   if (apiServer?.listening) return apiStatus();
   const port = Number(store.getSettings().apiPort || 50325);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) {
     throw new Error('Invalid API port');
   }
-  const service = createApiServer(store, launcher, { apiKey, behaviorMonitor });
+  const service = createApiServer(store, launcher, { apiKey, behaviorMonitor,licensePolicy });
   try {
     await new Promise((resolve, reject) => {
       service.once('error', reject);
@@ -132,9 +135,15 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
-  ipcMain.handle('license-center-status', () => licenseManager.status());
-  ipcMain.handle('license-center-activate', (_,token) => licenseManager.activate(token));
-  ipcMain.handle('license-center-deactivate', () => licenseManager.deactivate());
+  ipcMain.handle('license-center-status', () => licensePolicy.status());
+  ipcMain.handle('license-center-activate', (_,token) => {
+    licenseManager.activate(token);
+    return licensePolicy.status();
+  });
+  ipcMain.handle('license-center-deactivate', () => {
+    licenseManager.deactivate();
+    return licensePolicy.status();
+  });
   ipcMain.handle('license-center-copy-installation', () => {
     clipboard.writeText(licenseManager.installationId);
     return true;
@@ -367,6 +376,7 @@ function initIPC() {
   ipcMain.handle('studio-batch-preview', (_, id,ids,onError) =>
     batchAutomation.preview(id,ids,onError));
   ipcMain.handle('studio-batch-run', (_, id,ids,onError) => {
+    licensePolicy.require('automation');
     if(recorderManager.status().state==='recording')
       throw Error('Dừng Recorder trước khi chạy hàng đợi');
     return batchAutomation.start(id,ids,onError);
@@ -396,6 +406,7 @@ function initIPC() {
     return automationRunner.run(id);
   });
   ipcMain.handle('recorder-start', async (_, options) => {
+    licensePolicy.require('automation');
     if (automationRunner.status().status === 'running' || batchAutomation.status().active)
       throw new Error('Hãy dừng workflow hoặc hàng đợi RPA trước khi ghi thao tác');
     return recorderManager.start(options);
@@ -504,7 +515,10 @@ app.whenReady().then(async () => {
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
   aiAdvisor = new AIAdvisor(storageDir,safeStorage);
   licenseManager = new LicenseManager(storageDir);
+  licensePolicy = new LicensePolicy(storageDir,licenseManager);
+  store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
+  launcher.licensePolicy = licensePolicy;
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
@@ -512,6 +526,7 @@ app.whenReady().then(async () => {
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
+  automationRunner.licensePolicy = licensePolicy;
   batchAutomation = new BatchAutomation(storageDir, workflowStore, store, automationRunner);
   sessionSnapshots = new SessionSnapshots(store,launcher,{inUse:id=>
     (automationRunner.status().status==='running'&&automationRunner.status().profileId===id)||

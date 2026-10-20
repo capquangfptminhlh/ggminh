@@ -28,9 +28,15 @@ function cli(argv=process.argv.slice(2),env=process.env){
  catch(_){throw Error('Issuer key or passphrase invalid');}
  const now=new Date(),end=new Date(now);
  end.setUTCMonth(end.getUTCMonth()+months);
+ const plans={
+  starter:['profiles'],
+  pro:['api','automation','profiles'],
+  business:['api','automation','profiles']
+ };
+ if(!Object.hasOwn(plans,values['--plan']))throw Error('Invalid subscription plan');
  const claims={version:1,licenseId:'lic_'+crypto.randomBytes(12).toString('hex'),
   customer:values['--customer'],installationId:values['--installation'],
-  plan:values['--plan'],maxProfiles,features:['api','automation','profiles'].sort(),
+  plan:values['--plan'],maxProfiles,features:plans[values['--plan']],
   issuedAt:now.toISOString(),expiresAt:end.toISOString()};
  const token=signLicense(claims,privateKey);
  verifyLicense(token,PUBLIC_KEY);

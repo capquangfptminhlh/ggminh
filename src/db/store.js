@@ -62,7 +62,7 @@ class Store {
     const found = this.data.profiles.find(p => p.id === id);
     return found ? this.publicProfile(found) : undefined;
   }
-  saveProfile(input) {
+  saveProfile(input,options={}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid profile');
     const id = input.id ? assertId(input.id) : 'pb_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
     const name = String(input.name || '').trim();
@@ -71,7 +71,7 @@ class Store {
     if (existingIndex < 0 && ((this.data.trash || []).some(t => t.profile?.id === id) ||
         (this.data.cleanupQueue || []).includes(id)))
       throw Error('Profile ID is reserved in trash or pending cleanup');
-    if(existingIndex<0 && this.licensePolicy && arguments[1]?.recovery!==true)
+    if(existingIndex<0 && this.licensePolicy && options.recovery!==true)
       this.licensePolicy.assertCapacity(this.data.profiles.length,1);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
