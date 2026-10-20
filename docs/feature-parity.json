@@ -75,16 +75,16 @@
     "id": "teams",
     "name": "Team roles, permissions and activity logging",
     "state": "partial",
-    "evidence": "Backend-only tenant-scoped RBAC and one-time invite policy library with unit tests; no user authentication, UI or remotely persisted memberships",
-    "gaps": "No identity provider or MFA, persistent permissioned backend, invitations UI, network deployment or real multi-account penetration tests",
+    "evidence": "Tenant- and group-scoped Team policy, self-hosted HTTPS service with administrator-provisioned bearer token identities, single-use invite/redeem, membership revocation/audit and desktop member UI; Windows HTTP e2e tests",
+    "gaps": "No hosted public Team deployment, external identity provider/passkeys/MFA, automated credential onboarding, per-group Team UI administration, high availability or independent security review",
     "acceptance": "Independent account RBAC and tenant isolation penetration tests"
   },
   {
     "id": "cloud-sync",
     "name": "Secure multi-device cloud sync",
     "state": "partial",
-    "evidence": "AES-256-GCM encrypted portable profile metadata codec with strict credential-free whitelist and in-memory CAS demo; no deployed cloud service or devices",
-    "gaps": "No deployed encrypted remote backend, authentication, real cross-device sync, conflict UI, revocation, history or migration",
+    "evidence": "AES-256-GCM ciphertext-only self-hosted HTTPS sync service, manual Electron push/preview/import of strictly whitelisted profile metadata, local revision CAS and tests, single-instance durable file persistence",
+    "gaps": "No public deployed service, database-backed multi-replica transactions, automatic/offline incremental sync, device/key lifecycle, conflict merge UI, production two-device proof or browser session sharing",
     "acceptance": "Encrypted transport/rest, cross-device conflict tests, recovery and secure sharing"
   },
   {
