@@ -139,17 +139,22 @@ class ProxyCenter {
     });
     // Validate everything before any mutation. Save a single atomic database update.
     const previous = profiles.map(profile => ({
-      profile, proxy: profile.proxy, updatedAt: profile.updatedAt
+      profile, proxy: profile.proxy, updatedAt: profile.updatedAt,
+      requiresProxySetup: profile.requiresProxySetup
     }));
     const now = new Date().toISOString();
     for (const profile of profiles) {
       profile.proxy = { type: proxy.type, host: proxy.host, port: proxy.port,
         ...(this.vault?.has(proxy.id) ? { authProxyId: proxy.id } : {}) };
+      profile.requiresProxySetup = false;
       profile.updatedAt = now;
     }
     try { this.store.saveData(); }
     catch (error) {
-      for (const p of previous) { p.profile.proxy = p.proxy; p.profile.updatedAt = p.updatedAt; }
+      for (const p of previous) {
+        p.profile.proxy = p.proxy; p.profile.updatedAt = p.updatedAt;
+        p.profile.requiresProxySetup = p.requiresProxySetup;
+      }
       throw error;
     }
     return { updated: profiles.length, proxyId: proxy.id, profileIds: chosen };

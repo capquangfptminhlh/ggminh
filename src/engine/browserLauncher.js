@@ -93,6 +93,8 @@ class BrowserLauncher {
       throw new Error(`Profile not found: ${profileId}`);
     }
 
+    if (profile.requiresProxySetup === true)
+      throw Error('Hồ sơ nhập từ bản sao lưu cần gán lại proxy trước khi mở.');
     const engine = profile.engine === 'gecko' ? 'gecko' : 'chromium';
     const browserBin = this.findBrowserBinary(engine);
     // Manual browsing does not require a remotely controllable DevTools endpoint.

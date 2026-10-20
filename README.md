@@ -325,3 +325,7 @@ OS-encrypted proxy credentials and their local references are not included in ex
 
 ### Privacy-safe support report (2.9)
 Health Center can export a small JSON technical report with software version, platform, counts and status codes. It intentionally omits profile/customer names, IP/proxy endpoints, usernames, passwords, cookie/session identifiers, local paths and account details. This is a manual, on-device action; no telemetry upload is performed.
+
+
+### Restored-profile network safety
+Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `requiresProxySetup` after backup import. Launching them fails closed until a new proxy is explicitly assigned from Proxy Center. The requirement is visible in Health Center. Normal profile edits do not silently clear the requirement.

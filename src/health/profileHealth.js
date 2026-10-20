@@ -20,6 +20,10 @@ function checkProfile(profile, options = {}) {
     const url = new URL(profile.startUrl || 'https://ads.google.com/');
     if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error('URL không hợp lệ');
   } catch (_) { issues.push({ level: 'error', code: 'invalid_starturl', message: 'URL trang mặc định không hợp lệ.' }); }
+  if(profile?.requiresProxySetup===true) issues.push({
+    level:'error',code:'proxy_setup_required',
+    message:'Hồ sơ nhập từ bản sao lưu cần gán lại proxy trong Proxy Center trước khi mở.'
+  });
   const config = validateProxy(proxy);
   if (!config.ok) issues.push({ level: 'error', code: 'proxy_invalid', message: config.message });
   if (engine === 'gecko' && config.ok && config.type !== 'direct') issues.push({

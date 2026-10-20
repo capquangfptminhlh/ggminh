@@ -11,6 +11,8 @@ function portableProfile(profile) {
     ? {type:'direct'}
     : {type:proxy.type||'direct',
        ...(proxy.type==='direct'?{}:{host:proxy.host,port:proxy.port})};
+  // A restored encrypted-proxy profile is locked until explicitly reassigned.
+  if(proxy.authProxyId || profile.requiresProxySetup === true) copy.requiresProxySetup=true;
   return copy;
 }
 

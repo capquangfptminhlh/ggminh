@@ -44,6 +44,7 @@ const codec={
     assert.strictEqual(manager.assign(p.id,[prof.id]).updated,1);
     const assigned=store.getProfile(prof.id);
     assert.strictEqual(assigned.proxy.authProxyId,p.id);
+    assert.strictEqual(assigned.requiresProxySetup,false);
     const edited=store.saveProfile({...assigned,name:'Client edited',proxy:{
       type:assigned.proxy.type,host:assigned.proxy.host,port:assigned.proxy.port
     }});

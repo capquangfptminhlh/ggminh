@@ -85,6 +85,9 @@ class Store {
       startUrl: String(input.startUrl || old.startUrl || 'https://ads.google.com/').slice(0, 2048),
       notes: String(input.notes || old.notes || '').slice(0, 2000),
       proxy,
+      requiresProxySetup: proxy.type==='direct' &&
+        (input.requiresProxySetup === true ||
+          (input.requiresProxySetup !== false && old.requiresProxySetup === true)),
       // New/API/duplicated profiles default to native device properties.
       // Preserve explicitly customized fingerprints on pre-existing profiles.
       fingerprint: (() => {
