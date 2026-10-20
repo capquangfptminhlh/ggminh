@@ -108,7 +108,8 @@ class Store {
         ? input.engine : (old.engine === 'gecko' ? 'gecko' : 'chromium'),
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: startUrls[0], startUrls, tags,
-      notes: String(input.notes || old.notes || '').slice(0, 2000),
+      // An explicit empty string clears notes; omitted notes preserve the old value.
+      notes: String(input.notes !== undefined ? input.notes : (old.notes || '')).slice(0, 2000),
       proxy,
       requiresProxySetup: proxy.type==='direct' &&
         (input.requiresProxySetup === true ||

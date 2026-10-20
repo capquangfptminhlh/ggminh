@@ -400,3 +400,7 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Supported columns: `id` (required), `name`, `group`, `tags`, `notes`, `startUrls`. Empty tags/notes clear the field; blank name/group/URLs preserve prior values.
 - Duplicate/unknown IDs, invalid URLs and unexpected columns (including cookies/credentials) fail validation for the entire batch. Updating a running browser's profile is disallowed even if only metadata changes.
 - This does not reconfigure proxies or change engine, sessions, passwords, security properties or fingerprint values. The preview makes no persistent changes; commit validates again to catch status changes.
+
+
+### v3.8 data-preservation fix
+- Existing profile notes can now be deliberately cleared with an explicit empty string (including via CSV); omission still preserves notes. Regression coverage verifies the distinction.

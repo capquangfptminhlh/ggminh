@@ -11,7 +11,7 @@ try{
     proxy:{type:'http',host:'proxy.example',port:8080},
     startUrls:['https://example.com/']
   });
-  const other=store.saveProfile({name:'Other',tags:[]});
+  const other=store.saveProfile({name:'Other',tags:[],notes:'Clear this note'});
   const busy=new Set(),launcher={isBusy:id=>busy.has(id)};
   const csv='id,name,group,tags,notes,startUrls\n'+
     profile.id+',Changed,Clients,Client|Active,"Notes, quoted",https://example.org/\n'+
