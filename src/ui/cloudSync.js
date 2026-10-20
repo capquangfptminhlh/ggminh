@@ -27,6 +27,9 @@ window.addEventListener('DOMContentLoaded',()=>{
   el('cloud-sync-passphrase').value='';
   el('cloud-sync-confirm').value='';
   resetPreview();
+  el('cloud-team-result').textContent='';
+  el('cloud-team-list').replaceChildren();
+  el('cloud-team-email').value='';
  }
  trigger.addEventListener('click',()=>{
   modal.classList.add('open');
@@ -80,6 +83,63 @@ window.addEventListener('DOMContentLoaded',()=>{
    resetPreview();
    if(typeof loadProfiles==='function')await loadProfiles();
   }catch(error){result.textContent='Không thể áp dụng: '+error.message;}
+  finally{toggleBusy(false);}
+ });
+ const teamResult=el('cloud-team-result');
+ const memberList=el('cloud-team-list');
+ function credentials(){const {passphrase,...auth}=options();return auth;}
+ function drawMembers(items){
+  memberList.replaceChildren();
+  for(const member of items){
+   const row=document.createElement('div');row.className='lhm-wm-row';
+   const label=document.createElement('span');
+   label.textContent=member.subjectId+' · '+member.role+' · '+
+    (Array.isArray(member.groups)?member.groups.join(', '):'');
+   row.append(label);
+   if(member.status==='active'){
+    const revoke=document.createElement('button');revoke.type='button';
+    revoke.className='btn btn-sm btn-danger';revoke.textContent='Thu hồi';
+    revoke.addEventListener('click',async()=>{
+     if(!window.confirm('Thu hồi quyền '+member.subjectId+'?'))return;
+     toggleBusy(true);
+     try{
+      await window.api.cloudTeamRevoke(credentials(),member.subjectId);
+      drawMembers(await window.api.cloudTeamMembers(credentials()));
+      teamResult.textContent='Đã thu hồi quyền '+member.subjectId+'.';
+     }catch(error){teamResult.textContent='Thu hồi thất bại: '+error.message;}
+     finally{toggleBusy(false);}
+    });
+    row.append(revoke);
+   }
+   memberList.append(row);
+  }
+  if(!items.length)memberList.textContent='Chưa có thành viên.';
+ }
+ el('cloud-team-load').addEventListener('click',async()=>{
+  toggleBusy(true);
+  try{
+   const items=await window.api.cloudTeamMembers(credentials());
+   drawMembers(items);teamResult.textContent='Đã tải '+items.length+' thành viên.';
+  }catch(error){teamResult.textContent='Không thể tải Team: '+error.message;}
+  finally{toggleBusy(false);}
+ });
+ el('cloud-team-invite').addEventListener('click',async()=>{
+  const email=el('cloud-team-email').value.trim();
+  const role=el('cloud-team-role').value;
+  if(!email||!['viewer','operator','admin'].includes(role)){
+   teamResult.textContent='Nhập email và quyền hợp lệ.';return;
+  }
+  if(!window.confirm('Tạo lời mời '+role+' cho '+email+
+   '? Thành viên cần token riêng do quản trị viên cấp.'))return;
+  toggleBusy(true);
+  try{
+   const invite=await window.api.cloudTeamInvite(credentials(),{
+    email,role,groups:['*'],ttlHours:24
+   });
+   // One-time invite token is not stored; closing modal erases it from UI.
+   teamResult.textContent='Mã lời mời một lần (24 giờ): '+invite.token+
+    ' · Gửi riêng qua kênh an toàn.';
+  }catch(error){teamResult.textContent='Không tạo được lời mời: '+error.message;}
   finally{toggleBusy(false);}
  });
 });
