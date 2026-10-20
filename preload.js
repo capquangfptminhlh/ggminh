@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('api', {
   getProfileHealth: id => ipcRenderer.invoke('get-profile-health', id),
   getAllProfileHealth: () => ipcRenderer.invoke('get-all-profile-health'),
   getLocalReadiness: () => ipcRenderer.invoke('get-local-readiness'),
+  exportSupportReport: () => ipcRenderer.invoke('export-support-report'),
   exportConfigBackup: password => ipcRenderer.invoke('export-config-backup', password),
   importConfigBackup: password => ipcRenderer.invoke('import-config-backup', password),
   recorderStart: options => ipcRenderer.invoke('recorder-start', options),

@@ -321,3 +321,7 @@ OS-encrypted proxy credentials and their local references are not included in ex
 - A readiness check is not an anti-fraud score or proof of network anonymity; it never collects cookies or reveals vault contents.
 - Browser process exit handlers are registered before awaiting spawn, preventing false-positive successful launches and cleaning up the temporary proxy gateway on early failures.
 - Configuration exports/imports remove non-portable encrypted credential references and reset those profiles to Direct, requiring explicit reauthentication after migration.
+
+
+### Privacy-safe support report (2.9)
+Health Center can export a small JSON technical report with software version, platform, counts and status codes. It intentionally omits profile/customer names, IP/proxy endpoints, usernames, passwords, cookie/session identifiers, local paths and account details. This is a manual, on-device action; no telemetry upload is performed.

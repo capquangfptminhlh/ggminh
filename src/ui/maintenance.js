@@ -169,6 +169,17 @@
     el('health-isolation-audit').addEventListener('click', auditIsolation);
     el('health-check-engines').addEventListener('click', checkEngines);
     el('health-readiness-refresh').addEventListener('click',updateReadiness);
+    el('health-support-export').addEventListener('click',async()=>{
+      const button=el('health-support-export');
+      button.disabled=true;
+      try{
+        const result=await api.exportSupportReport();
+        el('health-readiness-summary').textContent=result.canceled ?
+          'Đã hủy xuất báo cáo.' : 'Đã lưu báo cáo chỉ gồm trạng thái cấu hình, không có tên hồ sơ, IP hoặc mật khẩu.';
+      }catch(error){
+        el('health-readiness-summary').textContent='Không xuất được báo cáo: '+error.message;
+      }finally{button.disabled=false;}
+    });
     el('btn-config-backup').addEventListener('click', showBackup);
     el('backup-close').addEventListener('click', () => close('modal-backup'));
     el('backup-cancel').addEventListener('click', () => close('modal-backup'));

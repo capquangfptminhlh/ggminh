@@ -17,6 +17,7 @@ const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const {buildReadiness}=require('./src/health/releaseReadiness');
+const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
@@ -191,6 +192,25 @@ function initIPC() {
     return buildReadiness({profiles,reports,proxies:proxyCenter.list(),
       active:launcher.listActive(),workflows:workflowStore.list(),
       vault:proxyVault,platform:process.platform});
+  });
+  ipcMain.handle('export-support-report', async () => {
+    const profiles=store.getProfiles();
+    const reports=profiles.map(profile=>checkProfile(profile,{
+      settings:store.getSettings(),proxies:store.data.proxies,vault:proxyVault
+    }));
+    const summary=buildReadiness({profiles,reports,proxies:proxyCenter.list(),
+      active:launcher.listActive(),workflows:workflowStore.list(),vault:proxyVault});
+    const report=buildSupportReport(summary,{
+      version:app.getVersion(),platform:process.platform,arch:process.arch
+    });
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Xuất báo cáo kỹ thuật LHM (không chứa dữ liệu nhạy cảm)',
+      defaultPath:'LHM-Support-'+new Date().toISOString().slice(0,10)+'.json',
+      filters:[{name:'JSON Support Report',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    fs.writeFileSync(filePath,JSON.stringify(report,null,2),{mode:0o600});
+    return {canceled:false};
   });
   ipcMain.handle('export-config-backup', async (_, passphrase) => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
