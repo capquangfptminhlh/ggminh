@@ -16,6 +16,7 @@ const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
+const {buildReadiness}=require('./src/health/releaseReadiness');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
@@ -182,6 +183,15 @@ function initIPC() {
   });
   ipcMain.handle('get-all-profile-health', () =>
     store.getProfiles().map(profile => checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault })));
+  ipcMain.handle('get-local-readiness', () => {
+    const profiles=store.getProfiles();
+    const reports=profiles.map(profile=>checkProfile(profile,{
+      settings:store.getSettings(),proxies:store.data.proxies,vault:proxyVault
+    }));
+    return buildReadiness({profiles,reports,proxies:proxyCenter.list(),
+      active:launcher.listActive(),workflows:workflowStore.list(),
+      vault:proxyVault,platform:process.platform});
+  });
   ipcMain.handle('export-config-backup', async (_, passphrase) => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Xuất bản sao lưu cấu hình được mã hóa',

@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('api', {
   inspectFingerprint: value => ipcRenderer.invoke('inspect-fingerprint', value),
   getProfileHealth: id => ipcRenderer.invoke('get-profile-health', id),
   getAllProfileHealth: () => ipcRenderer.invoke('get-all-profile-health'),
+  getLocalReadiness: () => ipcRenderer.invoke('get-local-readiness'),
   exportConfigBackup: password => ipcRenderer.invoke('export-config-backup', password),
   importConfigBackup: password => ipcRenderer.invoke('import-config-backup', password),
   recorderStart: options => ipcRenderer.invoke('recorder-start', options),

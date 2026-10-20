@@ -665,7 +665,7 @@ run();
     <div class="modal-dialog modal-lg health-dialog" role="dialog" aria-modal="true" aria-labelledby="health-title">
       <div class="modal-header">
         <div>
-          <h2 id="health-title">🛡️ Profile Health Center</h2>
+          <h2 id="health-title">Profile Health Center</h2>
           <p class="health-intro">Chẩn đoán cấu hình, không phải điểm đánh giá Google Ads.</p>
         </div>
         <button class="btn-close" id="health-close" aria-label="Đóng">&times;</button>
@@ -676,6 +676,14 @@ run();
           <div><span>Cần xử lý</span><strong id="health-errors">0</strong></div>
           <div><span>Cảnh báo</span><strong id="health-warnings">0</strong></div>
         </div>
+        <section class="health-readiness" aria-labelledby="health-readiness-title">
+          <div class="isolation-audit-head">
+            <strong id="health-readiness-title">Kiểm tra trước khi sử dụng</strong>
+            <button type="button" class="btn btn-sm btn-secondary" id="health-readiness-refresh">Kiểm tra cấu hình</button>
+          </div>
+          <div id="health-readiness-summary" class="health-readiness-summary" role="status">Nhấn kiểm tra để xem trạng thái hệ thống.</div>
+          <div id="health-readiness-items" class="health-readiness-items"></div>
+        </section>
         <div id="health-items" class="health-list"></div>
         <section class="engine-diagnostics">
           <div class="isolation-audit-head">
@@ -687,7 +695,7 @@ run();
         </section>
         <div class="isolation-audit">
           <div class="isolation-audit-head">
-            <strong>🔐 Kiểm tra cách ly dữ liệu cục bộ</strong>
+            <strong>Kiểm tra cách ly dữ liệu cục bộ</strong>
             <button class="btn btn-sm btn-secondary" id="health-isolation-audit">Quét thư mục hồ sơ</button>
           </div>
           <div id="isolation-audit-results" role="status" class="isolation-audit-results">Chưa chạy kiểm tra. Chỉ kiểm tra việc tách thư mục lưu trữ, không kiểm tra danh tính Google.</div>
@@ -703,7 +711,7 @@ run();
   <div class="modal-overlay" id="modal-backup">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="backup-title">
       <div class="modal-header">
-        <h2 id="backup-title">🔐 Sao lưu cấu hình LHM</h2>
+        <h2 id="backup-title">Sao lưu cấu hình LHM</h2>
         <button class="btn-close" id="backup-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">

@@ -33,23 +33,57 @@
       heading.className = 'health-item-head';
       heading.append(labeled('health-name', (names.get(result.profileId) || result.profileId) + ' · ' + result.engine));
       heading.append(labeled('health-status ' + result.status,
-        result.status === 'error' ? '🔴 Cần xử lý' : result.status === 'warning' ? '🟡 Cần xem lại' : '🟢 Có thể mở'));
+        result.status === 'error' ? 'Cần xử lý' : result.status === 'warning' ? 'Cần xem lại' : 'Có thể mở'));
       wrapper.append(heading);
       const issues = document.createElement('div');
       issues.className = 'health-issues';
       for (const item of result.issues) {
         issues.append(labeled('health-issue ' + item.level,
-          (item.level === 'error' ? '✖ ' : item.level === 'warning' ? '⚠ ' : 'ℹ ') + item.message));
+          item.message));
       }
       if (!result.issues.length) issues.append(labeled('health-issue', 'Không phát hiện lỗi cấu hình đã biết.'));
       wrapper.append(issues);
       list.append(wrapper);
     }
   }
+  async function updateReadiness() {
+    const target=el('health-readiness-items');
+    const refresh=el('health-readiness-refresh');
+    refresh.disabled=true;
+    target.replaceChildren(labeled('health-issue','Đang kiểm tra...'));
+    try {
+      const report=await api.getLocalReadiness();
+      const counts=report.counts;
+      el('health-readiness-summary').textContent=
+        counts.profiles+' hồ sơ · '+counts.active+' đang chạy · '+
+        counts.proxies+' proxy · '+counts.workflows+' quy trình';
+      target.replaceChildren();
+      for(const entry of report.items) {
+        const line=document.createElement('div');
+        line.className='health-readiness-row';
+        line.dataset.status=entry.status;
+        const heading=document.createElement('div');
+        heading.className='health-readiness-label';
+        const label=document.createElement('strong');
+        label.textContent=entry.label;
+        const state=document.createElement('span');
+        state.className='health-readiness-tag';
+        state.textContent=entry.status==='ready'?'Sẵn sàng'
+          :entry.status==='error'?'Cần xử lý'
+          :entry.status==='warning'?'Cần xem lại':'Chưa triển khai';
+        heading.append(label,state);
+        line.append(heading,labeled('health-readiness-detail',entry.detail));
+        target.append(line);
+      }
+      target.append(labeled('health-footnote',report.note));
+    } catch(error) {
+      target.replaceChildren(labeled('health-issue error','Không kiểm tra được: '+error.message));
+    } finally {refresh.disabled=false;}
+  }
   async function showHealth(profileId = null) {
     selectedProfile = profileId;
     open('modal-health');
-    try { await updateHealth(); }
+    try { await Promise.all([updateHealth(),updateReadiness()]); }
     catch (error) { el('health-items').replaceChildren(labeled('health-issue error', 'Không kiểm tra được: ' + error.message)); }
   }
   async function checkEngines() {
@@ -134,6 +168,7 @@
     el('health-refresh').addEventListener('click', () => updateHealth().catch(console.error));
     el('health-isolation-audit').addEventListener('click', auditIsolation);
     el('health-check-engines').addEventListener('click', checkEngines);
+    el('health-readiness-refresh').addEventListener('click',updateReadiness);
     el('btn-config-backup').addEventListener('click', showBackup);
     el('backup-close').addEventListener('click', () => close('modal-backup'));
     el('backup-cancel').addEventListener('click', () => close('modal-backup'));

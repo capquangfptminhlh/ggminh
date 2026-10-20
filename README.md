@@ -314,3 +314,10 @@ Note: standard HTTP proxy Basic authentication is not encrypted on the network h
 
 ### Backup compatibility and security (2.9)
 OS-encrypted proxy credentials and their local references are not included in exported backups. If a profile uses an authenticated proxy, its exported configuration defaults to **Direct** so a restored profile cannot silently use the remote proxy without credentials; the user must explicitly reassign a saved, authenticated proxy after import. Older backup files containing local credential references are sanitized on import.
+
+
+## v2.9 — Operational readiness, protected backup and launch lifecycle
+- Health Center now has a real, local preflight checklist covering executable availability, profile configuration, encrypted credential vault, orphaned credential references, native-profile defaults, proxy IP verification and unimplemented capabilities.
+- A readiness check is not an anti-fraud score or proof of network anonymity; it never collects cookies or reveals vault contents.
+- Browser process exit handlers are registered before awaiting spawn, preventing false-positive successful launches and cleaning up the temporary proxy gateway on early failures.
+- Configuration exports/imports remove non-portable encrypted credential references and reset those profiles to Direct, requiring explicit reauthentication after migration.

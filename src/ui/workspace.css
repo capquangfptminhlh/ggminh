@@ -599,3 +599,18 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 #modal-proxy-center .pc-import-section p{font-size:10px;color:#8798a8;line-height:1.6;margin:10px 0}
 #modal-proxy-center .pc-import-section textarea{font-family:ui-monospace,Consolas,monospace;width:100%;resize:vertical;min-height:85px;max-height:180px;border:1px solid #dfe8ee;border-radius:7px;background:white;padding:9px;font-size:11px;color:#36495e}
 #modal-proxy-center .pc-import-section button{margin-top:8px;font-size:11px}
+
+
+/* Release readiness: source-grounded operational checklist */
+.health-readiness{border:1px solid #e5ebf0;border-radius:9px;padding:15px;margin:17px 0;background:#fff}
+.health-readiness-summary{font-size:12px;color:#65778b;margin:10px 0}
+.health-readiness-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.health-readiness-row{background:#fbfcfe;border:1px solid #e7edf3;border-radius:7px;padding:11px 12px;min-width:0}
+.health-readiness-label{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:7px}
+.health-readiness-label strong{color:#435770;font-size:11px}
+.health-readiness-tag{font-size:10px;border-radius:12px;padding:4px 7px;background:#e5f4ee;color:#267f64;white-space:nowrap}
+.health-readiness-row[data-status="error"] .health-readiness-tag{background:#fcece9;color:#b4564a}
+.health-readiness-row[data-status="warning"] .health-readiness-tag{background:#fff4df;color:#9d782e}
+.health-readiness-row[data-status="planned"] .health-readiness-tag{background:#f0f3f6;color:#8d99a6}
+.health-readiness-detail{color:#8a9aab;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+@media(max-width:680px){.health-readiness-items{grid-template-columns:1fr}}
