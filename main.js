@@ -129,7 +129,7 @@ function initIPC() {
     return buildDashboardSummary({
       profiles,
       active: launcher.listActive(),
-      healthReports: profiles.map(profile => checkProfile(profile, { settings: store.getSettings() })),
+      healthReports: profiles.map(profile => checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault })),
       proxies: proxyCenter.list(),
       workflows: workflowStore.list(),
       automation: automationRunner.status(),
@@ -138,7 +138,7 @@ function initIPC() {
   });
   ipcMain.handle('control-tower-snapshot', () => {
     const profiles = store.getProfiles();
-    const reports = profiles.map(profile => checkProfile(profile, { settings: store.getSettings() }));
+    const reports = profiles.map(profile => checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault }));
     return overview(profiles, launcher.listActive(), reports, behaviorMonitor.getReport());
   });
   ipcMain.handle('control-tower-duplicate', (_, id) => {
@@ -176,10 +176,10 @@ function initIPC() {
   ipcMain.handle('get-profile-health', (_, id) => {
     const profile = store.getProfile(id);
     if (!profile) throw new Error('Không tìm thấy hồ sơ');
-    return checkProfile(profile, { settings: store.getSettings() });
+    return checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault });
   });
   ipcMain.handle('get-all-profile-health', () =>
-    store.getProfiles().map(profile => checkProfile(profile, { settings: store.getSettings() })));
+    store.getProfiles().map(profile => checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault })));
   ipcMain.handle('export-config-backup', async (_, passphrase) => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Xuất bản sao lưu cấu hình được mã hóa',

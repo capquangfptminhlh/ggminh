@@ -211,10 +211,7 @@
     el('pc-search').addEventListener('input',render);
     el('field-proxy-preset').addEventListener('change',presetChange);
     el('pc-type').addEventListener('change',()=>{
-      const socks=el('pc-type').value==='socks5';
-      el('pc-auth-user').disabled=socks;
-      el('pc-auth-pass').disabled=socks;
-      el('pc-credential-info').textContent=socks ? 'SOCKS5 có mật khẩu chưa được hỗ trợ.' : 'Để trống sẽ giữ nguyên thông tin đã lưu.';
+      el('pc-credential-info').textContent='HTTP/SOCKS5: nhập cả hai trường để đặt mật khẩu, để trống giữ nguyên.';
     });
   }
   window.LHMProxyCenter={show,refresh,refreshPresets};

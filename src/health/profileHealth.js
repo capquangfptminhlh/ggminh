@@ -23,8 +23,28 @@ function checkProfile(profile, options = {}) {
   const config = validateProxy(proxy);
   if (!config.ok) issues.push({ level: 'error', code: 'proxy_invalid', message: config.message });
   if (engine === 'gecko' && config.ok && config.type !== 'direct') issues.push({
-    level: 'notice', code: 'gecko_proxy_profile', message: 'HTTP/SOCKS5 sẽ áp dụng bằng Firefox user.js khi mở hồ sơ. Chưa hỗ trợ proxy xác thực.'
+    level: 'notice', code: 'gecko_proxy_profile', message: 'HTTP/SOCKS5 sẽ áp dụng bằng Firefox user.js. Proxy có mật khẩu dùng kết nối chuyển tiếp cục bộ.'
   });
+  if (proxy.authProxyId) {
+    const entry = (options.proxies || []).find(p=>p.id===proxy.authProxyId);
+    if (options.proxies && (!entry || entry.type!==proxy.type ||
+        entry.host!==proxy.host || Number(entry.port)!==Number(proxy.port))) {
+      issues.push({level:'error',code:'proxy_credential_mismatch',
+        message:'Cấu hình proxy xác thực không còn khớp với kho proxy. Hãy gán lại.'});
+    }
+    if(options.vault) {
+      if(!options.vault.has(proxy.authProxyId)) issues.push({
+        level:'error',code:'proxy_credential_missing',
+        message:'Thiếu mật khẩu proxy. Hãy nhập lại trong Proxy Center.'
+      });
+      else if(!options.vault.available()) issues.push({
+        level:'error',code:'proxy_encryption_unavailable',
+        message:'Mã hóa mật khẩu Windows đang không khả dụng.'
+      });
+      else issues.push({level:'notice',code:'proxy_authenticated',
+        message:'Proxy xác thực sử dụng kho mật khẩu mã hóa và gateway HTTPS CONNECT trên máy.'});
+    }
+  }
   if (engine === 'gecko') issues.push({
     level: 'notice', code: 'gecko_experimental', message: 'Gecko cần Firefox cài ngoài; RPA/CDP và cấu hình mặt nạ Chromium không có hiệu lực.'
   });

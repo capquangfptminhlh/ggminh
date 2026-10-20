@@ -112,14 +112,19 @@ class BrowserLauncher {
       const proxyId=effectiveProxy.authProxyId;
       if(!this.proxyVault)throw Error('Kho mật khẩu proxy chưa được khởi tạo');
       const saved=this.store.data.proxies?.find(p=>p.id===proxyId);
-      if(!saved || saved.type!=='http' ||
+      if(!saved || !['http','socks5'].includes(saved.type) ||
          saved.host!==effectiveProxy.host || saved.port!==Number(effectiveProxy.port)){
         throw Error('Proxy đã thay đổi hoặc bị xóa. Hãy gán lại từ Proxy Center.');
       }
       const credentials=this.proxyVault.get(proxyId);
       if(!credentials)throw Error('Không tìm thấy mật khẩu proxy. Hãy nhập lại trong Proxy Center.');
-      const { createAuthenticatedHttpGateway }=require('./authenticatedHttpGateway');
-      gateway=await createAuthenticatedHttpGateway({...saved,...credentials});
+      if(saved.type==='socks5') {
+        const {createAuthenticatedSocksGateway}=require('./authenticatedSocksGateway');
+        gateway=await createAuthenticatedSocksGateway({...saved,...credentials});
+      }else{
+        const {createAuthenticatedHttpGateway}=require('./authenticatedHttpGateway');
+        gateway=await createAuthenticatedHttpGateway({...saved,...credentials});
+      }
       effectiveProxy={type:'http',host:'127.0.0.1',port:gateway.port};
     }
     try {

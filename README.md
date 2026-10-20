@@ -296,3 +296,12 @@ See [ADR-0001: LHM Browser Runtime](docs/ADR-0001-browser-runtime.md) for the pl
 Profile edits that leave the proxy endpoint unchanged preserve the encrypted credential reference. The profile form directs users to Proxy Center instead of accepting raw proxy passwords.
 
 Note: standard HTTP proxy Basic authentication is not encrypted on the network hop between LHM and a remote HTTP proxy. Use a trusted proxy provider and network; Windows encryption protects secrets at rest only.
+
+
+## 2.8 — Authenticated SOCKS5 beta and proxy health
+- Username/password for SOCKS5 use the existing Windows encrypted credential vault; the browser receives only a temporary localhost HTTP CONNECT endpoint.
+- The gateway uses RFC1928 method 0x02 and RFC1929 username/password, with destination hostnames forwarded to the remote SOCKS5 server. The browser's command line contains no secret.
+- Proxy Center verification uses the gateway for both HTTP and SOCKS5 credentialed connections. There is no direct fallback if authentication fails.
+- Health reports warn when a configured authenticated endpoint differs from the saved proxy, its credential is missing, or Windows encryption is unavailable.
+- Gateway supports HTTPS CONNECT only; HTTP URLs and UDP are deliberately unsupported in this beta.
+- Security limit: the local loopback port can be used by other processes under the same OS account while the browser is open. Authenticated SOCKS5 traffic beyond the local machine is not end-to-end encrypted by SOCKS5 itself.

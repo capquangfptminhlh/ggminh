@@ -3,8 +3,8 @@ const { validateProxy } = require('../health/profileHealth');
 const { uniqueIds } = require('../ops/operations');
 
 /**
- * LHM Proxy Center stores non-authenticated proxy endpoints only.
- * Credentials, cookies and browser state must never be stored in this module.
+ * LHM Proxy Center stores public endpoint metadata only.
+ * Credentials are stored in the OS-encrypted vault, never in profile JSON,
  * A profile receives a snapshot of the selected endpoint, not a live reference.
  */
 class ProxyCenter {
@@ -81,9 +81,7 @@ class ProxyCenter {
     if(editingAuth && clearAuth)throw Error('Không thể thêm và xóa mật khẩu cùng lúc');
     if((username===undefined||username==='') !== (password===undefined||password===''))
       throw Error('Cần nhập cả tên đăng nhập và mật khẩu proxy');
-    if(editingAuth && proxy.type!=='http')throw Error('Chỉ hỗ trợ mật khẩu proxy HTTP; SOCKS5 có mật khẩu chưa hỗ trợ');
-    if(proxy.type!=='http' && this.vault?.has(proxy.id) && !clearAuth)
-      throw Error('Proxy có mật khẩu: hãy chọn xóa mật khẩu trước khi đổi sang SOCKS5.');
+    // HTTP and SOCKS5 credentials both use the same OS-backed vault.
     if((editingAuth||clearAuth) && !this.vault)throw Error('OS credential vault unavailable');
     if(clearAuth && linkedProfiles.length)throw Error('Hãy gỡ proxy này khỏi các hồ sơ trước khi xóa mật khẩu.');
     if(editingAuth && !this.vault.available())throw Error('Mã hóa mật khẩu của Windows không khả dụng');
@@ -162,11 +160,15 @@ class ProxyCenter {
     let result;
     try {
       if(this.vault?.has(id)){
-        if(p.type!=='http')throw Error('SOCKS5 proxy có mật khẩu chưa được hỗ trợ');
         const auth=this.vault.get(id);
         if(!auth)throw Error('Không tìm thấy mật khẩu proxy được mã hóa');
-        const {createAuthenticatedHttpGateway}=require('../engine/authenticatedHttpGateway');
-        gateway=await createAuthenticatedHttpGateway({...p,...auth});
+        if(p.type==='socks5') {
+          const {createAuthenticatedSocksGateway}=require('../engine/authenticatedSocksGateway');
+          gateway=await createAuthenticatedSocksGateway({...p,...auth});
+        }else{
+          const {createAuthenticatedHttpGateway}=require('../engine/authenticatedHttpGateway');
+          gateway=await createAuthenticatedHttpGateway({...p,...auth});
+        }
         result=await this.checkProxy({type:'http',host:'127.0.0.1',port:gateway.port});
       }else result=await this.checkProxy({type:p.type,host:p.host,port:p.port});
     }finally{if(gateway)await gateway.close();}
