@@ -46,6 +46,10 @@ class LicensePolicy{
   if(!Number.isFinite(now)||now+5*60000<this.startedAt ||
      base.status==='clock_error')
    return {...base,access:'blocked',trial:false,allowed:false,reason:'clock_error'};
+  // Expired, invalid or mismatched paid tokens must NOT silently regain trial
+  // privileges just because fewer than 30 days elapsed since installation.
+  if(['expired','invalid','different_installation','not_yet_valid'].includes(base.status))
+   return {...base,access:'blocked',trial:false,allowed:false,reason:base.status};
   // A deactivated or expired license cannot restart the free trial. The first
   // successful installation starts one bounded local evaluation window.
   const elapsed=Math.max(0,now-this.startedAt);

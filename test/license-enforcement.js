@@ -35,6 +35,13 @@ try{
   plan:'business',maxProfiles:200};
  gate.require('automation');gate.require('api');gate.assertCapacity(199);
  entitlement={...entitlement,active:false,status:'expired'};
+ // A short paid license expiring during the evaluation window cannot
+ // re-enable an otherwise disabled or revoked paid subscription.
+ now=start+10*86400000;
+ assert.strictEqual(gate.status().access,'blocked');
+ assert.strictEqual(gate.status().reason,'expired');
+ assert.throws(()=>gate.require('profiles'),/hết hạn/);
+ now=start+31*86400000;
  assert.strictEqual(gate.status().access,'blocked');
  now=start-3*86400000;
  assert.strictEqual(gate.status().reason,'clock_error');

@@ -10,7 +10,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   el('license-installation-id').value=state.installationId;
   el('license-state').textContent=state.access==='trial'
     ?'Dùng thử · còn '+state.trialDaysLeft+' ngày'
-    :state.access==='blocked'?'Bị giới hạn · '+(statusText[state.status]||state.reason)
+    :state.access==='blocked'?'Bị giới hạn · '+(state.online?.state||statusText[state.status]||state.reason)
     :statusText[state.status]||state.status;
   el('license-plan').textContent=state.plan||(state.trial?'Dùng thử':'—');
   el('license-expires').textContent=state.expiresAt
@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    const outcome=await window.api.verifyLicenseOnline();
    msg.textContent=outcome.result.configured===false?'Máy chủ xác minh chưa được cấu hình.':'Máy chủ trả về: '+outcome.result.state;
   }catch(error){msg.textContent='Không kiểm tra được máy chủ: '+error.message;}
-  finally{await refresh().catch(()=>{});button.disabled=false;}
+  finally{await refresh().catch(()=>{});button.disabled=!el('license-online-state').textContent.startsWith('Xác minh online:');}
  });
  el('license-copy-installation').addEventListener('click',async()=>{
   try{await window.api.copyInstallationId();msg.textContent='Đã sao chép mã cài đặt.';}
