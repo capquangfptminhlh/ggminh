@@ -30,6 +30,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   el('cloud-team-result').textContent='';
   el('cloud-team-list').replaceChildren();
   el('cloud-team-email').value='';
+  el('cloud-team-invite-token').value='';
  }
  trigger.addEventListener('click',()=>{
   modal.classList.add('open');
@@ -140,6 +141,18 @@ window.addEventListener('DOMContentLoaded',()=>{
    teamResult.textContent='Mã lời mời một lần (24 giờ): '+invite.token+
     ' · Gửi riêng qua kênh an toàn.';
   }catch(error){teamResult.textContent='Không tạo được lời mời: '+error.message;}
+  finally{toggleBusy(false);}
+ });
+ el('cloud-team-redeem').addEventListener('click',async()=>{
+  const token=el('cloud-team-invite-token').value;
+  if(!token){teamResult.textContent='Nhập mã lời mời.';return;}
+  toggleBusy(true);
+  try{
+   const accepted=await window.api.cloudTeamRedeem(credentials(),token);
+   teamResult.textContent='Đã tham gia Workspace '+accepted.tenantId+
+    ' với vai trò '+accepted.role+'.';
+   el('cloud-team-invite-token').value='';
+  }catch(error){teamResult.textContent='Không nhận được lời mời: '+error.message;}
   finally{toggleBusy(false);}
  });
 });
