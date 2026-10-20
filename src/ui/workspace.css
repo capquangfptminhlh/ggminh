@@ -781,3 +781,13 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 #license-message{color:#385e81;font-size:12px;white-space:pre-wrap}
 #modal-license-center .modal-body{max-height:72vh;overflow:auto}
 @media(max-width:650px){.lhm-license-status{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* v5.5 About & actual app version display */
+.lhm-about-metrics{margin:14px 0 17px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lhm-about-metrics>div{background:#f7f9fc;border:1px solid #e0e8f2;border-radius:10px;padding:13px;min-width:0}
+.lhm-about-metrics dt{font-size:11px;color:#64758c;margin-bottom:6px}
+.lhm-about-metrics dd{font-size:14px;color:#223d67;font-weight:700;margin:0;word-break:break-word}
+#lhm-about-message{color:#ad403b;font-size:12px;white-space:pre-wrap}
+#modal-app-about .modal-body{max-height:70vh;overflow:auto}
+@media(max-width:680px){.lhm-about-metrics{grid-template-columns:1fr}}

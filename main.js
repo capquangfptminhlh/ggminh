@@ -122,6 +122,16 @@ function createWindow() {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
         try {
+          // The image used as a release preview must show the real version.
+          const release=app.getVersion();
+          const shown=await mainWindow.webContents.executeJavaScript(
+            `({ready:document.body.dataset.versionReady,
+               header:document.getElementById('lhm-header-version')?.textContent,
+               nav:document.getElementById('lhm-nav-version')?.textContent,
+               title:document.title})`,true);
+          if(shown.ready!=='true'||shown.header!=='v'+release||
+             shown.nav!=='v'+release||!shown.title.includes('v'+release))
+            throw Error('UI screenshot version mismatch: '+JSON.stringify(shown));
           const png = await mainWindow.webContents.capturePage();
           const output = path.join(__dirname, 'dist', 'workspace-preview.png');
           fs.mkdirSync(path.dirname(output), { recursive: true });

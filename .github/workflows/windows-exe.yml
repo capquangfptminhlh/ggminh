@@ -42,7 +42,6 @@ jobs:
             throw "PowerShell helper missing from Electron unpacked bundle"
           }
       - name: Capture actual Electron UI (sample data)
-        continue-on-error: true
         shell: pwsh
         env:
           LHM_CI_UI_CAPTURE: '1'
