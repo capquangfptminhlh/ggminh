@@ -71,21 +71,40 @@ class WorkflowStore {
   list() { return structuredClone(this.items); }
   get(id) { const value=this.items.find(w=>w.id===id);return value && structuredClone(value); }
   save(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+      throw Error('Quy trình không hợp lệ');
     const old = input.id ? this.items.find(x=>x.id===input.id) : null;
     if (input.id && !old) throw Error('Quy trình không tồn tại');
-    const result=clean(input,old);
-    if (old) this.items[this.items.indexOf(old)]=result;else this.items.push(result);
-    this.persist();
+    const result = clean(input,old);
+    // Stage a new array. A failed disk write must never leave an
+    // uncommitted workflow visible in memory or available to the scheduler.
+    const previous = this.items;
+    const next = [...previous];
+    if (old) next[previous.indexOf(old)] = result;
+    else next.push(result);
+    this.items = next;
+    try { this.persist(); }
+    catch (error) { this.items = previous; throw error; }
     return structuredClone(result);
   }
   delete(id) {
-    const before=this.items.length;this.items=this.items.filter(w=>w.id!==id);
-    if (before===this.items.length)return false;this.persist();return true;
+    const previous = this.items;
+    const next = previous.filter(w => w.id !== id);
+    if (next.length === previous.length) return false;
+    this.items = next;
+    try { this.persist(); }
+    catch (error) { this.items = previous; throw error; }
+    return true;
   }
   persist() {
-    const tmp=this.file+'.tmp';
-    fs.writeFileSync(tmp,JSON.stringify(this.items,null,2),{mode:0o600});
-    fs.renameSync(tmp,this.file);
+    const tmp = this.file + '.' + process.pid + '.' + crypto.randomBytes(6).toString('hex') + '.tmp';
+    try {
+      fs.writeFileSync(tmp, JSON.stringify(this.items,null,2), {mode:0o600,flag:'wx'});
+      fs.renameSync(tmp,this.file);
+    } catch (error) {
+      try { fs.rmSync(tmp,{force:true}); } catch (_) {}
+      throw error;
+    }
   }
 }
 

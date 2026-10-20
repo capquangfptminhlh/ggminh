@@ -80,7 +80,10 @@ class Store {
     const now = new Date().toISOString();
     const result = {
       ...old, id, name,
-      engine: input.engine === 'gecko' ? 'gecko' : 'chromium',
+      // A partial edit must preserve the selected engine, especially
+      // when clients POST only {id, name} through the Local API.
+      engine: input.engine === 'gecko' || input.engine === 'chromium'
+        ? input.engine : (old.engine === 'gecko' ? 'gecko' : 'chromium'),
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: String(input.startUrl || old.startUrl || 'https://ads.google.com/').slice(0, 2048),
       notes: String(input.notes || old.notes || '').slice(0, 2000),

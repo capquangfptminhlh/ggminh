@@ -348,3 +348,11 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - One-time or recurring schedules, explicit enable/disable, persistent local state, and once-per-minute checking **only while Electron is running**. Recurring missed executions are not replayed in a burst.
 - A single workflow runs at a time; when busy, due schedules remain pending. Every run still passes the existing domain allowlist and cancellation safeguards.
 - No hidden Windows service, unattended Google Ads actions or OS-level timer. User must keep LHM Browser open. Scheduler stores no browser cookies or account credentials.
+
+
+## v3.2 — Persistence and live-profile API safety
+- Automation workflows now stage create/edit/delete in memory and roll back on any persistence error. Atomic file replacement uses a unique temporary name and cleans up after failure; existing workflows remain unchanged when the write fails.
+- Authenticated Local API now rejects profile edits while their Chromium/Gecko process is running or starting (HTTP 409), consistent with the desktop lifecycle lock. Stop the browser before editing a live profile.
+- Partial profile updates preserve the previously selected Gecko/Chromium engine rather than silently resetting it to Chromium.
+- Added regression tests for workflow persistence failures, API lifecycle locks, engine-preserving updates, and profile deletion while active.
+- This release does not include an embedded browser core, Google Ads account automation, or any guarantee of anti-detection.

@@ -25,7 +25,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null 
   function fail(res, error) {
     return res.status(400).json({ code: -1, msg: error.message || String(error) });
   }
-  service.get('/status', (_, res) => res.json({ status: 'ok', app: 'LHM Ads Browser API', version: '1.1.0' }));
+  service.get('/status', (_, res) => res.json({ status: 'ok', app: 'LHM Ads Browser API', version: require('../../package.json').version }));
   service.get('/api/v1/browser/start', async (req, res) => {
     try {
       const id = req.query.user_id || req.query.serial_number || req.query.id;
@@ -61,6 +61,15 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null 
   service.get('/api/profiles', (_, res) => res.json(store.getProfiles()));
   service.post('/api/profiles', (req, res) => {
     try {
+      // The desktop IPC path already prevents changing a running profile.
+      // Enforce the same lifecycle rule for authenticated Local API calls.
+      const id = req.body?.id;
+      if (id && store.getProfile(id) &&
+          (launcher.isBusy?.(id) || launcher.getActive?.(id))) {
+        return res.status(409).json({
+          code: -1, msg: 'Stop browser and wait for exit before editing profile'
+        });
+      }
       const saved = store.saveProfile(req.body);
       if (behaviorMonitor) behaviorMonitor.record('profile_save', saved.id, 'api');
       res.json(saved);
