@@ -15,7 +15,7 @@ function safeWebUrls(values) {
   if (new Set(urls).size !== urls.length) throw new Error('Duplicate startup URLs');
   return urls;
 }
-function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, proxy = {}, extensionDir = null, port = null }) {
+function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, proxy = {}, extensionDir = null, extensionDirs = [], port = null }) {
   if (!path.isAbsolute(profileDir)) throw new Error('Profile directory must be absolute');
   const startUrls = safeWebUrls(urls === undefined ? [url] : urls);
   if (engine === 'gecko') {
@@ -32,7 +32,11 @@ function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, pro
     '--disable-sync', // Avoid accidentally syncing Chrome browser data between managed profiles.
     '--window-size=' + (size.width || 1280) + ',' + (size.height || 800)
   ];
-  if (extensionDir) args.push('--load-extension=' + extensionDir);
+  const extensions=[...(extensionDir?[extensionDir]:[]),...extensionDirs];
+  if(extensions.length>9||new Set(extensions).size!==extensions.length ||
+     extensions.some(dir=>typeof dir!=='string'||!path.isAbsolute(dir)||dir.includes(',')))
+    throw Error('Invalid Chromium extension directory list');
+  if(extensions.length)args.push('--load-extension='+extensions.join(','));
   if (port !== null) {
     args.push('--remote-debugging-address=127.0.0.1');
     args.push('--remote-debugging-port=' + port);

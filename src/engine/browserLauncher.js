@@ -9,9 +9,10 @@ const { updateGeckoProxy } = require('./geckoProxy');
 const { optionsFor } = require('./browserDiagnostics');
 
 class BrowserLauncher {
-  constructor(store, { spawnProcess = spawn, proxyVault = null } = {}) {
+  constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null } = {}) {
     this.store = store;
     this.proxyVault = proxyVault;
+    this.extensionManager = extensionManager;
     this.spawnProcess = spawnProcess;
     this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
@@ -139,9 +140,11 @@ class BrowserLauncher {
       (Array.isArray(profile.startUrls) && profile.startUrls.length
         ? profile.startUrls : [profile.startUrl || 'https://ads.google.com/']);
     if (engine === 'gecko') updateGeckoProxy(profileDir, effectiveProxy);
+    const localExtensions=engine==='chromium' && this.extensionManager
+      ? this.extensionManager.getEnabledPaths(profile.id) : [];
     const args = createLaunchArgs({
       engine, profileDir, urls: startUrls, fingerprint: profile.fingerprint || {},
-      proxy: effectiveProxy, extensionDir: extDir, port
+      proxy: effectiveProxy, extensionDir: extDir, extensionDirs:localExtensions, port
     });
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);

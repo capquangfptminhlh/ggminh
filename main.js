@@ -27,6 +27,7 @@ const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const ProxyCenter = require('./src/proxies/proxyCenter');
+const {ExtensionManager} = require('./src/extensions/manager');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -41,6 +42,7 @@ let schedulerTimer = null;
 let recorderManager = null;
 let configBackup = null;
 let proxyCenter = null;
+let extensionManager = null;
 let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -136,6 +138,18 @@ function initIPC() {
     return { count: created.length, profileIds: created.map(p => p.id) };
   });
   ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
+  ipcMain.handle('extension-list', () => extensionManager.list());
+  ipcMain.handle('extension-install', async () => {
+    const selected=await dialog.showOpenDialog(mainWindow,{
+      title:'Chọn thư mục tiện ích Chromium đã giải nén',
+      properties:['openDirectory']
+    });
+    if(selected.canceled||!selected.filePaths?.length)return {canceled:true};
+    return {canceled:false,extension:extensionManager.install(selected.filePaths[0])};
+  });
+  ipcMain.handle('extension-assign', (_,id,ids,enabled) =>
+    extensionManager.assign(id,ids,enabled));
+  ipcMain.handle('extension-remove', (_,id) => extensionManager.remove(id));
   ipcMain.handle('inspect-fingerprint', (_, input) => inspectFingerprint(input));
 
   ipcMain.handle('proxy-center-list', () => proxyCenter.list());
@@ -392,6 +406,8 @@ app.whenReady().then(async () => {
   }
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
   launcher = new BrowserLauncher(store,{proxyVault});
+  extensionManager = new ExtensionManager(store,launcher);
+  launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
   workflowStore = new WorkflowStore(storageDir);
