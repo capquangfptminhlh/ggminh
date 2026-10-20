@@ -50,7 +50,7 @@ const {parseProxyCsv}=require('../src/proxies/bulkImport');
   assert(maximum<=3);
   assert(!JSON.stringify(batch).includes('THE_SECRET_SHOULD_NOT_LEAK'));
   assert.strictEqual(mgr.list().filter(x=>x.check?.verified).length,2);
-  assert.throws(()=>mgr.verifyBatch([]),/1 đến 20/);
+  await assert.rejects(()=>mgr.verifyBatch([]),/1 đến 20/);
   await assert.rejects(()=>mgr.verifyBatch(['invalid-id']),/Invalid proxy ID/);
   assert(checked===3);
   // Twenty verification workers, but never more than three concurrently.
