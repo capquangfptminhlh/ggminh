@@ -58,6 +58,16 @@ class ConfigBackup {
       workflows: this.workflows.list()
     }, password);
   }
+  inspect(data,password) {
+    const decoded=decrypt(data,password);
+    return {
+      profiles:decoded.profiles.length,workflows:decoded.workflows.length,
+      requiresProxySetup:decoded.profiles.filter(p=>p.proxy?.authProxyId||
+        p.requiresProxySetup===true).length,
+      excludesSessions:true,
+      note:'Xem trước chỉ đọc dữ liệu. Không nhập phiên, cookie hoặc mật khẩu proxy.'
+    };
+  }
   import(data, password) {
     const decoded = decrypt(data, password);
     // Validate every reference and workflow before touching live data.
@@ -72,17 +82,66 @@ class ConfigBackup {
       if (!ids.has(w.profileId)) throw Error('Workflow tham chiếu hồ sơ không có trong tệp sao lưu');
       clean({ ...w, id: undefined }, undefined);
     }
-    // Merge non-destructively with fresh IDs. Browser cookies/session profiles are never copied.
-    const mapped = new Map();
-    for (const p of decoded.profiles) {
+    // Prepare BOTH stores fully in memory. Nothing is persisted if any
+    // imported profile/workflow fails validation. No browser session is copied.
+    const previewStore=Object.create(Object.getPrototypeOf(this.store));
+    previewStore.baseDir=this.store.baseDir;
+    previewStore.data=structuredClone(this.store.data);
+    previewStore.saveData=()=>{};
+    const previewWorkflows=Object.create(Object.getPrototypeOf(this.workflows));
+    previewWorkflows.file=this.workflows.file;
+    previewWorkflows.items=structuredClone(this.workflows.items);
+    previewWorkflows.persist=()=>{};
+    const mapped=new Map();
+    for(const p of decoded.profiles){
       const safe=portableProfile(p);
-      const item = this.store.saveProfile({ ...safe, id: undefined, name: p.name + ' (nhập)' });
-      mapped.set(p.id, item.id);
+      const item=previewStore.saveProfile({
+        ...safe,id:undefined,name:p.name.slice(0,149)+' (nhập)'
+      });
+      mapped.set(p.id,item.id);
     }
-    for (const w of decoded.workflows) {
-      this.workflows.save({ ...w, id: undefined, profileId: mapped.get(w.profileId) });
+    for(const w of decoded.workflows){
+      const cleanSteps=w.steps.map(step=>step.type==='fill'?{...step,value:''}:step);
+      previewWorkflows.save({
+        ...w,id:undefined,profileId:mapped.get(w.profileId),steps:cleanSteps
+      });
     }
-    return { profiles: decoded.profiles.length, workflows: decoded.workflows.length, excludesSessions: true };
+    // One durable write per database; rollback on an I/O error. This protects
+    // against validation/write failures, but is NOT a cross-file crash-proof
+    // transaction if Windows loses power between the two renames.
+    const originalProfiles=this.store.data;
+    const originalWorkflows=this.workflows.items;
+    const hadWorkflowFile=fs.existsSync(this.workflows.file);
+    const oldWorkflowBytes=hadWorkflowFile?fs.readFileSync(this.workflows.file):null;
+    const oldDbBytes=fs.readFileSync(this.store.dbFile);
+    this.store.data=previewStore.data;
+    this.workflows.items=previewWorkflows.items;
+    let dbWritten=false;
+    try{
+      this.store.saveData();
+      dbWritten=true;
+      this.workflows.persist();
+    }catch(error){
+      this.store.data=originalProfiles;
+      this.workflows.items=originalWorkflows;
+      const rollbackErrors=[];
+      const restoreFile=(filename,buffer)=>{
+        const tmp=filename+'.rollback-'+process.pid;
+        try{fs.writeFileSync(tmp,buffer,{mode:0o600});fs.renameSync(tmp,filename);}
+        catch(e){rollbackErrors.push(e.message);try{fs.rmSync(tmp,{force:true});}catch(_){}}
+      };
+      if(dbWritten)restoreFile(this.store.dbFile,oldDbBytes);
+      if(hadWorkflowFile)restoreFile(this.workflows.file,oldWorkflowBytes);
+      else {
+        try{fs.rmSync(this.workflows.file,{force:true});}
+        catch(e){rollbackErrors.push(e.message);}
+      }
+      if(rollbackErrors.length)throw Error(
+        'Không thể nhập; hoàn tác dữ liệu trên đĩa chưa đầy đủ: '+rollbackErrors.join('; '));
+      throw error;
+    }
+    return {profiles:decoded.profiles.length,workflows:decoded.workflows.length,
+      excludesSessions:true};
   }
 }
 module.exports = { ConfigBackup, encrypt, decrypt, portableProfile };
