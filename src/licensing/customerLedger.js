@@ -169,7 +169,8 @@ function due(file,days=14,{now=()=>Date.now()}={}){
  if(!Number.isInteger(days)||days<0||days>365)throw Error('Days must be 0–365');
  const data=readLedger(file),t=now();
  const customers=new Map(data.customers.map(c=>[c.id,c]));
- return data.licenses.filter(x=>!x.revoked&&Date.parse(x.expiresAt)>=t&&
+ const superseded=new Set(data.licenses.map(x=>x.renewalOf).filter(Boolean));
+ return data.licenses.filter(x=>!superseded.has(x.licenseId)&&!x.revoked&&Date.parse(x.expiresAt)>=t&&
    Date.parse(x.expiresAt)<=t+days*86400000)
   .map(x=>({licenseId:x.licenseId,customerId:x.customerId,
    customer:customers.get(x.customerId)?.name,plan:x.plan,expiresAt:x.expiresAt}))
