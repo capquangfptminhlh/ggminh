@@ -341,3 +341,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Read-only preflight preview reports counts, required proxy reassignment and browser-session exclusion without changing local data.
 - A restore is validated and staged entirely in memory; profiles and workflows are written once each. If a write fails, an in-process rollback restores original data when storage is writable. A power loss between the two files remains a limitation; this is not a fully crash-atomic multi-file transaction.
 - Exported and restored workflow **fill values are blanked**, avoiding accidental transfer of form content. URLs and free-form notes remain in the encrypted backup and may themselves contain sensitive information: do not share backups untrusted.
+
+
+## v3.1 — Local Automation Studio scheduler
+- Schedule bounded, allowlisted **read-only** workflows (navigate, wait, assertions, conditions). Workflows containing clicks, fills or approval nodes cannot be scheduled.
+- One-time or recurring schedules, explicit enable/disable, persistent local state, and once-per-minute checking **only while Electron is running**. Recurring missed executions are not replayed in a burst.
+- A single workflow runs at a time; when busy, due schedules remain pending. Every run still passes the existing domain allowlist and cancellation safeguards.
+- No hidden Windows service, unattended Google Ads actions or OS-level timer. User must keep LHM Browser open. Scheduler stores no browser cookies or account credentials.

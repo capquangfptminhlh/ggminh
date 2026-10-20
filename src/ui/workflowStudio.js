@@ -394,8 +394,64 @@
     } catch (error) { alert('Không thể lấy bản ghi: ' + error.message); }
   }
 
+
+  function scheduleDateDefault() {
+    const now=new Date(Date.now()+15*60*1000);
+    const local=new Date(now.getTime()-now.getTimezoneOffset()*60000);
+    el('studio-schedule-at').value=local.toISOString().slice(0,16);
+  }
+  async function refreshSchedules() {
+    const list=el('studio-schedule-list');
+    list.replaceChildren();
+    const schedules=await api.studioScheduleList();
+    if(!schedules.length){
+      const empty=document.createElement('p');
+      empty.className='studio-muted';empty.textContent='Chưa lập lịch nào.';
+      list.append(empty);
+      return;
+    }
+    for(const schedule of schedules){
+      const row=document.createElement('div');row.className='studio-schedule-item';
+      const description=document.createElement('div');
+      const name=document.createElement('strong');name.textContent=schedule.workflowName;
+      const detail=document.createElement('small');
+      detail.textContent=new Date(schedule.nextRunAt).toLocaleString('vi-VN')+
+        (schedule.intervalMinutes ? ' · '+schedule.intervalMinutes+' phút/lần' : ' · Một lần')+
+        ' · '+schedule.lastStatus;
+      description.append(name,detail);
+      const actions=document.createElement('div');actions.className='studio-schedule-actions';
+      const toggle=document.createElement('button');toggle.type='button';
+      toggle.className='btn btn-sm btn-secondary';toggle.textContent=schedule.enabled?'Tạm dừng':'Bật lịch';
+      toggle.addEventListener('click',async()=>{
+        try{await api.studioScheduleEnable(schedule.id,!schedule.enabled);await refreshSchedules();}
+        catch(error){alert('Không đổi được lịch: '+error.message);}
+      });
+      const remove=document.createElement('button');remove.type='button';
+      remove.className='btn btn-sm btn-secondary';remove.textContent='Xóa';
+      remove.addEventListener('click',async()=>{
+        if(!confirm('Xóa lịch chạy cho '+schedule.workflowName+'?'))return;
+        try{await api.studioScheduleDelete(schedule.id);await refreshSchedules();}
+        catch(error){alert('Không thể xóa lịch: '+error.message);}
+      });
+      actions.append(toggle,remove);row.append(description,actions);list.append(row);
+    }
+  }
+  async function createSchedule() {
+    if(!current?.id)return alert('Hãy lưu và chọn một quy trình trước khi lập lịch.');
+    try{
+      await api.studioScheduleAdd({
+        workflowId:current.id,
+        nextRunAt:new Date(el('studio-schedule-at').value).toISOString(),
+        intervalMinutes:Number(el('studio-schedule-interval').value)
+      });
+      await refreshSchedules();
+    }catch(error){alert('Không thể lập lịch: '+error.message);}
+  }
+
   function show() {
     el('modal-studio').classList.add('open');
+    if(!el('studio-schedule-at').value)scheduleDateDefault();
+    refreshSchedules().catch(console.error);
     updateProfiles().then(refreshList).then(() => {
       if (!current) createNew();
       return Promise.all([updateStatus(), recorderStatus()]);
@@ -407,6 +463,7 @@
     el('studio-close').addEventListener('click', close);
     el('studio-done').addEventListener('click', close);
     el('studio-new').addEventListener('click', createNew);
+    el('studio-schedule-add').addEventListener('click',createSchedule);
     el('studio-workflow-search').addEventListener('input',()=>refreshList().catch(console.error));
     el('studio-graph-refresh').addEventListener('click', () => renderGraph().catch(console.error));
     el('studio-record-start').addEventListener('click', startRecording);

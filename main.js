@@ -11,6 +11,7 @@ const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
+const { LocalScheduler } = require('./src/automation/localScheduler');
 const { graphForSteps } = require('./src/automation/flowGraph');
 const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
@@ -32,6 +33,8 @@ let launcher = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
+let localScheduler = null;
+let schedulerTimer = null;
 let recorderManager = null;
 let configBackup = null;
 let proxyCenter = null;
@@ -249,6 +252,11 @@ function initIPC() {
     return { canceled: false, ...report };
   });
   ipcMain.handle('studio-list', () => workflowStore.list());
+  ipcMain.handle('studio-schedule-list', () => localScheduler.list());
+  ipcMain.handle('studio-schedule-add', (_, value) => localScheduler.create(value));
+  ipcMain.handle('studio-schedule-enable', (_, id, enabled) => localScheduler.setEnabled(id, enabled));
+  ipcMain.handle('studio-schedule-delete', (_, id) => localScheduler.remove(id));
+
   ipcMain.handle('studio-graph-preview', (_, steps) => graphForSteps(steps));
   ipcMain.handle('studio-save', (_, value) => workflowStore.save(value));
   ipcMain.handle('studio-delete', (_, id) => {
@@ -352,6 +360,13 @@ app.whenReady().then(async () => {
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
+  localScheduler = new LocalScheduler(storageDir, workflowStore, automationRunner);
+  // In-app polling only, never a Windows background service.
+  schedulerTimer = setInterval(() => {
+    if (recorderManager?.status().state === 'recording') return;
+    localScheduler.tick().catch(error => console.warn('[Scheduler]',error.message));
+  }, 60000);
+  schedulerTimer.unref?.();
   recorderManager = new RecorderManager(store, createRecorderWindow);
   initIPC();
   createWindow();
@@ -371,6 +386,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', () => {
+  if (schedulerTimer) clearInterval(schedulerTimer);
   if (automationRunner) automationRunner.stop();
   if (recorderManager?.status().state === 'recording') recorderManager.stop();
   if (launcher) for (const active of launcher.listActive()) launcher.stop(active.profileId);

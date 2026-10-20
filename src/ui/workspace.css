@@ -620,3 +620,18 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 #selection-open{background:#27b0d5!important;border-color:#27b0d5!important}
 #selection-group{background:#fff!important;border-color:#dce7ec!important;color:#486377!important}
 @media(max-width:1150px){.selection-toolbar .selection-actions .btn{font-size:10px;padding:7px 9px}}
+
+/* 3.1 — Studio local schedules, low-noise admin UI */
+#modal-studio .studio-schedule-panel{border:1px solid #e6ecf2;border-radius:10px;background:#fcfdfe;margin:14px 0;padding:15px}
+#modal-studio .studio-schedule-title{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;color:#304660;font-size:12px}
+#modal-studio .studio-schedule-title span,#modal-studio .studio-schedule-help{font-size:11px;color:#8291a5}
+#modal-studio .studio-schedule-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px}
+#modal-studio .studio-schedule-controls label{display:flex;flex-direction:column;gap:6px;flex:1 1 170px}
+#modal-studio .studio-schedule-controls label input,#modal-studio .studio-schedule-controls select{height:36px;min-width:120px}
+#modal-studio .studio-schedule-help{margin:12px 0;line-height:1.6}
+#modal-studio .studio-schedule-list{display:flex;flex-direction:column;gap:7px;max-height:190px;overflow:auto}
+#modal-studio .studio-schedule-item{background:white;border:1px solid #e7edf2;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px}
+#modal-studio .studio-schedule-item>div:first-child{min-width:0}
+#modal-studio .studio-schedule-item strong{display:block;font-size:11px;color:#3c5067;overflow:hidden;text-overflow:ellipsis}
+#modal-studio .studio-schedule-item small{display:block;font-size:10px;color:#889aab;margin-top:4px}
+#modal-studio .studio-schedule-actions{display:flex;flex-shrink:0;gap:6px}

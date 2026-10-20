@@ -627,6 +627,21 @@ run();
               </select>
               <button class="btn btn-secondary" id="studio-add-step">Thêm bước</button>
             </div>
+            <section class="studio-schedule-panel" aria-labelledby="studio-schedule-heading">
+              <div class="studio-schedule-title"><strong id="studio-schedule-heading">Lập lịch kiểm tra website</strong>
+                <span>Chỉ chạy quy trình chỉ đọc khi phần mềm đang mở</span></div>
+              <div class="studio-schedule-controls">
+                <label>Lần chạy tiếp theo <input type="datetime-local" id="studio-schedule-at"></label>
+                <label>Lặp lại <select id="studio-schedule-interval">
+                  <option value="0">Một lần</option><option value="15">15 phút</option>
+                  <option value="60">Mỗi giờ</option><option value="360">6 giờ</option>
+                  <option value="1440">Hằng ngày</option><option value="10080">Hằng tuần</option>
+                </select></label>
+                <button id="studio-schedule-add" type="button" class="btn btn-secondary">Tạo lịch</button>
+              </div>
+              <p class="studio-schedule-help">Các quy trình có nhấn nút, điền biểu mẫu hoặc xác nhận thủ công không được tự chạy theo lịch. Thời gian sử dụng theo đồng hồ máy.</p>
+              <div id="studio-schedule-list" class="studio-schedule-list" role="region" aria-label="Danh sách lịch đã tạo"></div>
+            </section>
             <div class="studio-action-row">
               <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>
               <button class="btn btn-primary" id="studio-run">Lưu và chạy</button>
