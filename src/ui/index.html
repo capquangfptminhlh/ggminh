@@ -48,6 +48,7 @@
       </section>
       <div class="lhm-context-head">
         <div class="lhm-context-heading"><span class="lhm-context-overline">HỒ SƠ ĐÃ CHỌN</span><h2 id="lhm-context-title">Thông tin hồ sơ</h2></div>
+        <button type="button" class="lhm-context-more" id="lhm-v7-hide-rail" title="Thu gọn bảng AI & thông tin hồ sơ" aria-label="Thu gọn bảng điều khiển bên phải" aria-controls="lhm-profile-panel"><span data-lhm-icon="panel-right-close"></span></button>
         <button type="button" class="lhm-context-more" id="lhm-context-refresh" title="Làm mới thông tin hồ sơ" aria-label="Làm mới thông tin hồ sơ"><span data-lhm-icon="refresh-cw"></span></button>
       </div>
       <div id="lhm-context-empty" class="lhm-context-empty">Chọn một hồ sơ ở bảng để xem chi tiết.</div>
@@ -99,6 +100,7 @@
           <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
+      <button type="button" id="lhm-v7-command-open" class="lhm-v7-command-open" aria-haspopup="dialog" aria-controls="lhm-v7-command-palette" title="Lệnh nhanh · Ctrl Shift P"><span data-lhm-icon="command" aria-hidden="true"></span><span>Lệnh nhanh</span></button>
       <label class="lhm-v6-global-search"><span data-lhm-icon="search" aria-hidden="true"></span><input id="lhm-v6-global-search" type="search" placeholder="Tìm hồ sơ, nhóm, ID..." aria-label="Tìm hồ sơ từ thanh trên"><kbd>Ctrl K</kbd></label>
       <div class="header-stats">
         <div class="stat-badge">
@@ -159,6 +161,7 @@
           <p>Tất cả hồ sơ, kết nối và công cụ trong một không gian làm việc.</p>
         </div>
         <div class="lhm-v6-intro-actions">
+          <button type="button" id="lhm-v7-show-rail" class="lhm-v6-quiet-action lhm-v7-show-rail" aria-controls="lhm-profile-panel" aria-expanded="true" title="Hiện hoặc thu gọn AI Control Center"><span data-lhm-icon="panel-right" aria-hidden="true"></span><span id="lhm-v7-rail-label">Thu gọn bảng AI</span></button>
           <span class="lhm-v6-local"><span class="lhm-v6-dot"></span> Dữ liệu trên thiết bị</span>
           <button type="button" class="lhm-v6-quiet-action" id="lhm-v6-refresh" aria-label="Làm mới số liệu"><span data-lhm-icon="refresh-cw"></span> Làm mới</button>
         </div>
@@ -1417,6 +1420,24 @@ run();
     </div>
   </div>
 
+  <!-- Keyboard command palette: invokes existing safe UI actions only. -->
+  <div class="modal-overlay lhm-v7-command-overlay" id="lhm-v7-command-palette" role="dialog" aria-modal="true" aria-labelledby="lhm-v7-command-title">
+    <div class="lhm-v7-command-dialog">
+      <div class="lhm-v7-command-top">
+        <span data-lhm-icon="command" aria-hidden="true"></span>
+        <div><h2 id="lhm-v7-command-title">Lệnh nhanh</h2><p>Điều hướng và thao tác bằng bàn phím</p></div>
+        <button type="button" id="lhm-v7-command-close" aria-label="Đóng bảng lệnh">ESC</button>
+      </div>
+      <label class="lhm-v7-command-search">
+        <span data-lhm-icon="search" aria-hidden="true"></span>
+        <input id="lhm-v7-command-search" type="search" placeholder="Tìm lệnh, hồ sơ, proxy, AI..." autocomplete="off" aria-label="Tìm lệnh">
+        <kbd>↵</kbd>
+      </label>
+      <div id="lhm-v7-command-list" class="lhm-v7-command-list" role="listbox" aria-label="Danh sách lệnh"></div>
+      <div class="lhm-v7-command-footer">↑ ↓ để chọn <span>·</span> Enter để chạy <span>·</span> Esc để đóng <span>·</span> Ctrl+B thu gọn bảng AI</div>
+    </div>
+  </div>
+
   <script src="icons.js"></script>
   <script src="renderer.js"></script>
   <script src="profileImport.js"></script>
@@ -1429,6 +1450,7 @@ run();
   <script src="licenseCenter.js"></script>
   <script src="appIdentity.js"></script>
   <script src="premiumWorkspace.js"></script>
+  <script src="workspaceInteractions.js"></script>
   <script src="aiAdvisor.js"></script>
   <script src="cacheManager.js"></script>
   <script src="sessionSnapshots.js"></script>
