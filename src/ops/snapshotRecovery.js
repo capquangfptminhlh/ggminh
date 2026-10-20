@@ -24,7 +24,9 @@ function recoverProfile(manager,source,password,name,confirmation){
  if(fs.existsSync(directory))throw Error('Tồn tại dữ liệu cũ của profile ID này; từ chối ghi đè');
  const verified=checkEnvelope({profileId:id,engine,directory},
   fs.readFileSync(input.filename,'utf8'),password);
- const existing=manager.store.data;
+ // Store.saveProfile mutates its database object in-place. Capture a deep
+ // immutable snapshot or rollback would accidentally retain the new profile.
+ const existing=structuredClone(manager.store.data);
  let created=false,imported=false;
  try{
   manager.store.saveProfile({
