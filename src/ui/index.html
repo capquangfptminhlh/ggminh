@@ -110,6 +110,7 @@
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
         <button class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
         <button class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
         <button class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
@@ -443,6 +444,31 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="wm-refresh">Làm mới</button>
         <button type="button" class="btn btn-primary" id="wm-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Chromium MV3 extension catalog; explicit user consent for local code. -->
+  <div class="modal-overlay" id="modal-extension-center">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="ext-title">
+      <div class="modal-header">
+        <h2 id="ext-title">Tiện ích Chromium cục bộ</h2>
+        <button type="button" class="btn-close" id="ext-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Chọn thư mục extension Manifest V3 đã giải nén trên máy. Chỉ dùng tiện ích tin cậy vì extension có thể đọc dữ liệu website theo quyền đã cấp. LHM không kiểm tra độ an toàn của mã nguồn.</p>
+        <div class="lhm-extension-actions">
+          <button type="button" class="btn btn-primary" id="ext-install">Nhập thư mục extension</button>
+          <button type="button" class="btn btn-secondary" id="ext-refresh">Làm mới</button>
+        </div>
+        <p id="ext-selection" role="status"></p>
+        <div class="lhm-extension-list" id="ext-list"></div>
+        <p class="lhm-bulk-help">Để gán hoặc bỏ extension, chọn tối đa 50 profile Chromium đang đóng trong bảng hồ sơ trước khi mở mục này. Không hỗ trợ Firefox, ZIP hay tải trực tiếp từ Chrome Web Store.</p>
+        <p class="lhm-bulk-help">Lưu ý: Chrome/Edge bản mới có thể bỏ qua tham số tải extension. Vì vậy khả năng extension chạy thực sự cần thử trên trình duyệt được cài trên máy.</p>
+        <p id="ext-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="ext-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1099,6 +1125,7 @@ run();
   <script src="profileCsvUpdate.js"></script>
   <script src="tablePreferences.js"></script>
   <script src="windowManager.js"></script>
+  <script src="extensionCenter.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>

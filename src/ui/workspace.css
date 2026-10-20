@@ -696,3 +696,13 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .lhm-wm-result{font-size:12px;color:#426a8e;line-height:1.6;white-space:pre-wrap;min-height:24px}
 #modal-window-manager .form-group{margin-top:12px}
 @media(max-width:600px){.lhm-wm-list{grid-template-columns:1fr}}
+
+
+/* v4.0 — local Chromium extension catalog */
+.lhm-extension-list{display:grid;gap:10px;max-height:310px;overflow:auto;margin:10px 0}
+.lhm-extension-row{border:1px solid #dae4ef;border-radius:9px;padding:12px;background:#f7faff}
+.lhm-extension-row strong{font-size:13px;color:#31415d}
+.lhm-extension-row p,.lhm-extension-row small{font-size:11px;color:#5b6c86}
+.lhm-extension-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.lhm-extension-permissions{overflow-wrap:anywhere}
+#ext-selection,#ext-status{font-size:12px;color:#426486;line-height:1.6}

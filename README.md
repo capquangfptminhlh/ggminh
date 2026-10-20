@@ -416,3 +416,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 
 ### Windows packaging note
 - The PowerShell/Win32 helper is explicitly `asarUnpack`ed from the Electron archive so Windows can launch the source-controlled script in packaged builds. No download or arbitrary script execution is involved.
+
+
+## v4.0 — Local Chromium extension management
+- Install up to 50 **unpacked Manifest V3** Chromium extensions from a trusted local folder using the native file chooser; source files are copied into app-local storage. Symlinks, special files and oversized folders (>300 files or >25 MB) are rejected.
+- Assign/remove extensions for selected **stopped Chromium profiles** (up to 50 per update); assignment writes are atomic and never copy cookies or user sessions. Restart assigned profiles for extension changes.
+- Extensions are passed to Chrome/Edge with `--load-extension` at startup. **Activation is not guaranteed**, because recent Google Chrome builds may ignore loading unpacked extensions via command-line flags. No cloud distribution, ZIP import, Web Store download or Firefox extensions are implemented.
+- Only install trusted extension code. The app does not audit extension permissions or contents beyond basic manifest and filesystem safety checks. Do not store third-party scripts or account secrets in extension metadata.
