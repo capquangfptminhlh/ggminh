@@ -137,6 +137,21 @@ function createWindow() {
           fs.mkdirSync(path.dirname(output), { recursive: true });
           fs.writeFileSync(output, png.toPNG());
           console.log('[UI smoke] Saved workspace preview');
+          const railCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('lhm-v7-show-rail').click(); return {collapsed:document.body.classList.contains('lhm-v7-wide'),aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded')}; })()",true);
+          if(!railCheck.collapsed||railCheck.aria!=='false')
+            throw Error('AI rail collapse failed: '+JSON.stringify(railCheck));
+          await new Promise(resolve=>setTimeout(resolve,450));
+          const fullTable=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-expanded-preview.png'),fullTable.toPNG());
+          const paletteCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('lhm-v7-command-open').click(); return {opened:document.getElementById('lhm-v7-command-palette').classList.contains('open'),focus:document.activeElement?.id,count:document.querySelectorAll('.lhm-v7-command-option').length}; })()",true);
+          if(!paletteCheck.opened||paletteCheck.focus!=='lhm-v7-command-search'||paletteCheck.count<8)
+            throw Error('Command palette failed: '+JSON.stringify(paletteCheck));
+          await new Promise(resolve=>setTimeout(resolve,280));
+          const paletteImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-command-preview.png'),paletteImage.toPNG());
+          console.log('[UI smoke] Verified expanded profile workspace and keyboard palette');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;

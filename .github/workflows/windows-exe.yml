@@ -52,8 +52,8 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
               throw "Electron UI capture timed out"
             }
-            if (-not (Test-Path "dist\workspace-preview.png")) {
-              throw "The Windows runner did not produce the screenshot"
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png")) {
+              if (-not (Test-Path ("dist\" + $screen))) { throw "Missing actual Electron screenshot: $screen" }
             }
           } finally {
             if (-not $proc.HasExited) {
@@ -65,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: LHM-Workspace-UI-Preview
-          path: dist/workspace-preview.png
+          path: dist/workspace-*.png
           if-no-files-found: ignore
           retention-days: 14
       - name: Upload EXE
