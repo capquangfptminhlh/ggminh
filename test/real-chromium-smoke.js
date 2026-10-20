@@ -6,6 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os');
 const {execFileSync}=require('child_process');
 const Store=require('../src/db/store');
 const BrowserLauncher=require('../src/engine/browserLauncher');
+const {RuntimeRegistry}=require('../src/engine/runtimeRegistry');
 const {openInRunning}=require('../src/ops/liveNavigation');
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -29,7 +30,11 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const profile=store.saveProfile({name:'Disposable CI Chromium',engine:'chromium',
    startUrl:'https://example.com/',proxy:{type:'direct'},fingerprint:{mode:'native'}});
   launcher=new BrowserLauncher(store);
-  launcher.findBrowserBinary=()=>executable;
+  const runtimes=new RuntimeRegistry(path.join(root,'storage'));
+  const registered=runtimes.register('chromium',executable);
+  assert.strictEqual(registered.sha256.length,64);
+  launcher.runtimeRegistry=runtimes;
+  assert.strictEqual(launcher.findBrowserBinary('chromium'),executable);
   launch=await launcher.start(profile.id);
   assert(launch.port>=1024 && launch.port<=65535);
   let detected=false;
