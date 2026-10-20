@@ -88,6 +88,11 @@ CloudClient.prototype.listMembers=async function(){
 CloudClient.prototype.issueInvite=function({email,role,groups,ttlHours=24}){
  return this.teamRequest('POST','/invites',{email,role,groups,ttlHours});
 };
+CloudClient.prototype.redeemInvite=function(token){
+ if(typeof token!=='string'||!/^[a-zA-Z0-9_-]{40,100}$/.test(token))
+  throw Error('Invalid one-time invite token');
+ return this.teamRequest('POST','/invites/redeem',{token});
+};
 CloudClient.prototype.revokeMember=function(subjectId){
  if(typeof subjectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(subjectId))
   throw Error('Invalid team member ID');
