@@ -95,9 +95,10 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
   const mismatched=await req(outsider,'POST',
    '/v1/workspaces/tenantA/invites/redeem',{token:invitation.token});
   assert.strictEqual(mismatched.status,400);
-  const redeem=await req(pending,'POST',
-   '/v1/workspaces/tenantA/invites/redeem',{token:invitation.token});
-  assert.strictEqual(redeem.status,201);
+  const recipient=new CloudClient({baseUrl:'https://cloud.example.test',
+   token:pending,tenantId:'tenantA',deviceId:'device3'},{fetcher:mockHttps});
+  const redeem=await recipient.redeemInvite(invitation.token);
+  assert.strictEqual(redeem.role,'viewer');
   const nowMember=await req(pending,'GET','/v1/workspaces/tenantA/sync');
   assert.strictEqual(nowMember.status,200);
   const members=await req(owner,'GET','/v1/workspaces/tenantA/members');
