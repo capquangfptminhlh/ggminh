@@ -555,6 +555,12 @@ function initIPC() {
       confirmation:options.confirmation
     },behaviorMonitor);
   });
+  ipcMain.handle('cloud-team-members',async(event,options)=>
+    cloudClientFor(event,options).listMembers());
+  ipcMain.handle('cloud-team-invite',async(event,options,invite)=>
+    cloudClientFor(event,options).issueInvite(invite));
+  ipcMain.handle('cloud-team-revoke',async(event,options,memberId)=>
+    cloudClientFor(event,options).revokeMember(memberId));
   ipcMain.handle('check-proxy', (_, proxy) => checkProxy(proxy));
   ipcMain.handle('generate-fingerprint', (_, options) => generateFingerprint(options));
   ipcMain.handle('get-settings', () => store.getSettings());
