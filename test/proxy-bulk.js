@@ -51,7 +51,7 @@ const {parseProxyCsv}=require('../src/proxies/bulkImport');
   assert(!JSON.stringify(batch).includes('THE_SECRET_SHOULD_NOT_LEAK'));
   assert.strictEqual(mgr.list().filter(x=>x.check?.verified).length,2);
   await assert.rejects(()=>mgr.verifyBatch([]),/1 đến 20/);
-  await assert.rejects(()=>mgr.verifyBatch(['invalid-id']),/Invalid proxy ID/);
+  await assert.rejects(()=>mgr.verifyBatch(['invalid-id']),/Không tìm thấy proxy/);
   assert(checked===3);
   // Twenty verification workers, but never more than three concurrently.
   const more=Array.from({length:17},(_,i)=>'Extra'+i+',http,x'+i+'.example,'+(2000+i)+',Bulk');
