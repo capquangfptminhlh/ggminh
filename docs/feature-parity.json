@@ -43,7 +43,7 @@
     "id": "synchronizer",
     "name": "Multiwindow Synchronizer",
     "state": "partial",
-    "evidence": "Win32 foreground, grid, cascade and shared startup URLs",
+    "evidence": "Win32 foreground, grid, cascade and shared startup URLs; explicit new-tab navigation via localhost Chrome DevTools on running profiles",
     "gaps": "No master/slave click/input/scroll/tab synchronization, multi-monitor layout or keyboard shortcuts",
     "acceptance": "Real desktop synchronized interactions tested with explicit user authorization"
   },

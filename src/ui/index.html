@@ -443,10 +443,13 @@
           <button type="button" class="btn btn-secondary" id="wm-cascade">Xếp cửa sổ tầng</button>
         </div>
         <div class="form-group">
-          <label for="wm-shared-url">Mở URL chung (chỉ trên các hồ sơ đang đóng)</label>
+          <label for="wm-shared-url">Mở cùng URL trên nhiều hồ sơ</label>
           <input id="wm-shared-url" type="url" value="https://example.com/" placeholder="https://example.com/">
-          <p class="lhm-bulk-help">Lệnh này mở các hồ sơ chưa chạy tại URL đã nhập. Không điều khiển tab của hồ sơ đang chạy; không tự đồng bộ click hay nhập liệu.</p>
-          <button type="button" class="btn btn-secondary" id="wm-open-url">Mở URL trên hồ sơ đang đóng</button>
+          <p class="lhm-bulk-help">Hồ sơ đang đóng: khởi chạy tại URL trên. Hồ sơ đang mở: tạo tab mới bằng giao diện DevTools cục bộ, chỉ hỗ trợ Chromium đã mở sau khi bật Local API. Tối đa 10 hồ sơ; không đồng bộ click/nhập liệu.</p>
+          <div class="lhm-wm-actions">
+            <button type="button" class="btn btn-secondary" id="wm-open-url">Mở URL trên hồ sơ đang đóng</button>
+            <button type="button" class="btn btn-primary" id="wm-open-live-url">Mở tab trên hồ sơ đang chạy</button>
+          </div>
         </div>
         <p id="wm-result" class="lhm-wm-result" aria-live="polite"></p>
       </div>

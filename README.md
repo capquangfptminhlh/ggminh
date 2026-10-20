@@ -462,3 +462,9 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - `npm run parity:report`: print progress and gaps without failing CI.
 - `npm run parity:gate`: enforce full-scope acceptance; it deliberately exits nonzero when requirements remain partial/missing.
 - A successful Windows EXE build is **not** the same as AdsPower feature completeness.
+
+
+## v4.5 — Open shared URL in running Chromium sessions (limited Synchronizer)
+- In **Công cụ → Cửa sổ**, select up to ten profiles and choose **Mở tab trên hồ sơ đang chạy** to open a validated HTTP(S) URL in newly created tabs of *running Chromium* sessions. Firefox and profiles without an active DevTools port are skipped.
+- Chromium debugging must have been explicitly enabled **before opening** the browser through the existing Local API setting. Requests use only a checked numeric port from this application's live process map, `127.0.0.1` and the documented `PUT /json/new?{url}` Chromium endpoint. No web page content is read or cookies copied.
+- This feature is **not full click, keyboard or scroll synchronization**. Browser version restrictions may prevent a tab opening; the per-profile result reports those errors instead of weakening any security setting. Real Windows browser tests are still needed.

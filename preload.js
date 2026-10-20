@@ -75,6 +75,7 @@ contextBridge.exposeInMainWorld('api', {
   clearProfileCache: (ids,confirmation) => ipcRenderer.invoke('cache-manager-clear',ids,confirmation),
   arrangeBrowserWindows: (ids, mode) => ipcRenderer.invoke('window-manager-arrange',ids,mode),
   openUrlForStoppedProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-url',ids,url),
+  openUrlInRunningProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-live-url',ids,url),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   getSettings: () => ipcRenderer.invoke('get-settings'),

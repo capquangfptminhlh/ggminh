@@ -27,6 +27,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     el('wm-grid').disabled=currentlyRunning.length===0||targetIds.length>10;
     el('wm-cascade').disabled=currentlyRunning.length===0||targetIds.length>10;
     el('wm-open-url').disabled=!targetIds.length||targetIds.length>10;
+    el('wm-open-live-url').disabled=!currentlyRunning.length||targetIds.length>10;
   }
   async function refresh(){
     const [profiles,live]=await Promise.all([
@@ -62,6 +63,20 @@ window.addEventListener('DOMContentLoaded',()=>{
     }catch(error){message.textContent='Không thành công: '+error.message;}
     finally{render();}
   }
+  async function openLiveUrl(){
+    const button=el('wm-open-live-url');
+    button.disabled=true;
+    message.textContent='Đang gửi yêu cầu mở tab tới các trình duyệt đang chạy...';
+    try{
+      const result=await window.api.openUrlInRunningProfiles(targetIds,el('wm-shared-url').value);
+      const failures=result.results.filter(x=>x.status!=='opened');
+      message.textContent='Đã mở '+result.opened+'/'+result.requested+
+        ' tab. Không mở: '+failures.length+
+        (failures.length?' · '+failures.map(x=>x.status).join(', '):'');
+      await refresh();
+    }catch(error){message.textContent='Không thành công: '+error.message;}
+    finally{render();}
+  }
   async function show(){
     message.textContent='';
     modal.classList.add('open');
@@ -75,4 +90,5 @@ window.addEventListener('DOMContentLoaded',()=>{
   for(const mode of ['focus','grid','cascade'])
     el('wm-'+mode).addEventListener('click',()=>perform(mode));
   el('wm-open-url').addEventListener('click',openUrl);
+  el('wm-open-live-url').addEventListener('click',openLiveUrl);
 });
