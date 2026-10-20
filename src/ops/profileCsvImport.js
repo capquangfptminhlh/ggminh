@@ -29,7 +29,7 @@ function parseDelimited(input){
   const text=input.replace(/^\uFEFF/,'');
   const first=text.split(/\r?\n/,1)[0];
   const sep=delimiterFor(first);
-  if(!first || !first.includes(sep))throw Error('File must contain a CSV/TSV header');
+  if(!first.trim())throw Error('File must contain a CSV/TSV header');
   const rows=[], row=[];
   let value='',inside=false,closed=false;
   const cell=()=>{row.push(value);value='';closed=false;};
