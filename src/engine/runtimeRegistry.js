@@ -29,7 +29,14 @@ function inspectBinary(engine,filename,opts={}){
  if(!stat.isFile()||stat.isSymbolicLink()||stat.size<MIN_BINARY||stat.size>MAX_BINARY)
   throw Error('Executable must be a regular file between 4 KB and 512 MB');
  // Do not silently follow symlinked executable or a linked parent directory.
- const real=fs.realpathSync.native(filename);
+ let real=fs.realpathSync.native(filename);
+ // Node's Win32 realpath may return the extended-length \\?\C:\... form,
+ // even for a regular file. Normalize the prefix, but never follow actual
+ // symlinks/junctions silently.
+ if((opts.platform||process.platform)==='win32'){
+  if(real.startsWith('\\\\?\\UNC\\'))real='\\\\'+real.slice(8);
+  else if(real.startsWith('\\\\?\\'))real=real.slice(4);
+ }
  if(path.normalize(real).toLowerCase()!==path.normalize(filename).toLowerCase())
   throw Error('Symbolic/junction-linked executable locations are not accepted');
  if((opts.platform||process.platform)==='win32'){
