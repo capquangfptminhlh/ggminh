@@ -8,13 +8,19 @@ window.addEventListener('DOMContentLoaded',()=>{
  async function refresh(){
   const state=await window.api.getLicenseStatus();
   el('license-installation-id').value=state.installationId;
-  el('license-state').textContent=statusText[state.status]||state.status;
-  el('license-plan').textContent=state.plan||'—';
+  el('license-state').textContent=state.access==='trial'
+    ?'Dùng thử · còn '+state.trialDaysLeft+' ngày'
+    :state.access==='blocked'?'Bị giới hạn · '+(statusText[state.status]||state.reason)
+    :statusText[state.status]||state.status;
+  el('license-plan').textContent=state.plan||(state.trial?'Dùng thử':'—');
   el('license-expires').textContent=state.expiresAt
    ?new Date(state.expiresAt).toLocaleDateString('vi-VN')+
     (state.active?' · '+state.remainingDays+' ngày còn lại':'')
    :'—';
   el('license-limit').textContent=state.maxProfiles===null?'—':state.maxProfiles+' hồ sơ';
+  el('license-features').textContent=state.allowed
+   ?'Quyền: '+(state.features||[]).join(', ')+(state.trial?' · Giới hạn 10 hồ sơ':'')
+   :'Chế độ giữ dữ liệu: có thể xem, xuất và khôi phục; hãy gia hạn để chạy tiếp.';
   el('license-deactivate').disabled=state.status==='inactive';
  }
  async function show(){
