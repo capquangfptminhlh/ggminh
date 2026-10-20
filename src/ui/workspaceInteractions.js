@@ -31,6 +31,7 @@
  }
  function setRail(visible){
   document.body.dataset.lhmRail=visible?'open':'closed';
+  document.body.classList.toggle('lhm-v7-wide',!visible);
   $('lhm-v7-show-rail').setAttribute('aria-expanded',String(visible));
   $('lhm-v7-rail-label').textContent=visible?'Thu gọn bảng AI':'Hiển thị bảng AI';
   try{localStorage.setItem(STATE_KEY,visible?'open':'closed');}catch(_){}
@@ -66,7 +67,7 @@
  function searchCommands(query){
   const needle=norm(query);
   const actions=ACTIONS.filter(a=>!needle||norm(a.label+' '+a.hint+' '+a.search).includes(needle));
-  return [...actions.slice(0,needle?8:7),...profileCommands(needle)].slice(0,12);
+  return [...actions.slice(0,needle?8:9),...profileCommands(needle)].slice(0,12);
  }
  function setSelected(index){
   if(!results.length)return;
@@ -95,7 +96,7 @@
   results.forEach((item,i)=>{
    const row=document.createElement('button');
    row.type='button';
-   row.className='lhm-v7-command-item';
+   row.className='lhm-v7-command-item lhm-v7-command-option';
    row.id='lhm-v7-command-option-'+i;
    row.setAttribute('role','option');
    row.setAttribute('aria-selected','false');
