@@ -22,6 +22,13 @@ window.addEventListener('DOMContentLoaded',()=>{
    ?'Quyền: '+(state.features||[]).join(', ')+(state.trial?' · Giới hạn 10 hồ sơ':'')
    :'Chế độ giữ dữ liệu: có thể xem, xuất và khôi phục; hãy gia hạn để chạy tiếp.';
   el('license-deactivate').disabled=state.status==='inactive';
+  const remote=state.online;
+  el('license-online-state').textContent=remote
+   ?'Xác minh online: '+remote.state+
+    (remote.checkedAt?' · '+new Date(remote.checkedAt).toLocaleString('vi-VN'):'')+
+    (remote.graceExpiresAt?' · hạn offline '+new Date(remote.graceExpiresAt).toLocaleString('vi-VN'):'')
+   :'Chưa cấu hình máy chủ xác minh: sử dụng license offline.';
+  el('license-verify-online').disabled=!remote;
  }
  async function show(){
   modal.classList.add('open');msg.textContent='';
@@ -31,6 +38,14 @@ window.addEventListener('DOMContentLoaded',()=>{
  function close(){code.value='';modal.classList.remove('open');}
  for(const id of ['license-center-close','license-done'])el(id).addEventListener('click',close);
  el('license-refresh').addEventListener('click',()=>refresh().catch(e=>{msg.textContent=e.message;}));
+ el('license-verify-online').addEventListener('click',async()=>{
+  const button=el('license-verify-online');button.disabled=true;
+  try{
+   const outcome=await window.api.verifyLicenseOnline();
+   msg.textContent=outcome.result.configured===false?'Máy chủ xác minh chưa được cấu hình.':'Máy chủ trả về: '+outcome.result.state;
+  }catch(error){msg.textContent='Không kiểm tra được máy chủ: '+error.message;}
+  finally{await refresh().catch(()=>{});button.disabled=false;}
+ });
  el('license-copy-installation').addEventListener('click',async()=>{
   try{await window.api.copyInstallationId();msg.textContent='Đã sao chép mã cài đặt.';}
   catch(error){msg.textContent=error.message;}

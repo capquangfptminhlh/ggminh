@@ -38,6 +38,7 @@ const {AIAdvisor} = require('./src/ai/advisor');
 const {proposeWorkflow} = require('./src/ai/workflowDraft');
 const {LicenseManager} = require('./src/licensing/manager');
 const {LicensePolicy} = require('./src/licensing/enforcement');
+const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -58,6 +59,8 @@ let extensionManager = null;
 let aiAdvisor = null;
 let licenseManager = null;
 let licensePolicy = null;
+let onlineLicenseVerifier = null;
+let licenseTimer = null;
 let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -136,8 +139,16 @@ function createWindow() {
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
   ipcMain.handle('license-center-status', () => licensePolicy.status());
-  ipcMain.handle('license-center-activate', (_,token) => {
+  ipcMain.handle('license-center-verify-online', async () => {
+    const result=await onlineLicenseVerifier.verifyNow();
+    return {result,license:licensePolicy.status()};
+  });
+  ipcMain.handle('license-center-activate', async (_,token) => {
     licenseManager.activate(token);
+    if(onlineLicenseVerifier.endpoint){
+      try{await onlineLicenseVerifier.verifyNow();}
+      catch(error){console.warn('[License] Online activation pending:',error.message);}
+    }
     return licensePolicy.status();
   });
   ipcMain.handle('license-center-deactivate', () => {
@@ -516,6 +527,10 @@ app.whenReady().then(async () => {
   aiAdvisor = new AIAdvisor(storageDir,safeStorage);
   licenseManager = new LicenseManager(storageDir);
   licensePolicy = new LicensePolicy(storageDir,licenseManager);
+  onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
+    endpoint:process.env.LHM_LICENSE_VERIFY_URL||null
+  });
+  licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
   launcher.licensePolicy = licensePolicy;
@@ -540,6 +555,13 @@ app.whenReady().then(async () => {
     localScheduler.tick().catch(error => console.warn('[Scheduler]',error.message));
   }, 60000);
   schedulerTimer.unref?.();
+  if(onlineLicenseVerifier.endpoint){
+    onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
+    licenseTimer=setInterval(()=>{
+      onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
+    },12*60*60*1000);
+    licenseTimer.unref?.();
+  }
   recorderManager = new RecorderManager(store, createRecorderWindow);
   initIPC();
   createWindow();
@@ -560,6 +582,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   if (schedulerTimer) clearInterval(schedulerTimer);
+  if (licenseTimer) clearInterval(licenseTimer);
   if (batchAutomation) batchAutomation.stop();
   if (automationRunner) automationRunner.stop();
   if (recorderManager?.status().state === 'recording') recorderManager.stop();

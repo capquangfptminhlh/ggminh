@@ -107,8 +107,8 @@
     "id": "commercial",
     "name": "Billing, plans and integrated providers",
     "state": "partial",
-    "evidence": "Ed25519 public-key offline license validation, installation ID, monthly issuer, expiry and activation UI; private issuer key not shipped; v5.1 main-process license gate for profile creation, RPA, Local API and browser startup plus bounded 30-day trial",
-    "gaps": "No online checkout, centralized revocation, authoritative device ledger, paid entitlements security review or tamper-proof metering",
+    "evidence": "Ed25519 public-key offline license validation, installation ID, monthly issuer, expiry and activation UI; private issuer key not shipped; v5.1 main-process license gate for profile creation, RPA, Local API and browser startup plus bounded 30-day trial; signed online verification receipts, vendor-hosted revocation list and limited 72-hour offline grace (optional HTTPS authority)",
+    "gaps": "Hosted production authority, audited secret/key rotation, subscription billing, payments/refunds/chargebacks, customer admin portal, and authoritative multi-device license ledger remain missing",
     "acceptance": "Payment compliance, entitlement, chargeback and accounting verification"
   },
   {

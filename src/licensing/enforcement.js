@@ -39,7 +39,8 @@ class LicensePolicy{
   // A valid signed license always overrides trial and is read fresh on each
   // operation, preventing continued use of an expired cached token.
   if(base.active){
-   return {...base,access:'licensed',trial:false,allowed:true};
+   const licensed={...base,access:'licensed',trial:false,allowed:true};
+   return this.onlineVerifier?this.onlineVerifier.apply(licensed):licensed;
   }
   const now=this.clock();
   if(!Number.isFinite(now)||now+5*60000<this.startedAt ||
@@ -61,7 +62,7 @@ class LicensePolicy{
    throw Error('Unknown licensed operation');
   const result=this.status();
   if(!result.allowed)
-   throw Error('Giấy phép hết hạn hoặc dùng thử 30 ngày đã kết thúc. Dữ liệu vẫn có thể xem, sao lưu và khôi phục.');
+   throw Error('Giấy phép hết hạn, bị thu hồi hoặc chưa được máy chủ xác minh. Dữ liệu vẫn có thể xem, sao lưu và khôi phục.');
   if(!result.features.includes(feature))
    throw Error('Gói '+(result.plan||'dùng thử')+' không cho phép '+feature+'. Hãy gia hạn hoặc nâng gói.');
   return result;
