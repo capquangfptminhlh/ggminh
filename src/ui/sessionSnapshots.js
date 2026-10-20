@@ -92,6 +92,26 @@ window.addEventListener('DOMContentLoaded',()=>{
  el('snapshots-close').addEventListener('click',close);
  el('snapshots-done').addEventListener('click',close);
  profile.addEventListener('change',()=>refresh().catch(e=>{status.textContent=e.message;}));
+ el('snapshots-recover').addEventListener('click',async()=>{
+  const name=el('snapshots-recovery-name').value.trim();
+  if(!name||password.value.length<12){
+   status.textContent='Nhập tên hồ sơ mới và mật khẩu snapshot ít nhất 12 ký tự.';return;
+  }
+  if(!confirm('Chỉ dùng file backup của bạn. Hồ sơ sẽ được tạo lại với ID gốc, dữ liệu phiên sẽ được khôi phục. Mật khẩu đăng nhập của Chrome có thể không hoạt động trên máy Windows mới. Tiếp tục?'))return;
+  const typed=prompt('Để tạo lại hồ sơ, nhập chính xác TAO HO SO');
+  if(typed!=='TAO HO SO')return;
+  const btn=el('snapshots-recover');btn.disabled=true;
+  try{
+   const output=await window.api.recoverProfileFromSnapshot(password.value,name,typed);
+   if(output.canceled)return;
+   password.value='';
+   status.textContent='Đã khôi phục hồ sơ '+output.name+' ('+output.profileId+
+    ') với '+output.files+' tệp. Kiểm tra tình trạng đăng nhập trước khi sử dụng.';
+   await profiles();profile.value=output.profileId;await refresh();
+   if(typeof window.loadProfiles==='function')await window.loadProfiles();
+  }catch(error){status.textContent='Không khôi phục được hồ sơ: '+error.message;}
+  finally{btn.disabled=false;}
+ });
  el('snapshots-import').addEventListener('click',async()=>{
   if(!selected()||password.value.length<12){
    status.textContent='Chọn hồ sơ đích và nhập mật khẩu dài ít nhất 12 ký tự.';return;

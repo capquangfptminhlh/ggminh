@@ -66,6 +66,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('session-snapshots-export',id,snapshotId,passphrase),
   importEncryptedSnapshot: (id,passphrase) =>
     ipcRenderer.invoke('session-snapshots-import',id,passphrase),
+  recoverProfileFromSnapshot: (passphrase,name,confirmation) =>
+    ipcRenderer.invoke('session-snapshots-recover-profile',passphrase,name,confirmation),
   aiAdvisorStatus: () => ipcRenderer.invoke('ai-advisor-status'),
   aiAdvisorConfigure: data => ipcRenderer.invoke('ai-advisor-configure',data),
   aiAdvisorForgetKey: () => ipcRenderer.invoke('ai-advisor-forget-key'),

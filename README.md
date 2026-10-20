@@ -496,3 +496,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - **Nhập file .lhmsnap** chooses an external archive with the OS file chooser, verifies the AES-256-GCM integrity tag using the password, checks all filenames, bytes, counts and archive metadata, and stores the original encrypted envelope in the local snapshot list. Import does **not restore** anything; restoring requires the existing separate explicit `KHOI PHUC` confirmation.
 - Archives are strongly bound to the original profile ID and browser engine; they cannot be imported into arbitrary other profiles. Output is exclusive-creation and refuses to overwrite existing files; archive import refuses duplicate IDs.
 - This adds offline/export backups, **not cross-device browser-credential portability**, because Chrome Login Data may be protected by OS/device encryption. Cloud sync, team access and large profiles remain out of scope.
+
+
+## v4.9 — Recovery from an external snapshot after reinstall
+- **Snapshots → Khôi phục hồ sơ sau cài lại máy** can reconstruct the original profile ID and Chromium/Gecko session directory from a self-owned `.lhmsnap` file on an empty/other LHM installation. The user supplies a new display name, original backup password and explicit `TAO HO SO` confirmation.
+- The archive is validated and fully authenticated **before** the new profile is created. Existing, trashed or orphaned profile IDs are rejected rather than overwritten. New profiles always start with direct proxy and native fingerprint; Chrome/Firefox browser session file contents are restored without plaintext intermediate archive files.
+- If import or restore fails, the new profile/database entry, imported encrypted archive and any new session directory are rolled back where possible. A crashed OS or failed storage rollback may need manual recovery. Keep the external backup file until the new profile has been checked.
+- Passwords, cookies and tokens may be encrypted to the original Windows account/device or tied to provider sessions and may require signing in again. This capability does not promise cross-device login compatibility or cloud synchronization.

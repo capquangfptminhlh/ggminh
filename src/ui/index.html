@@ -590,7 +590,12 @@
         <div class="lhm-snapshot-actions">
           <button type="button" class="btn btn-primary" id="snapshots-create">Tạo snapshot mã hóa</button>
           <button type="button" class="btn btn-secondary" id="snapshots-import">Nhập file .lhmsnap</button>
+          <button type="button" class="btn btn-secondary" id="snapshots-recover">Khôi phục hồ sơ sau cài lại máy</button>
           <button type="button" class="btn btn-secondary" id="snapshots-refresh">Làm mới</button>
+        </div>
+        <div class="form-group">
+          <label for="snapshots-recovery-name">Tên hồ sơ khi khôi phục sau cài lại máy (không cần chọn hồ sơ phía trên)</label>
+          <input type="text" id="snapshots-recovery-name" maxlength="160" placeholder="Ví dụ: Khách hàng A – đã khôi phục">
         </div>
         <div id="snapshots-list" class="lhm-snapshot-list"></div>
         <p class="lhm-bulk-help">Có thể xuất file snapshot đã mã hóa ra ổ lưu trữ khác và nhập lại cho đúng profile ID/engine; file sẽ không chứa dữ liệu phiên ở dạng đọc được. Bạn phải tự bảo vệ file và mật khẩu, ứng dụng không tải lên cloud. Khôi phục thay thế toàn bộ phiên hiện tại; nên tạo snapshot trước. Mật khẩu lưu trong trình duyệt có thể bị ràng buộc với Windows cũ.</p>

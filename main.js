@@ -31,6 +31,7 @@ const {openInRunning} = require('./src/ops/liveNavigation');
 const cacheManager = require('./src/ops/cacheManager');
 const {SessionSnapshots} = require('./src/ops/sessionSnapshots');
 const {exportEncrypted,importEncrypted} = require('./src/ops/snapshotPortability');
+const {recoverProfile} = require('./src/ops/snapshotRecovery');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const {ExtensionManager} = require('./src/extensions/manager');
 const {AIAdvisor} = require('./src/ai/advisor');
@@ -149,6 +150,20 @@ function initIPC() {
     });
     if(canceled||!filePath)return {canceled:true};
     return {canceled:false,...exportEncrypted(sessionSnapshots,id,snapshotId,filePath,passphrase)};
+  });
+  ipcMain.handle('session-snapshots-recover-profile', async (_,passphrase,name,confirmation) => {
+    if(confirmation!=='TAO HO SO')throw Error('Xác nhận khôi phục bằng TAO HO SO');
+    if(typeof passphrase!=='string'||passphrase.length<12)
+      throw Error('Nhập mật khẩu snapshot trước khi chọn file');
+    const {canceled,filePaths}=await dialog.showOpenDialog(mainWindow,{
+      title:'Khôi phục hồ sơ gốc từ file snapshot mã hóa',
+      properties:['openFile'],
+      filters:[{name:'LHM Encrypted Session Snapshot',extensions:['lhmsnap']}]
+    });
+    if(canceled||!filePaths?.length)return {canceled:true};
+    const result=recoverProfile(sessionSnapshots,filePaths[0],passphrase,name,confirmation);
+    behaviorMonitor.record('profile_save',result.profileId,'manual');
+    return {canceled:false,...result};
   });
   ipcMain.handle('session-snapshots-import', async (_,id,passphrase) => {
     if(typeof passphrase!=='string'||passphrase.length<12)
