@@ -30,6 +30,21 @@
   <div class="app-container">
 
     <aside id="lhm-profile-panel" class="lhm-context-panel" aria-labelledby="lhm-context-title">
+      <section class="lhm-v6-assistant" aria-label="AI Control Center">
+        <div class="lhm-v6-assistant-top"><span class="lhm-v6-ai-mark" aria-hidden="true">✳</span><span class="lhm-v6-online"><span class="lhm-v6-dot"></span> Local workspace</span></div>
+        <p class="lhm-v6-ai-eyebrow">AI CONTROL CENTER</p>
+        <h3>Đội ngũ của bạn,<br><em>một bảng điều khiển.</em></h3>
+        <p class="lhm-v6-ai-desc">Quản lý hồ sơ và khởi chạy các công cụ hỗ trợ khi bạn cần.</p>
+        <div class="lhm-v6-ai-health">
+          <div><span>Hồ sơ cần chú ý</span><strong id="lhm-v6-attention">—</strong></div>
+          <div><span>Tự động hóa đã lưu</span><strong id="lhm-v6-automation">—</strong></div>
+        </div>
+        <div class="lhm-v6-ai-tools">
+          <button type="button" id="lhm-v6-ai-open" class="lhm-v6-ai-button primary"><span data-lhm-icon="workflow"></span> Mở AI Advisor <span aria-hidden="true">↗</span></button>
+          <button type="button" id="lhm-v6-studio-open" class="lhm-v6-ai-button"><span data-lhm-icon="layers"></span> Automation Studio <span aria-hidden="true">↗</span></button>
+        </div>
+        <small>AI chỉ hoạt động khi bạn chủ động mở và cấu hình API Key.</small>
+      </section>
       <div class="lhm-context-head">
         <div class="lhm-context-heading"><span class="lhm-context-overline">HỒ SƠ ĐÃ CHỌN</span><h2 id="lhm-context-title">Thông tin hồ sơ</h2></div>
         <button type="button" class="lhm-context-more" id="lhm-context-refresh" title="Làm mới thông tin hồ sơ" aria-label="Làm mới thông tin hồ sơ"><span data-lhm-icon="refresh-cw"></span></button>
@@ -83,6 +98,7 @@
           <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
+      <label class="lhm-v6-global-search"><span data-lhm-icon="search" aria-hidden="true"></span><input id="lhm-v6-global-search" type="search" placeholder="Tìm hồ sơ, nhóm, ID..." aria-label="Tìm hồ sơ từ thanh trên"><kbd>Ctrl K</kbd></label>
       <div class="header-stats">
         <div class="stat-badge">
           <span class="stat-label">Tổng Profile:</span>
@@ -132,6 +148,47 @@
     </header>
 
     <p id="behavior-inline-notice" class="behavior-inline-notice" hidden role="status"></p>
+
+    <!-- v5.6 profile workspace: metrics use live local data, not mock values. -->
+    <section class="lhm-v6-overview" aria-label="Tình hình hồ sơ và tự động hóa">
+      <div class="lhm-v6-intro">
+        <div>
+          <span class="lhm-v6-overline">WORKSPACE · PROFILE OPERATIONS</span>
+          <h2>Chào mừng trở lại <span class="lhm-v6-sparkle" aria-hidden="true">✳</span></h2>
+          <p>Tất cả hồ sơ, kết nối và công cụ trong một không gian làm việc.</p>
+        </div>
+        <div class="lhm-v6-intro-actions">
+          <span class="lhm-v6-local"><span class="lhm-v6-dot"></span> Dữ liệu trên thiết bị</span>
+          <button type="button" class="lhm-v6-quiet-action" id="lhm-v6-refresh" aria-label="Làm mới số liệu"><span data-lhm-icon="refresh-cw"></span> Làm mới</button>
+        </div>
+      </div>
+      <div class="lhm-v6-metrics">
+        <article class="lhm-v6-metric" data-tone="blue">
+          <span class="lhm-v6-metric-icon" data-lhm-icon="panels-top-left"></span>
+          <span class="lhm-v6-metric-label">Tổng hồ sơ</span>
+          <strong id="lhm-v6-total">—</strong>
+          <span class="lhm-v6-metric-bottom">Profile được quản lý</span>
+        </article>
+        <article class="lhm-v6-metric" data-tone="mint">
+          <span class="lhm-v6-metric-icon" data-lhm-icon="activity"></span>
+          <span class="lhm-v6-metric-label">Phiên đang chạy</span>
+          <strong id="lhm-v6-running">—</strong>
+          <span class="lhm-v6-metric-bottom"><span class="lhm-v6-dot"></span> Trình duyệt đang mở</span>
+        </article>
+        <article class="lhm-v6-metric" data-tone="yellow">
+          <span class="lhm-v6-metric-icon" data-lhm-icon="network"></span>
+          <span class="lhm-v6-metric-label">Proxy đã kiểm tra</span>
+          <strong id="lhm-v6-proxies">—</strong>
+          <span class="lhm-v6-metric-bottom">IP được xác minh cục bộ</span>
+        </article>
+        <article class="lhm-v6-metric" data-tone="violet">
+          <span class="lhm-v6-metric-icon" data-lhm-icon="workflow"></span>
+          <span class="lhm-v6-metric-label">Quy trình đã lưu</span>
+          <strong id="lhm-v6-workflows">—</strong>
+          <span class="lhm-v6-metric-bottom">Workflow khả dụng</span>
+        </article>
+      </div>
+    </section>
 
 
     <section class="lhm-dashboard" id="dashboard-view" aria-label="LHM Mission Control">
@@ -197,7 +254,7 @@
     <section class="lhm-profiles-heading" aria-label="Quản lý hồ sơ">
       <div>
         <p class="lhm-breadcrumb">Workspace / Hồ sơ</p>
-        <h2>Hồ sơ trình duyệt</h2>
+        <h2>Browser Profiles <span class="lhm-v6-title-sub">/ Hồ sơ trình duyệt</span></h2>
         <p class="lhm-page-subtitle">Quản lý phiên, nhóm hồ sơ và kết nối proxy trong một nơi.</p>
       </div>
       <div class="lhm-profiles-overview">
@@ -209,6 +266,12 @@
       <button type="button" class="lhm-list-tab is-current" data-lhm-status="all">Tất cả hồ sơ</button>
       <button type="button" class="lhm-list-tab" data-lhm-status="running">Đang chạy</button>
       <button type="button" class="lhm-list-tab" data-lhm-status="stopped">Đã dừng</button>
+    </div>
+    <div class="lhm-v6-shortcuts" aria-label="Lối tắt thao tác">
+      <span class="lhm-v6-table-label">Danh sách hồ sơ <span>· Dữ liệu thực</span></span>
+      <button type="button" id="lhm-v6-import" class="lhm-v6-small-link"><span data-lhm-icon="layers"></span> Nhập CSV</button>
+      <button type="button" id="lhm-v6-bulk" class="lhm-v6-small-link"><span data-lhm-icon="plus"></span> Tạo hàng loạt</button>
+      <button type="button" id="lhm-v6-studio" class="lhm-v6-small-link"><span data-lhm-icon="workflow"></span> RPA</button>
     </div>
     <!-- Toolbar / Filter Bar -->
     <section class="toolbar">
@@ -1364,6 +1427,7 @@ run();
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
   <script src="appIdentity.js"></script>
+  <script src="premiumWorkspace.js"></script>
   <script src="aiAdvisor.js"></script>
   <script src="cacheManager.js"></script>
   <script src="sessionSnapshots.js"></script>

@@ -497,6 +497,7 @@ async function loadProfiles() {
 function updateStats() {
   statTotal.textContent = allProfiles.length;
   window.LHMProfilePanel?.refresh();
+  window.LHMPremiumWorkspace?.refreshFromProfiles(allProfiles,activeBrowserMap.size);
   statActive.textContent = activeBrowserMap.size;
   document.getElementById('lhm-profiles-total').textContent = allProfiles.length;
   document.getElementById('lhm-profiles-running').textContent = activeBrowserMap.size;

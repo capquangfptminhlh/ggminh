@@ -611,3 +611,9 @@ for server-side authenticated role-based access and audit-backed billing.
 - **Công cụ → Thông tin phần mềm** shows the actual running version, Windows architecture, portable/development packaging indicator and current local license/trial status. No license token, user-data path, secret or fingerprint is transmitted by this endpoint.
 - The Windows UI screenshot smoke test checks the DOM reports the actual `app.getVersion()` **before** saving `workspace-preview.png`, preventing old version labels from being published in CI previews.
 - A passing screenshot and Windows EXE build do **not** imply full feature parity or fraud-detection invisibility.
+
+
+## v5.6 — Premium cards workspace with motion design
+- Rebuilt the default Profiles workspace with a slender icon rail, warm/light SaaS surfaces, actual local KPI cards for total/active profiles, proxy verification and saved workflows, searchable data grid and compact dark AI control panel. The existing profile handlers, proxy tools, Automation Studio and AI Advisor are reused; no stock/mock account data is shown outside screenshot fixtures.
+- Added real keyboard search (Ctrl+K), quick shortcuts, staggered profile-row entrance, panel transitions, hover micro-interactions, page fade, counter updates and responsive layout. `prefers-reduced-motion` disables nonessential motion, and the UI retains original button/IPC IDs for backwards compatibility.
+- Indicators show local known configuration health only, not third-party anti-bot scores or claims. The AI panel is a manual entry point; it does not autonomously operate ads.
