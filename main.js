@@ -316,13 +316,10 @@ function initIPC() {
   ipcMain.handle('studio-approve', () => automationRunner.approve());
   ipcMain.handle('studio-status', () => automationRunner.status());
   ipcMain.handle('save-profile', (_, profile) => {
-    if (profile?.id && launcher.isBusy(profile.id)) {
-      const old = store.getProfile(profile.id);
-      if (old && (JSON.stringify(old.proxy || {}) !== JSON.stringify(profile.proxy || {}) ||
-          (profile.engine || 'chromium') !== (old.engine || 'chromium'))) {
-        throw new Error('Đóng hồ sơ trước khi thay proxy hoặc engine, tránh sai lệch cấu hình phiên đang chạy');
-      }
-    }
+    // The Local API already forbids all live profile edits. Apply the same
+    // lifecycle rule to desktop edits, including URLs, fingerprint and notes.
+    if (profile?.id && store.getProfile(profile.id) && launcher.isBusy(profile.id))
+      throw new Error('Hãy đóng hồ sơ trước khi chỉnh sửa cấu hình để tránh sai lệch dữ liệu của phiên đang chạy');
     const saved = store.saveProfile(profile);
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;

@@ -85,6 +85,13 @@ class ExtensionManager{
   }
   const previous=this.store.data,ext=(previous.extensions||[]).find(e=>e.id===id);
   if(!ext)throw Error('Extension missing');
+  if(enabled){
+   for(const pid of ids){
+    const count=(previous.extensions||[]).filter(item=>
+      item.id!==id&&(item.profileIds||[]).includes(pid)).length;
+    if(count>=8)throw Error('Maximum eight extensions per profile');
+   }
+  }
   if(!fs.existsSync(path.join(this.base,id,'manifest.json')))throw Error('Extension files missing');
   const next=structuredClone(previous),item=next.extensions.find(e=>e.id===id);
   const assigned=new Set(item.profileIds||[]);
