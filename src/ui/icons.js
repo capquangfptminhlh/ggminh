@@ -4,6 +4,9 @@
   const NS = 'http://www.w3.org/2000/svg';
   const paths = Object.freeze({
     'panels-top-left': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>',
+    'command': '<path d="M9 7V5a3 3 0 0 0-6 0 3 3 0 0 0 3 3h2v8H6a3 3 0 1 0 3 3v-2h6v2a3 3 0 1 0 3-3h-2V8h2a3 3 0 1 0-3-3v2H9Z"/>',
+    'panel-right': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/>',
+    'panel-right-close': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18m-7-11 3 2-3 2"/>',
     'layout-dashboard': '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
     'network': '<rect x="9" y="2" width="6" height="6" rx="1.5"/><rect x="2" y="16" width="6" height="6" rx="1.5"/><rect x="16" y="16" width="6" height="6" rx="1.5"/><path d="M12 8v4M5 16v-4h14v4"/>',
     'workflow': '<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="9" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h6M18 9v3h-6v3M6 9v3h6"/>',
