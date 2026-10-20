@@ -66,4 +66,31 @@ class CloudClient{
   return {revision:saved.revision,profileCount:safe.length};
  }
 }
+// Team identity is verified on the server. Client role fields are never trusted.
+CloudClient.prototype.teamRequest=async function(method,path,body){
+ const target=this.origin+'/v1/workspaces/'+encodeURIComponent(this.tenantId)+path;
+ const response=await this.fetcher(target,{method,redirect:'error',
+  headers:{Authorization:'Bearer '+this.token,'Accept':'application/json',
+   ...(body?{'Content-Type':'application/json'}:{})},
+  ...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(12000)});
+ if(!response?.ok){
+  if(response?.status===401||response?.status===403)throw Error('Team permission denied');
+  throw Error('Team API failed: HTTP '+(response?.status||'unknown'));
+ }
+ return response.json();
+};
+CloudClient.prototype.listMembers=async function(){
+ const result=await this.teamRequest('GET','/members');
+ if(!Array.isArray(result?.members)||result.members.length>10000)
+  throw Error('Invalid member response');
+ return result.members;
+};
+CloudClient.prototype.issueInvite=function({email,role,groups,ttlHours=24}){
+ return this.teamRequest('POST','/invites',{email,role,groups,ttlHours});
+};
+CloudClient.prototype.revokeMember=function(subjectId){
+ if(typeof subjectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(subjectId))
+  throw Error('Invalid team member ID');
+ return this.teamRequest('DELETE','/members/'+encodeURIComponent(subjectId));
+};
 module.exports={CloudClient,endpoint,assertCredentials};
