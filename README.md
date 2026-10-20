@@ -423,3 +423,9 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Assign/remove extensions for selected **stopped Chromium profiles** (up to 50 per update); assignment writes are atomic and never copy cookies or user sessions. Restart assigned profiles for extension changes.
 - Extensions are passed to Chrome/Edge with `--load-extension` at startup. **Activation is not guaranteed**, because recent Google Chrome builds may ignore loading unpacked extensions via command-line flags. No cloud distribution, ZIP import, Web Store download or Firefox extensions are implemented.
 - Only install trusted extension code. The app does not audit extension permissions or contents beyond basic manifest and filesystem safety checks. Do not store third-party scripts or account secrets in extension metadata.
+
+
+## v4.1 — Companion command-line utility (source + Node 22+)
+- Enable the desktop Local API, copy the session API key in the desktop app and supply it via an environment variable named `LHM_API_KEY`. Optionally set `LHM_API_PORT` (default 50325).
+- From the source repository run `npm run cli -- status`, `npm run cli -- list`, `npm run cli -- active`, `npm run cli -- start pb_...`, `npm run cli -- stop pb_...`.
+- The CLI contacts `127.0.0.1` only, validates IDs and does not save API keys. It does not expose MCP, collect cookies or install a standalone CLI EXE. Use on a trusted local PC.
