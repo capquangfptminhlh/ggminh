@@ -44,7 +44,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-ai-'));
    [{name:'Customers Ltd',group:'Private Group',engine:'gecko',proxy:{type:'http',host:'proxy.secret'}}]);
   assert.strictEqual(response.answer,'Please use named groups');
   assert(response.sentStatistics);
-  assert(sent[0].init.body.includes('"total":1'));
+  assert(JSON.parse(sent[0].init.body).messages[1].content.includes('"total":1'));
   assert(!sent[0].init.body.includes('Private Group'));
   await assert.rejects(()=>advisor.ask({question:'Again',includeStatistics:false}),/7 giây/);
   tick+=7500;
