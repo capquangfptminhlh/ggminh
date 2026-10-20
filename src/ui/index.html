@@ -524,6 +524,19 @@
             <button type="button" class="btn btn-primary" id="wm-open-live-url">Mở tab trên hồ sơ đang chạy</button>
           </div>
         </div>
+        <section class="form-group" aria-label="Synchronizer">
+          <h3>Synchronizer · Đồng bộ tab (thử nghiệm)</h3>
+          <p class="lhm-bulk-help">Chỉ đồng bộ chuyển trang HTTPS từ tab chính sang các cửa sổ phụ bằng tab mới; tối đa 15 lần. Không sao chép click, nhập liệu, cookie, form hoặc tham số URL. Cần bật Local API.</p>
+          <label for="wm-sync-master">Hồ sơ chính</label>
+          <select id="wm-sync-master"></select>
+          <label for="wm-sync-hosts">Tên miền được phép (1–5, ngăn cách bằng dấu phẩy)</label>
+          <input id="wm-sync-hosts" type="text" value="example.com" placeholder="example.com, other.org" autocomplete="off" spellcheck="false">
+          <div class="lhm-wm-actions">
+            <button id="wm-sync-start" class="btn btn-primary" type="button">Bắt đầu đồng bộ</button>
+            <button id="wm-sync-stop" class="btn btn-secondary" type="button">Dừng</button>
+          </div>
+          <p id="wm-sync-state" role="status" aria-live="polite">Đã tắt</p>
+        </section>
         <p id="wm-result" class="lhm-wm-result" aria-live="polite"></p>
       </div>
       <div class="modal-footer">
