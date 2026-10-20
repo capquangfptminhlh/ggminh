@@ -1,140 +1,192 @@
 'use strict';
-(() => {
-  // UI-only shortcuts; all operations stay in their existing, guarded handlers.
-  const el=id=>document.getElementById(id);
-  const storageKey='lhm.workspace.rail.v1';
-  const fold=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
-  const commands=Object.freeze([
-    {id:'profiles',title:'Danh sách hồ sơ',detail:'Chuyển sang màn hình Browser Profiles',tag:'Điều hướng',action:()=>window.LHMMissionControl?.switchView('profiles')},
-    {id:'dashboard',title:'Dashboard tổng quan',detail:'Xem thống kê, tình trạng hồ sơ và proxy',tag:'Điều hướng',action:()=>window.LHMMissionControl?.switchView('dashboard')},
-    {id:'search',title:'Tìm kiếm hồ sơ',detail:'Tìm bằng tên, mã hồ sơ hoặc nhóm',tag:'Hồ sơ',action:()=>{window.LHMMissionControl?.switchView('profiles');el('lhm-v6-global-search')?.focus();}},
-    {id:'create',title:'Tạo hồ sơ mới',detail:'Tạo phiên trình duyệt cục bộ',tag:'Hồ sơ',target:'btn-create-profile'},
-    {id:'quick',title:'Tạo nhanh nhiều hồ sơ',detail:'Dùng trình tạo hàng loạt có kiểm tra giới hạn',tag:'Hồ sơ',target:'btn-bulk-create'},
-    {id:'import',title:'Nhập hồ sơ từ CSV',detail:'Kiểm tra trước khi nhập dữ liệu',tag:'Hồ sơ',target:'btn-import-profiles'},
-    {id:'proxy',title:'Proxy Center',detail:'Kiểm tra và quản lý kết nối proxy',tag:'Công cụ',target:'btn-proxy-center'},
-    {id:'studio',title:'Automation Studio',detail:'Mở quy trình tự động hóa được phê duyệt',tag:'Công cụ',target:'btn-open-studio'},
-    {id:'ai',title:'AI Advisor',detail:'Mở tư vấn AI theo yêu cầu',tag:'Công cụ',target:'btn-ai-advisor'},
-    {id:'backup',title:'Sao lưu cấu hình',detail:'Xuất dữ liệu cấu hình cục bộ',tag:'Công cụ',target:'btn-config-backup'},
-    {id:'window',title:'Quản lý cửa sổ',detail:'Sắp xếp các cửa sổ trình duyệt đang chạy',tag:'Công cụ',target:'btn-window-manager'},
-    {id:'about',title:'Thông tin phần mềm',detail:'Xem phiên bản và license hiện tại',tag:'Công cụ',target:'btn-app-about'}
-  ]);
-  let selected=0,visible=[],previousFocus=null;
-  function railEnabled(){return document.body.dataset.view==='profiles'&&window.innerWidth>1270;}
-  function saveRail(expanded){
-    try{window.localStorage.setItem(storageKey,expanded?'open':'closed');}catch(_){}
+(()=>{
+ const $=id=>document.getElementById(id);
+ const STATE_KEY='lhm-workspace-rail-v1';
+ const ACTIONS=Object.freeze([
+  {label:'Tất cả hồ sơ',hint:'Danh sách profile',action:'profiles',search:'profile hồ sơ danh sách'},
+  {label:'Dashboard',hint:'Số liệu cục bộ',action:'dashboard',search:'tổng quan'},
+  {label:'Tạo hồ sơ mới',hint:'Mở cửa sổ tạo hồ sơ',action:'btn-create-profile',search:'thêm tạo profile'},
+  {label:'Nhập danh sách CSV',hint:'Nhập hồ sơ từ tệp',action:'btn-import-profiles',search:'import csv'},
+  {label:'Tạo hồ sơ hàng loạt',hint:'Tạo từ mẫu',action:'btn-bulk-create',search:'bulk nhanh'},
+  {label:'Quản lý proxy',hint:'Kiểm tra kết nối và proxy',action:'btn-proxy-center',search:'mạng kết nối ip'},
+  {label:'Automation Studio',hint:'Mở quy trình tự động hóa',action:'btn-open-studio',search:'rpa quy trình'},
+  {label:'AI Advisor',hint:'Mở trợ lý AI',action:'btn-ai-advisor',search:'trợ lý'},
+  {label:'Snapshot & khôi phục',hint:'Sao lưu phiên mã hóa',action:'btn-session-snapshots',search:'backup restore'},
+  {label:'Giấy phép & gia hạn',hint:'Xem trạng thái license',action:'btn-license-center',search:'thuê bao'},
+  {label:'Kiểm tra sức khỏe hồ sơ',hint:'Chẩn đoán cấu hình',action:'btn-profile-health',search:'health check'},
+  {label:'Quản lý cửa sổ',hint:'Sắp xếp browser đang chạy',action:'btn-window-manager',search:'window tile'},
+  {label:'Thùng rác',hint:'Khôi phục hồ sơ đã xóa',action:'btn-trash-profiles',search:'recycle'}
+ ]);
+ const norm=text=>String(text||'').normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D')
+  .toLocaleLowerCase('vi').trim();
+ let selected=0;
+ let results=[];
+ let previousFocus=null;
+ let initialized=false;
+ let shown=false;
+ function isTyping(node){
+  return !!node&&(node.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(node.tagName));
+ }
+ function setRail(visible){
+  document.body.dataset.lhmRail=visible?'open':'closed';
+  $('lhm-v7-show-rail').setAttribute('aria-expanded',String(visible));
+  $('lhm-v7-rail-label').textContent=visible?'Thu gọn bảng AI':'Hiển thị bảng AI';
+  try{localStorage.setItem(STATE_KEY,visible?'open':'closed');}catch(_){}
+ }
+ function toggleRail(){setRail(document.body.dataset.lhmRail==='closed');}
+ function profileCommands(query){
+  const snapshot=window.LHMProfileContextData?.();
+  const profiles=Array.isArray(snapshot?.profiles)?snapshot.profiles:[];
+  if(!query)return [];
+  return profiles
+   .filter(p=>{
+    const text=[p.name,p.id,p.group,...(Array.isArray(p.tags)?p.tags:[])].join(' ');
+    return norm(text).includes(query);
+   })
+   .slice(0,6)
+   .map(p=>({
+     label:String(p.name||p.id),
+     hint:'Hồ sơ · '+String(p.group||'Mặc định'),
+     action:'profile',
+     profileId:p.id,
+     profileName:p.name||p.id,
+     search:norm(p.id+' '+(p.group||''))
+   }));
+ }
+ function searchCommands(query){
+  const needle=norm(query);
+  const actions=ACTIONS.filter(a=>!needle||norm(a.label+' '+a.hint+' '+a.search).includes(needle));
+  return [...actions.slice(0,needle?8:7),...profileCommands(needle)].slice(0,12);
+ }
+ function setSelected(index){
+  if(!results.length)return;
+  selected=(index+results.length)%results.length;
+  const list=$('lhm-v7-command-list');
+  const options=[...list.querySelectorAll('[role="option"]')];
+  options.forEach((option,i)=>{
+   option.setAttribute('aria-selected',String(i===selected));
+   if(i===selected)option.scrollIntoView({block:'nearest'});
+  });
+  $('lhm-v7-command-search').setAttribute('aria-activedescendant',
+   options[selected]?.id||'');
+ }
+ function render(){
+  const list=$('lhm-v7-command-list');
+  results=searchCommands($('lhm-v7-command-search').value);
+  list.replaceChildren();
+  if(!results.length){
+   const empty=document.createElement('p');
+   empty.className='lhm-v7-command-empty';
+   empty.textContent='Không tìm thấy lệnh hay hồ sơ phù hợp.';
+   list.append(empty);
+   $('lhm-v7-command-search').removeAttribute('aria-activedescendant');
+   return;
   }
-  function setRail(expanded,{persist=true}={}){
-    const rail=el('lhm-profile-panel'),show=el('lhm-v7-show-rail');
-    if(!rail||!show)return;
-    if(!expanded&&rail.contains(document.activeElement))show.focus();
-    document.body.classList.toggle('lhm-v7-wide',!expanded);
-    rail.setAttribute('aria-hidden',String(!expanded));
-    // When hidden, the entire rail must be skipped in keyboard tab order.
-    rail.inert=!expanded;
-    show.setAttribute('aria-expanded',String(expanded));
-    el('lhm-v7-rail-label').textContent=expanded?'Thu gọn bảng AI':'Hiện bảng AI';
-    show.title=expanded?'Thu gọn bảng điều khiển bên phải':'Hiện AI Control Center và thông tin hồ sơ';
-    if(persist)saveRail(expanded);
+  results.forEach((item,i)=>{
+   const row=document.createElement('button');
+   row.type='button';
+   row.className='lhm-v7-command-item';
+   row.id='lhm-v7-command-option-'+i;
+   row.setAttribute('role','option');
+   row.setAttribute('aria-selected','false');
+   const icon=document.createElement('span');
+   icon.className='lhm-v7-command-item-mark';
+   icon.textContent=item.action==='profile'?'◉':'↗';
+   const content=document.createElement('span');
+   content.className='lhm-v7-command-item-copy';
+   const title=document.createElement('strong');title.textContent=item.label;
+   const hint=document.createElement('small');hint.textContent=item.hint;
+   content.append(title,hint);
+   const arrow=document.createElement('span');arrow.textContent='↵';
+   arrow.className='lhm-v7-command-arrow';
+   row.append(icon,content,arrow);
+   row.addEventListener('mouseenter',()=>setSelected(i));
+   row.addEventListener('click',()=>activate(i));
+   list.append(row);
+  });
+  selected=Math.min(selected,results.length-1);
+  setSelected(selected);
+ }
+ function close(){
+  if(!shown)return;
+  shown=false;
+  const modal=$('lhm-v7-command-palette');
+  modal.classList.remove('open');
+  $('lhm-v7-command-search').value='';
+  $('lhm-v7-command-search').removeAttribute('aria-activedescendant');
+  if(previousFocus?.isConnected)previousFocus.focus();
+ }
+ function open(){
+  if(shown)return;
+  if(document.querySelector('.modal-overlay.open'))return;
+  shown=true;previousFocus=document.activeElement;selected=0;
+  $('lhm-v7-command-palette').classList.add('open');
+  $('lhm-v7-command-search').value='';
+  render();
+  $('lhm-v7-command-search').focus();
+ }
+ function activate(index){
+  const command=results[index];
+  if(!command)return;
+  close();
+  if(command.action==='profiles'||command.action==='dashboard'){
+   window.LHMMissionControl?.switchView(command.action);
+   return;
   }
-  function setSelected(index){
-    selected=Math.min(Math.max(index,0),Math.max(visible.length-1,0));
-    for(const [i,node] of [...el('lhm-v7-command-list').children].entries()){
-      node.classList.toggle('is-selected',i===selected);
-      node.setAttribute('aria-selected',String(i===selected));
-      if(i===selected){node.id='lhm-v7-option-selected';node.scrollIntoView({block:'nearest'});}
-      else node.removeAttribute('id');
-    }
-    if(visible.length)el('lhm-v7-command-search').setAttribute('aria-activedescendant','lhm-v7-option-selected');
-    else el('lhm-v7-command-search').removeAttribute('aria-activedescendant');
+  if(command.action==='profile'){
+   window.LHMMissionControl?.switchView('profiles');
+   for(const id of ['filter-group','filter-tag','filter-engine','filter-proxy','filter-status']){
+     const control=$(id);
+     if(control){control.value='all';control.dispatchEvent(new Event('change',{bubbles:true}));}
+   }
+   const field=$('search-input');
+   field.value=String(command.profileId);
+   field.dispatchEvent(new Event('input',{bubbles:true}));
+   $('lhm-v6-global-search').value=field.value;
+   // Locating a saved profile is safe; no window is opened automatically.
+   requestAnimationFrame(()=>document.querySelector(
+    '#profile-list-body tr[data-profile-id="'+CSS.escape(String(command.profileId))+'"]')
+    ?.scrollIntoView({block:'center',behavior:'smooth'}));
+   return;
   }
-  function render(){
-    const root=el('lhm-v7-command-list'),query=fold(el('lhm-v7-command-search').value.trim());
-    visible=commands.filter(cmd=>!query||fold([cmd.title,cmd.detail,cmd.tag].join(' ')).includes(query));
-    root.replaceChildren();
-    if(!visible.length){
-      const item=document.createElement('p');
-      item.className='lhm-v7-no-results';item.textContent='Không tìm thấy lệnh phù hợp.';
-      root.append(item);return;
-    }
-    for(const [index,cmd] of visible.entries()){
-      const button=document.createElement('button');
-      button.type='button';button.className='lhm-v7-command-option';
-      button.setAttribute('role','option');button.dataset.commandId=cmd.id;
-      const body=document.createElement('span');body.className='lhm-v7-command-copy';
-      const title=document.createElement('strong');title.textContent=cmd.title;
-      const hint=document.createElement('small');hint.textContent=cmd.detail;
-      body.append(title,hint);
-      const label=document.createElement('span');label.className='lhm-v7-command-tag';label.textContent=cmd.tag;
-      button.append(body,label);
-      button.addEventListener('pointermove',()=>{if(selected!==index)setSelected(index);});
-      button.addEventListener('click',()=>run(cmd));
-      root.append(button);
-    }
-    setSelected(0);
-  }
-  function paletteVisible(){return el('lhm-v7-command-palette').classList.contains('open');}
-  function open(){
-    if(paletteVisible())return;
-    // Avoid placing two modal dialogs on top of each other.
-    if(document.querySelector('.modal-overlay.open'))return;
-    previousFocus=document.activeElement;
-    const modal=el('lhm-v7-command-palette');
-    modal.classList.add('open');document.body.classList.add('lhm-v7-palette-open');
-    el('lhm-v7-command-search').value='';render();
-    el('lhm-v7-command-search').focus();
-  }
-  function close({restoreFocus=true}={}){
-    const modal=el('lhm-v7-command-palette');
-    if(!modal.classList.contains('open'))return;
-    modal.classList.remove('open');document.body.classList.remove('lhm-v7-palette-open');
-    if(restoreFocus&&previousFocus?.isConnected)previousFocus.focus();
-  }
-  function run(cmd){
-    close({restoreFocus:false});
-    if(cmd.action)cmd.action();
-    else if(cmd.target)el(cmd.target)?.click();
-  }
-  function editing(node){
-    return node?.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(node?.tagName||'');
-  }
-  function init(){
-    const modal=el('lhm-v7-command-palette');
-    if(!modal||!el('lhm-v7-show-rail'))return;
-    let initial=true;
-    try{initial=window.localStorage.getItem(storageKey)!=='closed';}catch(_){}
-    setRail(initial,{persist:false});
-    el('lhm-v7-show-rail').addEventListener('click',()=>{
-      if(railEnabled())setRail(document.body.classList.contains('lhm-v7-wide'));
-    });
-    el('lhm-v7-hide-rail').addEventListener('click',()=>{if(railEnabled())setRail(false);});
-    el('lhm-v7-command-open').addEventListener('click',open);
-    el('lhm-v7-command-close').addEventListener('click',()=>close());
-    modal.addEventListener('click',event=>{if(event.target===modal)close();});
-    el('lhm-v7-command-search').addEventListener('input',render);
-    modal.addEventListener('keydown',event=>{
-      if(event.key==='Escape'){event.preventDefault();close();return;}
-      if(event.key==='ArrowDown'){event.preventDefault();setSelected(selected+1);}
-      if(event.key==='ArrowUp'){event.preventDefault();setSelected(selected-1);}
-      if(event.key==='Enter'&&!event.isComposing&&visible.length){
-        event.preventDefault();run(visible[selected]);
-      }
-      if(event.key==='Tab'){
-        // Keep focus inside the dialog. Palette options are selected via arrows.
-        event.preventDefault();
-        el(event.shiftKey?'lhm-v7-command-close':'lhm-v7-command-search').focus();
-      }
-    });
-    document.addEventListener('keydown',event=>{
-      const hotkey=(event.ctrlKey||event.metaKey)&&event.shiftKey&&event.key.toLowerCase()==='p';
-      if(hotkey){event.preventDefault();if(paletteVisible())close();else open();return;}
-      if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&event.key.toLowerCase()==='b'&&
-         !editing(event.target)&&railEnabled()&&!paletteVisible()){
-        event.preventDefault();setRail(document.body.classList.contains('lhm-v7-wide'));
-      }
-    });
-  }
-  window.LHMWorkspaceInteractions={setRail,openPalette:open,closePalette:close};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
-  else init();
+  const trigger=$(command.action);
+  trigger?.click();
+ }
+ function init(){
+  if(initialized)return;initialized=true;
+  const dialog=$('lhm-v7-command-palette');
+  const input=$('lhm-v7-command-search');
+  if(!dialog||!input||!$('lhm-v7-show-rail')||!$('lhm-v7-hide-rail'))return;
+  try{setRail(localStorage.getItem(STATE_KEY)!=='closed');}catch(_){setRail(true);}
+  $('lhm-v7-show-rail').addEventListener('click',toggleRail);
+  $('lhm-v7-hide-rail').addEventListener('click',()=>setRail(false));
+  $('lhm-v7-command-open').addEventListener('click',open);
+  $('lhm-v7-command-close').addEventListener('click',close);
+  dialog.addEventListener('click',event=>{if(event.target===dialog)close();});
+  input.addEventListener('input',()=>{selected=0;render();});
+  input.addEventListener('keydown',event=>{
+   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+    event.preventDefault();setSelected(selected+(event.key==='ArrowDown'?1:-1));
+   }else if(event.key==='Enter'){
+    event.preventDefault();activate(selected);
+   }else if(event.key==='Escape'){event.preventDefault();close();}
+  });
+  // Capture-phase prevents an older global search shortcut swallowing the
+  // explicit Ctrl+Shift+P command-palette combination.
+  document.addEventListener('keydown',event=>{
+   const key=event.key.toLowerCase();
+   if(event.key==='Escape'&&shown){event.preventDefault();event.stopImmediatePropagation();close();return;}
+   if((event.ctrlKey||event.metaKey)&&event.shiftKey&&key==='p'){
+    event.preventDefault();event.stopImmediatePropagation();
+    shown?close():open();return;
+   }
+   if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&key==='b'&&!isTyping(event.target)){
+    event.preventDefault();toggleRail();
+   }
+  },true);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+ else init();
+ window.LHMWorkspaceInteractions={open,close,toggleRail,searchCommands};
 })();
