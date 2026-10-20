@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
 const { uniqueIds } = require('../ops/operations');
+const {parseProxyCsv}=require('./bulkImport');
 
 /**
  * LHM Proxy Center stores public endpoint metadata only.
@@ -152,6 +153,51 @@ class ProxyCenter {
       throw error;
     }
     return { updated: profiles.length, proxyId: proxy.id, profileIds: chosen };
+  }
+
+  importCsv(input) {
+    const imported=parseProxyCsv(input).map(p=>this.normalized(p));
+    const seen=new Set(this.store.data.proxies.map(p=>p.type+':'+p.host.toLowerCase()+':'+p.port));
+    const accepted=[];
+    let skipped=0;
+    for(const p of imported) {
+      const key=p.type+':'+p.host.toLowerCase()+':'+p.port;
+      if(seen.has(key)){skipped++;continue;}
+      seen.add(key);accepted.push(p);
+    }
+    if(this.store.data.proxies.length+accepted.length>500)throw Error('Kho proxy không vượt quá 500 mục');
+    if(!accepted.length)return {imported:0,skipped,total:this.store.data.proxies.length};
+    const old=this.store.data.proxies.slice();
+    this.store.data.proxies=[...old,...accepted];
+    try{this.store.saveData();}
+    catch(error){this.store.data.proxies=old;throw error;}
+    return {imported:accepted.length,skipped,total:this.store.data.proxies.length};
+  }
+
+  async verifyBatch(ids) {
+    if(!Array.isArray(ids)||!ids.length||ids.length>20)
+      throw Error('Chỉ kiểm tra từ 1 đến 20 proxy mỗi lần');
+    const selected=[...new Set(ids)];
+    if(selected.length!==ids.length)throw Error('Danh sách proxy chứa ID trùng');
+    for(const id of selected)this.get(id);
+    const results=new Array(selected.length);
+    let cursor=0;
+    const worker=async()=>{
+      while(cursor<selected.length){
+        const index=cursor++;
+        const id=selected[index];
+        try{results[index]=await this.verify(id);}
+        catch(error){
+          // Do not leak credential values into UI/IPC; use a generic message
+          // for errors outside the normal status object.
+          results[index]={proxyId:id,status:'error',verified:false,
+            message:'Không thể kết nối hoặc giải mã proxy này; kiểm tra thông tin xác thực.'};
+        }
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(3,selected.length)},()=>worker()));
+    return {checked:results.length,verified:results.filter(x=>x.verified===true).length,
+      failures:results.filter(x=>x.verified!==true).length,results};
   }
 
   async verify(id) {
