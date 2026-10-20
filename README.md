@@ -489,3 +489,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Excludes cache directories but includes actual profile state such as Cookies, Local Storage, IndexedDB and Login Data when present. No Web Store extension library or proxy key vault is copied by this feature.
 - Inspect requires the correct password; restoring requires a second **KHOI PHUC** confirmation. A staged directory swap and rollback protect against many filesystem errors. A sudden OS crash during the swap can still need manual recovery; do not replace regular external backups.
 - Snapshot contents are bound to the original profile ID and browser engine; cross-profile/cross-device import is not supported. Chrome password data may be OS-bound. Cloud snapshots and team sync remain unimplemented.
+
+
+## v4.8 — Portable encrypted session snapshot files (same profile only)
+- From **Công cụ → Snapshots**, choose an existing stopped profile, create a snapshot, then use **Xuất file** to save its encrypted `.lhmsnap` archive to a user-selected external directory. Enter the correct password before export. The export never decrypts files onto disk or writes the password.
+- **Nhập file .lhmsnap** chooses an external archive with the OS file chooser, verifies the AES-256-GCM integrity tag using the password, checks all filenames, bytes, counts and archive metadata, and stores the original encrypted envelope in the local snapshot list. Import does **not restore** anything; restoring requires the existing separate explicit `KHOI PHUC` confirmation.
+- Archives are strongly bound to the original profile ID and browser engine; they cannot be imported into arbitrary other profiles. Output is exclusive-creation and refuses to overwrite existing files; archive import refuses duplicate IDs.
+- This adds offline/export backups, **not cross-device browser-credential portability**, because Chrome Login Data may be protected by OS/device encryption. Cloud sync, team access and large profiles remain out of scope.

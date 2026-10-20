@@ -21,7 +21,9 @@ function safePath(root,relative){
   throw Error('Invalid snapshot entry path');
  const bits=relative.split('/');
  if(bits.some(x=>!x||x==='.'||x==='..'||x.includes(':')||
-   /[\x00-\x1f]/.test(x)))throw Error('Invalid snapshot entry path');
+   /[\x00-\x1f<>|?"*]/.test(x)||/[. ]$/.test(x)||
+   /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(x)))
+   throw Error('Invalid snapshot entry path');
  const full=path.resolve(root,...bits),rel=path.relative(root,full);
  if(!rel||rel.startsWith('..')||path.isAbsolute(rel))
   throw Error('Snapshot path escapes profile');
@@ -108,7 +110,9 @@ class SessionSnapshots{
  }
  folder(profileId){
   assertProfileId(profileId);
-  return path.join(this.base,profileId);
+  const folder=path.join(this.base,profileId);
+  rejectSymlinks(this.store.baseDir,folder);
+  return folder;
  }
  list(profileId){
   this.source(profileId);

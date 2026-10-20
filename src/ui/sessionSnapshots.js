@@ -45,6 +45,18 @@ window.addEventListener('DOMContentLoaded',()=>{
       (info.bytes/1024/1024).toFixed(2)+' MB. '+info.warning;
     }catch(error){status.textContent='Không đọc được snapshot: '+error.message;}
    }));
+   actions.append(button('Xuất file','btn-secondary',async()=>{
+    if(!password.value||!selected()){
+     status.textContent='Nhập mật khẩu snapshot trước khi xuất file.';return;
+    }
+    try{
+     const out=await window.api.exportEncryptedSnapshot(selected(),snapshot.id,password.value);
+     if(out.canceled)return;
+     status.textContent='Đã xuất '+out.files+' tệp được mã hóa tới: '+out.filePath+
+      '. Giữ riêng file và mật khẩu.';
+     password.value='';
+    }catch(error){status.textContent='Không thể xuất file: '+error.message;}
+   }));
    actions.append(button('Khôi phục','btn-primary',async()=>{
     if(!password.value||!selected()){status.textContent='Hãy nhập mật khẩu trước.';return;}
     if(!confirm('KHÔI PHỤC SẼ THAY THẾ CÁC FILE PHIÊN HIỆN TẠI. Bạn đã sao lưu trạng thái hiện tại và đóng trình duyệt?'))return;
@@ -80,6 +92,20 @@ window.addEventListener('DOMContentLoaded',()=>{
  el('snapshots-close').addEventListener('click',close);
  el('snapshots-done').addEventListener('click',close);
  profile.addEventListener('change',()=>refresh().catch(e=>{status.textContent=e.message;}));
+ el('snapshots-import').addEventListener('click',async()=>{
+  if(!selected()||password.value.length<12){
+   status.textContent='Chọn hồ sơ đích và nhập mật khẩu dài ít nhất 12 ký tự.';return;
+  }
+  if(!confirm('Chỉ nhập file snapshot do chính bạn sở hữu. File phải thuộc đúng profile ID và loại trình duyệt. Tiếp tục?'))return;
+  const button=el('snapshots-import');button.disabled=true;
+  try{
+   const res=await window.api.importEncryptedSnapshot(selected(),password.value);
+   if(res.canceled)return;
+   status.textContent='Đã nhập '+res.files+' tệp vào kho snapshot mã hóa. Chưa khôi phục dữ liệu phiên.';
+   password.value='';await refresh();
+  }catch(error){status.textContent='Nhập file thất bại: '+error.message;}
+  finally{button.disabled=false;}
+ });
  el('snapshots-refresh').addEventListener('click',async()=>{
   try{await profiles();await refresh();}
   catch(error){status.textContent=error.message;}

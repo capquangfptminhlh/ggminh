@@ -30,6 +30,7 @@ const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOper
 const {openInRunning} = require('./src/ops/liveNavigation');
 const cacheManager = require('./src/ops/cacheManager');
 const {SessionSnapshots} = require('./src/ops/sessionSnapshots');
+const {exportEncrypted,importEncrypted} = require('./src/ops/snapshotPortability');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const {ExtensionManager} = require('./src/extensions/manager');
 const {AIAdvisor} = require('./src/ai/advisor');
@@ -137,6 +138,30 @@ function initIPC() {
     sessionSnapshots.restore(id,snapshotId,passphrase,confirmation));
   ipcMain.handle('session-snapshots-remove', (_,id,snapshotId,confirmation) =>
     sessionSnapshots.remove(id,snapshotId,confirmation));
+  ipcMain.handle('session-snapshots-export', async (_,id,snapshotId,passphrase) => {
+    // Do not ask the renderer to pick or transmit filesystem paths.
+    // Validate profile ownership + password before exposing the destination dialog.
+    sessionSnapshots.inspect(id,snapshotId,passphrase);
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Xuất snapshot mã hóa ra ổ sao lưu',
+      defaultPath:'LHM-'+snapshotId+'.lhmsnap',
+      filters:[{name:'LHM Encrypted Session Snapshot',extensions:['lhmsnap']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    return {canceled:false,...exportEncrypted(sessionSnapshots,id,snapshotId,filePath,passphrase)};
+  });
+  ipcMain.handle('session-snapshots-import', async (_,id,passphrase) => {
+    if(typeof passphrase!=='string'||passphrase.length<12)
+      throw Error('Nhập mật khẩu snapshot trước khi chọn file');
+    sessionSnapshots.source(id);
+    const {canceled,filePaths}=await dialog.showOpenDialog(mainWindow,{
+      title:'Nhập snapshot mã hóa của đúng hồ sơ',
+      properties:['openFile'],
+      filters:[{name:'LHM Encrypted Session Snapshot',extensions:['lhmsnap']}]
+    });
+    if(canceled||!filePaths?.length)return {canceled:true};
+    return {canceled:false,...importEncrypted(sessionSnapshots,id,filePaths[0],passphrase)};
+  });
   ipcMain.handle('ai-advisor-status', () => aiAdvisor.status());
   ipcMain.handle('ai-advisor-configure', (_, value) => aiAdvisor.configure(value));
   ipcMain.handle('ai-advisor-forget-key', () => aiAdvisor.clear());

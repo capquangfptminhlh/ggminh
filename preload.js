@@ -62,6 +62,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('session-snapshots-restore',id,snapshotId,pass,confirmation),
   removeSessionSnapshot: (id,snapshotId,confirmation) =>
     ipcRenderer.invoke('session-snapshots-remove',id,snapshotId,confirmation),
+  exportEncryptedSnapshot: (id,snapshotId,passphrase) =>
+    ipcRenderer.invoke('session-snapshots-export',id,snapshotId,passphrase),
+  importEncryptedSnapshot: (id,passphrase) =>
+    ipcRenderer.invoke('session-snapshots-import',id,passphrase),
   aiAdvisorStatus: () => ipcRenderer.invoke('ai-advisor-status'),
   aiAdvisorConfigure: data => ipcRenderer.invoke('ai-advisor-configure',data),
   aiAdvisorForgetKey: () => ipcRenderer.invoke('ai-advisor-forget-key'),

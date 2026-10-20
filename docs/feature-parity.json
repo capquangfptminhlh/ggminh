@@ -99,7 +99,7 @@
     "id": "cache-restore",
     "name": "Cache snapshots and recovery",
     "state": "partial",
-    "evidence": "Explicit preview and cache-only cleanup for stopped profiles; AES-256-GCM PBKDF2 passphrase-protected local session snapshots with per-profile restore and live-session lock",
+    "evidence": "Explicit preview and cache-only cleanup for stopped profiles; AES-256-GCM PBKDF2 passphrase-protected local session snapshots with per-profile restore and live-session lock; encrypted external .lhmsnap file import/export restricted to original profile ID and engine",
     "gaps": "No encrypted browser-session snapshot restore, cloud caches, granular storage-class deletion",
     "acceptance": "Session recovery and data-integrity checks after crash"
   },

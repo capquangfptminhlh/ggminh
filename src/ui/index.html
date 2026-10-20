@@ -589,10 +589,11 @@
         </div>
         <div class="lhm-snapshot-actions">
           <button type="button" class="btn btn-primary" id="snapshots-create">Tạo snapshot mã hóa</button>
+          <button type="button" class="btn btn-secondary" id="snapshots-import">Nhập file .lhmsnap</button>
           <button type="button" class="btn btn-secondary" id="snapshots-refresh">Làm mới</button>
         </div>
         <div id="snapshots-list" class="lhm-snapshot-list"></div>
-        <p class="lhm-bulk-help">Khôi phục sẽ thay thế toàn bộ dữ liệu phiên hiện có của profile này, không thể hoàn tác nếu chưa sao lưu trước. Snapshot Chrome/Edge và Firefox dùng đúng profile gốc; mật khẩu trình duyệt có thể phụ thuộc hệ điều hành.</p>
+        <p class="lhm-bulk-help">Có thể xuất file snapshot đã mã hóa ra ổ lưu trữ khác và nhập lại cho đúng profile ID/engine; file sẽ không chứa dữ liệu phiên ở dạng đọc được. Bạn phải tự bảo vệ file và mật khẩu, ứng dụng không tải lên cloud. Khôi phục thay thế toàn bộ phiên hiện tại; nên tạo snapshot trước. Mật khẩu lưu trong trình duyệt có thể bị ràng buộc với Windows cũ.</p>
         <p id="snapshots-status" role="status" aria-live="polite"></p>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-primary" id="snapshots-done">Đóng</button></div>
