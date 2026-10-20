@@ -46,7 +46,8 @@ function changeRevocation(filename,licenseId,revoked){
 }
 function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>Date.now()}={}){
  if(!privateKey||!registryFile)throw Error('Authority private key and registry path are required');
- const key=crypto.createPrivateKey(privateKey);
+ const key=privateKey instanceof crypto.KeyObject&&privateKey.type==='private'
+  ?privateKey:crypto.createPrivateKey(privateKey);
  const actual=crypto.createPublicKey(key).export({type:'spki',format:'pem'});
  const expected=crypto.createPublicKey(publicKey).export({type:'spki',format:'pem'});
  if(actual!==expected)throw Error('Authority signing key does not match app public key');
