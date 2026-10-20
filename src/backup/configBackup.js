@@ -16,6 +16,14 @@ function portableProfile(profile) {
   return copy;
 }
 
+function portableWorkflow(workflow) {
+  return {
+    ...workflow,
+    steps:(workflow.steps || []).map(step=>step.type==='fill'
+      ? {...step,value:''} : {...step})
+  };
+}
+
 const SIGNATURE = 'LHM-CONFIG-BACKUP-1';
 function derive(password, salt) {
   if (typeof password !== 'string' || password.length < 12) throw Error('Mật khẩu sao lưu cần tối thiểu 12 ký tự');
@@ -55,7 +63,7 @@ class ConfigBackup {
     return encrypt({
       version: 1, createdAt: new Date().toISOString(),
       profiles: this.store.getProfiles().map(portableProfile),
-      workflows: this.workflows.list()
+      workflows: this.workflows.list().map(portableWorkflow)
     }, password);
   }
   inspect(data,password) {
@@ -144,4 +152,4 @@ class ConfigBackup {
       excludesSessions:true};
   }
 }
-module.exports = { ConfigBackup, encrypt, decrypt, portableProfile };
+module.exports = { ConfigBackup, encrypt, decrypt, portableProfile, portableWorkflow };
