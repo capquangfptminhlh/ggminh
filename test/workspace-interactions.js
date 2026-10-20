@@ -21,4 +21,8 @@ assert(js.includes('window.LHMMissionControl?.switchView'));
 assert(js.includes('trigger?.click()'));
 assert(css.includes('data-lhm-rail="closed"'));
 assert(css.includes('prefers-reduced-motion:reduce'));
+assert(html.includes('id="lhm-v7-motion-toggle"'));
+assert(js.includes("document.body.dataset.lhmMotion=enabled?'on':'off'"));
+assert(js.includes("localStorage.setItem(MOTION_KEY"));
+assert(css.includes('data-lhm-motion="off"'));
 console.log('v5.7 command palette keyboard, safe profile lookup, active rail, responsive & reduced-motion supported');

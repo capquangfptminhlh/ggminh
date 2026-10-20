@@ -56,3 +56,18 @@ body[data-lhm-rail="closed"] .lhm-v7-show-rail{background:#e9f0ff;border-color:#
 @media(max-width:1130px){.lhm-v7-command-open span:not(.lhm-icon){display:none}.lhm-v7-show-rail{font-size:10px}}
 @media(max-width:760px){.lhm-v7-command-open{height:34px}.lhm-v7-show-rail{font-size:0}.lhm-v7-show-rail .lhm-icon{width:15px}}
 @media(prefers-reduced-motion:reduce){.lhm-v7-command-dialog{animation:none!important}.lhm-v7-command-item,.lhm-v7-command-open{transition:none!important}}
+
+
+/* Manual animation preference, with OS reduced-motion always taking priority */
+body[data-lhm-motion="off"] *,
+body[data-lhm-motion="off"] *::before,
+body[data-lhm-motion="off"] *::after {
+ animation-duration:.01ms!important;
+ animation-delay:0ms!important;
+ animation-iteration-count:1!important;
+ transition-duration:.01ms!important;
+ scroll-behavior:auto!important;
+}
+@media(prefers-reduced-motion:reduce){
+ .lhm-v7-command-open,.lhm-v7-show-rail,.lhm-context-more{transition:none!important}
+}

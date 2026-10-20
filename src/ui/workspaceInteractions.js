@@ -2,6 +2,7 @@
 (()=>{
  const $=id=>document.getElementById(id);
  const STATE_KEY='lhm-workspace-rail-v1';
+ const MOTION_KEY='lhm-workspace-motion-v1';
  const ACTIONS=Object.freeze([
   {label:'Tất cả hồ sơ',hint:'Danh sách profile',action:'profiles',search:'profile hồ sơ danh sách'},
   {label:'Dashboard',hint:'Số liệu cục bộ',action:'dashboard',search:'tổng quan'},
@@ -35,6 +36,14 @@
   try{localStorage.setItem(STATE_KEY,visible?'open':'closed');}catch(_){}
  }
  function toggleRail(){setRail(document.body.dataset.lhmRail==='closed');}
+ function setMotion(enabled){
+  document.body.dataset.lhmMotion=enabled?'on':'off';
+  const control=$('lhm-v7-motion-toggle');
+  control.textContent=enabled?'Hiệu ứng: Bật':'Hiệu ứng: Tắt';
+  control.setAttribute('aria-pressed',String(enabled));
+  try{localStorage.setItem(MOTION_KEY,enabled?'on':'off');}catch(_){}
+ }
+ function toggleMotion(){setMotion(document.body.dataset.lhmMotion!=='on');}
  function profileCommands(query){
   const snapshot=window.LHMProfileContextData?.();
   const profiles=Array.isArray(snapshot?.profiles)?snapshot.profiles:[];
@@ -159,6 +168,8 @@
   const input=$('lhm-v7-command-search');
   if(!dialog||!input||!$('lhm-v7-show-rail')||!$('lhm-v7-hide-rail'))return;
   try{setRail(localStorage.getItem(STATE_KEY)!=='closed');}catch(_){setRail(true);}
+  try{setMotion(localStorage.getItem(MOTION_KEY)!=='off');}catch(_){setMotion(true);}
+  $('lhm-v7-motion-toggle').addEventListener('click',toggleMotion);
   $('lhm-v7-show-rail').addEventListener('click',toggleRail);
   $('lhm-v7-hide-rail').addEventListener('click',()=>setRail(false));
   $('lhm-v7-command-open').addEventListener('click',open);
