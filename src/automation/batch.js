@@ -112,10 +112,12 @@ class BatchAutomation{
     const state=this.runner.status();
     item.status=state.status==='completed'?'completed':
       state.status==='stopped'?'stopped':'failed';
-    if(item.status!=='completed')item.message=(state.logs?.at(-1)?.message||'Workflow failed').slice(0,160);
+    // Persist only categorical outcomes. Runner error strings can contain user
+    // CSS selectors, page titles or workflow input values.
+    if(item.status!=='completed')item.message='Xem lỗi chi tiết trong nhật ký Studio (không lưu vào lịch sử hàng đợi)';
    }catch(error){
     item.status=this.cancel?'stopped':'failed';
-    item.message=String(error.message).slice(0,160);
+    item.message='Không thể khởi chạy quy trình trên hồ sơ này';
    }
    item.finishedAt=new Date(this.now()).toISOString();
    this.persist();

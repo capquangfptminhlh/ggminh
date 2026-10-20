@@ -54,6 +54,9 @@ async function settled(batch){
   assert.strictEqual(other.status().batch.status,'failed');
   assert.deepStrictEqual(other.status().batch.tasks.map(x=>x.status),['failed','skipped']);
   assert.deepStrictEqual(failures,[a.id]);
+  const audit=fs.readFileSync(path.join(dir,'separate','automation-batches.json'),'utf8');
+  assert(!audit.includes('#submit'),'No selector text in persisted batch audit');
+  assert(!audit.includes('#email'),'No form selector text in persisted batch audit');
 
   const approvalFlow=workflows.save({name:'Approval',profileId:a.id,hosts:'example.com',
    steps:[{type:'navigate',url:'https://example.com/'},
