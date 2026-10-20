@@ -569,6 +569,24 @@
           <p class="lhm-bulk-help">Khôi phục chỉ cập nhật metadata; profile đang mở sẽ bị từ chối. Profile mới được tạo trống, không mang theo cookie, mật khẩu hay phiên.</p>
           <button type="button" class="btn btn-secondary" id="cloud-sync-apply" disabled>Áp dụng bản đã xem</button>
         </div>
+        <section class="form-group" aria-label="Team Management">
+          <h3>Team · Thành viên Workspace</h3>
+          <p class="lhm-bulk-help">Chỉ chủ sở hữu/Admin mới xem và quản lý được thành viên. Tài khoản người nhận phải được quản trị viên máy chủ xác minh danh tính và cấp token riêng trước khi chấp nhận lời mời.</p>
+          <button type="button" class="btn btn-secondary" id="cloud-team-load">Xem thành viên</button>
+          <div id="cloud-team-list" class="lhm-wm-list" aria-live="polite"></div>
+          <div class="form-group"><label for="cloud-team-email">Email thành viên đã được xác minh</label>
+            <input type="email" id="cloud-team-email" placeholder="user@example.com" autocomplete="off">
+          </div>
+          <div class="form-group"><label for="cloud-team-role">Quyền được mời</label>
+            <select id="cloud-team-role">
+              <option value="viewer">Viewer · Chỉ xem</option>
+              <option value="operator">Operator · Vận hành</option>
+              <option value="admin">Admin · Quản lý</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary" id="cloud-team-invite">Tạo lời mời (24 giờ)</button>
+          <p id="cloud-team-result" role="status" aria-live="polite">Lời mời chỉ sử dụng một lần. Không chia sẻ token quản trị.</p>
+        </section>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-primary" id="cloud-sync-done">Đóng</button></div>
     </div>
