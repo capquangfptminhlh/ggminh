@@ -20,6 +20,7 @@ const statTotal = document.getElementById('stat-total');
 const statActive = document.getElementById('stat-active');
 const searchInput = document.getElementById('search-input');
 const filterGroup = document.getElementById('filter-group');
+const filterTag = document.getElementById('filter-tag');
 const filterStatus = document.getElementById('filter-status');
 const btnRefresh = document.getElementById('btn-refresh');
 
@@ -41,6 +42,7 @@ const geckoPathControl = document.getElementById('gecko-path-control');
 const fieldName = document.getElementById('field-name');
 const fieldGroup = document.getElementById('field-group');
 const fieldStartUrl = document.getElementById('field-starturl');
+const fieldTags = document.getElementById('field-tags');
 const fieldNotes = document.getElementById('field-notes');
 const fieldProxyType = document.getElementById('field-proxy-type');
 const proxyFields = document.getElementById('proxy-fields');
@@ -239,6 +241,29 @@ function setupEventListeners() {
 
   // Modal Open / Close
   btnCreateProfile.addEventListener('click', () => openProfileModal());
+  const bulkModal = document.getElementById('modal-bulk-create');
+  const bulkButton = document.getElementById('btn-bulk-create');
+  const bulkSubmit = document.getElementById('bulk-create-submit');
+  bulkButton.addEventListener('click', () => openModal(bulkModal));
+  for (const id of ['bulk-create-close','bulk-create-cancel'])
+    document.getElementById(id).addEventListener('click', () => closeModal(bulkModal));
+  bulkSubmit.addEventListener('click', async () => {
+    bulkSubmit.disabled = true;
+    try {
+      const response = await window.api.bulkCreateProfiles({
+        namePrefix: document.getElementById('bulk-create-prefix').value,
+        count: Number(document.getElementById('bulk-create-count').value),
+        group: document.getElementById('bulk-create-group').value,
+        engine: document.getElementById('bulk-create-engine').value,
+        startUrls: parseStartupUrls(document.getElementById('bulk-create-urls').value),
+        tags: parseTags(document.getElementById('bulk-create-tags').value)
+      });
+      closeModal(bulkModal);
+      await loadProfiles();
+      alert('Đã tạo ' + response.count + ' hồ sơ mới, có phiên độc lập.');
+    } catch (error) { alert('Không thể tạo nhanh: ' + error.message); }
+    finally { bulkSubmit.disabled = false; }
+  });
   btnCloseModal.addEventListener('click', () => closeModal(modalProfile));
   btnCancelModal.addEventListener('click', () => closeModal(modalProfile));
 
@@ -287,7 +312,8 @@ function setupEventListeners() {
       name,
       engine: fieldBrowserEngine.value,
       group: fieldGroup.value.trim() || 'Default',
-      startUrl: fieldStartUrl.value.trim() || 'https://browserleaks.com/canvas',
+      startUrls: parseStartupUrls(fieldStartUrl.value),
+      tags: parseTags(fieldTags.value),
       notes: fieldNotes.value.trim(),
       proxy: {
         type: fieldProxyType.value,
@@ -325,6 +351,7 @@ function setupEventListeners() {
   // Search & Filter
   searchInput.addEventListener('input', renderProfiles);
   filterGroup.addEventListener('change', renderProfiles);
+  filterTag.addEventListener('change', renderProfiles);
   filterStatus.addEventListener('change', renderProfiles);
   btnRefresh.addEventListener('click', loadProfiles);
 }
@@ -347,7 +374,8 @@ async function openProfileModal(existingProfile = null) {
     fieldBrowserEngine.value = existingProfile.engine === 'gecko' ? 'gecko' : 'chromium';
     fieldName.value = existingProfile.name;
     fieldGroup.value = existingProfile.group || 'Default';
-    fieldStartUrl.value = existingProfile.startUrl || 'https://browserleaks.com/canvas';
+    fieldStartUrl.value = (existingProfile.startUrls || [existingProfile.startUrl || 'https://ads.google.com/']).join('\n');
+    fieldTags.value = (existingProfile.tags || []).join(', ');
     fieldNotes.value = existingProfile.notes || '';
 
     const pxy = existingProfile.proxy || {};
@@ -367,7 +395,8 @@ async function openProfileModal(existingProfile = null) {
     fieldBrowserEngine.value = 'chromium';
     fieldName.value = `Profile_${allProfiles.length + 1}`;
     fieldGroup.value = 'Default';
-    fieldStartUrl.value = 'https://browserleaks.com/canvas';
+    fieldStartUrl.value = 'https://ads.google.com/';
+    fieldTags.value = '';
     fieldNotes.value = '';
     fieldProxyType.value = 'direct';
     proxyFields.style.display = 'none';
@@ -381,6 +410,12 @@ async function openProfileModal(existingProfile = null) {
   openModal(modalProfile);
 }
 
+function parseStartupUrls(value) {
+  return value.split(/\r?\n/).map(url => url.trim()).filter(Boolean);
+}
+function parseTags(value) {
+  return value.split(',').map(tag => tag.trim()).filter(Boolean);
+}
 function selectedFingerprintConfig() {
   if (fieldFpMode.value === 'native' || fieldBrowserEngine.value === 'gecko')
     return { mode: 'native' };
@@ -445,6 +480,12 @@ async function loadProfiles() {
   });
 
   if (groups.has(priorGroup)) filterGroup.value = priorGroup;
+  const tags = new Set(allProfiles.flatMap(p => p.tags || []));
+  const previousTag = filterTag.value;
+  filterTag.replaceChildren(new Option('Tất cả Tag','all'));
+  [...tags].sort((a,b)=>a.localeCompare(b,'vi')).forEach(tag =>
+    filterTag.add(new Option(tag,tag)));
+  if (tags.has(previousTag)) filterTag.value = previousTag;
   renderProfiles();
   updateStats();
 }
@@ -460,6 +501,7 @@ function updateStats() {
 function renderProfiles() {
   const query = searchInput.value.toLowerCase().trim();
   const selectedGroup = filterGroup.value;
+  const selectedTag = filterTag.value;
   const selectedStatus = filterStatus.value;
 
   const filtered = allProfiles.filter(p => {
@@ -467,6 +509,7 @@ function renderProfiles() {
       p.name.toLowerCase().includes(query) ||
       p.id.toLowerCase().includes(query) ||
       (p.group && p.group.toLowerCase().includes(query)) ||
+      (p.tags || []).some(tag => tag.toLowerCase().includes(query)) ||
       (p.proxy?.host && p.proxy.host.toLowerCase().includes(query));
 
     const matchGroup = selectedGroup === 'all' || (p.group || 'Default') === selectedGroup;
@@ -475,7 +518,8 @@ function renderProfiles() {
       (selectedStatus === 'running' && isRunning) ||
       (selectedStatus === 'stopped' && !isRunning);
 
-    return matchQuery && matchGroup && matchStatus;
+    return matchQuery && matchGroup && matchStatus &&
+      (selectedTag === 'all' || (p.tags || []).includes(selectedTag));
   });
 
   profileListBody.innerHTML = '';
@@ -499,7 +543,7 @@ function renderProfiles() {
     tr.innerHTML = `
       <td><input type="checkbox" aria-label="Chọn hồ sơ" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
       <td><code class="profile-id">${escapeHtml(profile.id)}</code></td>
-      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span></div></td>
+      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
       <td><div class="browser-info"><span class="browser-engine">${profile.engine === 'gecko' ? 'Firefox / Gecko' : 'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
       <td><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>

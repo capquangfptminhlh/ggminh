@@ -33,5 +33,12 @@ try {
  store.saveData=()=>{throw Error('SIMULATED_DISK_FULL')};
  assert.throws(()=>store.createProfilesBulk({count:20,namePrefix:'Failed'}),/SIMULATED_DISK_FULL/);
  assert.deepStrictEqual(store.getProfiles(),before);
- console.log('v3.3 atomic Quick Create, tagged profiles, multiple startup URLs and rollback passed');
+ const html=fs.readFileSync(path.join(__dirname,'../src/ui/index.html'),'utf8');
+ const renderer=fs.readFileSync(path.join(__dirname,'../src/ui/renderer.js'),'utf8');
+ for(const id of ['btn-bulk-create','bulk-create-submit','bulk-create-count','filter-tag','field-tags','field-starturl']){
+   assert(html.includes('id="'+id+'"'),'Missing UI control '+id);
+ }
+ assert(renderer.includes('bulkCreateProfiles('));
+ assert(renderer.includes('filterTag.addEventListener'));
+ console.log('v3.3 atomic Quick Create, tags, multiple startup URLs, UI controls and rollback passed');
 }finally{fs.rmSync(dir,{recursive:true,force:true});}

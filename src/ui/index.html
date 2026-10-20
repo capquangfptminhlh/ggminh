@@ -110,6 +110,7 @@
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
         <button class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
       </div>
     </header>
@@ -203,6 +204,9 @@
         <select id="filter-group">
           <option value="all">Tất cả Nhóm</option>
         </select>
+        <select id="filter-tag" aria-label="Lọc theo tag">
+          <option value="all">Tất cả Tag</option>
+        </select>
         <select id="filter-status">
           <option value="all">Tất cả Trạng thái</option>
           <option value="running">Đang chạy</option>
@@ -253,6 +257,34 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Quick Create uses fresh browser sessions, never cloned cookies or logins. -->
+  <div class="modal-overlay" id="modal-bulk-create">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bulk-create-title">
+      <div class="modal-header">
+        <h2 id="bulk-create-title">Tạo nhanh nhiều hồ sơ</h2>
+        <button class="btn-close" id="bulk-create-close" type="button" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Tạo 1–50 hồ sơ độc lập trong một lượt. Mỗi hồ sơ có phiên riêng; cấu hình mặc định là trình duyệt gốc và mạng trực tiếp. Gán proxy riêng trong Proxy Center.</p>
+        <div class="form-row">
+          <div class="form-group"><label for="bulk-create-prefix">Tiền tố tên</label><input id="bulk-create-prefix" value="Khách hàng" maxlength="145"></div>
+          <div class="form-group"><label for="bulk-create-count">Số lượng</label><input id="bulk-create-count" type="number" min="1" max="50" value="5"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="bulk-create-group">Nhóm</label><input id="bulk-create-group" value="Default" maxlength="100"></div>
+          <div class="form-group"><label for="bulk-create-engine">Trình duyệt</label><select id="bulk-create-engine"><option value="chromium">Chrome / Edge</option><option value="gecko">Firefox / Gecko</option></select></div>
+        </div>
+        <div class="form-group"><label for="bulk-create-urls">URL khởi động (1–5 URL, mỗi dòng một URL)</label><textarea id="bulk-create-urls" rows="3">https://ads.google.com/</textarea></div>
+        <div class="form-group"><label for="bulk-create-tags">Tag phân loại, cách nhau bằng dấu phẩy</label><input id="bulk-create-tags" placeholder="Khách hàng, Nội bộ"></div>
+        <p class="lhm-bulk-help">Không tạo tài khoản Google, không nhập cookie và không chạy thao tác Google Ads.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="bulk-create-cancel" type="button" class="btn btn-secondary">Hủy</button>
+        <button id="bulk-create-submit" type="button" class="btn btn-primary">Tạo hồ sơ</button>
+      </div>
+    </div>
   </div>
 
   <!-- Local activity review: does not inspect Google account activity or fingerprint sites. -->
@@ -322,9 +354,13 @@
               <input type="text" id="field-group" placeholder="Default" value="Default">
             </div>
             <div class="form-group">
-              <label>Trang mở mặc định:</label>
-              <input type="text" id="field-starturl" value="https://ads.google.com/">
+              <label>Trang khởi động (1–5 URL, mỗi dòng một URL):</label>
+              <textarea id="field-starturl" rows="3" placeholder="https://ads.google.com/">https://ads.google.com/</textarea>
             </div>
+          </div>
+          <div class="form-group">
+            <label for="field-tags">Tag (tối đa 8, ngăn cách bằng dấu phẩy)</label>
+            <input type="text" id="field-tags" placeholder="Khách hàng A, Đang vận hành">
           </div>
           <div class="form-group">
             <label>Ghi chú:</label>
