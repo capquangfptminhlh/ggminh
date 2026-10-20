@@ -387,3 +387,9 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Permanent removal requires typing `XOA` and removes local Chromium and Gecko session directories. Failed filesystem removal remains in an on-disk cleanup queue for retry. Data cannot be recovered after permanent deletion.
 - Trash metadata is not exported in configuration-only backups. A configuration backup is **not** a browser session backup.
 - When deleting from the desktop or Local API, running browser profiles are blocked as before; the application never moves a live browser profile into trash via those paths.
+
+
+## v3.7 — Profile list column and density preferences
+- Toolbar adds **Tùy biến bảng** to hide/show ID, proxy, engine and status columns individually. Profile name, selection and actions remain visible.
+- Switch between comfortable and compact row density. Settings persist in this local desktop renderer's localStorage and do not modify profile information.
+- The user's column preferences are reapplied every time live status polling re-renders the profile rows. Reset restores the default full view.

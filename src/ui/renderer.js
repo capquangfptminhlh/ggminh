@@ -553,11 +553,11 @@ function renderProfiles() {
     tr.dataset.profileId=profile.id;
     tr.innerHTML = `
       <td><input type="checkbox" aria-label="Chọn hồ sơ" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
-      <td><code class="profile-id">${escapeHtml(profile.id)}</code></td>
+      <td data-table-col="id"><code class="profile-id">${escapeHtml(profile.id)}</code></td>
       <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
-      <td><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
-      <td><div class="browser-info"><span class="browser-engine">${profile.engine === 'gecko' ? 'Firefox / Gecko' : 'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
-      <td><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
+      <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
+      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine === 'gecko' ? 'Firefox / Gecko' : 'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
+      <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
         <button type="button" class="btn btn-sm btn-secondary btn-health lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Kiểm tra cấu hình" aria-label="Kiểm tra cấu hình"><span data-lhm-icon="shield-check"></span></button>
@@ -619,6 +619,7 @@ function renderProfiles() {
   selectAll.checked = visible.length > 0 && visible.every(x => x.checked);
   selectAll.indeterminate = visible.some(x => x.checked) && !selectAll.checked;
   window.LHMControlTower?.updateSelection();
+  window.LHMTablePreferences?.apply();
 }
 
 function startStatusPoller() {

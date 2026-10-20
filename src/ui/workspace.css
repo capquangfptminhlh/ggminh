@@ -664,3 +664,18 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .lhm-trash-summary strong{font-size:13px}.lhm-trash-summary span{font-size:11px;color:#596d89}
 .lhm-trash-actions{display:flex;gap:7px;flex-wrap:wrap}.lhm-trash-empty{padding:24px;text-align:center;color:#68798f}
 @media(max-width:630px){.lhm-trash-row{align-items:flex-start;flex-direction:column}}
+
+
+/* v3.7 configurable columns / density; preferences local to this desktop. */
+.lhm-table-options{display:flex;flex-wrap:wrap;align-items:center;gap:13px;padding:10px 22px;margin:0 30px 12px 326px;background:#fff;border:1px solid #dde5ef;border-radius:9px;color:#3a526b;font-size:12px}
+.lhm-table-options[hidden]{display:none!important}
+.lhm-table-options strong{font-size:12px}
+.lhm-table-options label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.lhm-table-options input{accent-color:#315bb7}
+.lhm-table-options select{max-width:135px;border:1px solid #d6dfeb;border-radius:5px;padding:6px;background:white}
+.profile-table [data-table-col][hidden]{display:none!important}
+.profile-table.lhm-table-compact th{padding:9px 10px!important}
+.profile-table.lhm-table-compact td{padding:7px 10px!important}
+.profile-table.lhm-table-compact .lhm-profile-tags{display:none}
+@media(max-width:1180px){.lhm-table-options{margin-left:282px}}
+@media(max-width:900px){.lhm-table-options{margin-left:15px;margin-right:15px}}

@@ -224,10 +224,24 @@
           <option value="running">Đang chạy</option>
           <option value="stopped">Đã dừng</option>
         </select>
+        <button type="button" class="btn btn-secondary" id="btn-table-options" aria-expanded="false" aria-controls="table-options-panel">Tùy biến bảng</button>
         <button class="btn btn-icon" id="btn-refresh" title="Làm mới" aria-label="Làm mới danh sách"><span data-lhm-icon="refresh-cw"></span></button>
       </div>
     </section>
 
+    <section class="lhm-table-options" id="table-options-panel" hidden aria-label="Cài đặt cột và mật độ bảng">
+      <strong>Hiển thị cột</strong>
+      <label><input type="checkbox" data-table-column="id" checked> Mã hồ sơ</label>
+      <label><input type="checkbox" data-table-column="proxy" checked> Proxy</label>
+      <label><input type="checkbox" data-table-column="engine" checked> Trình duyệt</label>
+      <label><input type="checkbox" data-table-column="status" checked> Trạng thái</label>
+      <label for="table-density">Mật độ hàng</label>
+      <select id="table-density">
+        <option value="comfortable">Thoải mái</option>
+        <option value="compact">Gọn</option>
+      </select>
+      <button type="button" class="btn btn-secondary btn-sm" id="table-options-reset">Khôi phục mặc định</button>
+    </section>
     <section class="selection-toolbar" id="selection-toolbar" hidden role="region" aria-label="Thao tác hồ sơ đã chọn">
       <div class="selection-counter">
         <strong id="selected-count">0</strong> hồ sơ được chọn
@@ -251,11 +265,11 @@
           <thead>
             <tr>
               <th width="40"><input type="checkbox" id="select-all"></th>
-              <th width="150">Mã hồ sơ</th>
+              <th width="150" data-table-col="id">Mã hồ sơ</th>
               <th>Tên hồ sơ</th>
-              <th>Proxy</th>
-              <th>Trình duyệt</th>
-              <th width="120">Trạng thái</th>
+              <th data-table-col="proxy">Proxy</th>
+              <th data-table-col="engine">Trình duyệt</th>
+              <th width="120" data-table-col="status">Trạng thái</th>
               <th width="196" style="text-align: right;">Thao tác</th>
             </tr>
           </thead>
@@ -1025,6 +1039,7 @@ run();
   <script src="renderer.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>
+  <script src="tablePreferences.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>
