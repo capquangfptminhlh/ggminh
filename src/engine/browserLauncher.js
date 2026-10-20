@@ -20,6 +20,10 @@ class BrowserLauncher {
   }
 
   findBrowserBinary(engine = 'chromium') {
+    // Explicitly pinned browser takes priority. Modified or missing binaries
+    // fail closed instead of silently falling back to an unpinned version.
+    const pinned=this.runtimeRegistry?.binaryFor(engine);
+    if(pinned)return pinned;
     const settings = this.store.getSettings();
     const detected = optionsFor(settings);
     const candidates = engine === 'gecko'

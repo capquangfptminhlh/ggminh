@@ -26,6 +26,7 @@ const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
+const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
 const cacheManager = require('./src/ops/cacheManager');
@@ -45,6 +46,7 @@ const { buildDashboardSummary } = require('./src/ops/dashboard');
 let mainWindow = null;
 let store = null;
 let launcher = null;
+let runtimeRegistry = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
@@ -232,6 +234,25 @@ function initIPC() {
     return { count: created.length, profileIds: created.map(p => p.id) };
   });
   ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
+  ipcMain.handle('engine-runtime-status', () => runtimeRegistry.status());
+  ipcMain.handle('engine-runtime-register', async (_,engine) => {
+    if(!['chromium','gecko'].includes(engine))throw Error('Unknown browser engine');
+    if(launcher.listActive().some(x=>x.engine===engine)||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả trình duyệt trước khi ghim bản engine');
+    const selection=await dialog.showOpenDialog(mainWindow,{
+      title:'Chọn Chrome/Edge hoặc Firefox chính thức để ghim phiên bản',
+      properties:['openFile'],
+      filters:[{name:'Windows browser executable',extensions:['exe']}]
+    });
+    if(selection.canceled||!selection.filePaths?.length)return {canceled:true};
+    return {canceled:false,runtime:runtimeRegistry.register(engine,selection.filePaths[0])};
+  });
+  ipcMain.handle('engine-runtime-clear', (_,engine) => {
+    if(!['chromium','gecko'].includes(engine))throw Error('Unknown browser engine');
+    if(launcher.listActive().some(x=>x.engine===engine)||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả trình duyệt trước khi bỏ ghim engine');
+    return runtimeRegistry.clear(engine);
+  });
   ipcMain.handle('extension-list', () => extensionManager.list());
   ipcMain.handle('extension-install', async () => {
     const selected=await dialog.showOpenDialog(mainWindow,{
@@ -509,6 +530,7 @@ app.whenReady().then(async () => {
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
   store = new Store(storageDir);
+  runtimeRegistry = new RuntimeRegistry(storageDir);
   try { store.purgeExpiredTrashedProfiles(); }
   catch(error) { console.warn('[ProfileTrash] startup cleanup deferred:',error.message); }
   if (process.env.LHM_CI_UI_CAPTURE === '1') {
@@ -533,6 +555,7 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
+  launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;
