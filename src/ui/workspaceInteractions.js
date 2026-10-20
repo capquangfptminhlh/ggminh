@@ -30,6 +30,9 @@
   return !!node&&(node.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(node.tagName));
  }
  function setRail(visible){
+  const panel=$('lhm-profile-panel');
+  if(!visible&&panel?.contains(document.activeElement))$('lhm-v7-show-rail')?.focus();
+  if(panel){panel.inert=!visible;panel.setAttribute('aria-hidden',String(!visible));}
   document.body.dataset.lhmRail=visible?'open':'closed';
   document.body.classList.toggle('lhm-v7-wide',!visible);
   $('lhm-v7-show-rail').setAttribute('aria-expanded',String(visible));
@@ -177,6 +180,13 @@
   $('lhm-v7-command-close').addEventListener('click',close);
   dialog.addEventListener('click',event=>{if(event.target===dialog)close();});
   input.addEventListener('input',()=>{selected=0;render();});
+  dialog.addEventListener('keydown',event=>{
+   // An open modal must not let Tab move keyboard focus into the profiles grid.
+   if(event.key==='Tab'){
+    event.preventDefault();
+    $(event.shiftKey?'lhm-v7-command-close':'lhm-v7-command-search').focus();
+   }
+  });
   input.addEventListener('keydown',event=>{
    if(event.key==='ArrowDown'||event.key==='ArrowUp'){
     event.preventDefault();setSelected(selected+(event.key==='ArrowDown'?1:-1));
@@ -193,7 +203,8 @@
     event.preventDefault();event.stopImmediatePropagation();
     shown?close():open();return;
    }
-   if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&key==='b'&&!isTyping(event.target)){
+   if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&key==='b'&&!isTyping(event.target)&&
+      document.body.dataset.view==='profiles'&&window.innerWidth>1270&&!shown){
     event.preventDefault();toggleRail();
    }
   },true);

@@ -71,3 +71,14 @@ body[data-lhm-motion="off"] *::after {
 @media(prefers-reduced-motion:reduce){
  .lhm-v7-command-open,.lhm-v7-show-rail,.lhm-context-more{transition:none!important}
 }
+
+
+/* v5.7 final: larger desktop grid typography, no decorative controls on narrow displays */
+body[data-view="profiles"] .profile-table th{font-size:11px!important;color:#66758c!important}
+body[data-view="profiles"] .profile-table td{font-size:12px!important;line-height:1.5}
+body[data-view="profiles"] .profile-name-box .p-name{font-size:12px!important}
+body[data-view="profiles"] .profile-name-box .p-group{font-size:11px!important}
+body[data-view="profiles"] .lhm-v6-metric-label,
+body[data-view="profiles"] .lhm-v6-metric-bottom{font-size:11px!important}
+body[data-view="profiles"] .lhm-list-tab{font-size:12px!important}
+@media(max-width:1270px){#lhm-v7-show-rail,#lhm-v7-hide-rail{display:none!important}}

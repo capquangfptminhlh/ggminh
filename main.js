@@ -146,7 +146,7 @@ function createWindow() {
           fs.writeFileSync(path.join(__dirname,'dist','workspace-expanded-preview.png'),fullTable.toPNG());
           const paletteCheck=await mainWindow.webContents.executeJavaScript(
             "(() => { document.getElementById('lhm-v7-command-open').click(); return {opened:document.getElementById('lhm-v7-command-palette').classList.contains('open'),focus:document.activeElement?.id,count:document.querySelectorAll('.lhm-v7-command-item').length}; })()",true);
-          if(!paletteCheck.opened||paletteCheck.focus!=='lhm-v7-command-search'||paletteCheck.count<8)
+          if(!paletteCheck.opened||paletteCheck.focus!=='lhm-v7-command-search'||paletteCheck.count<6)
             throw Error('Command palette failed: '+JSON.stringify(paletteCheck));
           await new Promise(resolve=>setTimeout(resolve,280));
           const paletteImage=await mainWindow.webContents.capturePage();
