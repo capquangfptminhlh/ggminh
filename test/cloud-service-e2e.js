@@ -43,6 +43,11 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
    token:owner,tenantId:'tenantA',deviceId:'device1'},{fetcher:mockHttps});
   const client2=new CloudClient({baseUrl:'https://cloud.example.test',
    token:reader,tenantId:'tenantA',deviceId:'device2'},{fetcher:mockHttps});
+  assert((await admin.listMembers()).some(x=>x.subjectId==='ownerA'));
+  await assert.rejects(()=>client2.listMembers(),/Team permission denied/);
+  const serviceInvite=await admin.issueInvite({email:'future@example.com',
+   role:'operator',groups:['*'],ttlHours:24});
+  assert(serviceInvite.token&&serviceInvite.id);
   const passphrase='very-long-test-passphrase-2026';
   const sample=[{id:'profile1',name:'Work',group:'Default',engine:'chromium',
    tags:['ok'],cookie:'SESSION_SECRET',proxy:{password:'PROXY_SECRET'}}];
@@ -98,9 +103,8 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
   const members=await req(owner,'GET','/v1/workspaces/tenantA/members');
   assert.strictEqual(members.status,200);
   assert((await members.json()).members.some(x=>x.subjectId==='pendingA'));
-  const revocation=await req(owner,'DELETE',
-   '/v1/workspaces/tenantA/members/pendingA');
-  assert.strictEqual(revocation.status,200);
+  const revocation=await admin.revokeMember('pendingA');
+  assert.strictEqual(revocation.revoked,true);
   const afterRevocation=await req(pending,'GET','/v1/workspaces/tenantA/sync');
   assert.strictEqual(afterRevocation.status,403);
   const audit=await req(owner,'GET','/v1/workspaces/tenantA/audit');
