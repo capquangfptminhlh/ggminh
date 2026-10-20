@@ -116,13 +116,13 @@
       const report = await api.auditProfileIsolation();
       container.replaceChildren();
       container.append(labeled('isolation-overview',
-        (report.storageSeparate ? '✓ Các đường dẫn lưu trữ đã kiểm tra không trùng nhau.' :
-          '⚠ Phát hiện trùng hoặc liên kết thư mục cần xử lý.') + ' Đã kiểm tra: ' + report.checked + ' hồ sơ.'));
+        (report.storageSeparate ? 'Các đường dẫn lưu trữ đã kiểm tra không trùng nhau.' :
+          'Phát hiện trùng hoặc liên kết thư mục cần xử lý.') + ' Đã kiểm tra: ' + report.checked + ' hồ sơ.'));
       for (const entry of report.entries) {
         const line = document.createElement('div');
         line.className = 'isolation-entry';
         line.append(labeled('isolation-name',
-          (entry.storageSeparate ? '✓ ' : '⚠ ') + entry.name + ' · ' + entry.engine));
+          (entry.storageSeparate ? '' : '') + entry.name + ' · ' + entry.engine));
         line.append(labeled('health-issue',
           entry.issues.length ? entry.issues.join('; ') :
             entry.storageInitialized ? 'Có thư mục riêng; ' + (entry.running ? 'đang sử dụng' : 'chưa mở') :
@@ -153,12 +153,12 @@
     try {
       const value = mode === 'export' ? await api.exportConfigBackup(password) : await api.importConfigBackup(password);
       if (value.canceled) el('backup-result').textContent = 'Đã hủy chọn tệp.';
-      else if (mode === 'export') el('backup-result').textContent = '✓ Đã xuất bản sao lưu mã hóa. Hãy giữ mật khẩu tại nơi an toàn.';
+      else if (mode === 'export') el('backup-result').textContent = 'Đã xuất bản sao lưu mã hóa. Hãy giữ mật khẩu tại nơi an toàn.';
       else {
-        el('backup-result').textContent = '✓ Đã nhập thêm ' + value.profiles + ' hồ sơ, ' + value.workflows + ' quy trình. Phiên trình duyệt không được sao chép.';
+        el('backup-result').textContent = 'Đã nhập thêm ' + value.profiles + ' hồ sơ, ' + value.workflows + ' quy trình. Phiên trình duyệt không được sao chép.';
         if (typeof loadProfiles === 'function') await loadProfiles();
       }
-    } catch (error) { el('backup-result').textContent = '✖ ' + error.message; }
+    } catch (error) { el('backup-result').textContent = '' + error.message; }
     finally { el('backup-password').value = ''; el('backup-execute').disabled = false; }
   }
   function bind() {

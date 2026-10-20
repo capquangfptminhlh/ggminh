@@ -139,7 +139,7 @@
     renderGroups(snapshot.groups || []);
     renderEvents(snapshot.activity.recentEvents || []);
     text('lhm-dashboard-status',
-      '✓ Đồng bộ số liệu cục bộ lúc ' + new Date().toLocaleTimeString('vi-VN') +
+      'Đồng bộ số liệu cục bộ lúc ' + new Date().toLocaleTimeString('vi-VN') +
       ' · Không đo khả năng Google nhận diện tài khoản');
   }
   async function refresh() {

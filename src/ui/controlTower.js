@@ -56,7 +56,7 @@
   }
   function makeIssue(item) {
     const row = node('div', 'tower-attention '+(item.level === 'error' ? 'is-error' : 'is-warning'));
-    row.append(node('strong', '', (item.level === 'error' ? '🔴 ' : '🟡 ') + item.name));
+    row.append(node('strong', '', (item.level === 'error' ? '' : '') + item.name));
     row.append(node('p', '', item.problems.join(' · ') || 'Kiểm tra cấu hình'));
     return row;
   }
@@ -87,12 +87,12 @@
       }
       const attention = byId('tower-attention');
       attention.replaceChildren();
-      if (!report.attention.length && !report.alerts.length) empty(attention, '✓ Không có lỗi/cảnh báo đã biết.');
+      if (!report.attention.length && !report.alerts.length) empty(attention, 'Không có lỗi/cảnh báo đã biết.');
       else {
         for (const item of report.attention) attention.append(makeIssue(item));
         for (const item of report.alerts) {
           const row = node('div', 'tower-attention is-warning');
-          row.append(node('strong', '', '⚠ ' + (item.profileId || 'Nhiều hồ sơ')));
+          row.append(node('strong', '', '' + (item.profileId || 'Nhiều hồ sơ')));
           row.append(node('p', '', item.message));
           attention.append(row);
         }

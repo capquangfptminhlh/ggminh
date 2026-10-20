@@ -278,7 +278,7 @@
       heading.append(grip, name);
       heading.append(button('↑', 'btn btn-sm btn-secondary', () => move(i, -1)));
       heading.append(button('↓', 'btn btn-sm btn-secondary', () => move(i, 1)));
-      heading.append(button('✕', 'btn btn-sm btn-danger', () => {
+      heading.append(button('Xóa', 'btn btn-sm btn-danger', () => {
         current.steps.splice(i, 1); renderSteps();
       }));
       const fields = document.createElement('div'); fields.className = 'studio-step-contents';
@@ -347,7 +347,7 @@
     for (const action of report.actions || []) {
       const row = document.createElement('div');
       row.className = 'studio-record-event';
-      const title = { navigate:'🌐 Mở trang',click:'👆 Nhấn nút',fill:'✍ Trường nhập',approval:'✓ Phê duyệt' }[action.type] || action.type;
+      const title = { navigate:'Mở trang',click:'Nhấn nút',fill:'Trường nhập',approval:'Phê duyệt' }[action.type] || action.type;
       row.textContent = title + ' · ' + action.label;
       log.append(row);
     }

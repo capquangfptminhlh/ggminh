@@ -118,7 +118,7 @@ function renderBehaviorRows(containerId, data, builder) {
   if (!data.length) {
     const empty = document.createElement('p');
     empty.className = 'behavior-empty';
-    empty.textContent = containerId === 'behavior-alert-list' ? '✅ Chưa phát hiện thao tác lặp vượt ngưỡng.' : 'Chưa ghi nhận hoạt động.';
+    empty.textContent = containerId === 'behavior-alert-list' ? 'Chưa phát hiện thao tác lặp vượt ngưỡng.' : 'Chưa ghi nhận hoạt động.';
     container.appendChild(empty);
     return;
   }
@@ -128,7 +128,7 @@ function makeBehaviorAlert(alertItem) {
   const row = document.createElement('div');
   row.className = 'behavior-alert-item ' + (alertItem.level === 'high' ? 'is-high' : 'is-medium');
   const title = document.createElement('strong');
-  title.textContent = (alertItem.level === 'high' ? '🔴 Cần kiểm tra' : '🟠 Chú ý') +
+  title.textContent = (alertItem.level === 'high' ? 'Cần kiểm tra' : 'Chú ý') +
     ' · ' + alertItem.count + ' lần / 10 phút';
   const detail = document.createElement('p');
   detail.textContent = alertItem.message;
@@ -165,7 +165,7 @@ async function refreshBehaviorAlerts() {
   if (behaviorInitialized && report.alertCount > 0 &&
       report.alerts.some(a => !behaviorAlertsSeen.has(a.code + ':' + a.profileId + ':' + a.latestAt))) {
     const notice = document.getElementById('behavior-inline-notice');
-    notice.textContent = '⚠️ Có thao tác lặp lại bất thường trong phần mềm. Mở “Cảnh báo hành vi” để kiểm tra.';
+    notice.textContent = 'Có thao tác lặp lại bất thường trong phần mềm. Mở “Cảnh báo hành vi” để kiểm tra.';
     notice.hidden = false;
   }
   behaviorInitialized = true;
@@ -196,7 +196,7 @@ function setupEventListeners() {
       for (const issue of audit.issues) {
         const row = document.createElement('div');
         row.className = 'fp-audit-item ' + issue.level;
-        row.textContent = (issue.level === 'warning' ? '⚠ ' : 'ℹ ') + issue.message;
+        row.textContent = (issue.level === 'warning' ? '' : '') + issue.message;
         fpAuditResults.append(row);
       }
       const footer = document.createElement('p');
@@ -266,10 +266,10 @@ function setupEventListeners() {
     const res = await window.api.checkProxy(proxyConfig);
     if (['success', 'verified', 'warning'].includes(res.status)) {
       proxyTestResult.className = res.status === 'warning' ? 'test-result error' : 'test-result success';
-      proxyTestResult.textContent = res.status === 'warning' ? `⚠️ ${res.message} IP: ${res.ip}` : res.status === 'verified' ? `✅ ${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `✅ IP trực tiếp: ${res.ip} (${res.latency}ms)`;
+      proxyTestResult.textContent = res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`;
     } else {
       proxyTestResult.className = 'test-result error';
-      proxyTestResult.textContent = `❌ Lỗi: ${res.message}`;
+      proxyTestResult.textContent = `Lỗi: ${res.message}`;
     }
   });
 
