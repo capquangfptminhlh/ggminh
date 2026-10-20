@@ -356,3 +356,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Partial profile updates preserve the previously selected Gecko/Chromium engine rather than silently resetting it to Chromium.
 - Added regression tests for workflow persistence failures, API lifecycle locks, engine-preserving updates, and profile deletion while active.
 - This release does not include an embedded browser core, Google Ads account automation, or any guarantee of anti-detection.
+
+## v3.3 — Quick Create, profile tags, multiple startup tabs
+- 1–50 empty profile templates in one validated, atomic database write; native fingerprint and direct networking are the defaults.
+- Tags: maximum eight per profile, unique case-insensitively, maximum 32 characters each.
+- Multiple HTTP(S) startup URLs: 1–5 per profile; validated for schemes, embedded credentials, length and duplicates. Chromium receives startup URL arguments; Firefox receives new-window/new-tab options. Test real opening on Windows before production use.
+- Legacy startUrl remains compatible with older files and API clients. Templates copy tag and URL metadata, never cookies or authenticated sessions.
+- This does not provide a self-built browser engine or anti-detection guarantees.

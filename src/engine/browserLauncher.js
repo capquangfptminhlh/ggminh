@@ -135,10 +135,12 @@ class BrowserLauncher {
       extDir = ensureIsolatedDirectory(this.baseDataDir, paths.extensionDir);
       generateExtension(profile, extDir);
     }
-    const startUrl = customUrl || profile.startUrl || 'https://ads.google.com/';
+    const startUrls = customUrl ? [customUrl] :
+      (Array.isArray(profile.startUrls) && profile.startUrls.length
+        ? profile.startUrls : [profile.startUrl || 'https://ads.google.com/']);
     if (engine === 'gecko') updateGeckoProxy(profileDir, effectiveProxy);
     const args = createLaunchArgs({
-      engine, profileDir, url: startUrl, fingerprint: profile.fingerprint || {},
+      engine, profileDir, urls: startUrls, fingerprint: profile.fingerprint || {},
       proxy: effectiveProxy, extensionDir: extDir, port
     });
 

@@ -8,13 +8,20 @@ function safeWebUrl(value) {
   return url.toString();
 }
 
-function createLaunchArgs({ engine, profileDir, url, fingerprint = {}, proxy = {}, extensionDir = null, port = null }) {
+function safeWebUrls(values) {
+  if (!Array.isArray(values) || values.length < 1 || values.length > 5)
+    throw new Error('Startup URLs must contain 1–5 addresses');
+  const urls = values.map(safeWebUrl);
+  if (new Set(urls).size !== urls.length) throw new Error('Duplicate startup URLs');
+  return urls;
+}
+function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, proxy = {}, extensionDir = null, port = null }) {
   if (!path.isAbsolute(profileDir)) throw new Error('Profile directory must be absolute');
-  const startUrl = safeWebUrl(url);
+  const startUrls = safeWebUrls(urls === undefined ? [url] : urls);
   if (engine === 'gecko') {
-    // Gecko network preferences are applied to the isolated Firefox user.js by BrowserLauncher.
     if (port) throw new Error('Gecko does not support Chromium CDP endpoints');
-    return ['--no-remote', '--profile', profileDir, '--new-window', startUrl];
+    return ['--no-remote', '--profile', profileDir, '--new-window', startUrls[0],
+      ...startUrls.slice(1).flatMap(item => ['--new-tab', item])];
   }
   if (engine !== 'chromium') throw new Error('Unsupported browser engine');
   const size = fingerprint.screen || {};
@@ -39,8 +46,8 @@ function createLaunchArgs({ engine, profileDir, url, fingerprint = {}, proxy = {
     if (!['http', 'socks5'].includes(proxy.type)) throw new Error('Unsupported proxy protocol');
     args.push('--proxy-server=' + proxy.type + '://' + proxy.host + ':' + proxyPort);
   }
-  args.push(startUrl);
+  args.push(...startUrls);
   return args;
 }
 
-module.exports = { createLaunchArgs, safeWebUrl };
+module.exports = { createLaunchArgs, safeWebUrl, safeWebUrls };

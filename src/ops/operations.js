@@ -21,6 +21,8 @@ function duplicateTemplate(store, id) {
     group: original.group,
     engine: original.engine,
     startUrl: original.startUrl,
+    startUrls: original.startUrls || [original.startUrl],
+    tags: original.tags || [],
     proxy: original.proxy?.authProxyId ? {type:original.proxy.type,host:original.proxy.host,port:original.proxy.port} : { ...original.proxy },
     fingerprint: {},
     notes: ''

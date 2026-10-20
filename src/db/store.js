@@ -2,6 +2,20 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
+const { safeWebUrls } = require('../engine/launchArgs');
+function cleanTags(input) {
+  if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
+  const seen = new Set(), tags = [];
+  for (const value of input) {
+    if (typeof value !== 'string') throw Error('Invalid tag');
+    const tag = value.trim();
+    if (!tag || tag.length > 32 || /[\u0000-\u001f\u007f]/.test(tag))
+      throw Error('Tags must contain 1–32 printable characters');
+    const key = tag.toLocaleLowerCase('vi-VN');
+    if (!seen.has(key)) {seen.add(key);tags.push(tag);}
+  }
+  return tags;
+}
 const VALID_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 function assertId(id) {
   if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
@@ -77,6 +91,11 @@ class Store {
       : { type: parsedProxy.type, host: parsedProxy.host, port: parsedProxy.port,
           ...(authProxyId && /^px_[0-9a-f]{16}$/.test(authProxyId)
             ? { authProxyId } : {}) };
+    const chosenUrls = input.startUrls !== undefined ? input.startUrls :
+      input.startUrl !== undefined ? [input.startUrl] :
+      old.startUrls?.length ? old.startUrls : [old.startUrl || 'https://ads.google.com/'];
+    const startUrls = safeWebUrls(chosenUrls);
+    const tags = cleanTags(input.tags === undefined ? (old.tags || []) : input.tags);
     const now = new Date().toISOString();
     const result = {
       ...old, id, name,
@@ -85,7 +104,7 @@ class Store {
       engine: input.engine === 'gecko' || input.engine === 'chromium'
         ? input.engine : (old.engine === 'gecko' ? 'gecko' : 'chromium'),
       group: String(input.group || old.group || 'Default').slice(0, 100),
-      startUrl: String(input.startUrl || old.startUrl || 'https://ads.google.com/').slice(0, 2048),
+      startUrl: startUrls[0], startUrls, tags,
       notes: String(input.notes || old.notes || '').slice(0, 2000),
       proxy,
       requiresProxySetup: proxy.type==='direct' &&
@@ -109,6 +128,41 @@ class Store {
       throw error;
     }
     return this.publicProfile(result);
+  }
+  // Create all new profiles in memory, then commit with one durable write.
+  // Every new profile starts with an empty browser session and native settings.
+  createProfilesBulk(options) {
+    if (!options || typeof options !== 'object' || Array.isArray(options))
+      throw Error('Invalid Quick Create request');
+    const count = Number(options.count);
+    const prefix = options.namePrefix, group = options.group ?? 'Default';
+    if (!Number.isInteger(count) || count < 1 || count > 50)
+      throw Error('Quick Create supports 1–50 profiles');
+    if (typeof prefix !== 'string' || !prefix.trim() || prefix.trim().length > 145 ||
+        /[\u0000-\u001f]/.test(prefix)) throw Error('Invalid profile name prefix');
+    if (typeof group !== 'string' || !group.trim() || group.trim().length > 100 ||
+        /[\u0000-\u001f]/.test(group)) throw Error('Invalid group');
+    const engine = options.engine || 'chromium';
+    if (!['chromium','gecko'].includes(engine)) throw Error('Invalid browser engine');
+    const urls = safeWebUrls(options.startUrls ?? ['https://ads.google.com/']);
+    const tags = cleanTags(options.tags ?? []);
+    const staged = Object.create(Store.prototype);
+    staged.baseDir = this.baseDir;
+    staged.data = structuredClone(this.data);
+    staged.saveData = () => {};
+    const created = [];
+    for (let i = 1; i <= count; i++) {
+      created.push(staged.saveProfile({
+        name: prefix.trim() + ' ' + String(i).padStart(2,'0'),
+        group: group.trim(), engine, startUrls: urls, tags,
+        proxy: {type:'direct'}, fingerprint:{mode:'native'}
+      }));
+    }
+    const previous = this.data;
+    this.data = staged.data;
+    try { this.saveData(); }
+    catch (error) { this.data = previous; throw error; }
+    return created;
   }
   deleteProfile(id) {
     assertId(id);

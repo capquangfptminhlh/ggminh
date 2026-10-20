@@ -114,6 +114,11 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('bulk-create-profiles', (_, options) => {
+    const created = store.createProfilesBulk(options);
+    for (const profile of created) behaviorMonitor.record('profile_save', profile.id, 'manual');
+    return { count: created.length, profileIds: created.map(p => p.id) };
+  });
   ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
   ipcMain.handle('inspect-fingerprint', (_, input) => inspectFingerprint(input));
 
