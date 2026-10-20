@@ -543,3 +543,44 @@ Start through \`npm run license:server\`. Admin actions are on the authority hos
 - Every new session checks the binary SHA-256 and size again. If the browser updates or changes, launch fails closed. Re-register after independently verifying the update or manually unpin to revert to upstream installed-browser discovery.
 - This pins an externally installed mainstream browser executable; **it is not an AdsPower browser fork**, a new rendering engine, or native fingerprint spoofing. The current checksum implementation does **not verify Authenticode publisher signatures**; a malicious but well-formed executable selected by the user could be pinned. Full vendor signing and supply-chain audit remain future work.
 - The renderer sees only engine display name and SHA-256, not the full executable path. LHM does not download browser binaries or transmit their paths online.
+
+## v5.4 — Admin-only customer and subscription ledger
+
+This release adds a local **operator-side** customer and license ledger under \`src/licensing/customerLedger.js\`. It is an administrative records system; do **not** distribute it to customers or pretend it is cloud billing. Electron installers exclude the issuer/admin CLI scripts. The existing end-user Windows app continues to validate signed license tokens and, when configured, receipts from the self-hosted authority.
+
+The ledger stores customer display name, installation UUID, issued license ID, plan, expiry, profile capacity, renewal reference and up to 50,000 audit events. It does **not** store private signing keys, activation tokens, passwords, user cookies, proxy data or browser session files. It is intentionally stored in a private JSON file outside the GitHub checkout; use filesystem ACLs, backups and an encrypted disk. Operations take an exclusive lock and write atomically. A privileged operator could still tamper with local data. Never put ledger or issuer key under the web root.
+
+Create a customer (all file paths must be absolute):
+
+\`\`\`bash
+node tools/license-admin.js add /secure/lhm-customers.json "Customer A" 11111111-1111-4111-8111-111111111111
+\`\`\`
+
+The printed \`cust_...\` ID is used for issuing a 1-month Pro license (issuer's encrypted Ed25519 private key must match the public key in the desktop app):
+
+\`\`\`bash
+node tools/license-admin.js issue /secure/lhm-customers.json cust_... pro 1 100 /secure/issuer-private.pem
+\`\`\`
+
+Set \`LHM_ISSUER_PASSPHRASE\` only in a trusted private terminal; do not paste it in chat, logs, commands or commit it to GitHub. The command prints a signed activation token **once**. Deliver it through a secure channel and do not lose it; the ledger only retains redacted metadata.
+
+To extend a license by two calendar months from its existing expiry (or today's date, whichever is later), while preserving its plan, profile cap and original installation:
+
+\`\`\`bash
+node tools/license-admin.js renew /secure/lhm-customers.json lic_... 2 /secure/issuer-private.pem
+\`\`\`
+
+Old licenses remain valid until their original expiry unless separately revoked. A renewal creates a new signed license ID; the customer must activate the newly issued token. Confirm delivery before revoking the old license.
+
+Reporting and operations:
+
+\`\`\`bash
+node tools/license-admin.js due /secure/lhm-customers.json 14
+node tools/license-admin.js report /secure/lhm-customers.json
+node tools/license-admin.js revoke /secure/lhm-customers.json /secure/revocations.json lic_...
+node tools/license-admin.js allow  /secure/lhm-customers.json /secure/revocations.json lic_...
+\`\`\`
+
+The \`due\` command skips superseded license IDs. The revocation registry is authoritative for the online authority, whereas the ledger stores an audit copy. These are two separate files: keep reliable backups and reconcile manually if a crash occurs between updating them.
+
+**Not implemented:** hosted customer admin website, production payment gateway, automated bank/payment reconciliation, multi-user operator RBAC, customer self-service portal, strong audit immutability, and SaaS-grade key management.
