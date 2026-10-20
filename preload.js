@@ -48,6 +48,8 @@ contextBridge.exposeInMainWorld('api', {
   getProfiles: () => ipcRenderer.invoke('get-profiles'),
   saveProfile: (profile) => ipcRenderer.invoke('save-profile', profile),
   bulkCreateProfiles: options => ipcRenderer.invoke('bulk-create-profiles', options),
+  previewProfileCsv: text => ipcRenderer.invoke('profile-import-preview',text),
+  importProfilesCsv: text => ipcRenderer.invoke('profile-import-commit',text),
   deleteProfile: (id) => ipcRenderer.invoke('delete-profile', id),
   startBrowser: (id) => ipcRenderer.invoke('start-browser', id),
   stopBrowser: (id) => ipcRenderer.invoke('stop-browser', id),

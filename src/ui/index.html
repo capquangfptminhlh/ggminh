@@ -110,6 +110,7 @@
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
         <button class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
         <button class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
       </div>
@@ -283,6 +284,29 @@
       <div class="modal-footer">
         <button id="bulk-create-cancel" type="button" class="btn btn-secondary">Hủy</button>
         <button id="bulk-create-submit" type="button" class="btn btn-primary">Tạo hồ sơ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV/TXT metadata-only import with preflight; no cookies or credentials. -->
+  <div class="modal-overlay" id="modal-import-profiles">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="profile-import-title">
+      <div class="modal-header">
+        <h2 id="profile-import-title">Nhập hồ sơ hàng loạt từ CSV / TXT</h2>
+        <button type="button" class="btn-close" id="profile-import-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Hỗ trợ CSV Excel, dấu phẩy / chấm phẩy / tab, tối đa 200 hồ sơ và 256 KB. Cột <strong>name</strong> bắt buộc. Cột còn lại: group, engine, startUrls, tags, notes, proxyType, proxyHost, proxyPort. Tách nhiều URL hoặc tag bằng ký tự |.</p>
+        <div class="form-group"><label for="profile-import-file">Chọn file CSV hoặc TXT trên máy</label><input id="profile-import-file" type="file" accept=".csv,.txt,text/csv,text/plain"></div>
+        <div class="form-group"><label for="profile-import-text">Hoặc dán nội dung CSV</label><textarea id="profile-import-text" rows="9" spellcheck="false" placeholder="name,group,engine,startUrls,tags,notes,proxyType,proxyHost,proxyPort"></textarea></div>
+        <button type="button" class="btn btn-secondary" id="profile-import-sample">Điền dữ liệu mẫu</button>
+        <p class="lhm-bulk-help">Không nhập mật khẩu, cookie, token, 2FA hoặc thông tin tài khoản. Proxy chỉ lưu địa chỉ; cần kiểm tra và quản lý mật khẩu riêng trong Proxy Center.</p>
+        <p id="profile-import-status" role="status" aria-live="polite">Xem trước để kiểm tra dữ liệu trước khi nhập.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="profile-import-cancel">Đóng</button>
+        <button type="button" class="btn btn-secondary" id="profile-import-preview">Kiểm tra &amp; xem trước</button>
+        <button type="button" class="btn btn-primary" id="profile-import-commit" disabled>Nhập hồ sơ</button>
       </div>
     </div>
   </div>
@@ -934,6 +958,7 @@ run();
 
   <script src="icons.js"></script>
   <script src="renderer.js"></script>
+  <script src="profileImport.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>
   <script src="controlTower.js"></script>

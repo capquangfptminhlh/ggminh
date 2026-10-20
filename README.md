@@ -363,3 +363,11 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Multiple HTTP(S) startup URLs: 1–5 per profile; validated for schemes, embedded credentials, length and duplicates. Chromium receives startup URL arguments; Firefox receives new-window/new-tab options. Test real opening on Windows before production use.
 - Legacy startUrl remains compatible with older files and API clients. Templates copy tag and URL metadata, never cookies or authenticated sessions.
 - This does not provide a self-built browser engine or anti-detection guarantees.
+
+
+## v3.4 — Safe CSV/TXT mass import (metadata only)
+- Import up to 200 brand-new, independent profiles per batch from CSV/TSV (comma, semicolon or tab) pasted into the app or read from a local CSV/TXT file.
+- Supported columns: name (required), group, engine, startUrls, tags, notes, proxyType, proxyHost, proxyPort. Lists of URLs or tags use a pipe (`|`) delimiter inside each CSV cell. Quoted values and UTF-8 BOM are supported.
+- Read-only preview validates every row with the same profile validation rules used by the actual import. Unknown columns (including cookies/passwords/OTP) are rejected, not silently accepted.
+- One database write commits the entire batch; if a validation or disk write fails, no profile is imported. No browser sessions, cookies, passwords, 2FA values or fingerprint spoofing data are imported.
+- Proxy host and port can be imported for HTTP/SOCKS5 without credentials. Assign authenticated proxies separately in Proxy Center. Network reachability and real Windows browser sessions must be tested on the target machine.

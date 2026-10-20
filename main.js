@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
 const Store = require('./src/db/store');
+const {inspectProfilesCsv,importProfilesCsv} = require('./src/ops/profileCsvImport');
 const BrowserLauncher = require('./src/engine/browserLauncher');
 const { generateFingerprint } = require('./src/engine/fingerprint');
 const { checkProxy } = require('./src/engine/proxyChecker');
@@ -114,6 +115,12 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('profile-import-preview', (_, csv) => inspectProfilesCsv(store,csv));
+  ipcMain.handle('profile-import-commit', (_, csv) => {
+    const result=importProfilesCsv(store,csv);
+    for(const id of result.profileIds)behaviorMonitor.record('profile_save',id,'manual');
+    return result;
+  });
   ipcMain.handle('bulk-create-profiles', (_, options) => {
     const created = store.createProfilesBulk(options);
     for (const profile of created) behaviorMonitor.record('profile_save', profile.id, 'manual');
