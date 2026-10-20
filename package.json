@@ -39,6 +39,7 @@
       "!*.log"
     ],
     "asar": true,
+    "asarUnpack": ["src/ops/windowControl.ps1"],
     "win": {
       "target": [
         {

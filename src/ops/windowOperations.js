@@ -42,7 +42,10 @@ async function arrangeWindows(launcher,ids,mode,{
 }={}){
   if(platform!=='win32')throw Error('Quản lý vị trí cửa sổ chỉ hỗ trợ Windows');
   const {targets,skipped}=liveTargets(launcher,ids,mode);
-  const script=path.join(__dirname,'windowControl.ps1');
+  // PowerShell cannot read scripts from Electron's virtual app.asar archive.
+  // The installer unpacks only this bundled script next to app.asar.
+  const script=path.join(__dirname,'windowControl.ps1')
+    .replace(/app\.asar([\\/])/,'app.asar.unpacked$1');
   const stdout=await execute('powershell.exe',[
     '-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
     '-File',script,'-Mode',mode,'-Pids',targets.map(x=>x.pid).join(',')

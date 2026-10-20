@@ -412,3 +412,7 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Foreground activation can be rejected by Windows focus-stealing restrictions. Some Chrome/Edge/Firefox windows may not be owned by the original launcher PID because existing browser instances reused a different process; such windows are reported as not found rather than touching unrelated applications. The app does not manage windows it did not launch.
 - For up to 10 selected stopped profiles, a **shared URL** action starts their isolated sessions with a validated HTTP(S) URL; it skips all running profiles and never injects navigation into a running session. At most two starts occur concurrently. No synchronization of mouse, keyboard, forms or tab contents exists yet.
 - Windows-only behavior must be smoke-tested interactively on a real customer workstation. CI validates argument safety, target PID filtering, data flow and build — not actual foreground activation with human interaction.
+
+
+### Windows packaging note
+- The PowerShell/Win32 helper is explicitly `asarUnpack`ed from the Electron archive so Windows can launch the source-controlled script in packaged builds. No download or arbitrary script execution is involved.

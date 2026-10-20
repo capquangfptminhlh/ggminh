@@ -27,6 +27,10 @@ const run=async()=>{
   assert.strictEqual(result.arranged,2);
   assert.strictEqual(calls.length,1);
   assert(calls[0].args.some(a=>a.endsWith('windowControl.ps1')));
+  const pkg=require('../package.json');
+  assert(pkg.build.asarUnpack.includes('src/ops/windowControl.ps1'));
+  const operationsCode=fs.readFileSync(path.join(__dirname,'../src/ops/windowOperations.js'),'utf8');
+  assert(operationsCode.includes('app.asar.unpacked'));
   assert.strictEqual(calls[0].args.at(-1),'1234,2345');
   result=await arrangeWindows(launcher,['pb_one','pb_two','pb_missing','pb_stopping'],'cascade',
     {platform:'win32',execute});
