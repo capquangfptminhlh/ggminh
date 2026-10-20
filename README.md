@@ -518,3 +518,21 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - New-profile limits are checked for single creation, duplicate, Quick Create, CSV and configuration backup imports; restoring from trash and an explicit offline-disaster restore remains possible without deleting valuable user data. Existing profile count can exceed the signed cap following recovery, but no additional new profile can be created.
 - Starter entitles browser profiles only, Pro/Business include Automation Studio and authenticated Local API. The signed license supplies the per-customer maximum profile count.
 - License logic is in the main Electron process and verified on each action. Offline trials and local clock data are **not tamper-proof** for privileged users. No network billing, real server revocation or trusted device enforcement has been implemented.
+
+## v5.2 — Signed online license verification and revocation (self-hosted foundation)
+
+The desktop program now accepts a vendor-provided HTTPS verification URL through \`LHM_LICENSE_VERIFY_URL\`, ending precisely in \`/v1/verify\`. This value must be configured by the vendor in the installed application environment; browser websites, profile metadata and untrusted renderers cannot choose a verification endpoint. Without a configured URL, legacy offline behavior remains.
+
+When online verification is configured, paid subscriptions require a signed online receipt before starting new activity. A valid receipt grants an offline grace period of at most 72 hours; a signed revocation or expiry response blocks licensed actions immediately. Expired/revoked/never-verified receipts do not delete browser profiles, session backups or customer data. Receipts are tied to the exact license ID, installation ID and fresh request nonce, signed by the issuer's Ed25519 key and validated inside the Electron main process.
+
+A self-hosted licensing authority is provided for deployment behind an HTTPS reverse proxy. It defaults to binding only to \`127.0.0.1:8787\`; direct Internet HTTP hosting is unsupported. This is a foundation, **not a deployed cloud service**. The authority uses the **same encrypted PKCS#8 issuer private key kept off customer machines** and a local JSON revocation registry. It deliberately exposes no HTTP endpoint for administrators to revoke licenses.
+
+Authority configuration (private, outside git and customer installers):
+- \`LHM_ISSUER_KEY_PATH\`: absolute path to encrypted Ed25519 PKCS#8 PEM private key.
+- \`LHM_ISSUER_PASSPHRASE\`: secret used to decrypt the PEM (prefer a secret manager or protected environment).
+- \`LHM_LICENSE_REGISTRY_PATH\`: private JSON registry path for revoked license IDs.
+- \`LHM_LICENSE_AUTHORITY_PORT\`: optional loopback-only port, default 8787.
+
+Start through \`npm run license:server\`. Admin actions are on the authority host only: \`node tools/license-registry.js revoke /secure/registry.json lic_...\`; use \`allow\` to revoke the revocation. Use the existing \`npm run license:issue\` to issue new signed renewal tokens. Back up the registry securely and protect access to the issuer key. No customer data or browsing history is stored in the registry.
+
+**Important limitations:** No central service is actually hosted yet; no billing/checkout, subscription payment, refund handling, identity verification, device transfer approvals, audited key rotation or live operator dashboard is included. The server must be configured with TLS, reverse proxy protection, monitoring, rate limits and operational procedures before production use. Offline licensing is not tamper-resistant on an administrator-controlled endpoint, and the optional online verifier does not change that fundamental limit.
