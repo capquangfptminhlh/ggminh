@@ -14,6 +14,11 @@ assert(html.includes('<script src="aiAdvisor.js"></script>'));
 assert(script.includes('window.api.aiAdvisorConfigure('));
 assert(script.includes('window.api.aiAdvisorAsk('));
 assert(script.includes('window.api.aiAdvisorStop('));
+for(const id of ['ai-draft-profile','ai-draft-hosts','ai-draft-objective',
+ 'ai-draft-consent','ai-draft-generate','ai-draft-save','ai-draft-preview'])
+ assert(html.includes('id="'+id+'"'));
+assert(script.includes('window.api.aiAdvisorWorkflowDraft('));
+assert(script.includes('window.api.studioSave(suggested)'));
 assert(script.includes('answer.textContent=out.answer'),'AI must use safe plain text');
 assert(css.includes('.lhm-ai-answer'));
 console.log('AI Advisor UI controls, plain-text output and explicit stats checkbox passed');

@@ -56,6 +56,7 @@ contextBridge.exposeInMainWorld('api', {
   aiAdvisorForgetKey: () => ipcRenderer.invoke('ai-advisor-forget-key'),
   aiAdvisorAsk: data => ipcRenderer.invoke('ai-advisor-ask',data),
   aiAdvisorStop: () => ipcRenderer.invoke('ai-advisor-stop'),
+  aiAdvisorWorkflowDraft: data => ipcRenderer.invoke('ai-advisor-workflow-draft',data),
   saveProfile: (profile) => ipcRenderer.invoke('save-profile', profile),
   bulkCreateProfiles: options => ipcRenderer.invoke('bulk-create-profiles', options),
   previewProfileCsv: text => ipcRenderer.invoke('profile-import-preview',text),

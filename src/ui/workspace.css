@@ -738,3 +738,10 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .lhm-ai-answer{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;min-height:100px;overflow:auto;background:#f7f9fd;border:1px solid #dbe5f3;border-radius:9px;padding:14px;color:#2d3b52;font-size:12px;line-height:1.6}
 #modal-ai-advisor .form-group textarea{width:100%;resize:vertical}
 #modal-ai-advisor .modal-body{max-height:70vh;overflow:auto}
+
+
+/* v4.4 AI-assisted workflow draft with human-in-the-loop save */
+.lhm-ai-draft-panel{margin:20px 0 8px;padding:16px;background:#fff;border:1px solid #d9e4f3;border-radius:10px}
+.lhm-ai-draft-panel h3{font-size:14px;font-weight:700;color:#2e4a70;margin-bottom:8px}
+.lhm-ai-draft-panel textarea{width:100%;resize:vertical}
+.lhm-ai-draft-preview{white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.6;max-height:260px;overflow:auto;padding:12px;border:1px solid #e0e7ef;border-radius:8px;background:#f7f9fc;color:#364861}

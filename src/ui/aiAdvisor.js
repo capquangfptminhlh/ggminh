@@ -14,9 +14,19 @@ window.addEventListener('DOMContentLoaded',()=>{
   send.disabled=state.busy||!state.configured;
   stop.disabled=!state.busy;
  }
+ async function refreshDraftProfiles(){
+  const select=el('ai-draft-profile');
+  const prior=select.value;
+  const profiles=await window.api.getProfiles();
+  select.replaceChildren(new Option('Chọn profile Chromium',''));
+  for(const p of profiles.filter(p=>p.engine!=='gecko'))
+   select.add(new Option(p.name,p.id));
+  if([...select.options].some(o=>o.value===prior))select.value=prior;
+ }
  el('btn-ai-advisor').addEventListener('click',async()=>{
   modal.classList.add('open');
-  try{await refresh();}catch(e){keyStatus.textContent=e.message;}
+  try{await Promise.all([refresh(),refreshDraftProfiles()]);}
+  catch(e){keyStatus.textContent=e.message;}
  });
  for(const id of ['ai-advisor-close','ai-advisor-done'])
   el(id).addEventListener('click',()=>modal.classList.remove('open'));
@@ -64,5 +74,45 @@ window.addEventListener('DOMContentLoaded',()=>{
    await window.api.aiAdvisorStop();
    status.textContent='Đã gửi yêu cầu dừng.';
   }catch(e){status.textContent=e.message;}
+ });
+ let suggested=null;
+ const preview=el('ai-draft-preview'),generate=el('ai-draft-generate');
+ const save=el('ai-draft-save');
+ for(const id of ['ai-draft-profile','ai-draft-hosts','ai-draft-objective']){
+  el(id).addEventListener('input',()=>{
+   suggested=null;save.disabled=true;
+   preview.textContent='Thông tin đã thay đổi; cần tạo lại bản nháp.';
+  });
+ }
+ generate.addEventListener('click',async()=>{
+  suggested=null;save.disabled=true;
+  if(!el('ai-draft-consent').checked){
+   preview.textContent='Bạn cần xác nhận chia sẻ mô tả và tên miền cho OpenRouter.';
+   return;
+  }
+  generate.disabled=true;preview.textContent='Đang tạo và kiểm tra bản nháp...';
+  try{
+   const result=await window.api.aiAdvisorWorkflowDraft({
+    profileId:el('ai-draft-profile').value,
+    hosts:el('ai-draft-hosts').value,
+    objective:el('ai-draft-objective').value,
+    consent:true
+   });
+   suggested=result.draft;
+   preview.textContent=JSON.stringify(suggested,null,2)+
+    '\n\n'+result.warnings.join('\n');
+   save.disabled=false;
+  }catch(e){preview.textContent='Không tạo được bản nháp hợp lệ: '+e.message;}
+  finally{generate.disabled=false;await refresh().catch(()=>{});}
+ });
+ save.addEventListener('click',async()=>{
+  if(!suggested)return;
+  if(!confirm('Đã kiểm tra tên miền và các bước? Lưu bản nháp vào Automation Studio (không chạy)?'))return;
+  save.disabled=true;
+  try{
+   await window.api.studioSave(suggested);
+   suggested=null;
+   preview.textContent='Đã lưu vào Automation Studio. Chỉ chạy khi bạn chủ động yêu cầu.';
+  }catch(e){preview.textContent='Không lưu được: '+e.message;save.disabled=false;}
  });
 });

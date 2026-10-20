@@ -30,6 +30,7 @@ const cacheManager = require('./src/ops/cacheManager');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const {ExtensionManager} = require('./src/extensions/manager');
 const {AIAdvisor} = require('./src/ai/advisor');
+const {proposeWorkflow} = require('./src/ai/workflowDraft');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -127,6 +128,8 @@ function initIPC() {
   ipcMain.handle('ai-advisor-forget-key', () => aiAdvisor.clear());
   ipcMain.handle('ai-advisor-ask', (_, value) => aiAdvisor.ask(value,store.getProfiles()));
   ipcMain.handle('ai-advisor-stop', () => aiAdvisor.abort());
+  ipcMain.handle('ai-advisor-workflow-draft', (_, data) =>
+    proposeWorkflow(aiAdvisor,store,data));
   ipcMain.handle('profile-import-preview', (_, csv) => inspectProfilesCsv(store,csv));
   ipcMain.handle('profile-import-commit', (_, csv) => {
     const result=importProfilesCsv(store,csv);

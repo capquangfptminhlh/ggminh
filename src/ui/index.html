@@ -547,7 +547,24 @@
           <span id="ai-advisor-request-status" role="status" aria-live="polite"></span>
         </div>
         <div class="lhm-ai-answer" id="ai-advisor-answer" aria-live="polite">Câu trả lời sẽ hiển thị ở đây. Nội dung không được tự động đưa vào workflow.</div>
-        <p class="lhm-bulk-help">LHM không gửi dữ liệu trình duyệt, cookies, mật khẩu, token, tên hồ sơ hay proxy host. Không chia sẻ thông tin nhạy cảm trong câu hỏi. Model có thể trả lời sai; hãy xác minh trước khi áp dụng.</p>
+        <p class="lhm-bulk-help">LHM không tự gửi dữ liệu trình duyệt, cookies, mật khẩu, token, tên hồ sơ hay proxy host. Không chia sẻ thông tin nhạy cảm trong câu hỏi. Model có thể trả lời sai; hãy xác minh trước khi áp dụng.</p>
+        <div class="lhm-ai-draft-panel">
+          <h3>AI hỗ trợ phác thảo quy trình Automation Studio</h3>
+          <p class="lhm-bulk-help">Chỉ tạo bản nháp và kiểm tra bước, không chạy. Sau khi xem trước, bạn có thể lưu thủ công vào Studio. Chỉ dùng với website bạn có quyền tự động hóa; không dùng Google Ads, trang đăng nhập hoặc thanh toán.</p>
+          <div class="form-row">
+            <div class="form-group"><label for="ai-draft-profile">Profile đích (giữ cục bộ)</label><select id="ai-draft-profile"><option value="">Chọn profile Chromium</option></select></div>
+            <div class="form-group"><label for="ai-draft-hosts">Tên miền được phép (cách nhau dấu phẩy)</label><input id="ai-draft-hosts" placeholder="example.com" maxlength="300"></div>
+          </div>
+          <div class="form-group"><label for="ai-draft-objective">Mô tả mục tiêu (10–450 ký tự)</label>
+            <textarea id="ai-draft-objective" rows="3" maxlength="450" placeholder="Ví dụ: Kiểm tra trang giới thiệu và xác nhận có nút gửi liên hệ"></textarea>
+          </div>
+          <label class="lhm-ai-optin"><input id="ai-draft-consent" type="checkbox"> Tôi đồng ý gửi mô tả và tên miền ở trên tới OpenRouter; mã profile và dữ liệu phiên vẫn ở máy.</label>
+          <div class="lhm-ai-toolbar">
+            <button class="btn btn-secondary" type="button" id="ai-draft-generate">Tạo bản nháp</button>
+            <button class="btn btn-primary" type="button" id="ai-draft-save" disabled>Lưu bản nháp vào Studio</button>
+          </div>
+          <pre id="ai-draft-preview" class="lhm-ai-draft-preview" aria-live="polite">Chưa tạo bản nháp.</pre>
+        </div>
       </div>
       <div class="modal-footer"><button class="btn btn-primary" type="button" id="ai-advisor-done">Đóng</button></div>
     </div>

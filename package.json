@@ -1,6 +1,6 @@
 {
   "name": "power-browser",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "LHM Ads Browser local-first profile operations, Proxy Center and approval-gated Automation Studio",
   "main": "main.js",
   "scripts": {

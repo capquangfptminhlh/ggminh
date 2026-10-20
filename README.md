@@ -448,3 +448,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - **Statistics sharing defaults OFF**. If opted in, only aggregate counts of profiles, engine types, groups and direct/proxy usage are sent with the user's prompt. Never automatically includes profile names, browser URLs, proxy addresses, cookies, logins, workflows, passwords or tokens. Anything the user personally types into the prompt is necessarily sent to OpenRouter.
 - This assistant **does not execute browser automation or edit ad accounts**. Responses are displayed as plain text, not HTML; no auto-created workflows, no API commands, and no command execution. Max 2,000 prompt characters, 700 generated tokens, 30-second timeout, minimum seven seconds between requests and 20 requests per application session.
 - AI output may be inaccurate or costly; review before acting. This is a bounded Advisor foundation, **not yet a full autonomous AI Agent**.
+
+
+## v4.4 — AI-assisted safe Automation Studio workflow drafts
+- From AI Advisor, select an existing **Chromium** profile locally, explicitly enter allowlisted hostnames and describe a workflow objective. Consent is required before the objective + allowed hostnames are sent to OpenRouter; profile ID, profile name, cookies, proxy and browser data are never transmitted automatically.
+- The model proposes strictly structured JSON with 1–12 steps; existing Automation Studio validation rejects denied login/Google Ads/payment domains, out-of-allowlist navigation, forbidden secret-input selectors and workflows lacking a mandatory approval step before clicks or filling fields.
+- The proposal is only displayed as plain text for review. **Lưu bản nháp vào Studio** is a distinct human action; saving does not execute a workflow. Execution still requires an intentional action in Automation Studio.
+- AI output can be wrong or incompatible. Reject and retry invalid proposals; never treat model text as an instruction to the operating system.
