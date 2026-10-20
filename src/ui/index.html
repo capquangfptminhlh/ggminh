@@ -110,6 +110,7 @@
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
         <button class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
         <button class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
         <button class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
@@ -249,6 +250,7 @@
       </div>
       <div class="selection-actions">
         <button class="btn btn-sm btn-primary" id="selection-open">Mở đã chọn (tối đa 10)</button>
+        <button class="btn btn-sm btn-secondary" id="selection-windows">Sắp cửa sổ</button>
         <button class="btn btn-sm btn-secondary" id="selection-group">Chuyển nhóm</button>
         <button class="btn btn-sm btn-secondary" id="selection-tags">Gắn Tag</button>
         <button class="btn btn-sm btn-secondary" id="selection-duplicate">Nhân bản mẫu</button>
@@ -410,6 +412,37 @@
         <button type="button" class="btn btn-secondary" id="profile-update-cancel">Hủy</button>
         <button type="button" class="btn btn-secondary" id="profile-update-preview">Xem trước</button>
         <button type="button" class="btn btn-primary" id="profile-update-commit" disabled>Áp dụng sửa đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.9: user-initiated management of windows launched by this app. -->
+  <div class="modal-overlay" id="modal-window-manager">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="wm-title">
+      <div class="modal-header">
+        <h2 id="wm-title">Quản lý cửa sổ đang chạy</h2>
+        <button type="button" class="btn-close" id="wm-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Chọn hồ sơ ở bảng để thao tác; nếu chưa chọn, sử dụng danh sách cửa sổ đang chạy. Chỉ ảnh hưởng tới các trình duyệt mà LHM đã mở trên máy Windows này (tối đa 10 cửa sổ).</p>
+        <p id="wm-selection" class="lhm-wm-selection" role="status">Đang đọc danh sách...</p>
+        <div id="wm-profile-list" class="lhm-wm-list"></div>
+        <div class="lhm-wm-actions">
+          <button type="button" class="btn btn-secondary" id="wm-focus">Đưa cửa sổ ra trước</button>
+          <button type="button" class="btn btn-primary" id="wm-grid">Sắp xếp lưới</button>
+          <button type="button" class="btn btn-secondary" id="wm-cascade">Xếp cửa sổ tầng</button>
+        </div>
+        <div class="form-group">
+          <label for="wm-shared-url">Mở URL chung (chỉ trên các hồ sơ đang đóng)</label>
+          <input id="wm-shared-url" type="url" value="https://example.com/" placeholder="https://example.com/">
+          <p class="lhm-bulk-help">Lệnh này mở các hồ sơ chưa chạy tại URL đã nhập. Không điều khiển tab của hồ sơ đang chạy; không tự đồng bộ click hay nhập liệu.</p>
+          <button type="button" class="btn btn-secondary" id="wm-open-url">Mở URL trên hồ sơ đang đóng</button>
+        </div>
+        <p id="wm-result" class="lhm-wm-result" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="wm-refresh">Làm mới</button>
+        <button type="button" class="btn btn-primary" id="wm-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1065,6 +1098,7 @@ run();
   <script src="profileTrash.js"></script>
   <script src="profileCsvUpdate.js"></script>
   <script src="tablePreferences.js"></script>
+  <script src="windowManager.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>

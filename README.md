@@ -404,3 +404,11 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 
 ### v3.8 data-preservation fix
 - Existing profile notes can now be deliberately cleared with an explicit empty string (including via CSV); omission still preserves notes. Regression coverage verifies the distinction.
+
+
+## v3.9 — Window Manager: foreground, tiling, cascade & shared startup URL
+- The new **Cửa sổ** screen can bring an already launched browser to the foreground or tile up to 10 *active* profile windows into a Windows primary-display grid or cascade. These actions are on demand and change window geometry only — **not** website content or clicks.
+- Native Windows 32 API is called through a bundled signed-by-project-source PowerShell script (`src/ops/windowControl.ps1`), launched with hardcoded `powershell.exe`, `-File` (never `-Command`), numeric OS PIDs sourced only from this app's live `BrowserLauncher` process map. No arbitrary PowerShell, command strings, untrusted file paths or JS are executed.
+- Foreground activation can be rejected by Windows focus-stealing restrictions. Some Chrome/Edge/Firefox windows may not be owned by the original launcher PID because existing browser instances reused a different process; such windows are reported as not found rather than touching unrelated applications. The app does not manage windows it did not launch.
+- For up to 10 selected stopped profiles, a **shared URL** action starts their isolated sessions with a validated HTTP(S) URL; it skips all running profiles and never injects navigation into a running session. At most two starts occur concurrently. No synchronization of mouse, keyboard, forms or tab contents exists yet.
+- Windows-only behavior must be smoke-tested interactively on a real customer workstation. CI validates argument safety, target PID filtering, data flow and build — not actual foreground activation with human interaction.

@@ -25,6 +25,7 @@ const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
+const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
@@ -339,6 +340,10 @@ function initIPC() {
     return result;
   });
   ipcMain.handle('get-active-browsers', () => launcher.listActive());
+  ipcMain.handle('window-manager-arrange', (_, ids, mode) =>
+    arrangeWindows(launcher,ids,mode));
+  ipcMain.handle('window-manager-open-url', (_, ids, url) =>
+    openUrlForStoppedProfiles(store,launcher,ids,url,behaviorMonitor));
   ipcMain.handle('check-proxy', (_, proxy) => checkProxy(proxy));
   ipcMain.handle('generate-fingerprint', (_, options) => generateFingerprint(options));
   ipcMain.handle('get-settings', () => store.getSettings());

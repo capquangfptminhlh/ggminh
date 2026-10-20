@@ -61,6 +61,8 @@ contextBridge.exposeInMainWorld('api', {
   startBrowser: (id) => ipcRenderer.invoke('start-browser', id),
   stopBrowser: (id) => ipcRenderer.invoke('stop-browser', id),
   getActiveBrowsers: () => ipcRenderer.invoke('get-active-browsers'),
+  arrangeBrowserWindows: (ids, mode) => ipcRenderer.invoke('window-manager-arrange',ids,mode),
+  openUrlForStoppedProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-url',ids,url),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   getSettings: () => ipcRenderer.invoke('get-settings'),
