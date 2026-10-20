@@ -10,17 +10,17 @@ for(const id of ['btn-cloud-sync','modal-cloud-sync','cloud-sync-url','cloud-syn
  'cloud-sync-device','cloud-sync-token','cloud-sync-passphrase','cloud-sync-preview',
  'cloud-sync-push','cloud-sync-apply','cloud-sync-confirm','cloud-team-load',
  'cloud-team-invite','cloud-team-email','cloud-team-role','cloud-team-list',
- 'cloud-team-result']){
+ 'cloud-team-result','cloud-team-invite-token','cloud-team-redeem']){
  assert(html.includes('id="'+id+'"'),id+' missing from real desktop HTML');
 }
 assert(html.includes('<script src="cloudSync.js"></script>'));
 for(const name of ['cloudSyncPreview','cloudSyncPush','cloudSyncApply',
- 'cloudTeamMembers','cloudTeamInvite','cloudTeamRevoke']){
+ 'cloudTeamMembers','cloudTeamInvite','cloudTeamRevoke','cloudTeamRedeem']){
  assert(script.includes('window.api.'+name+'('),name+' UI not wired');
  assert(preload.includes(name+':'),name+' missing from preload');
 }
 for(const channel of ['cloud-sync-preview','cloud-sync-push','cloud-sync-apply',
- 'cloud-team-members','cloud-team-invite','cloud-team-revoke']){
+ 'cloud-team-members','cloud-team-invite','cloud-team-revoke','cloud-team-redeem']){
  assert(main.includes("ipcMain.handle('"+channel+"'"),channel+' IPC missing');
 }
 assert(script.includes("el('cloud-sync-token').value=''"));
