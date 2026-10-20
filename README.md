@@ -335,3 +335,9 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Selected-profile toolbar launches up to 10 browser sessions per manual action, throttled to two concurrent startup tasks, reporting errors for each profile without blocking the remaining profiles.
 - Atomic group assignment changes metadata for 1–50 closed profiles in a single database write; no cookies, fingerprints or credentials are changed.
 - The feature does not automate Google Ads interactions or background-schedule launches. It reports per-profile results and requires manual confirmation.
+
+
+### v3.0 Protected backup preview and staged restore
+- Read-only preflight preview reports counts, required proxy reassignment and browser-session exclusion without changing local data.
+- A restore is validated and staged entirely in memory; profiles and workflows are written once each. If a write fails, an in-process rollback restores original data when storage is writable. A power loss between the two files remains a limitation; this is not a fully crash-atomic multi-file transaction.
+- Exported and restored workflow **fill values are blanked**, avoiding accidental transfer of form content. URLs and free-form notes remain in the encrypted backup and may themselves contain sensitive information: do not share backups untrusted.

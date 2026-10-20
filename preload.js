@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('api', {
   exportSupportReport: () => ipcRenderer.invoke('export-support-report'),
   exportConfigBackup: password => ipcRenderer.invoke('export-config-backup', password),
   importConfigBackup: password => ipcRenderer.invoke('import-config-backup', password),
+  previewConfigBackup: password => ipcRenderer.invoke('preview-config-backup',password),
   recorderStart: options => ipcRenderer.invoke('recorder-start', options),
   recorderStatus: () => ipcRenderer.invoke('recorder-status'),
   recorderStop: () => ipcRenderer.invoke('recorder-stop'),

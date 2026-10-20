@@ -184,6 +184,21 @@
     el('backup-close').addEventListener('click', () => close('modal-backup'));
     el('backup-cancel').addEventListener('click', () => close('modal-backup'));
     el('backup-execute').addEventListener('click', executeBackup);
+    el('backup-preview').addEventListener('click',async()=>{
+      const password=el('backup-password').value;
+      if(password.length<12){
+        el('backup-result').textContent='Nhập mật khẩu tối thiểu 12 ký tự trước khi xem trước.';return;
+      }
+      const button=el('backup-preview');button.disabled=true;
+      try{
+        const result=await api.previewConfigBackup(password);
+        el('backup-result').textContent=result.canceled ? 'Đã hủy chọn tệp.' :
+          'Tệp chứa '+result.profiles+' hồ sơ, '+result.workflows+
+          ' quy trình; '+result.requiresProxySetup+
+          ' hồ sơ cần gán lại proxy. Xem trước không sửa dữ liệu hiện có.';
+      }catch(error){el('backup-result').textContent='Không xem được bản sao lưu: '+error.message;}
+      finally {button.disabled=false;}
+    });
   }
   window.LHMMaintenance = { showHealth };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

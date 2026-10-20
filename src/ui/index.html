@@ -720,7 +720,7 @@ run();
         <button class="btn-close" id="backup-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="backup-intro">Sao lưu AES-256-GCM gồm danh sách hồ sơ và quy trình Automation Studio. <strong>Không có cookie, phiên Google hay mật khẩu.</strong> Nhập lại sẽ tạo hồ sơ mới, không ghi đè dữ liệu cũ.</p>
+        <p class="backup-intro">Sao lưu AES-256-GCM gồm cấu hình hồ sơ và quy trình Automation Studio. <strong>Không sao chép cookie, phiên đăng nhập, mật khẩu proxy và nội dung các bước tự điền.</strong> Ghi chú và URL tự nhập có thể chứa thông tin riêng tư: chỉ chia sẻ tệp sao lưu với người được phép. Nhập lại sẽ tạo hồ sơ mới, không ghi đè dữ liệu cũ.</p>
         <div class="form-group">
           <label for="backup-mode">Hành động</label>
           <select id="backup-mode">
@@ -737,6 +737,7 @@ run();
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="backup-cancel">Hủy</button>
+        <button class="btn btn-secondary" id="backup-preview">Xem trước tệp</button>
         <button class="btn btn-primary" id="backup-execute">Thực hiện</button>
       </div>
     </div>

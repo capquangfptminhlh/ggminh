@@ -226,6 +226,16 @@ function initIPC() {
     fs.writeFileSync(filePath, data, { mode: 0o600 });
     return { canceled: false, filePath };
   });
+  ipcMain.handle('preview-config-backup', async (_, passphrase) => {
+    const {canceled,filePaths}=await dialog.showOpenDialog(mainWindow,{
+      title:'Xem trước bản sao lưu được mã hóa (không nhập dữ liệu)',
+      properties:['openFile'],
+      filters:[{name:'LHM Encrypted Backup',extensions:['lhmbak']}]
+    });
+    if(canceled||!filePaths?.length)return {canceled:true};
+    if(fs.statSync(filePaths[0]).size>8*1024*1024)throw Error('Tệp sao lưu quá lớn');
+    return {canceled:false,...configBackup.inspect(fs.readFileSync(filePaths[0],'utf8'),passphrase)};
+  });
   ipcMain.handle('import-config-backup', async (_, passphrase) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
       title: 'Chọn bản sao lưu cấu hình LHM',
