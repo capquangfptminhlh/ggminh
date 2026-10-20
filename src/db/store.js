@@ -99,15 +99,22 @@ class Store {
     };
     if (existingIndex >= 0) this.data.profiles[existingIndex] = result;
     else this.data.profiles.push(result);
-    this.saveData();
+    try { this.saveData(); }
+    catch(error){
+      if(existingIndex >= 0) this.data.profiles[existingIndex] = old;
+      else this.data.profiles = this.data.profiles.filter(p=>p.id!==id);
+      throw error;
+    }
     return this.publicProfile(result);
   }
   deleteProfile(id) {
     assertId(id);
     const prev = this.data.profiles.length;
-    this.data.profiles = this.data.profiles.filter(p => p.id !== id);
+    const original = this.data.profiles;
+    this.data.profiles = original.filter(p => p.id !== id);
     if (prev === this.data.profiles.length) return false;
-    this.saveData();
+    try{this.saveData();}
+    catch(error){this.data.profiles=original;throw error;}
     const directory = path.join(this.baseDir, 'profiles', id);
     if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
     const geckoDirectory = path.join(this.baseDir, 'gecko-profiles', id);
@@ -116,8 +123,10 @@ class Store {
   }
   getSettings() { return { ...(this.data.settings || {}) }; }
   updateSettings(settings) {
-    this.data.settings = { ...this.data.settings, ...settings };
-    this.saveData();
+    const previous=this.data.settings;
+    this.data.settings = { ...previous, ...settings };
+    try{this.saveData();}
+    catch(error){this.data.settings=previous;throw error;}
     return this.getSettings();
   }
 }
