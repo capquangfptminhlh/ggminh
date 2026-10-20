@@ -481,3 +481,11 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Every click or form fill still requires the existing **approval** step in each profile (approval is never transferred to the next profile); **Dừng hàng đợi** cancels the active workflow and skips remaining items.
 - Execution uses the existing **Electron Automation Sandbox partition** for each profile ID, **not** a shared logged-in Chrome/Edge session. Cookie/login data is **not** transferred. This is safer and transparent but not full AdsPower RPA multi-profile parity.
 - A rolling bounded history of 60 batches is stored locally as `automation-batches.json`, with per-profile statuses and timestamps but no form values, cookies, credentials, URLs or screenshots. Batches interrupted by a crash are marked interrupted on restart and never automatically resumed.
+
+
+## v4.7 — Encrypted local session snapshots and restore
+- **Công cụ → Snapshots** creates/restores snapshots of the original browser **profile storage directory** on the same machine. You must close the profile and finish any Recorder/RPA batch first. The snapshot contains sensitive website session state, bookmarks and browser storage; **do not share**.
+- The archive is AES-256-GCM encrypted using a user-supplied passphrase (minimum 12 characters), PBKDF2-SHA256 with 220,000 iterations and fresh random salt/nonce. Files are never written as an unencrypted portable backup. The passphrase is not stored. Up to 10 snapshots/profile, 32 MB and 1,200 files/snapshot; large browser profiles require external backup solutions.
+- Excludes cache directories but includes actual profile state such as Cookies, Local Storage, IndexedDB and Login Data when present. No Web Store extension library or proxy key vault is copied by this feature.
+- Inspect requires the correct password; restoring requires a second **KHOI PHUC** confirmation. A staged directory swap and rollback protect against many filesystem errors. A sudden OS crash during the swap can still need manual recovery; do not replace regular external backups.
+- Snapshot contents are bound to the original profile ID and browser engine; cross-profile/cross-device import is not supported. Chrome password data may be OS-bound. Cloud snapshots and team sync remain unimplemented.

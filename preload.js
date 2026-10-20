@@ -55,6 +55,13 @@ contextBridge.exposeInMainWorld('api', {
   assignExtensionProfiles: (id,ids,enabled) => ipcRenderer.invoke('extension-assign',id,ids,enabled),
   removeInstalledExtension: id => ipcRenderer.invoke('extension-remove',id),
   getProfiles: () => ipcRenderer.invoke('get-profiles'),
+  listSessionSnapshots: id => ipcRenderer.invoke('session-snapshots-list',id),
+  createSessionSnapshot: (id,pass) => ipcRenderer.invoke('session-snapshots-create',id,pass),
+  inspectSessionSnapshot: (id,snapshotId,pass) => ipcRenderer.invoke('session-snapshots-inspect',id,snapshotId,pass),
+  restoreSessionSnapshot: (id,snapshotId,pass,confirmation) =>
+    ipcRenderer.invoke('session-snapshots-restore',id,snapshotId,pass,confirmation),
+  removeSessionSnapshot: (id,snapshotId,confirmation) =>
+    ipcRenderer.invoke('session-snapshots-remove',id,snapshotId,confirmation),
   aiAdvisorStatus: () => ipcRenderer.invoke('ai-advisor-status'),
   aiAdvisorConfigure: data => ipcRenderer.invoke('ai-advisor-configure',data),
   aiAdvisorForgetKey: () => ipcRenderer.invoke('ai-advisor-forget-key'),

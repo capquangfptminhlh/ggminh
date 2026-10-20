@@ -29,6 +29,7 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
 const cacheManager = require('./src/ops/cacheManager');
+const {SessionSnapshots} = require('./src/ops/sessionSnapshots');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const {ExtensionManager} = require('./src/extensions/manager');
 const {AIAdvisor} = require('./src/ai/advisor');
@@ -43,6 +44,7 @@ let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
 let batchAutomation = null;
+let sessionSnapshots = null;
 let localScheduler = null;
 let schedulerTimer = null;
 let recorderManager = null;
@@ -126,6 +128,15 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('session-snapshots-list', (_,id) => sessionSnapshots.list(id));
+  ipcMain.handle('session-snapshots-create', (_,id,passphrase) =>
+    sessionSnapshots.create(id,passphrase));
+  ipcMain.handle('session-snapshots-inspect', (_,id,snapshotId,passphrase) =>
+    sessionSnapshots.inspect(id,snapshotId,passphrase));
+  ipcMain.handle('session-snapshots-restore', (_,id,snapshotId,passphrase,confirmation) =>
+    sessionSnapshots.restore(id,snapshotId,passphrase,confirmation));
+  ipcMain.handle('session-snapshots-remove', (_,id,snapshotId,confirmation) =>
+    sessionSnapshots.remove(id,snapshotId,confirmation));
   ipcMain.handle('ai-advisor-status', () => aiAdvisor.status());
   ipcMain.handle('ai-advisor-configure', (_, value) => aiAdvisor.configure(value));
   ipcMain.handle('ai-advisor-forget-key', () => aiAdvisor.clear());
@@ -452,6 +463,11 @@ app.whenReady().then(async () => {
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
   batchAutomation = new BatchAutomation(storageDir, workflowStore, store, automationRunner);
+  sessionSnapshots = new SessionSnapshots(store,launcher,{inUse:id=>
+    (automationRunner.status().status==='running'&&automationRunner.status().profileId===id)||
+    (batchAutomation.status().active&&batchAutomation.status().batch?.tasks.some(t=>t.profileId===id))||
+    (recorderManager?.status().state==='recording'&&recorderManager.status().profileId===id)
+  });
   localScheduler = new LocalScheduler(storageDir, workflowStore, automationRunner);
   // In-app polling only, never a Windows background service.
   schedulerTimer = setInterval(() => {

@@ -757,3 +757,13 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .lhm-batch-result{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;background:white;border:1px solid #e0e7ef;border-radius:7px;color:#526581}
 .lhm-batch-result strong{font-size:11px}
 @media(max-width:600px){.lhm-batch-profiles{grid-template-columns:1fr}}
+
+
+/* v4.7 encrypted local session snapshots */
+.lhm-snapshot-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.lhm-snapshot-list{display:grid;gap:9px;max-height:265px;overflow:auto}
+.lhm-snapshot-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dce5ee;background:#f8fafc;border-radius:9px;padding:11px}
+.lhm-snapshot-entry p{font-size:11px;color:#526987;margin:2px 0}
+.lhm-snapshot-entry .buttons{display:flex;gap:6px;flex-wrap:wrap}
+#snapshots-status{color:#3f5e7e;font-size:12px;white-space:pre-wrap;line-height:1.6}
+#modal-session-snapshots .modal-body{max-height:70vh;overflow:auto}

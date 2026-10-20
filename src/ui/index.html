@@ -115,6 +115,7 @@
             <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
             <button type="button" class="btn btn-secondary" id="btn-api-copy" style="display:none">Sao chép API Key</button>
             <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
+            <button type="button" class="btn btn-secondary" id="btn-session-snapshots">Snapshots</button>
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
             <button type="button" class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
@@ -570,6 +571,31 @@
         </div>
       </div>
       <div class="modal-footer"><button class="btn btn-primary" type="button" id="ai-advisor-done">Đóng</button></div>
+    </div>
+  </div>
+
+  <!-- v4.7 encrypted local session snapshots, explicit confirmation before restore. -->
+  <div class="modal-overlay" id="modal-session-snapshots">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="session-snapshot-heading">
+      <div class="modal-header">
+        <h2 id="session-snapshot-heading">Snapshot phiên trình duyệt mã hóa</h2>
+        <button type="button" class="btn-close" id="snapshots-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Sao lưu và khôi phục dữ liệu phiên cục bộ từ profile đã đóng, tối đa 32 MB và 1.200 file mỗi snapshot. Snapshot chứa thông tin đăng nhập và cookie đã mã hóa bằng mật khẩu tự đặt; tuyệt đối không chia sẻ file hoặc mật khẩu. Không đồng bộ cloud.</p>
+        <div class="form-row">
+          <div class="form-group"><label for="snapshots-profile">Hồ sơ đã đóng</label><select id="snapshots-profile"></select></div>
+          <div class="form-group"><label for="snapshots-password">Mật khẩu snapshot (12+ ký tự)</label><input type="password" id="snapshots-password" autocomplete="new-password" placeholder="Bắt buộc cho tạo/xem trước/khôi phục"></div>
+        </div>
+        <div class="lhm-snapshot-actions">
+          <button type="button" class="btn btn-primary" id="snapshots-create">Tạo snapshot mã hóa</button>
+          <button type="button" class="btn btn-secondary" id="snapshots-refresh">Làm mới</button>
+        </div>
+        <div id="snapshots-list" class="lhm-snapshot-list"></div>
+        <p class="lhm-bulk-help">Khôi phục sẽ thay thế toàn bộ dữ liệu phiên hiện có của profile này, không thể hoàn tác nếu chưa sao lưu trước. Snapshot Chrome/Edge và Firefox dùng đúng profile gốc; mật khẩu trình duyệt có thể phụ thuộc hệ điều hành.</p>
+        <p id="snapshots-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" id="snapshots-done">Đóng</button></div>
     </div>
   </div>
 
@@ -1252,6 +1278,7 @@ run();
   <script src="toolMenu.js"></script>
   <script src="aiAdvisor.js"></script>
   <script src="cacheManager.js"></script>
+  <script src="sessionSnapshots.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="batchStudio.js"></script>
