@@ -371,3 +371,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Read-only preview validates every row with the same profile validation rules used by the actual import. Unknown columns (including cookies/passwords/OTP) are rejected, not silently accepted.
 - One database write commits the entire batch; if a validation or disk write fails, no profile is imported. No browser sessions, cookies, passwords, 2FA values or fingerprint spoofing data are imported.
 - Proxy host and port can be imported for HTTP/SOCKS5 without credentials. Assign authenticated proxies separately in Proxy Center. Network reachability and real Windows browser sessions must be tested on the target machine.
+
+
+## v3.5 — Transactional tag updates and combined profile filters
+- Manually update tags for 1–50 selected profiles: add, remove or replace (including clearing tags after confirmation). Tag validation and storage are all-or-nothing, with rollback if disk writes fail.
+- Combine filters by group, tag, Chromium/Gecko, direct/proxy, running/stopped and the normal search field.
+- Tag changes are bookkeeping-only and do not alter live browser sessions, cookies, fingerprints or proxy credentials.
+- The UI adds a dedicated modal for tag operations and keeps the 50-profile batch cap.

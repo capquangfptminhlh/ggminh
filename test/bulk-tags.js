@@ -1,0 +1,44 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),os=require('os'),path=require('path');
+const Store=require('../src/db/store');
+const {batchAssignTags}=require('../src/ops/operations');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-bulk-tags-'));
+try{
+  const store=new Store(root);
+  const p=store.saveProfile({name:'A',tags:['Keep','Remove']});
+  const q=store.saveProfile({name:'B',tags:['Keep']});
+  const r=store.saveProfile({name:'C',tags:[]});
+  const events=[],monitor={record:(...args)=>events.push(args)};
+  let updated=batchAssignTags(store,[p.id,q.id],['New','KEEP'],'add',monitor);
+  assert.strictEqual(updated.updated,2);
+  assert.deepStrictEqual(store.getProfile(p.id).tags,['Keep','Remove','New']);
+  assert.deepStrictEqual(store.getProfile(q.id).tags,['Keep','New']);
+  assert.deepStrictEqual(store.getProfile(r.id).tags,[]);
+  assert.strictEqual(events.length,2);
+  batchAssignTags(store,[p.id,q.id],['keep'],'remove');
+  assert.deepStrictEqual(store.getProfile(p.id).tags,['Remove','New']);
+  batchAssignTags(store,[p.id,q.id],[],'replace');
+  assert.deepStrictEqual(store.getProfile(p.id).tags,[]);
+  assert.deepStrictEqual(new Store(root).getProfile(p.id).tags,[]);
+  const baseline=store.getProfiles(),onDisk=fs.readFileSync(store.dbFile,'utf8');
+  assert.throws(()=>batchAssignTags(store,[p.id,'missing'],['bad'],'add'),/not exist/);
+  assert.throws(()=>batchAssignTags(store,[p.id],['bad'],'invalid'),/operation/);
+  assert.throws(()=>batchAssignTags(store,[p.id],['one','two','three','four','five','six','seven','eight','nine'],'add'),/8/);
+  batchAssignTags(store,[r.id],['1','2','3','4','5','6','7','8'],'replace');
+  const afterEight=store.getProfiles();
+  assert.throws(()=>batchAssignTags(store,[r.id],['9'],'add'),/8/);
+  assert.deepStrictEqual(store.getProfiles(),afterEight,'overflow fails all-or-nothing');
+  const save=store.saveData;store.saveData=()=>{throw Error('SYNTHETIC_DISK_FAILURE')};
+  assert.throws(()=>batchAssignTags(store,[p.id,q.id],['New'],'add'),/SYNTHETIC_DISK_FAILURE/);
+  assert.deepStrictEqual(store.getProfiles(),afterEight);
+  store.saveData=save;
+  const html=fs.readFileSync(path.join(__dirname,'../src/ui/index.html'),'utf8');
+  const js=fs.readFileSync(path.join(__dirname,'../src/ui/renderer.js'),'utf8');
+  const bulkUi=fs.readFileSync(path.join(__dirname,'../src/ui/bulkTags.js'),'utf8');
+  for(const id of ['selection-tags','modal-bulk-tags','filter-engine','filter-proxy'])
+    assert(html.includes('id="'+id+'"'));
+  assert(js.includes("filterEngine.addEventListener('change'"));
+  assert(js.includes("filterProxy.addEventListener('change'"));
+  assert(bulkUi.includes('window.api.controlTowerAssignTags('));
+  console.log('v3.5 bulk tag updates, combined filters, atomic rollback and UI passed');
+}finally{fs.rmSync(root,{recursive:true,force:true});}

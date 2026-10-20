@@ -21,6 +21,8 @@ const statActive = document.getElementById('stat-active');
 const searchInput = document.getElementById('search-input');
 const filterGroup = document.getElementById('filter-group');
 const filterTag = document.getElementById('filter-tag');
+const filterEngine = document.getElementById('filter-engine');
+const filterProxy = document.getElementById('filter-proxy');
 const filterStatus = document.getElementById('filter-status');
 const btnRefresh = document.getElementById('btn-refresh');
 
@@ -352,6 +354,8 @@ function setupEventListeners() {
   searchInput.addEventListener('input', renderProfiles);
   filterGroup.addEventListener('change', renderProfiles);
   filterTag.addEventListener('change', renderProfiles);
+  filterEngine.addEventListener('change', renderProfiles);
+  filterProxy.addEventListener('change', renderProfiles);
   filterStatus.addEventListener('change', renderProfiles);
   btnRefresh.addEventListener('click', loadProfiles);
 }
@@ -502,6 +506,8 @@ function renderProfiles() {
   const query = searchInput.value.toLowerCase().trim();
   const selectedGroup = filterGroup.value;
   const selectedTag = filterTag.value;
+  const selectedEngine = filterEngine.value;
+  const selectedProxy = filterProxy.value;
   const selectedStatus = filterStatus.value;
 
   const filtered = allProfiles.filter(p => {
@@ -518,7 +524,12 @@ function renderProfiles() {
       (selectedStatus === 'running' && isRunning) ||
       (selectedStatus === 'stopped' && !isRunning);
 
-    return matchQuery && matchGroup && matchStatus &&
+    const matchEngine = selectedEngine === 'all' ||
+      (p.engine || 'chromium') === selectedEngine;
+    const matchProxy = selectedProxy === 'all' ||
+      (selectedProxy === 'direct' && (!p.proxy || p.proxy.type === 'direct')) ||
+      (selectedProxy === 'proxy' && p.proxy?.type !== 'direct' && !!p.proxy?.type);
+    return matchQuery && matchGroup && matchStatus && matchEngine && matchProxy &&
       (selectedTag === 'all' || (p.tags || []).includes(selectedTag));
   });
 

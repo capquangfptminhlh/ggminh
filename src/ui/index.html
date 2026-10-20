@@ -208,6 +208,16 @@
         <select id="filter-tag" aria-label="Lọc theo tag">
           <option value="all">Tất cả Tag</option>
         </select>
+        <select id="filter-engine" aria-label="Lọc engine">
+          <option value="all">Mọi trình duyệt</option>
+          <option value="chromium">Chrome / Edge</option>
+          <option value="gecko">Firefox / Gecko</option>
+        </select>
+        <select id="filter-proxy" aria-label="Lọc theo mạng">
+          <option value="all">Mọi kết nối</option>
+          <option value="direct">Mạng trực tiếp</option>
+          <option value="proxy">Có proxy</option>
+        </select>
         <select id="filter-status">
           <option value="all">Tất cả Trạng thái</option>
           <option value="running">Đang chạy</option>
@@ -224,6 +234,7 @@
       <div class="selection-actions">
         <button class="btn btn-sm btn-primary" id="selection-open">Mở đã chọn (tối đa 10)</button>
         <button class="btn btn-sm btn-secondary" id="selection-group">Chuyển nhóm</button>
+        <button class="btn btn-sm btn-secondary" id="selection-tags">Gắn Tag</button>
         <button class="btn btn-sm btn-secondary" id="selection-duplicate">Nhân bản mẫu</button>
         <button class="btn btn-sm btn-secondary" id="selection-health">Kiểm tra</button>
         <button class="btn btn-sm btn-secondary" id="selection-export">Xuất CSV</button>
@@ -307,6 +318,36 @@
         <button type="button" class="btn btn-secondary" id="profile-import-cancel">Đóng</button>
         <button type="button" class="btn btn-secondary" id="profile-import-preview">Kiểm tra &amp; xem trước</button>
         <button type="button" class="btn btn-primary" id="profile-import-commit" disabled>Nhập hồ sơ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-bulk-tags">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bulk-tags-title">
+      <div class="modal-header">
+        <h2 id="bulk-tags-title">Tag cho các hồ sơ đã chọn</h2>
+        <button type="button" class="btn-close" id="bulk-tags-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help" id="bulk-tags-count">Chưa chọn hồ sơ</p>
+        <div class="form-group">
+          <label for="bulk-tags-mode">Cách cập nhật</label>
+          <select id="bulk-tags-mode">
+            <option value="add">Thêm tag (giữ tag cũ)</option>
+            <option value="remove">Bỏ những tag đã nhập</option>
+            <option value="replace">Thay tất cả tag hiện tại</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bulk-tags-input">Tag cách nhau bằng dấu phẩy (tối đa 8)</label>
+          <input type="text" id="bulk-tags-input" placeholder="Khách hàng A, Google Ads">
+        </div>
+        <p class="lhm-bulk-help">Chỉ thay đổi nhãn phân loại; không tác động vào phiên đăng nhập, proxy hoặc dữ liệu trình duyệt.</p>
+        <p id="bulk-tags-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="bulk-tags-cancel">Hủy</button>
+        <button type="button" class="btn btn-primary" id="bulk-tags-save">Áp dụng</button>
       </div>
     </div>
   </div>
@@ -959,6 +1000,7 @@ run();
   <script src="icons.js"></script>
   <script src="renderer.js"></script>
   <script src="profileImport.js"></script>
+  <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>
   <script src="controlTower.js"></script>

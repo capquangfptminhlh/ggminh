@@ -1,4 +1,5 @@
 const { checkProfile } = require('../health/profileHealth');
+const { cleanTags } = require('../db/store');
 
 function uniqueIds(ids) {
   if (!Array.isArray(ids) || ids.length < 1 || ids.length > 50) {
@@ -123,6 +124,48 @@ function batchAssignGroup(store,launcher,ids,group,monitor) {
   return {updated:selected.length,group:name};
 }
 
+/**
+ * Transactional tag changes. Tags are local bookkeeping only; browser
+ * processes, proxy credentials, cookies and identities remain unchanged.
+ * All selected IDs and final tag sets are validated before one disk write.
+ */
+function batchAssignTags(store,ids,inputTags,mode,monitor){
+  const selected=uniqueIds(ids);
+  if(!['add','remove','replace'].includes(mode))throw Error('Invalid tag operation');
+  const tags=cleanTags(inputTags);
+  if(mode!=='replace' && !tags.length)throw Error('At least one tag is required');
+  const existing=new Map(store.getProfiles().map(p=>[p.id,p]));
+  for(const id of selected)
+    if(!existing.has(id))throw Error('Profile does not exist: '+id);
+  const next=structuredClone(store.data);
+  const idsSet=new Set(selected);
+  const keys=new Set(tags.map(tag=>tag.toLocaleLowerCase('vi-VN')));
+  for(const profile of next.profiles){
+    if(!idsSet.has(profile.id))continue;
+    const current=cleanTags(profile.tags||[]);
+    let updated;
+    if(mode==='replace')updated=tags;
+    else if(mode==='remove')
+      updated=current.filter(tag=>!keys.has(tag.toLocaleLowerCase('vi-VN')));
+    else {
+      updated=current.slice();
+      const has=new Set(current.map(t=>t.toLocaleLowerCase('vi-VN')));
+      for(const tag of tags) {
+        if(!has.has(tag.toLocaleLowerCase('vi-VN')))updated.push(tag);
+        has.add(tag.toLocaleLowerCase('vi-VN'));
+      }
+    }
+    profile.tags=cleanTags(updated);
+    profile.updatedAt=new Date().toISOString();
+  }
+  const previous=store.data;
+  store.data=next;
+  try{store.saveData();}
+  catch(error){store.data=previous;throw error;}
+  for(const id of selected)monitor?.record('profile_save',id,'manual');
+  return {updated:selected.length,mode};
+}
+
 function overview(profiles, active, healthReports, behaviorReport) {
   const activeIds = new Set(active.map(a => a.profileId));
   const health = new Map(healthReports.map(item => [item.profileId, item]));
@@ -177,4 +220,4 @@ function exportCsv(profiles, reports, active) {
   }
   return '\uFEFF' + rows.map(row => row.map(safeCsvCell).join(',')).join('\r\n') + '\r\n';
 }
-module.exports = { uniqueIds, duplicateTemplate, batchStop, batchOpen, batchAssignGroup, overview, safeCsvCell, exportCsv };
+module.exports = { uniqueIds, duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, safeCsvCell, exportCsv };

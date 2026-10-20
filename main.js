@@ -25,7 +25,7 @@ const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const ProxyCenter = require('./src/proxies/proxyCenter');
-const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
+const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
 let mainWindow = null;
@@ -168,6 +168,8 @@ function initIPC() {
   ipcMain.handle('control-tower-open', (_, ids) => batchOpen(store,launcher,ids,behaviorMonitor));
   ipcMain.handle('control-tower-assign-group', (_, ids, group) =>
     batchAssignGroup(store,launcher,ids,group,behaviorMonitor));
+  ipcMain.handle('control-tower-assign-tags', (_, ids, tags, mode) =>
+    batchAssignTags(store,ids,tags,mode,behaviorMonitor));
   ipcMain.handle('control-tower-stop', (_, ids) => {
     const selected = uniqueIds(ids);
     const status = automationRunner.status();
