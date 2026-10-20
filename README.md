@@ -584,3 +584,23 @@ node tools/license-admin.js allow  /secure/lhm-customers.json /secure/revocation
 The \`due\` command skips superseded license IDs. The revocation registry is authoritative for the online authority, whereas the ledger stores an audit copy. These are two separate files: keep reliable backups and reconcile manually if a crash occurs between updating them.
 
 **Not implemented:** hosted customer admin website, production payment gateway, automated bank/payment reconciliation, multi-user operator RBAC, customer self-service portal, strong audit immutability, and SaaS-grade key management.
+
+
+### v5.4 private HTML dashboard
+
+The administrator can generate a portable, **offline, read-only** overview
+of license customers, expiry dates, renewal alerts and revocation flags:
+
+\`\`\`bash
+node tools/license-dashboard.js /secure/lhm-customers.json /secure/customer-report.html 14
+\`\`\`
+
+Open \`customer-report.html\` locally. It has no JavaScript, external styles,
+remote resources, network calls, or licensing administration buttons.
+The report renders customer names as escaped text and never includes activation
+tokens or issuer private keys. The output is a sensitive operator document;
+protect and delete it appropriately and never upload it publicly. The
+generator refuses to overwrite an existing HTML output file.
+
+This is **not** a public customer portal, cloud dashboard or a substitute
+for server-side authenticated role-based access and audit-backed billing.
