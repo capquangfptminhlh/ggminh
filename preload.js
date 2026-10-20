@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('api', {
   controlTowerSnapshot: () => ipcRenderer.invoke('control-tower-snapshot'),
   controlTowerDuplicate: id => ipcRenderer.invoke('control-tower-duplicate', id),
   controlTowerStop: ids => ipcRenderer.invoke('control-tower-stop', ids),
+  controlTowerOpen: ids => ipcRenderer.invoke('control-tower-open',ids),
+  controlTowerAssignGroup: (ids,group) => ipcRenderer.invoke('control-tower-assign-group',ids,group),
   controlTowerExport: ids => ipcRenderer.invoke('control-tower-export', ids),
   auditProfileIsolation: () => ipcRenderer.invoke('audit-profile-isolation'),
   inspectFingerprint: value => ipcRenderer.invoke('inspect-fingerprint', value),

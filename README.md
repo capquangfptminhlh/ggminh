@@ -329,3 +329,9 @@ Health Center can export a small JSON technical report with software version, pl
 
 ### Restored-profile network safety
 Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `requiresProxySetup` after backup import. Launching them fails closed until a new proxy is explicitly assigned from Proxy Center. The requirement is visible in Health Center. Normal profile edits do not silently clear the requirement.
+
+
+## v3.0 — Operational bulk actions
+- Selected-profile toolbar launches up to 10 browser sessions per manual action, throttled to two concurrent startup tasks, reporting errors for each profile without blocking the remaining profiles.
+- Atomic group assignment changes metadata for 1–50 closed profiles in a single database write; no cookies, fingerprints or credentials are changed.
+- The feature does not automate Google Ads interactions or background-schedule launches. It reports per-profile results and requires manual confirmation.

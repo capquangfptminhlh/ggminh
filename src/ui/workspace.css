@@ -614,3 +614,9 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .health-readiness-row[data-status="planned"] .health-readiness-tag{background:#f0f3f6;color:#8d99a6}
 .health-readiness-detail{color:#8a9aab;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
 @media(max-width:680px){.health-readiness-items{grid-template-columns:1fr}}
+
+/* 3.0: Compact batch management actions in the existing selection toolbar */
+.selection-toolbar .selection-actions{display:flex;flex-wrap:wrap;gap:7px}
+#selection-open{background:#27b0d5!important;border-color:#27b0d5!important}
+#selection-group{background:#fff!important;border-color:#dce7ec!important;color:#486377!important}
+@media(max-width:1150px){.selection-toolbar .selection-actions .btn{font-size:10px;padding:7px 9px}}

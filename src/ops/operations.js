@@ -54,6 +54,73 @@ function batchStop(store, launcher, ids, monitor) {
   };
 }
 
+/**
+ * Bounded manual launch. One failed profile must not prevent others.
+ * Prevalidates IDs and caps concurrent child browser startups at two.
+ * No background scheduling or hidden website actions.
+ */
+async function batchOpen(store,launcher,ids,monitor,{concurrency=2}={}) {
+  const selected=uniqueIds(ids);
+  if(selected.length>10)throw Error('Chỉ mở tối đa 10 hồ sơ mỗi lượt để bảo vệ tài nguyên máy');
+  const limit=Math.min(2,Math.max(1,Math.floor(Number(concurrency)||1)));
+  const results=new Array(selected.length);
+  let cursor=0;
+  const work=async()=>{
+    while(cursor<selected.length){
+      const index=cursor++;
+      const id=selected[index];
+      if(!store.getProfile(id)){
+        results[index]={id,status:'missing'};continue;
+      }
+      if(launcher.isBusy(id)){
+        results[index]={id,status:'already_running'};continue;
+      }
+      try {
+        const opened=await launcher.start(id);
+        if(opened.alreadyRunning)results[index]={id,status:'already_running'};
+        else{
+          monitor?.record('profile_open',id,'manual');
+          results[index]={id,status:'opened'};
+        }
+      }catch(error) {
+        results[index]={id,status:'error',message:String(error.message||'Không thể mở hồ sơ').slice(0,160)};
+      }
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(limit,selected.length)},()=>work()));
+  return {requested:selected.length,opened:results.filter(r=>r.status==='opened').length,
+    failed:results.filter(r=>r.status==='error').length,results};
+}
+
+/**
+ * Atomic group name updates in the local JSON database. Does not change
+ * sessions, proxy assignments, or fingerprints.
+ */
+function batchAssignGroup(store,launcher,ids,group,monitor) {
+  const selected=uniqueIds(ids);
+  if(typeof group!=='string'||!group.trim()||group.trim().length>100||
+      /[\u0000-\u001f]/.test(group))
+    throw Error('Tên nhóm phải có 1–100 ký tự hợp lệ');
+  const name=group.trim();
+  for(const id of selected){
+    if(!store.getProfile(id))throw Error('Hồ sơ không tồn tại: '+id);
+    if(launcher.isBusy(id))throw Error('Hãy đóng hồ sơ trước khi chuyển nhóm: '+id);
+  }
+  const oldData=store.data;
+  const updated=structuredClone(oldData);
+  for(const item of updated.profiles){
+    if(selected.includes(item.id)){
+      item.group=name;
+      item.updatedAt=new Date().toISOString();
+    }
+  }
+  store.data=updated;
+  try{store.saveData();}
+  catch(error){store.data=oldData;throw error;}
+  for(const id of selected)monitor?.record('profile_save',id,'manual');
+  return {updated:selected.length,group:name};
+}
+
 function overview(profiles, active, healthReports, behaviorReport) {
   const activeIds = new Set(active.map(a => a.profileId));
   const health = new Map(healthReports.map(item => [item.profileId, item]));
@@ -108,4 +175,4 @@ function exportCsv(profiles, reports, active) {
   }
   return '\uFEFF' + rows.map(row => row.map(safeCsvCell).join(',')).join('\r\n') + '\r\n';
 }
-module.exports = { uniqueIds, duplicateTemplate, batchStop, overview, safeCsvCell, exportCsv };
+module.exports = { uniqueIds, duplicateTemplate, batchStop, batchOpen, batchAssignGroup, overview, safeCsvCell, exportCsv };

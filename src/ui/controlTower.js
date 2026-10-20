@@ -23,6 +23,8 @@
     byId('selected-count').textContent = String(ids.length);
     byId('selection-duplicate').disabled = ids.length !== 1;
     byId('selection-stop').disabled = ids.length === 0;
+    byId('selection-open').disabled = ids.length === 0 || ids.length > 10;
+    byId('selection-group').disabled = ids.length === 0;
     byId('selection-export').disabled = ids.length === 0;
   }
   function status(message, error = false) {
@@ -126,6 +128,37 @@
       alert('Đã tạo hồ sơ mới: ' + cloned.name + '\nID: ' + cloned.id + '\nHồ sơ chưa có phiên đăng nhập.');
     } catch (error) { alert('Không thể nhân bản: ' + error.message); }
   }
+  async function openSelected() {
+    const ids=selected();
+    if(!ids.length || ids.length>10)return alert('Chọn tối đa 10 hồ sơ.');
+    if(!confirm('Mở '+ids.length+' hồ sơ? LHM khởi động đồng thời tối đa 2 cửa sổ và không tự thao tác trên website.'))return;
+    const button=byId('selection-open');
+    button.disabled=true;
+    try {
+      const report=await api.controlTowerOpen(ids);
+      await refreshProfiles();
+      const errors=report.results.filter(x=>x.status==='error').slice(0,5)
+        .map(x=>x.id+': '+x.message).join('\n');
+      alert('Đã mở '+report.opened+'/'+report.requested+' hồ sơ.'+
+        (report.failed?'\nLỗi '+report.failed+':\n'+errors:''));
+    }catch(error){alert('Lỗi mở hồ sơ: '+error.message);}
+    finally{updateSelection();}
+  }
+  async function groupSelected() {
+    const ids=selected();
+    if(!ids.length)return;
+    const group=prompt('Tên nhóm mới cho '+ids.length+' hồ sơ (tối đa 100 ký tự):');
+    if(group===null)return;
+    if(!group.trim())return alert('Tên nhóm không được bỏ trống.');
+    if(!confirm('Chuyển '+ids.length+' hồ sơ sang nhóm "'+group.trim()+'"?'))return;
+    const button=byId('selection-group');button.disabled=true;
+    try {
+      const result=await api.controlTowerAssignGroup(ids,group);
+      await refreshProfiles();
+      alert('Đã chuyển '+result.updated+' hồ sơ sang nhóm '+result.group+'.');
+    }catch(error){alert('Không thể chuyển nhóm: '+error.message);}
+    finally{updateSelection();}
+  }
   async function stopSelected() {
     const ids = selected();
     if (!ids.length) return;
@@ -167,6 +200,8 @@
     byId('selection-clear').addEventListener('click', () => window.LHMProfileSelection.clear());
     byId('selection-duplicate').addEventListener('click', cloneSelected);
     byId('selection-stop').addEventListener('click', stopSelected);
+    byId('selection-open').addEventListener('click',openSelected);
+    byId('selection-group').addEventListener('click',groupSelected);
     byId('selection-export').addEventListener('click', () => exportProfiles(selected()));
     byId('selection-health').addEventListener('click', showSelectedHealth);
     setInterval(() => {
