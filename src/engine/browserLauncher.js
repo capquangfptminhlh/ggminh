@@ -146,28 +146,33 @@ class BrowserLauncher {
       stdio: 'ignore'
     });
 
-    await new Promise((resolve, reject) => {
-      proc.once('spawn', resolve);
-      proc.once('error', reject);
+    // Attach lifecycle handlers before awaiting spawn. A process can exit
+    // between its spawn event and the continuation of an async function.
+    let exited=false, spawned=false, settleStart=null;
+    const onExited=(code)=>{
+      if(exited)return;
+      exited=true;
+      console.log('[BrowserLauncher] Profile exited (code '+code+')');
+      const current=this.activeProcesses.get(profile.id);
+      if(current?.process===proc)this.activeProcesses.delete(profile.id);
+      if(gateway)gateway.close().catch(()=>{});
+      if(!spawned&&settleStart)settleStart(Error('Trình duyệt thoát trước khi khởi động hoàn tất'));
+    };
+    proc.once('exit',onExited);
+    proc.on('error',error=>{
+      if(!exited)onExited(null);
+      if(!spawned&&settleStart)settleStart(error);
     });
+    await new Promise((resolve,reject)=>{
+      settleStart=error=>error?reject(error):resolve();
+      proc.once('spawn',()=>{spawned=true;resolve();});
+    });
+    if(exited)throw Error('Trình duyệt đã thoát ngay sau khi khởi động. Kiểm tra engine hoặc cấu hình hồ sơ.');
 
     const instanceInfo = {
-      profileId: profile.id,
-      engine,
-      name: profile.name,
-      port,
-      pid: proc.pid,
-      startedAt: new Date().toISOString(),
-      wsEndpoint: null
+      profileId: profile.id, engine, name: profile.name,
+      port, pid: proc.pid, startedAt: new Date().toISOString(), wsEndpoint: null
     };
-
-    proc.on('exit', (code) => {
-      console.log(`[BrowserLauncher] Profile ${profile.name} exited with code ${code}`);
-      const current = this.activeProcesses.get(profile.id);
-      if (current?.process === proc) this.activeProcesses.delete(profile.id);
-      if (gateway)gateway.close().catch(()=>{});
-    });
-
     this.activeProcesses.set(profile.id, { process: proc, stopping: false, ...instanceInfo });
 
     // Background fetch ws endpoint for RPA
