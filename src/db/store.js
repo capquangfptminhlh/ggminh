@@ -71,6 +71,8 @@ class Store {
     if (existingIndex < 0 && ((this.data.trash || []).some(t => t.profile?.id === id) ||
         (this.data.cleanupQueue || []).includes(id)))
       throw Error('Profile ID is reserved in trash or pending cleanup');
+    if(existingIndex<0 && this.licensePolicy && arguments[1]?.recovery!==true)
+      this.licensePolicy.assertCapacity(this.data.profiles.length,1);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
     if (typeof incomingProxy !== 'object' || Array.isArray(incomingProxy)) throw new Error('Invalid proxy configuration');
@@ -146,6 +148,7 @@ class Store {
         /[\u0000-\u001f]/.test(prefix)) throw Error('Invalid profile name prefix');
     if (typeof group !== 'string' || !group.trim() || group.trim().length > 100 ||
         /[\u0000-\u001f]/.test(group)) throw Error('Invalid group');
+    this.licensePolicy?.assertCapacity(this.data.profiles.length,count);
     const engine = options.engine || 'chromium';
     if (!['chromium','gecko'].includes(engine)) throw Error('Invalid browser engine');
     const urls = safeWebUrls(options.startUrls ?? ['https://ads.google.com/']);

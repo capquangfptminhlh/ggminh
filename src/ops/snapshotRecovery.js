@@ -33,7 +33,7 @@ function recoverProfile(manager,source,password,name,confirmation){
    id,name:name.trim(),engine,group:'Recovered',startUrls:['https://example.com/'],
    proxy:{type:'direct'},fingerprint:{mode:'native'},
    notes:'Recovered from encrypted session snapshot; review proxy, settings and login state.'
-  });
+  },{recovery:true});
   created=true;
   const result=importEncrypted(manager,id,input.filename,password);
   imported=true;

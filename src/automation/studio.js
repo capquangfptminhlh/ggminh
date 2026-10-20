@@ -129,6 +129,7 @@ class AutomationRunner {
     if(this.task)throw Error('Đã có quy trình đang chạy');
     if(this.batchOwner&&options.owner!==this.batchOwner)
       throw Error('Hàng đợi RPA đang sử dụng Automation Studio');
+    this.licensePolicy?.require('automation');
     const saved=this.workflows.get(id);
     if(!saved)throw Error('Quy trình không tồn tại');
     const chosen=options.profileId||saved.profileId;

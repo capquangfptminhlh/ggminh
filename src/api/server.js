@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { checkProxy } = require('../engine/proxyChecker');
 
-function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null } = {}) {
+function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null, licensePolicy=null } = {}) {
   const service = express();
   service.disable('x-powered-by');
   service.use(express.json({ limit: '64kb' }));
@@ -19,6 +19,10 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null 
     const expected = Buffer.from(apiKey, 'utf8');
     if (!apiKey || provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
       return res.status(401).json({ code: -1, msg: 'Unauthorized' });
+    }
+    if(licensePolicy){
+      try{licensePolicy.require('api');}
+      catch(error){return res.status(403).json({code:-1,msg:error.message});}
     }
     next();
   });

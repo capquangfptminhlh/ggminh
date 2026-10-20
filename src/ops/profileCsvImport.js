@@ -128,6 +128,7 @@ function inspectProfilesCsv(store,csv){
 }
 function importProfilesCsv(store,csv){
   const prepared=prepareImport(store,csv);
+  store.licensePolicy?.assertCapacity(store.getProfiles().length,prepared.created.length);
   const previous=store.data;
   store.data=prepared.preview.data;
   try{store.saveData();}

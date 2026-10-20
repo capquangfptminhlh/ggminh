@@ -89,6 +89,7 @@ class BrowserLauncher {
       };
     }
 
+    this.licensePolicy?.require('profiles');
     const profile = this.store.getProfile(profileId);
     if (!profile) {
       throw new Error(`Profile not found: ${profileId}`);
