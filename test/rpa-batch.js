@@ -34,7 +34,7 @@ async function settled(batch){
   assert.throws(()=>batch.preview(item.id,[a.id],'skip'),/stop or continue/);
   batch.start(item.id,[a.id,b.id],'continue');
   assert(batch.status().active);
-  assert.throws(()=>runner.run(item.id),/bận|hàng đợi/i);
+  assert.throws(()=>runner.run(item.id),/bận|hàng đợi|đang chạy/i);
   assert.throws(()=>batch.start(item.id,[a.id]),/hàng đợi/);
   await settled(batch);
   assert.deepStrictEqual(opened,[a.id,b.id]);
