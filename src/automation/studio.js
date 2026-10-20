@@ -120,14 +120,21 @@ const NAMES={navigate:'Mở trang',wait:'Chờ',wait_for:'Chờ phần tử',cli
 class AutomationRunner {
   constructor(workflows, profiles, createBrowser) {
     this.workflows=workflows;this.profiles=profiles;this.createBrowser=createBrowser;
-    this.task=null;this.state={status:'idle',step:-1,logs:[],needsApproval:false};
+    this.task=null;this.batchOwner=null;this.completion=Promise.resolve();
+    this.state={status:'idle',step:-1,logs:[],needsApproval:false};
   }
   status(){return structuredClone(this.state);}
   log(message){this.state.logs.push({time:new Date().toISOString(),message});if(this.state.logs.length>80)this.state.logs.shift();}
-  run(id) {
+  run(id,options={}) {
     if(this.task)throw Error('Đã có quy trình đang chạy');
-    const flow=this.workflows.get(id);
-    if(!flow)throw Error('Quy trình không tồn tại');
+    if(this.batchOwner&&options.owner!==this.batchOwner)
+      throw Error('Hàng đợi RPA đang sử dụng Automation Studio');
+    const saved=this.workflows.get(id);
+    if(!saved)throw Error('Quy trình không tồn tại');
+    const chosen=options.profileId||saved.profileId;
+    if(typeof chosen!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(chosen))
+      throw Error('Profile ID không hợp lệ');
+    const flow={...saved,profileId:chosen};
     const profile=this.profiles.getProfile(flow.profileId);
     if(!profile)throw Error('Hồ sơ đã bị xóa');
     if(profile.engine==='gecko')throw Error('Studio hiện chưa hỗ trợ Gecko; hãy chọn hồ sơ Chromium');
@@ -136,9 +143,12 @@ class AutomationRunner {
     this.task=task;
     this.state={status:'running',workflowId:id,workflowName:flow.name,profileId:flow.profileId,step:-1,total:flow.steps.length,needsApproval:false,logs:[]};
     this.log('Bắt đầu: '+flow.name);
-    this.execute(flow,task).then(
+    // Always resolve completion *after* releasing task, so a sequential
+    // queue cannot overlap two separate profile executions.
+    this.completion=this.execute(flow,task).then(
       ()=>{this.state.status='completed';this.log('Hoàn thành');},
-      error=>{this.state.status=controller.signal.aborted?'stopped':'failed';this.log('Kết thúc: '+error.message);}
+      error=>{this.state.status=controller.signal.aborted?'stopped':'failed';
+        this.log('Kết thúc: '+error.message);}
     ).finally(()=>{this.state.needsApproval=false;this.task=null;});
     return this.status();
   }
