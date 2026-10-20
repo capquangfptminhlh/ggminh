@@ -108,6 +108,7 @@ contextBridge.exposeInMainWorld('api', {
   cloudTeamMembers: options => ipcRenderer.invoke('cloud-team-members',options),
   cloudTeamInvite: (options,invite) => ipcRenderer.invoke('cloud-team-invite',options,invite),
   cloudTeamRevoke: (options,memberId) => ipcRenderer.invoke('cloud-team-revoke',options,memberId),
+  cloudTeamRedeem: (options,token) => ipcRenderer.invoke('cloud-team-redeem',options,token),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   getSettings: () => ipcRenderer.invoke('get-settings'),
