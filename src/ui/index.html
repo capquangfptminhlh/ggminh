@@ -1133,6 +1133,15 @@ run();
             <button type="button" class="btn btn-sm btn-secondary" id="health-check-engines">Kiểm tra Chrome / Edge / Firefox</button>
           </div>
           <div id="health-engines-results" role="status" class="engine-diagnostics-results">Bấm kiểm tra để đọc phiên bản trình duyệt đang cài trên máy.</div>
+          <div class="lhm-runtime-manager">
+            <p class="health-footnote">Ghim engine cài trên máy bằng SHA-256, kiểm tra lại mỗi lần mở. Sau khi Chrome/Firefox cập nhật, hãy xác nhận và ghim lại phiên bản. Đây là kiểm tra toàn vẹn file, <strong>không thay thế chữ ký xác thực nhà phát hành</strong>.</p>
+            <div class="lhm-batch-actions">
+              <button type="button" class="btn btn-sm btn-secondary" id="runtime-register-chromium">Ghim Chrome / Edge</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="runtime-register-gecko">Ghim Firefox</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="runtime-check">Kiểm tra SHA-256</button>
+            </div>
+            <div id="runtime-status" class="engine-diagnostics-results" role="status">Chưa kiểm tra engine được ghim.</div>
+          </div>
           <p class="health-footnote">Kiểm tra chỉ dùng lệnh --version với chương trình tìm được, không mở website hoặc đăng nhập tài khoản.</p>
         </section>
         <div class="isolation-audit">

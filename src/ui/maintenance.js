@@ -134,6 +134,42 @@
       container.replaceChildren(labeled('health-issue error','Không kiểm tra được: ' + error.message));
     }
   }
+  async function refreshPinnedRuntimes(){
+    const container=el('runtime-status');
+    container.replaceChildren(labeled('health-issue','Đang kiểm tra dấu SHA-256...'));
+    try{
+      const states=await api.getPinnedBrowserRuntimes();
+      container.replaceChildren();
+      for(const [engine,label] of [['chromium','Chrome / Edge'],['gecko','Firefox']]){
+        const row=document.createElement('div');row.className='engine-diagnostics-line';
+        const status=states[engine];
+        row.append(labeled('engine-diagnostics-name',label+' · '+
+          (!status.configured?'Chưa ghim':status.valid?'Đúng bản đã ghim':'Cần kiểm tra')));
+        row.append(labeled('health-issue',!status.configured
+          ?'Dùng trình duyệt cài trên máy theo cấu hình hiện tại'
+          :(status.name+' · SHA-256 '+(status.sha256?.slice(0,16)||'chưa đọc được')+'… · '+status.message)));
+        if(status.configured){
+          const remove=document.createElement('button');remove.type='button';
+          remove.className='btn btn-sm btn-secondary';remove.textContent='Bỏ ghim';
+          remove.addEventListener('click',async()=>{
+            if(!confirm('Bỏ kiểm tra SHA-256 cho '+label+'? Sau đó dùng engine mặc định trên máy.'))return;
+            try{await api.clearPinnedBrowserRuntime(engine);await refreshPinnedRuntimes();}
+            catch(error){container.prepend(labeled('health-issue error',error.message));}
+          });row.append(remove);
+        }
+        container.append(row);
+      }
+    }catch(error){container.replaceChildren(labeled('health-issue error','Không thể kiểm tra: '+error.message));}
+  }
+  async function registerPinned(engine){
+    const button=el('runtime-register-'+engine);
+    button.disabled=true;
+    try{
+      const result=await api.registerPinnedBrowserRuntime(engine);
+      if(!result.canceled)await refreshPinnedRuntimes();
+    }catch(error){el('runtime-status').prepend(labeled('health-issue error',error.message));}
+    finally{button.disabled=false;}
+  }
   function showBackup() {
     el('backup-password').value = '';
     el('backup-result').textContent = '';
@@ -168,6 +204,9 @@
     el('health-refresh').addEventListener('click', () => updateHealth().catch(console.error));
     el('health-isolation-audit').addEventListener('click', auditIsolation);
     el('health-check-engines').addEventListener('click', checkEngines);
+    el('runtime-check').addEventListener('click',refreshPinnedRuntimes);
+    el('runtime-register-chromium').addEventListener('click',()=>registerPinned('chromium'));
+    el('runtime-register-gecko').addEventListener('click',()=>registerPinned('gecko'));
     el('health-readiness-refresh').addEventListener('click',updateReadiness);
     el('health-support-export').addEventListener('click',async()=>{
       const button=el('health-support-export');

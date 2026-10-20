@@ -3,7 +3,7 @@
     "id": "profile-engine",
     "name": "Isolated profile browser cores",
     "state": "partial",
-    "evidence": "Distinct Chromium/Gecko profile directories; Chrome/Firefox external engines",
+    "evidence": "Distinct Chromium/Gecko profile directories; Chrome/Firefox external engines; optional per-engine SHA-256 pinning for installed official Chrome/Edge/Firefox binaries with checksum validation at each launch",
     "gaps": "No maintained native Chromium/Firefox fork or reliable per-profile OS/kernel emulation",
     "acceptance": "Verified engine-level isolation on actual Windows Chrome, Edge and Firefox"
   },
