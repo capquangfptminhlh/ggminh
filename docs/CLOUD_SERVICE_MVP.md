@@ -104,11 +104,13 @@ malware, screenshots and clipboard hygiene as separate operational risks.
   mode are unsupported. Use a transactional database before scaling.
 - No external identity provider, user self-registration, passkeys or MFA.
   Personal tokens are manually provisioned by a trusted administrator.
+- Invitation creation, member listing, revocation and redemption now have
+  manual Electron controls. Identity provisioning is still administrator-only.
 - No automatic mail delivery, passphrase recovery, key rotation, device
   lifecycle registry or multi-device encrypted key exchange.
 - No hosted public service has been deployed. Connected Supabase was
   INACTIVE when previously checked; this code does not reactivate it.
-- Invitations and audit do not yet offer a complete UI. Team endpoints
+- Audits and advanced invitation administration do not yet offer a complete UI. Team endpoints
   are for service operators and integration clients.
 - No cookies/session sync, no live browser replication, no ads-platform
   unattended action, no full AdsPower parity.
