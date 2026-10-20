@@ -964,6 +964,29 @@ run();
               <p class="studio-schedule-help">Các quy trình có nhấn nút, điền biểu mẫu hoặc xác nhận thủ công không được tự chạy theo lịch. Thời gian sử dụng theo đồng hồ máy.</p>
               <div id="studio-schedule-list" class="studio-schedule-list" role="region" aria-label="Danh sách lịch đã tạo"></div>
             </section>
+            <section class="lhm-batch-panel" aria-labelledby="lhm-batch-title">
+              <div class="studio-schedule-title">
+                <strong id="lhm-batch-title">RPA Plus · Chạy lần lượt nhiều hồ sơ</strong>
+                <span>Chỉ chạy khi bạn bấm bắt đầu; từng hồ sơ vẫn cần xác nhận trước thao tác nhấn/nhập.</span>
+              </div>
+              <div class="studio-form-row">
+                <label>Quy trình đã lưu <select id="studio-batch-flow"></select></label>
+                <label>Khi một hồ sơ lỗi <select id="studio-batch-error">
+                  <option value="stop">Dừng hàng đợi</option>
+                  <option value="continue">Tiếp tục hồ sơ tiếp theo</option>
+                </select></label>
+              </div>
+              <p class="studio-schedule-help">Chọn 1–20 hồ sơ Chromium có quyền sử dụng ở dưới. Các lần chạy thực hiện tuần tự trong sandbox riêng, không chia sẻ cookie hay điều khiển cửa sổ Chrome đang mở.</p>
+              <div id="studio-batch-profiles" class="lhm-batch-profiles"></div>
+              <div class="lhm-batch-actions">
+                <button type="button" class="btn btn-secondary" id="studio-batch-refresh">Tải lại danh sách</button>
+                <button type="button" class="btn btn-secondary" id="studio-batch-preview">Xem trước</button>
+                <button type="button" class="btn btn-primary" id="studio-batch-run" disabled>Bắt đầu hàng đợi</button>
+                <button type="button" class="btn btn-danger" id="studio-batch-stop" disabled>Dừng hàng đợi</button>
+              </div>
+              <p id="studio-batch-state" class="studio-schedule-help" role="status" aria-live="polite">Chưa có hàng đợi.</p>
+              <div id="studio-batch-results" class="lhm-batch-results" aria-live="polite"></div>
+            </section>
             <div class="studio-action-row">
               <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>
               <button class="btn btn-primary" id="studio-run">Lưu và chạy</button>
@@ -1231,6 +1254,7 @@ run();
   <script src="cacheManager.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
+  <script src="batchStudio.js"></script>
   <script src="maintenance.js"></script>
   <script src="controlTower.js"></script>
   <script src="proxyCenter.js"></script>

@@ -13,6 +13,7 @@ const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
+const { BatchAutomation } = require('./src/automation/batch');
 const { LocalScheduler } = require('./src/automation/localScheduler');
 const { graphForSteps } = require('./src/automation/flowGraph');
 const { createWindowBrowser } = require('./src/automation/windowBrowser');
@@ -41,6 +42,7 @@ let launcher = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
+let batchAutomation = null;
 let localScheduler = null;
 let schedulerTimer = null;
 let recorderManager = null;
@@ -301,29 +303,48 @@ function initIPC() {
     return { canceled: false, ...report };
   });
   ipcMain.handle('studio-list', () => workflowStore.list());
+  ipcMain.handle('studio-batch-status', () => batchAutomation.status());
+  ipcMain.handle('studio-batch-preview', (_, id,ids,onError) =>
+    batchAutomation.preview(id,ids,onError));
+  ipcMain.handle('studio-batch-run', (_, id,ids,onError) => {
+    if(recorderManager.status().state==='recording')
+      throw Error('Dừng Recorder trước khi chạy hàng đợi');
+    return batchAutomation.start(id,ids,onError);
+  });
+  ipcMain.handle('studio-batch-stop', () => batchAutomation.stop());
   ipcMain.handle('studio-schedule-list', () => localScheduler.list());
   ipcMain.handle('studio-schedule-add', (_, value) => localScheduler.create(value));
   ipcMain.handle('studio-schedule-enable', (_, id, enabled) => localScheduler.setEnabled(id, enabled));
   ipcMain.handle('studio-schedule-delete', (_, id) => localScheduler.remove(id));
 
   ipcMain.handle('studio-graph-preview', (_, steps) => graphForSteps(steps));
-  ipcMain.handle('studio-save', (_, value) => workflowStore.save(value));
+  ipcMain.handle('studio-save', (_, value) => {
+    if(batchAutomation.status().active &&
+       value?.id===batchAutomation.status().batch?.workflowId)
+      throw Error('Không sửa quy trình khi hàng đợi đang chạy');
+    return workflowStore.save(value);
+  });
   ipcMain.handle('studio-delete', (_, id) => {
     if (automationRunner.status().status === 'running' && automationRunner.status().workflowId === id) throw Error('Hãy dừng quy trình trước khi xóa');
+    if (batchAutomation.status().active && batchAutomation.status().batch?.workflowId===id)
+      throw Error('Hãy dừng hàng đợi RPA trước khi xóa quy trình');
     return workflowStore.delete(id);
   });
   ipcMain.handle('studio-run', (_, id) => {
     if (recorderManager.status().state === 'recording') throw new Error('Dừng Recorder trước khi chạy Automation Studio');
+    if (batchAutomation.status().active)throw Error('Hàng đợi RPA đang hoạt động');
     return automationRunner.run(id);
   });
   ipcMain.handle('recorder-start', async (_, options) => {
-    if (automationRunner.status().status === 'running') throw new Error('Hãy dừng workflow đang chạy trước khi ghi thao tác');
+    if (automationRunner.status().status === 'running' || batchAutomation.status().active)
+      throw new Error('Hãy dừng workflow hoặc hàng đợi RPA trước khi ghi thao tác');
     return recorderManager.start(options);
   });
   ipcMain.handle('recorder-status', () => recorderManager.status());
   ipcMain.handle('recorder-stop', () => recorderManager.stop());
   ipcMain.handle('recorder-take', () => recorderManager.takeSteps());
-  ipcMain.handle('studio-stop', () => automationRunner.stop());
+  ipcMain.handle('studio-stop', () =>
+    batchAutomation.status().active?batchAutomation.stop():automationRunner.stop());
   ipcMain.handle('studio-approve', () => automationRunner.approve());
   ipcMain.handle('studio-status', () => automationRunner.status());
   ipcMain.handle('save-profile', (_, profile) => {
@@ -347,6 +368,9 @@ function initIPC() {
     if (launcher.isBusy(id)) throw new Error('Hãy đóng hồ sơ và đợi tiến trình thoát trước khi xóa dữ liệu');
     const state = automationRunner.status();
     if (state.status === 'running' && state.profileId === id) throw new Error('Hồ sơ đang được Automation Studio sử dụng');
+    if (batchAutomation.status().active &&
+      batchAutomation.status().batch?.tasks.some(x=>x.profileId===id))
+      throw Error('Không xóa profile khi hàng đợi RPA đang sử dụng');
     if (recorderManager.status().state === 'recording' && recorderManager.status().profileId === id) throw new Error('Hồ sơ đang được Recorder sử dụng');
     const deleted = store.trashProfile(id);
     if (deleted) behaviorMonitor.record('profile_delete', id, 'manual');
@@ -427,6 +451,7 @@ app.whenReady().then(async () => {
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
+  batchAutomation = new BatchAutomation(storageDir, workflowStore, store, automationRunner);
   localScheduler = new LocalScheduler(storageDir, workflowStore, automationRunner);
   // In-app polling only, never a Windows background service.
   schedulerTimer = setInterval(() => {
@@ -454,6 +479,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   if (schedulerTimer) clearInterval(schedulerTimer);
+  if (batchAutomation) batchAutomation.stop();
   if (automationRunner) automationRunner.stop();
   if (recorderManager?.status().state === 'recording') recorderManager.stop();
   if (launcher) for (const active of launcher.listActive()) launcher.stop(active.profileId);

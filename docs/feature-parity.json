@@ -51,7 +51,7 @@
     "id": "rpa",
     "name": "RPA Plus and workflow marketplace",
     "state": "partial",
-    "evidence": "Approval-gated Studio, conditional/repeat steps, recording, local schedules, flow diagram",
+    "evidence": "Approval-gated Studio, conditional/repeat steps, recording, local schedules, flow diagram; manual multi-profile sequential runner with per-profile approvals, stop/continue error handling and durable local audit",
     "gaps": "No mature drag-drop editor, cross-profile execution, template marketplace or multi-user permissioning",
     "acceptance": "Editor, scheduler and audit end-to-end tests and independent human approvals"
   },

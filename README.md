@@ -473,3 +473,11 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 ### Real Windows browser smoke coverage
 - The `windows-exe.yml` workflow now runs `node test/real-chromium-smoke.js` against **installed Chrome or Edge on Windows-latest**. It uses only a disposable temporary user-data directory and confirms startup with the local DevTools port and active shared-URL tab creation. The test fails the build if no browser is installed or tab creation is rejected.
 - This is a single-host browser launch/navigation test, **not** a fingerprint, proxy, full Synchronizer or multi-device production validation. A separate real workstation acceptance test remains necessary.
+
+
+## v4.6 — RPA Plus sequential multi-profile runs
+- In **Automation Studio**, select a saved workflow and 1–20 Chromium profiles. Preview the exact targets and choose stop/continue behavior. Explicit confirmation is mandatory before starting; the queue runs only while the desktop app is open, one profile at a time.
+- A single-run `AutomationRunner` holds an exclusive batch reservation. Manual runs, local read-only schedules, recorder sessions, editing/deletion of the active workflow and profile deletion cannot interfere with the queue.
+- Every click or form fill still requires the existing **approval** step in each profile (approval is never transferred to the next profile); **Dừng hàng đợi** cancels the active workflow and skips remaining items.
+- Execution uses the existing **Electron Automation Sandbox partition** for each profile ID, **not** a shared logged-in Chrome/Edge session. Cookie/login data is **not** transferred. This is safer and transparent but not full AdsPower RPA multi-profile parity.
+- A rolling bounded history of 60 batches is stored locally as `automation-batches.json`, with per-profile statuses and timestamps but no form values, cookies, credentials, URLs or screenshots. Batches interrupted by a crash are marked interrupted on restart and never automatically resumed.

@@ -69,7 +69,7 @@ class LocalScheduler {
           entry.lastMessage='Quy trình không còn chỉ đọc hoặc đã bị xóa';
           this.persist();continue;
         }
-        if(this.runner.task||this.runner.status().status==='running'){
+        if(this.runner.task||this.runner.batchOwner||this.runner.status().status==='running'){
           entry.lastStatus='waiting_for_idle';continue;
         }
         try{
