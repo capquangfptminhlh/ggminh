@@ -29,6 +29,7 @@ const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOper
 const cacheManager = require('./src/ops/cacheManager');
 const ProxyCenter = require('./src/proxies/proxyCenter');
 const {ExtensionManager} = require('./src/extensions/manager');
+const {AIAdvisor} = require('./src/ai/advisor');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -44,6 +45,7 @@ let recorderManager = null;
 let configBackup = null;
 let proxyCenter = null;
 let extensionManager = null;
+let aiAdvisor = null;
 let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -120,6 +122,11 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('ai-advisor-status', () => aiAdvisor.status());
+  ipcMain.handle('ai-advisor-configure', (_, value) => aiAdvisor.configure(value));
+  ipcMain.handle('ai-advisor-forget-key', () => aiAdvisor.clear());
+  ipcMain.handle('ai-advisor-ask', (_, value) => aiAdvisor.ask(value,store.getProfiles()));
+  ipcMain.handle('ai-advisor-stop', () => aiAdvisor.abort());
   ipcMain.handle('profile-import-preview', (_, csv) => inspectProfilesCsv(store,csv));
   ipcMain.handle('profile-import-commit', (_, csv) => {
     const result=importProfilesCsv(store,csv);
@@ -405,6 +412,7 @@ app.whenReady().then(async () => {
     }
   }
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
+  aiAdvisor = new AIAdvisor(storageDir,safeStorage);
   launcher = new BrowserLauncher(store,{proxyVault});
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;

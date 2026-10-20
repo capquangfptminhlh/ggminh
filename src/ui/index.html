@@ -114,6 +114,7 @@
           <div class="lhm-tools-panel">
             <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
             <button type="button" class="btn btn-secondary" id="btn-api-copy" style="display:none">Sao chép API Key</button>
+            <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
             <button type="button" class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
@@ -506,6 +507,49 @@
         <button type="button" class="btn btn-secondary" id="cache-cancel">Đóng</button>
         <button type="button" class="btn btn-danger" id="cache-clear">Xóa cache đã chọn</button>
       </div>
+    </div>
+  </div>
+
+  <!-- AI Advisor v4.3: explicit prompts, no autonomous browser/account actions. -->
+  <div class="modal-overlay" id="modal-ai-advisor">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="ai-advisor-title">
+      <div class="modal-header">
+        <h2 id="ai-advisor-title">AI Advisor — OpenRouter</h2>
+        <button class="btn-close" type="button" id="ai-advisor-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Trợ lý tư vấn vận hành profile. AI trả lời và đề xuất, không tự chạy lệnh hoặc thao tác quảng cáo. Câu hỏi sẽ được gửi qua Internet tới OpenRouter và nhà cung cấp model; có thể phát sinh chi phí API.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ai-advisor-model">Model OpenRouter (provider/model)</label>
+            <input id="ai-advisor-model" type="text" maxlength="100" value="openai/gpt-4o-mini" spellcheck="false">
+          </div>
+          <div class="form-group">
+            <label for="ai-advisor-key">API key (mã hóa bằng Windows)</label>
+            <input id="ai-advisor-key" type="password" maxlength="300" autocomplete="off" placeholder="Để trống nếu đã lưu">
+          </div>
+        </div>
+        <div class="lhm-ai-toolbar">
+          <button class="btn btn-secondary" type="button" id="ai-advisor-save-key">Lưu cấu hình</button>
+          <button class="btn btn-secondary" type="button" id="ai-advisor-forget-key">Xóa API key</button>
+          <span id="ai-advisor-key-status" role="status"></span>
+        </div>
+        <div class="form-group">
+          <label for="ai-advisor-question">Câu hỏi (tối đa 2.000 ký tự)</label>
+          <textarea id="ai-advisor-question" rows="4" maxlength="2000" placeholder="Ví dụ: Nên phân nhóm và kiểm tra cấu hình profile ra sao để dễ quản lý?"></textarea>
+        </div>
+        <label class="lhm-ai-optin"><input type="checkbox" id="ai-advisor-share-stats">
+          Cho phép gửi số lượng tổng hợp profile, engine, nhóm và proxy (không gửi tên, địa chỉ proxy, URL hoặc dữ liệu phiên)
+        </label>
+        <div class="lhm-ai-toolbar">
+          <button class="btn btn-primary" type="button" id="ai-advisor-ask">Hỏi AI</button>
+          <button class="btn btn-secondary" type="button" id="ai-advisor-stop">Dừng</button>
+          <span id="ai-advisor-request-status" role="status" aria-live="polite"></span>
+        </div>
+        <div class="lhm-ai-answer" id="ai-advisor-answer" aria-live="polite">Câu trả lời sẽ hiển thị ở đây. Nội dung không được tự động đưa vào workflow.</div>
+        <p class="lhm-bulk-help">LHM không gửi dữ liệu trình duyệt, cookies, mật khẩu, token, tên hồ sơ hay proxy host. Không chia sẻ thông tin nhạy cảm trong câu hỏi. Model có thể trả lời sai; hãy xác minh trước khi áp dụng.</p>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" type="button" id="ai-advisor-done">Đóng</button></div>
     </div>
   </div>
 
@@ -1163,6 +1207,7 @@ run();
   <script src="windowManager.js"></script>
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
+  <script src="aiAdvisor.js"></script>
   <script src="cacheManager.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>

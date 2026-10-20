@@ -440,3 +440,11 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 
 ### Workspace usability
 - The increasingly crowded toolbar now groups Local API, Cache, Extensions, Window Manager, Trash and CSV actions into a keyboard-accessible **Công cụ** menu. Quick Create and Create Profile remain visible. No feature has been removed.
+
+
+## v4.3 — OpenRouter AI Advisor (advisory-only, opt-in)
+- **Công cụ → AI Advisor** provides an OpenRouter chat-completions assistant for profile organization, privacy, workflow safety and operational recommendations. Requires the user's own OpenRouter API key and chosen `provider/model`; model calls may incur provider charges. Uses the current `POST https://openrouter.ai/api/v1/chat/completions` endpoint. Network calls are explicitly user initiated.
+- Key is persisted only in an OS-encrypted local file using Electron `safeStorage`; no plaintext fallback, no API key returned to the renderer, no secrets in normal profile JSON or configuration backups. OS encryption availability is checked before use.
+- **Statistics sharing defaults OFF**. If opted in, only aggregate counts of profiles, engine types, groups and direct/proxy usage are sent with the user's prompt. Never automatically includes profile names, browser URLs, proxy addresses, cookies, logins, workflows, passwords or tokens. Anything the user personally types into the prompt is necessarily sent to OpenRouter.
+- This assistant **does not execute browser automation or edit ad accounts**. Responses are displayed as plain text, not HTML; no auto-created workflows, no API commands, and no command execution. Max 2,000 prompt characters, 700 generated tokens, 30-second timeout, minimum seven seconds between requests and 20 requests per application session.
+- AI output may be inaccurate or costly; review before acting. This is a bounded Advisor foundation, **not yet a full autonomous AI Agent**.
