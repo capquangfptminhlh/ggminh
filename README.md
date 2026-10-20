@@ -429,3 +429,10 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Enable the desktop Local API, copy the session API key in the desktop app and supply it via an environment variable named `LHM_API_KEY`. Optionally set `LHM_API_PORT` (default 50325).
 - From the source repository run `npm run cli -- status`, `npm run cli -- list`, `npm run cli -- active`, `npm run cli -- start pb_...`, `npm run cli -- stop pb_...`.
 - The CLI contacts `127.0.0.1` only, validates IDs and does not save API keys. It does not expose MCP, collect cookies or install a standalone CLI EXE. Use on a trusted local PC.
+
+
+## v4.2 — Cache Data: conservative local cleanup
+- Select 1–20 stopped profiles and open **Cache** to preview a bounded estimate of Chromium/Gecko *cache-only* directories.
+- Explicit `XOA CACHE` confirmation is required for cleanup. The tool only removes allowlisted cache directories beneath the selected browser's isolated profile folder and checks all paths against symlinks before deletion.
+- **Never** removes the profile root, Cookies, Login Data, Local Storage, IndexedDB, extension state, passwords or tokens. It does not wipe an account or guarantee disk space recovery.
+- This destructive operation is not atomic (one directory may fail to delete after another succeeded); individual folder failures are reported. Profile(s) must be stopped before preview and cleanup.

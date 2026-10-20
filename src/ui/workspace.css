@@ -706,3 +706,13 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .lhm-extension-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .lhm-extension-permissions{overflow-wrap:anywhere}
 #ext-selection,#ext-status{font-size:12px;color:#426486;line-height:1.6}
+
+
+/* v4.2 selected-profile cache cleanup */
+.lhm-cache-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.lhm-cache-toolbar strong{font-size:12px;color:#405775}
+.lhm-cache-list{display:grid;gap:7px;max-height:220px;overflow:auto}
+.lhm-cache-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #dfe7ef;background:#f7f9fc;border-radius:8px;padding:9px 12px;font-size:12px}
+.lhm-cache-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lhm-cache-row small{font-size:11px;color:#63758a;flex-shrink:0}
+#cache-result{font-size:12px;color:#395e84;white-space:pre-wrap;line-height:1.6}

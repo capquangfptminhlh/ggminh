@@ -110,6 +110,7 @@
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
         <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
         <button class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
         <button class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
@@ -252,6 +253,7 @@
       <div class="selection-actions">
         <button class="btn btn-sm btn-primary" id="selection-open">Mở đã chọn (tối đa 10)</button>
         <button class="btn btn-sm btn-secondary" id="selection-windows">Sắp cửa sổ</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="selection-cache">Dọn Cache</button>
         <button class="btn btn-sm btn-secondary" id="selection-group">Chuyển nhóm</button>
         <button class="btn btn-sm btn-secondary" id="selection-tags">Gắn Tag</button>
         <button class="btn btn-sm btn-secondary" id="selection-duplicate">Nhân bản mẫu</button>
@@ -469,6 +471,34 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="ext-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- v4.2 cache preview and explicit destructive confirmation. -->
+  <div class="modal-overlay" id="modal-cache-manager">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="cache-title">
+      <div class="modal-header">
+        <h2 id="cache-title">Dọn cache trình duyệt cục bộ</h2>
+        <button type="button" class="btn-close" id="cache-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Chọn tối đa 20 hồ sơ ở bảng trước khi mở mục này. Chỉ xóa các thư mục cache được phép của những hồ sơ đã đóng. Không xóa cookie, mật khẩu, tiện ích, LocalStorage hoặc IndexedDB.</p>
+        <div class="lhm-cache-toolbar">
+          <button type="button" class="btn btn-secondary" id="cache-preview">Kiểm tra lại dung lượng</button>
+          <strong id="cache-summary">Chưa chọn hồ sơ</strong>
+        </div>
+        <div id="cache-profile-list" class="lhm-cache-list"></div>
+        <p class="lhm-bulk-help">Số byte là ước lượng, có thể bị giới hạn khi có quá nhiều file. Việc xóa cache không thể hoàn tác; cần đóng trình duyệt để tránh làm hỏng dữ liệu. Kiểm tra và sao lưu khi cần.</p>
+        <div class="form-group">
+          <label for="cache-confirmation">Nhập XOA CACHE để xác nhận</label>
+          <input type="text" id="cache-confirmation" autocomplete="off" placeholder="XOA CACHE">
+        </div>
+        <p id="cache-result" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cache-cancel">Đóng</button>
+        <button type="button" class="btn btn-danger" id="cache-clear">Xóa cache đã chọn</button>
       </div>
     </div>
   </div>
@@ -1126,6 +1156,7 @@ run();
   <script src="tablePreferences.js"></script>
   <script src="windowManager.js"></script>
   <script src="extensionCenter.js"></script>
+  <script src="cacheManager.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>
