@@ -653,3 +653,14 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 .toolbar .filters{display:flex;align-items:center;flex-wrap:wrap}
 #filter-engine,#filter-proxy,#filter-tag{min-width:120px}
 #bulk-tags-status{font-size:12px;color:#3d658c;margin:8px 0}
+
+
+/* v3.6 — recoverable profile trash */
+.lhm-trash-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.lhm-trash-toolbar #trash-profile-count{margin-right:auto;font-size:12px;color:#536580}
+.lhm-trash-list{display:grid;gap:10px;max-height:330px;overflow:auto}
+.lhm-trash-row{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:9px;background:#f6f8fc;border:1px solid #e2e9f3}
+.lhm-trash-summary{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.lhm-trash-summary strong{font-size:13px}.lhm-trash-summary span{font-size:11px;color:#596d89}
+.lhm-trash-actions{display:flex;gap:7px;flex-wrap:wrap}.lhm-trash-empty{padding:24px;text-align:center;color:#68798f}
+@media(max-width:630px){.lhm-trash-row{align-items:flex-start;flex-direction:column}}

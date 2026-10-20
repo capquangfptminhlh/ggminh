@@ -68,6 +68,9 @@ class Store {
     const name = String(input.name || '').trim();
     if (!name || name.length > 160) throw new Error('Profile name must be 1–160 characters');
     const existingIndex = this.data.profiles.findIndex(p => p.id === id);
+    if (existingIndex < 0 && ((this.data.trash || []).some(t => t.profile?.id === id) ||
+        (this.data.cleanupQueue || []).includes(id)))
+      throw Error('Profile ID is reserved in trash or pending cleanup');
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
     if (typeof incomingProxy !== 'object' || Array.isArray(incomingProxy)) throw new Error('Invalid proxy configuration');
@@ -163,6 +166,112 @@ class Store {
     try { this.saveData(); }
     catch (error) { this.data = previous; throw error; }
     return created;
+  }
+  // v3.6 recycle bin: do not touch session folders until permanent deletion.
+  // The live-profile / automation guards are enforced by Electron IPC and Local API.
+  getTrashedProfiles() {
+    return (this.data.trash || []).map(item => ({
+      ...this.publicProfile(item.profile),
+      deletedAt: item.deletedAt,
+      expiresAt: new Date(Date.parse(item.deletedAt) + 30 * 86400000).toISOString()
+    }));
+  }
+  trashProfile(id, now = Date.now()) {
+    assertId(id);
+    if (!Number.isFinite(now)) throw Error('Invalid deletion time');
+    const existing = this.data.profiles.find(p => p.id === id);
+    if (!existing) return false;
+    const previous = this.data;
+    this.data = {
+      ...previous,
+      profiles: previous.profiles.filter(p => p.id !== id),
+      trash: [...(previous.trash || []),
+        {profile: structuredClone(existing), deletedAt: new Date(now).toISOString()}]
+    };
+    try { this.saveData(); }
+    catch(error) { this.data = previous; throw error; }
+    return true;
+  }
+  restoreTrashedProfile(id, now = Date.now()) {
+    assertId(id);
+    const item = (this.data.trash || []).find(x => x.profile?.id === id);
+    if (!item) throw Error('Profile was not found in trash');
+    if (Number.isNaN(Date.parse(item.deletedAt)) ||
+        now >= Date.parse(item.deletedAt) + 30 * 86400000)
+      throw Error('Trash retention has expired after 30 days');
+    if (this.data.profiles.some(p => p.id === id) ||
+        (this.data.cleanupQueue || []).includes(id))
+      throw Error('Cannot restore: profile ID already exists or is pending cleanup');
+    const previous=this.data;
+    this.data={
+      ...previous,
+      profiles:[...previous.profiles, structuredClone(item.profile)],
+      trash:previous.trash.filter(x => x !== item)
+    };
+    try { this.saveData(); }
+    catch(error) { this.data=previous; throw error; }
+    return this.publicProfile(item.profile);
+  }
+  // Keep a cleanup queue in the database until profile files are deleted,
+  // so a failed filesystem cleanup can be retried on the next startup.
+  cleanupTrashedFolders() {
+    const queue=this.data.cleanupQueue || [];
+    const failed=[];
+    for (const id of queue) {
+      try {
+        assertId(id);
+        if (this.data.profiles.some(p=>p.id===id) ||
+            (this.data.trash || []).some(x=>x.profile?.id===id))
+          throw Error('ID is still referenced by a profile');
+        for (const part of ['profiles','gecko-profiles']) {
+          const target=path.join(this.baseDir,part,id);
+          if (fs.existsSync(target))
+            fs.rmSync(target,{recursive:true,force:true});
+        }
+      } catch(error) {
+        failed.push(id);
+        console.warn('[ProfileTrash] cleanup deferred for',id,error.message);
+      }
+    }
+    if (failed.length !== queue.length) {
+      const old=this.data;
+      this.data={...old,cleanupQueue:failed};
+      try{this.saveData();}
+      catch(error){this.data=old;throw error;}
+    }
+    return {pending:failed.length};
+  }
+  purgeTrashedProfile(id) {
+    assertId(id);
+    if (!(this.data.trash || []).some(x=>x.profile?.id===id)) return false;
+    const old=this.data;
+    this.data={
+      ...old,trash:old.trash.filter(x=>x.profile?.id!==id),
+      cleanupQueue:[...new Set([...(old.cleanupQueue||[]),id])]
+    };
+    try { this.saveData(); }
+    catch(error){this.data=old;throw error;}
+    this.cleanupTrashedFolders();
+    return true;
+  }
+  purgeExpiredTrashedProfiles(now = Date.now()) {
+    if (!Number.isFinite(now))throw Error('Invalid retention time');
+    const old=this.data,expired=[],still=[];
+    for(const item of old.trash || []){
+      const expiry=Date.parse(item.deletedAt)+30*86400000;
+      if(!Number.isFinite(expiry)||now>=expiry)expired.push(item.profile.id);
+      else still.push(item);
+    }
+    if(expired.length){
+      this.data={
+        ...old,trash:still,
+        cleanupQueue:[...new Set([...(old.cleanupQueue||[]),...expired])]
+      };
+      try{this.saveData();}
+      catch(error){this.data=old;throw error;}
+    }
+    const result=this.cleanupTrashedFolders();
+    return {purged:expired.length,pending:result.pending};
   }
   deleteProfile(id) {
     assertId(id);

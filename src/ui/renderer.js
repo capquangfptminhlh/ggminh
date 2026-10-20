@@ -605,7 +605,7 @@ function renderProfiles() {
 
     const btnDelete = tr.querySelector('.btn-delete');
     btnDelete.addEventListener('click', async () => {
-      if (confirm(`Bạn có chắc chắn muốn xóa profile "${profile.name}"?`)) {
+      if (confirm(`Chuyển hồ sơ "${profile.name}" vào thùng rác 30 ngày? Bạn có thể khôi phục trong mục Thùng rác.`)) {
         await window.api.deleteProfile(profile.id);
         await loadProfiles();
         await refreshBehaviorAlerts();

@@ -303,12 +303,20 @@ function initIPC() {
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;
   });
+  ipcMain.handle('list-trashed-profiles', () => store.getTrashedProfiles());
+  ipcMain.handle('restore-trashed-profile', (_, id) => {
+    const restored=store.restoreTrashedProfile(id);
+    behaviorMonitor.record('profile_save',id,'manual');
+    return restored;
+  });
+  ipcMain.handle('purge-trashed-profile', (_, id) => store.purgeTrashedProfile(id));
+  ipcMain.handle('purge-expired-trash', () => store.purgeExpiredTrashedProfiles());
   ipcMain.handle('delete-profile', (_, id) => {
     if (launcher.isBusy(id)) throw new Error('Hãy đóng hồ sơ và đợi tiến trình thoát trước khi xóa dữ liệu');
     const state = automationRunner.status();
     if (state.status === 'running' && state.profileId === id) throw new Error('Hồ sơ đang được Automation Studio sử dụng');
     if (recorderManager.status().state === 'recording' && recorderManager.status().profileId === id) throw new Error('Hồ sơ đang được Recorder sử dụng');
-    const deleted = store.deleteProfile(id);
+    const deleted = store.trashProfile(id);
     if (deleted) behaviorMonitor.record('profile_delete', id, 'manual');
     return deleted;
   });
@@ -355,6 +363,8 @@ app.whenReady().then(async () => {
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
   store = new Store(storageDir);
+  try { store.purgeExpiredTrashedProfiles(); }
+  catch(error) { console.warn('[ProfileTrash] startup cleanup deferred:',error.message); }
   if (process.env.LHM_CI_UI_CAPTURE === '1') {
     const samples = [
       ['Demo · Chiến dịch 01','Khách hàng A','chromium'],

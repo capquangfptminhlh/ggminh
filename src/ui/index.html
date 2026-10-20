@@ -110,6 +110,7 @@
           <button id="btn-api-copy" style="display:none">Sao chép API Key</button>
         </div>
         <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
+        <button class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
         <button class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
         <button class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
         <button class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
@@ -348,6 +349,29 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="bulk-tags-cancel">Hủy</button>
         <button type="button" class="btn btn-primary" id="bulk-tags-save">Áp dụng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.6: recoverable local-profile removal. Files remain untouched until purge. -->
+  <div class="modal-overlay" id="modal-profile-trash">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="trash-dialog-title">
+      <div class="modal-header">
+        <h2 id="trash-dialog-title">Thùng rác hồ sơ — lưu 30 ngày</h2>
+        <button type="button" class="btn-close" id="trash-dialog-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Hồ sơ trong thùng rác không mở được. Dữ liệu phiên, cookie và lịch sử trong thư mục profile được giữ nguyên cho đến khi xóa vĩnh viễn hoặc hết 30 ngày. Dữ liệu hết hạn được dọn khi phần mềm khởi động hoặc khi bạn bấm dọn.</p>
+        <div class="lhm-trash-toolbar">
+          <span id="trash-profile-count" role="status">Đang tải…</span>
+          <button type="button" class="btn btn-secondary" id="trash-dialog-refresh">Làm mới</button>
+          <button type="button" class="btn btn-secondary" id="trash-dialog-expired">Dọn hồ sơ quá hạn</button>
+        </div>
+        <div id="trash-profile-list" class="lhm-trash-list" aria-live="polite"></div>
+        <p class="lhm-bulk-help">Xóa vĩnh viễn sẽ xóa dữ liệu trình duyệt cục bộ của hồ sơ này và không thể khôi phục bằng thùng rác. Nên sao lưu cấu hình trước nếu cần.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="trash-dialog-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1000,6 +1024,7 @@ run();
   <script src="icons.js"></script>
   <script src="renderer.js"></script>
   <script src="profileImport.js"></script>
+  <script src="profileTrash.js"></script>
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="maintenance.js"></script>

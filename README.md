@@ -378,3 +378,12 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 - Combine filters by group, tag, Chromium/Gecko, direct/proxy, running/stopped and the normal search field.
 - Tag changes are bookkeeping-only and do not alter live browser sessions, cookies, fingerprints or proxy credentials.
 - The UI adds a dedicated modal for tag operations and keeps the 50-profile batch cap.
+
+
+## v3.6 — Recoverable local profile trash (30-day retention)
+- **Desktop Delete** and authenticated Local API `DELETE /api/profiles/:id` now move profiles to a local recycle bin instead of deleting browser session files. Profiles are hidden from the active list while trashed. Old direct `Store.deleteProfile` remains an internal permanent-delete primitive for legacy callers and tests.
+- **Thùng rác** allows a single profile to be restored with the same ID, browser engine, metadata and original on-disk browser data, provided it has not expired or been permanently deleted.
+- A profile expires 30 days after moving to trash. The desktop checks expiration on startup; a dedicated UI action cleans up expired items on demand.
+- Permanent removal requires typing `XOA` and removes local Chromium and Gecko session directories. Failed filesystem removal remains in an on-disk cleanup queue for retry. Data cannot be recovered after permanent deletion.
+- Trash metadata is not exported in configuration-only backups. A configuration backup is **not** a browser session backup.
+- When deleting from the desktop or Local API, running browser profiles are blocked as before; the application never moves a live browser profile into trash via those paths.

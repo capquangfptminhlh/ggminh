@@ -80,7 +80,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null 
       if (launcher.isBusy?.(req.params.id) || launcher.getActive?.(req.params.id)) {
         return res.status(409).json({ code: -1, msg: 'Stop browser and wait for exit before deleting profile' });
       }
-      const success = store.deleteProfile(req.params.id);
+      const success = store.trashProfile(req.params.id);
       if (success && behaviorMonitor) behaviorMonitor.record('profile_delete', req.params.id, 'api');
       res.json({ success });
     }
