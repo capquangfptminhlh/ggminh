@@ -2,6 +2,18 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { clean } = require('../automation/studio');
 
+// Credential references belong to one local OS vault. Never export or
+// resurrect them on a different machine, where they may point to another user.
+function portableProfile(profile) {
+  const copy={...profile};
+  const proxy=profile?.proxy || {type:'direct'};
+  copy.proxy=proxy.authProxyId
+    ? {type:'direct'}
+    : {type:proxy.type||'direct',
+       ...(proxy.type==='direct'?{}:{host:proxy.host,port:proxy.port})};
+  return copy;
+}
+
 const SIGNATURE = 'LHM-CONFIG-BACKUP-1';
 function derive(password, salt) {
   if (typeof password !== 'string' || password.length < 12) throw Error('Mật khẩu sao lưu cần tối thiểu 12 ký tự');
@@ -40,7 +52,7 @@ class ConfigBackup {
   export(password) {
     return encrypt({
       version: 1, createdAt: new Date().toISOString(),
-      profiles: this.store.getProfiles(),
+      profiles: this.store.getProfiles().map(portableProfile),
       workflows: this.workflows.list()
     }, password);
   }
@@ -61,7 +73,8 @@ class ConfigBackup {
     // Merge non-destructively with fresh IDs. Browser cookies/session profiles are never copied.
     const mapped = new Map();
     for (const p of decoded.profiles) {
-      const item = this.store.saveProfile({ ...p, id: undefined, name: p.name + ' (nhập)' });
+      const safe=portableProfile(p);
+      const item = this.store.saveProfile({ ...safe, id: undefined, name: p.name + ' (nhập)' });
       mapped.set(p.id, item.id);
     }
     for (const w of decoded.workflows) {
@@ -70,4 +83,4 @@ class ConfigBackup {
     return { profiles: decoded.profiles.length, workflows: decoded.workflows.length, excludesSessions: true };
   }
 }
-module.exports = { ConfigBackup, encrypt, decrypt };
+module.exports = { ConfigBackup, encrypt, decrypt, portableProfile };

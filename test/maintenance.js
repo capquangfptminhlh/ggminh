@@ -49,14 +49,27 @@ const { checkProxy, parseRemoteIp } = require('../src/engine/proxyChecker');
     assert(bad.issues.some(i => i.code === 'gecko_proxy_profile'));
     workflows.save({ name: 'QA Workflow', profileId: profile.id, hosts: 'example.com',
       steps: [{ type:'navigate', url:'https://example.com' }, { type:'approval', label:'Ok' }] });
+    // Credential vault references are not portable and cannot be silently
+    // converted into unauthenticated remote proxy access.
+    const attached=store.saveProfile({name:'Auth customer',engine:'chromium',
+      startUrl:'https://example.com',
+      proxy:{type:'http',host:'secured.example',port:3128,authProxyId:'px_0123456789abcdef'}});
     const backup = new ConfigBackup(store, workflows);
     assert.throws(() => backup.export('short'), /12/);
     const encrypted = backup.export('correct horse demo words');
     assert(!encrypted.includes('QA Customer'));
+    const {decrypt:decode}=require('../src/backup/configBackup');
+    const unpacked=decode(encrypted,'correct horse demo words');
+    const protectedEntry=unpacked.profiles.find(p=>p.name==='Auth customer');
+    assert(protectedEntry);
+    assert.deepStrictEqual(protectedEntry.proxy,{type:'direct'});
+    assert(!JSON.stringify(unpacked).includes('px_0123456789abcdef'));
     assert.throws(() => decrypt(encrypted, 'wrong password demo'), /Unsupported state|authenticate/);
     const imported = backup.import(encrypted, 'correct horse demo words');
-    assert.deepStrictEqual(imported, { profiles: 1, workflows: 1, excludesSessions: true });
-    assert.strictEqual(store.getProfiles().length, 2);
+    assert.deepStrictEqual(imported, { profiles: 2, workflows: 1, excludesSessions: true });
+    assert.strictEqual(store.getProfiles().length, 4);
+    const restored=store.getProfiles().find(p=>p.name==='Auth customer (nhập)');
+    assert.deepStrictEqual(restored.proxy,{type:'direct'});
     assert.strictEqual(workflows.list().length, 2);
     const moved = workflows.list().find(x => x.name === 'QA Workflow' && x.profileId !== profile.id);
     assert(moved && store.getProfile(moved.profileId));

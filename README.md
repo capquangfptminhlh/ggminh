@@ -310,3 +310,7 @@ Note: standard HTTP proxy Basic authentication is not encrypted on the network h
 ### Proxy Center batch tools (2.8)
 - Import up to 100 endpoint-only CSV records per action: header `name,type,host,port,tag`. No usernames/passwords are accepted in CSV. Inputs are validated and committed atomically in one database write; duplicates are skipped.
 - Verify at most 20 visible proxy entries per action with a concurrency limit of 3. Results represent HTTPS egress checks, not platform anti-fraud visibility.
+
+
+### Backup compatibility and security (2.9)
+OS-encrypted proxy credentials and their local references are not included in exported backups. If a profile uses an authenticated proxy, its exported configuration defaults to **Direct** so a restored profile cannot silently use the remote proxy without credentials; the user must explicitly reassign a saved, authenticated proxy after import. Older backup files containing local credential references are sanitized on import.
