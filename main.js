@@ -29,6 +29,8 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
+const {CloudClient}=require('./src/sync/cloudClient');
+const {applyCloudMetadata}=require('./src/sync/applyMetadata');
 const cacheManager = require('./src/ops/cacheManager');
 const {SessionSnapshots} = require('./src/ops/sessionSnapshots');
 const {exportEncrypted,importEncrypted} = require('./src/ops/snapshotPortability');
@@ -530,6 +532,29 @@ function initIPC() {
     openUrlForStoppedProfiles(store,launcher,ids,url,behaviorMonitor));
   ipcMain.handle('window-manager-open-live-url', (_, ids, url) =>
     openInRunning(store,launcher,ids,url));
+  // Cloud Sync is always explicit. Keep API secrets ephemeral; never persist
+  // customer bearer tokens or encryption passphrases in the local store.
+  const cloudClientFor=(event,options)=>{
+    if(event.sender!==mainWindow?.webContents)throw Error('Untrusted Cloud Sync IPC caller');
+    return new CloudClient(options);
+  };
+  ipcMain.handle('cloud-sync-preview',async(event,options)=>{
+    const cloud=cloudClientFor(event,options);
+    return cloud.pull(options.passphrase);
+  });
+  ipcMain.handle('cloud-sync-push',async(event,options)=>{
+    const cloud=cloudClientFor(event,options);
+    return cloud.push(options.passphrase,store.getProfiles());
+  });
+  ipcMain.handle('cloud-sync-apply',async(event,options)=>{
+    const cloud=cloudClientFor(event,options);
+    const remote=await cloud.pull(options.passphrase);
+    if(remote.empty)throw Error('Cloud is empty; nothing to apply');
+    return applyCloudMetadata(store,launcher,remote.profiles,{
+      remoteRevision:remote.revision,expectedRevision:options.expectedRevision,
+      confirmation:options.confirmation
+    },behaviorMonitor);
+  });
   ipcMain.handle('check-proxy', (_, proxy) => checkProxy(proxy));
   ipcMain.handle('generate-fingerprint', (_, options) => generateFingerprint(options));
   ipcMain.handle('get-settings', () => store.getSettings());
