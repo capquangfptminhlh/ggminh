@@ -21,8 +21,24 @@ jobs:
         run: npm ci
       - name: Run verification tests
         run: npm test
+      - name: Windows Win32 helper smoke test
+        shell: pwsh
+        run: |
+          # Exercise the actual script in a real Windows runner without touching a browser.
+          $output = & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ".\src\ops\windowControl.ps1" -Mode focus -Pids "$PID"
+          if ($LASTEXITCODE -ne 0) { throw "Window manager helper failed to execute" }
+          $result = $output | ConvertFrom-Json
+          if ($result.mode -ne 'focus' -or @($result.results).Count -ne 1) {
+            throw "Window manager helper produced invalid response"
+          }
       - name: Build Windows installer
         run: npm run build:win
+      - name: Verify packaged Win32 helper is unpacked
+        shell: pwsh
+        run: |
+          if (-not (Test-Path ".\dist\win-unpacked\resources\app.asar.unpacked\src\ops\windowControl.ps1")) {
+            throw "PowerShell helper missing from Electron unpacked bundle"
+          }
       - name: Capture actual Electron UI (sample data)
         continue-on-error: true
         shell: pwsh
