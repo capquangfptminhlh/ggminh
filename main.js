@@ -36,6 +36,7 @@ const ProxyCenter = require('./src/proxies/proxyCenter');
 const {ExtensionManager} = require('./src/extensions/manager');
 const {AIAdvisor} = require('./src/ai/advisor');
 const {proposeWorkflow} = require('./src/ai/workflowDraft');
+const {LicenseManager} = require('./src/licensing/manager');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -54,6 +55,7 @@ let configBackup = null;
 let proxyCenter = null;
 let extensionManager = null;
 let aiAdvisor = null;
+let licenseManager = null;
 let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -130,6 +132,13 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('license-center-status', () => licenseManager.status());
+  ipcMain.handle('license-center-activate', (_,token) => licenseManager.activate(token));
+  ipcMain.handle('license-center-deactivate', () => licenseManager.deactivate());
+  ipcMain.handle('license-center-copy-installation', () => {
+    clipboard.writeText(licenseManager.installationId);
+    return true;
+  });
   ipcMain.handle('session-snapshots-list', (_,id) => sessionSnapshots.list(id));
   ipcMain.handle('session-snapshots-create', (_,id,passphrase) =>
     sessionSnapshots.create(id,passphrase));
@@ -494,6 +503,7 @@ app.whenReady().then(async () => {
   }
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
   aiAdvisor = new AIAdvisor(storageDir,safeStorage);
+  licenseManager = new LicenseManager(storageDir);
   launcher = new BrowserLauncher(store,{proxyVault});
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;

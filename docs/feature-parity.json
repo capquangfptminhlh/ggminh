@@ -106,9 +106,9 @@
   {
     "id": "commercial",
     "name": "Billing, plans and integrated providers",
-    "state": "missing",
-    "evidence": "No billing system",
-    "gaps": "No subscriptions, proxy marketplace, entitlements, purchases or credits",
+    "state": "partial",
+    "evidence": "Ed25519 public-key offline license validation, installation ID, monthly issuer, expiry and activation UI; private issuer key not shipped",
+    "gaps": "No automated checkout/billing, centralized revocation, license-server device management or enforced per-plan entitlements",
     "acceptance": "Payment compliance, entitlement, chargeback and accounting verification"
   },
   {

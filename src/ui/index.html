@@ -114,6 +114,7 @@
           <div class="lhm-tools-panel">
             <button type="button" class="btn btn-secondary lhm-api-button" id="btn-api-toggle">API: Tắt</button>
             <button type="button" class="btn btn-secondary" id="btn-api-copy" style="display:none">Sao chép API Key</button>
+            <button type="button" class="btn btn-secondary" id="btn-license-center">Giấy phép & gia hạn</button>
             <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
             <button type="button" class="btn btn-secondary" id="btn-session-snapshots">Snapshots</button>
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
@@ -602,6 +603,47 @@
         <p id="snapshots-status" role="status" aria-live="polite"></p>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-primary" id="snapshots-done">Đóng</button></div>
+    </div>
+  </div>
+
+  <!-- Offline signed license dashboard. The app has no embedded issuer private key. -->
+  <div class="modal-overlay" id="modal-license-center">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="license-center-title">
+      <div class="modal-header">
+        <h2 id="license-center-title">Giấy phép LHM Browser & gia hạn</h2>
+        <button type="button" class="btn-close" id="license-center-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Kích hoạt offline bằng license do đơn vị phát hành ký bằng Ed25519. Không cần gửi cookie, mật khẩu, proxy hoặc thông tin trình duyệt để kích hoạt. Đây là hệ thống xác minh license cục bộ, không phải cổng thanh toán tự động.</p>
+        <div class="lhm-license-status">
+          <div><span>Trạng thái</span><strong id="license-state">Đang kiểm tra…</strong></div>
+          <div><span>Gói sử dụng</span><strong id="license-plan">—</strong></div>
+          <div><span>Hạn dùng</span><strong id="license-expires">—</strong></div>
+          <div><span>Hạn mức hồ sơ</span><strong id="license-limit">—</strong></div>
+        </div>
+        <div class="form-group">
+          <label for="license-installation-id">Mã cài đặt (cung cấp cho bên phát hành để gia hạn)</label>
+          <div class="lhm-license-identity">
+            <input id="license-installation-id" type="text" readonly>
+            <button type="button" class="btn btn-secondary" id="license-copy-installation">Sao chép mã</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="license-token">Nhập mã license có chữ ký số</label>
+          <textarea id="license-token" rows="4" spellcheck="false" autocomplete="off" placeholder="lhmlic1.xxxxx.yyyyy"></textarea>
+          <p class="lhm-bulk-help">Mã license gắn với cài đặt này. Giữ mã bí mật, không đăng lên nhóm. Thời hạn dựa trên đồng hồ thiết bị; phần mềm sẽ cảnh báo nếu phát hiện giờ hệ thống bị chỉnh lùi.</p>
+        </div>
+        <div class="lhm-license-actions">
+          <button type="button" class="btn btn-primary" id="license-activate">Kích hoạt / gia hạn</button>
+          <button type="button" class="btn btn-secondary" id="license-refresh">Kiểm tra lại</button>
+          <button type="button" class="btn btn-danger" id="license-deactivate">Xóa license trên máy này</button>
+        </div>
+        <p id="license-message" role="status" aria-live="polite"></p>
+        <p class="lhm-bulk-help">Phiên bản này hiển thị và xác thực license nhưng **chưa khóa các tính năng theo gói**; thanh toán, thu hồi license từ xa và quản lý thuê bao nhiều khách hàng cần máy chủ riêng.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="license-done">Đóng</button>
+      </div>
     </div>
   </div>
 
@@ -1282,6 +1324,7 @@ run();
   <script src="windowManager.js"></script>
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
+  <script src="licenseCenter.js"></script>
   <script src="aiAdvisor.js"></script>
   <script src="cacheManager.js"></script>
   <script src="sessionSnapshots.js"></script>
