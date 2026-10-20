@@ -41,7 +41,7 @@ try{
  assert.strictEqual(fs.readFileSync(path.join(chrome,'Login Data'),'utf8'),'IMPORTANT PASSWORDS');
  assert.strictEqual(fs.readFileSync(path.join(chrome,'IndexedDB','storage'),'utf8'),'IMPORTANT INDEXEDDB');
  assert.strictEqual(fs.readFileSync(path.join(chrome,'Local Storage','leveldb'),'utf8'),'IMPORTANT LOCALSTORAGE');
- assert.throws(()=>preview(store,launcher,['../bad']),/Invalid/);
+ assert.throws(()=>preview(store,launcher,['../bad']),/không hợp lệ|Invalid/);
  assert.throws(()=>preview(store,launcher,['ghost']),/Profile missing/);
  if(process.platform!=='win32'){
   fs.symlinkSync('/tmp',path.join(chrome,'Cache'));
