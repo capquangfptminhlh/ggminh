@@ -82,6 +82,8 @@ class ConfigBackup {
     const ids = new Set();
     for (const p of decoded.profiles) {
       if (!p || typeof p.name !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(p.id)) throw Error('Hồ sơ trong bản sao lưu không hợp lệ');
+      if (!p.name.trim() || p.name.length > 160)
+        throw Error('Profile name trong bản sao lưu không hợp lệ');
       if (ids.has(p.id)) throw Error('ID hồ sơ trùng trong bản sao lưu');
       ids.add(p.id);
       if (p.proxy?.user || p.proxy?.pass || p.proxy?.password) throw Error('Sao lưu không chứa thông tin đăng nhập proxy');
