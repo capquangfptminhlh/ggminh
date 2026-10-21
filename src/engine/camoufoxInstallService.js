@@ -20,7 +20,8 @@ const MIN_ARCHIVE=100;
 const HASH=/^[a-f0-9]{64}$/;
 const RELEASE_URL=/^\/[^/?#]+\/[^/?#]+\/releases\/download\/[^/?#]+\/[^/?#]+\.zip$/i;
 function validateRelease(document,{publicKey}={}){
- if(!publicKey||crypto.createPublicKey(publicKey).asymmetricKeyType!=='ed25519')
+ if(!publicKey||
+    (publicKey.type==='public'?publicKey:crypto.createPublicKey(publicKey)).asymmetricKeyType!=='ed25519')
   throw Error('An independent Ed25519 engine publisher public key is required');
  if(!document||typeof document!=='object'||Array.isArray(document)||
     Object.keys(document).sort().join(',')!=='archiveBytes,archiveSha256,manifest,schema,url'||
@@ -127,7 +128,8 @@ class CamoufoxInstallService{
  constructor(appDataRoot,{publicKey,platform=process.platform,
   download=downloadPinned,extract=extractArchive,inspect,scriptPath}={}){
   if(!path.isAbsolute(appDataRoot))throw Error('Install root must be absolute');
-  if(!publicKey||crypto.createPublicKey(publicKey).asymmetricKeyType!=='ed25519')
+  if(!publicKey||
+    (publicKey.type==='public'?publicKey:crypto.createPublicKey(publicKey)).asymmetricKeyType!=='ed25519')
    throw Error('Independent Camoufox engine publisher key is required');
   this.base=path.join(appDataRoot,'engines');
   this.root=path.join(this.base,'camoufox');
