@@ -552,6 +552,9 @@
         <div class="form-group"><label for="cloud-sync-device">Mã thiết bị</label>
           <input id="cloud-sync-device" placeholder="windows1" autocomplete="off">
         </div>
+        <div class="form-group"><label for="cloud-sync-device-key">Khóa riêng thiết bị (không lưu)</label>
+          <input type="password" id="cloud-sync-device-key" autocomplete="off" placeholder="Khóa 64 ký tự do quản trị viên cấp">
+        </div>
         <div class="form-group"><label for="cloud-sync-token">Token cá nhân (không lưu)</label>
           <input type="password" id="cloud-sync-token" autocomplete="off">
         </div>
@@ -563,6 +566,16 @@
           <button type="button" class="btn btn-primary" id="cloud-sync-push">Đẩy metadata đã mã hóa</button>
         </div>
         <p id="cloud-sync-result" role="status" aria-live="polite">Chưa kết nối. Chỉ dùng máy chủ được bạn tin cậy.</p>
+        <section class="form-group" aria-label="Lịch sử Cloud">
+          <h3>Lịch sử và khôi phục Cloud (tối đa 25 bản cũ)</h3>
+          <button type="button" class="btn btn-secondary" id="cloud-sync-history">Xem lịch sử</button>
+          <label for="cloud-sync-history-revision">Phiên bản cần phục hồi</label>
+          <select id="cloud-sync-history-revision"></select>
+          <label for="cloud-sync-history-confirm">Nhập RESTORE CLOUD để xác nhận</label>
+          <input id="cloud-sync-history-confirm" autocomplete="off" placeholder="RESTORE CLOUD">
+          <button type="button" class="btn btn-secondary" id="cloud-sync-history-restore" disabled>Khôi phục bản Cloud đã chọn</button>
+          <p id="cloud-sync-history-result" role="status" aria-live="polite">Khôi phục tạo một revision mới đã mã hóa; không sửa trực tiếp hồ sơ trên máy.</p>
+        </section>
         <div class="form-group">
           <label for="cloud-sync-confirm">Khôi phục metadata về máy: nhập APPLY CLOUD để xác nhận</label>
           <input id="cloud-sync-confirm" autocomplete="off" placeholder="APPLY CLOUD">
@@ -586,6 +599,17 @@
           </div>
           <button type="button" class="btn btn-primary" id="cloud-team-invite">Tạo lời mời (24 giờ)</button>
           <p id="cloud-team-result" role="status" aria-live="polite">Lời mời chỉ sử dụng một lần. Không chia sẻ token quản trị.</p>
+          <h3>Quản lý thiết bị được cấp phép</h3>
+          <div class="lhm-wm-actions"><button type="button" id="cloud-team-device-list" class="btn btn-secondary">Xem thiết bị</button></div>
+          <div id="cloud-team-devices" class="lhm-wm-list" aria-live="polite"></div>
+          <div class="form-group"><label for="cloud-team-device-subject">Mã thành viên được cấp thiết bị</label>
+            <input id="cloud-team-device-subject" autocomplete="off" placeholder="owner1">
+          </div>
+          <div class="form-group"><label for="cloud-team-device-id">Mã thiết bị mới</label>
+            <input id="cloud-team-device-id" autocomplete="off" placeholder="windows-01">
+          </div>
+          <button type="button" id="cloud-team-device-enroll" class="btn btn-primary">Cấp khóa thiết bị một lần</button>
+          <p id="cloud-team-device-result" role="status" aria-live="polite">Khóa chỉ hiện một lần. Gửi riêng cho đúng thành viên.</p>
           <div class="form-group">
             <label for="cloud-team-invite-token">Nhận lời mời: nhập mã lời mời một lần</label>
             <input type="password" id="cloud-team-invite-token" autocomplete="off" placeholder="Mã lời mời đã được cấp">
