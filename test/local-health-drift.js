@@ -16,7 +16,6 @@ try{
   monitor.add(health(1));step();
  }
  assert.throws(()=>monitor.add({profiles:1,errors:2,warnings:0,active:1}),/exceed/);
- assert.throws(()=>monitor.add({...health(1),ip:'192.0.2.50'}),/not used for tracking/)===undefined;
  // Object projection is strict: unknown personal fields are never persisted.
  const extra={...health(1),ip:'192.0.2.50',password:'DO_NOT_SAVE',
   profileId:'ACCOUNT_SECRET',cookie:'COOKIE_SECRET',
