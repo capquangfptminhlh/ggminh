@@ -53,6 +53,12 @@ jobs:
           if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\bundled-engines") {
             throw "Bundled engine resources unexpectedly duplicated inside app bundle"
           }
+          if (-not (Test-Path ".\\dist\\win-unpacked\\resources\\lhm-camoufox\\README.md")) {
+            throw "Camoufox external release staging directory missing"
+          }
+          if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\camoufox-engine") {
+            throw "Camoufox resource folder was packed inside app bundle unexpectedly"
+          }
           node -e "const m=require('./src/engine/bundledEngineManager'); if(typeof m.BundledEngineManager!=='function')process.exit(1)"
       - name: Package standalone Cloud API (no customer secrets)
         shell: pwsh
