@@ -32,7 +32,7 @@ Write-Host 'Official asset SHA-256 verified.'
 # ephemeral test workspace and are NEVER uploaded as build artifacts.
 Expand-Archive -LiteralPath $archive -DestinationPath $browserRoot -Force
 $resolved=(Resolve-Path $browserRoot).Path
-$exe=Get-ChildItem -LiteralPath $browserRoot -Filter firefox.exe -Recurse -File -ErrorAction Stop |
+$exe=Get-ChildItem -LiteralPath $browserRoot -Filter camoufox.exe -Recurse -File -ErrorAction Stop |
   Where-Object { $_.FullName.StartsWith($resolved+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) } |
   Select-Object -First 1
 if (-not $exe) {
@@ -43,7 +43,7 @@ if (-not $exe) {
   foreach ($candidate in $candidates) {
     Write-Host (' - '+[IO.Path]::GetRelativePath($resolved,$candidate))
   }
-  throw 'Official archive contains no firefox.exe. Review the upstream layout; do not guess or relabel a binary.'
+  throw 'Official archive contains no camoufox.exe. Review the upstream layout; do not guess or relabel a binary.'
 }
 # Reject linked files and tree escapes, including malicious archive surprises.
 if (($exe.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
