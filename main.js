@@ -886,7 +886,7 @@ app.whenReady().then(async () => {
     bundleVerifier:verifiedProviders,store,proxyVault,
     // Explicit operator-only opt-in. Production defaults fail closed until
     // independently verified proxy/DNS/WebRTC lab acceptance.
-    allowProxyLab:process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+    allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
   });
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the
