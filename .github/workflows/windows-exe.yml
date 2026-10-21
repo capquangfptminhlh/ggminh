@@ -59,6 +59,16 @@ jobs:
           if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\camoufox-engine") {
             throw "Camoufox resource folder was packed inside app bundle unexpectedly"
           }
+          $extractor = Join-Path $PWD "dist/win-unpacked/resources/app.asar.unpacked/tools/extract-signed-engine.ps1"
+          if (-not (Test-Path $extractor)) {
+            throw "Signed extraction helper missing from unpacked Electron resources"
+          }
+          $camoufoxStaging = Join-Path $PWD "dist/win-unpacked/resources/lhm-camoufox"
+          foreach ($unsafe in @("camoufox.exe", "release.json", "publisher-ed25519.pub")) {
+            if (Test-Path (Join-Path $camoufoxStaging $unsafe)) {
+              throw "Draft preview unexpectedly contains unapproved Camoufox commercial asset: $unsafe"
+            }
+          }
           node -e "const m=require('./src/engine/bundledEngineManager'); if(typeof m.BundledEngineManager!=='function')process.exit(1)"
       - name: Package standalone Cloud API (no customer secrets)
         shell: pwsh
