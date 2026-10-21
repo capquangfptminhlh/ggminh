@@ -90,7 +90,7 @@ class CamoufoxAdapter{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
-  prepareProxy=prepareCamoufoxProxy
+  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
      typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
@@ -101,6 +101,7 @@ class CamoufoxAdapter{
   if(typeof prepareProxy!=='function')throw Error('Invalid Camoufox proxy configurator');
   this.closeWindow=closeWindow;this.platform=platform;
   this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
+  this.allowProxyLab=allowProxyLab===true;
   this.startupTimeoutMs=startupTimeoutMs;
   this.sessions=new Map();this.pending=new Map();
  }
@@ -113,7 +114,7 @@ class CamoufoxAdapter{
    automationAvailable:false,
    ready:signed.valid===true&&this.platform==='win32',
    note:signed.valid?
-    'Signed native EXE available; manual UI only. Vault-backed HTTPS CONNECT proxy is experimental, unverified on a live lab.':
+    'Signed native EXE available; manual UI only. Proxy auth is opt-in lab-only until DNS/WebRTC checks pass.':
     'Independent publisher-signed Camoufox EXE is not installed or verified.'};
  }
  isBusy(id){return this.sessions.has(id)||this.pending.has(id);}
@@ -122,6 +123,8 @@ class CamoufoxAdapter{
   const id=assertProfileId(profile?.id);
   if(this.isBusy(id))throw Error('Camoufox profile is already running or starting');
   const {profileDir}=validateCamoufoxProfile(profile,this.baseDir);
+  if(normalizedProxy(profile.proxy).type!=='direct'&&!this.allowProxyLab)
+   throw Error('Camoufox authenticated proxy is experimental and requires an approved proxy/DNS/WebRTC lab; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
   const task=this._startVerified({profile,id,profileDir,target,onClosed});
   this.pending.set(id,task);
