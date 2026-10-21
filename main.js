@@ -32,6 +32,7 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
+const {resolveEngineType}=require('./src/engine/EngineFactory');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
 const {NavigationSynchronizer}=require('./src/ops/navigationSynchronizer');
@@ -340,8 +341,8 @@ function initIPC() {
     if(!['firefox','camoufox'].includes(provider))throw Error('Invalid Firefox provider');
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả trình duyệt trước khi thay đổi engine Firefox');
-    if(provider==='camoufox'&&!camoufoxAdapter.status().installed)
-      throw Error('Camoufox TypeScript package not installed; no browser binary is bundled');
+    if(provider==='camoufox'&&!camoufoxAdapter.status().ready)
+      throw Error('Camoufox needs an installed TypeScript launcher AND a signed verified Windows distribution');
     store.updateSettings({geckoProvider:provider});
     return {provider,status:camoufoxAdapter.status()};
   });
@@ -603,12 +604,28 @@ function initIPC() {
     batchAutomation.status().active?batchAutomation.stop():automationRunner.stop());
   ipcMain.handle('studio-approve', () => automationRunner.approve());
   ipcMain.handle('studio-status', () => automationRunner.status());
-  ipcMain.handle('save-profile', (_, profile) => {
+  ipcMain.handle('save-profile', async (_, profile) => {
     // The Local API already forbids all live profile edits. Apply the same
     // lifecycle rule to desktop edits, including URLs, fingerprint and notes.
     if (profile?.id && store.getProfile(profile.id) && launcher.isBusy(profile.id))
       throw new Error('Hãy đóng hồ sơ trước khi chỉnh sửa cấu hình để tránh sai lệch dữ liệu của phiên đang chạy');
-    const saved = store.saveProfile(profile);
+    const existing=profile?.id?store.getProfile(profile.id):null;
+    let allowEngineChange=false;
+    if(existing){
+      const oldType=resolveEngineType(existing,store.getSettings());
+      const selected=resolveEngineType({...existing,...profile},store.getSettings());
+      if(oldType!==selected){
+        const answer=await dialog.showMessageBox(mainWindow,{
+          type:'warning',buttons:['Hủy','Đổi engine'],defaultId:0,
+          cancelId:0,noLink:true,title:'Đổi engine của profile',
+          message:'Chuyển từ '+oldType+' sang '+selected+'?',
+          detail:'Dữ liệu phiên, cookie và thư mục Firefox/Chromium/Camoufox không được chuyển hoặc sao chép. Profile phải đang đóng.'
+        });
+        if(answer.response!==1)throw Error('Đã hủy chuyển đổi engine');
+        allowEngineChange=true;
+      }
+    }
+    const saved = store.saveProfile(profile,{allowEngineChange});
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;
   });
@@ -768,7 +785,10 @@ app.whenReady().then(async () => {
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));
   launcher.bundledEngine=bundledEngine;
-  camoufoxAdapter=new CamoufoxAdapter(storageDir);
+  const camoufoxBundle=new BundledEngineManager(app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-camoufox')
+    :path.join(__dirname,'resources','camoufox-engine'),{engine:'camoufox'});
+  camoufoxAdapter=new CamoufoxAdapter(storageDir,{bundleVerifier:camoufoxBundle});
   launcher.camoufoxAdapter=camoufoxAdapter;
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;

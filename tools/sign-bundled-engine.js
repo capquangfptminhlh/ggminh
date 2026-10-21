@@ -6,7 +6,7 @@ const path=require('path');
 const crypto=require('crypto');
 const {signedPayload,listFiles,sha256File}=require('../src/engine/bundledEngineManager');
 const {PUBLIC_KEY}=require('../src/licensing/manager');
-function issueManifest({root,version,keyFile}){
+function issueManifest({root,version,keyFile,engine='chromium'}){
  if(typeof root!=='string'||!path.isAbsolute(root))
   throw Error('Choose the absolute resource engine directory');
  if(typeof version!=='string'||!/^([0-9]{1,3}\.){2}[0-9]{1,5}(?:\.[0-9]{1,6})?$/.test(version))
@@ -16,11 +16,12 @@ function issueManifest({root,version,keyFile}){
  const dir=fs.lstatSync(root);
  if(!dir.isDirectory()||dir.isSymbolicLink())throw Error('Release root must be a regular folder');
  const privateKey=crypto.createPrivateKey(fs.readFileSync(keyFile));
- const entry='chrome.exe';
+ if(!['chromium','camoufox'].includes(engine))throw Error('Unsupported engine distribution');
+ const entry=engine==='camoufox'?'camoufox.exe':'chrome.exe';
  const filenames=listFiles(root);
- if(!filenames.includes(entry))throw Error('Only an approved bundled chrome.exe is supported');
+ if(!filenames.includes(entry))throw Error('Bundled release is missing approved browser executable: '+entry);
  const manifest={
-  schema:1,engine:'chromium',version,entry,
+  schema:1,engine,version,entry,
   files:filenames.map(name=>({
    path:name,...sha256File(path.join(root,...name.split('/')))
   }))
@@ -42,6 +43,7 @@ if(require.main===module){
  try{
   const result=issueManifest({
    root:process.argv[2],version:process.argv[3],
+   engine:process.argv[4]||'chromium',
    keyFile:process.env.LHM_ENGINE_SIGNING_KEY_FILE
   });
   console.log('Signed verified manifest:',result.path,'Files:',result.fileCount);

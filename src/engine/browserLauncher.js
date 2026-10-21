@@ -8,6 +8,7 @@ const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation
 const { updateGeckoProxy } = require('./geckoProxy');
 const { optionsFor } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
+const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null } = {}) {
@@ -18,6 +19,7 @@ class BrowserLauncher {
     this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
     this.baseDataDir = store.baseDir;
+    this.engineFactory=new EngineFactory(this);
   }
 
   findBrowserBinary(engine = 'chromium') {
@@ -112,17 +114,14 @@ class BrowserLauncher {
     }
     if (profile.requiresProxySetup === true)
       throw Error('Hồ sơ nhập từ bản sao lưu cần gán lại proxy trước khi mở.');
-    const engine = profile.engine === 'gecko' ? 'gecko' : 'chromium';
-    if(engine==='gecko'&&this.store.getSettings().geckoProvider==='camoufox'){
-      if(!this.camoufoxAdapter)throw Error('Camoufox adapter is unavailable');
-      const details=await this.camoufoxAdapter.start(profile,{
-        url:customUrl||profile.startUrl,
-        onClosed:()=>{const active=this.activeProcesses.get(profile.id);
-          if(active?.provider==='camoufox')this.activeProcesses.delete(profile.id);}
-      });
-      this.activeProcesses.set(profile.id,{...details,process:null,stopping:false});
-      return details;
-    }
+    // Resolve provider using the saved per-profile selection. Never fallback
+    // from a missing Camoufox release into a different browser engine.
+    return this.engineFactory.launchProfile(profile,{customUrl});
+  }
+
+  async _launchInstalled(profile,customUrl,engine){
+    if(!['chromium','gecko'].includes(engine))
+      throw Error('Installed runtime cannot handle this engine');
     const browserBin = this.findBrowserBinary(engine);
     // Manual browsing does not require a remotely controllable DevTools endpoint.
     const port = engine === 'chromium' && this.store.getSettings().apiEnabled === true ?
@@ -204,6 +203,7 @@ class BrowserLauncher {
 
     const instanceInfo = {
       profileId: profile.id, engine, name: profile.name,
+      engineType:engine==='gecko'?'firefox':'chromium',
       port, pid: proc.pid, startedAt: new Date().toISOString(), wsEndpoint: null
     };
     this.activeProcesses.set(profile.id, { process: proc, stopping: false, ...instanceInfo });
@@ -265,6 +265,7 @@ class BrowserLauncher {
         profileId: id,
         engine: info.engine || 'chromium',
         provider:info.provider||(info.engine==='gecko'?'firefox':'chromium'),
+        engineType:info.engineType||resolveEngineType(info,this.store.getSettings()),
         name: info.name,
         port: info.port,
         pid: info.pid,

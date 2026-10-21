@@ -29,17 +29,23 @@ function validateCamoufoxProfile(profile,baseDir){
  return {profileDir,headless:false};
 }
 class CamoufoxAdapter{
- constructor(baseDir,{loader=officialLauncher}={}){
+ constructor(baseDir,{loader=officialLauncher,bundleVerifier=null}={}){
   if(typeof loader!=='function')throw Error('Invalid Camoufox loader');
-  this.baseDir=baseDir;this.loader=loader;this.sessions=new Map();
+  this.baseDir=baseDir;this.loader=loader;this.bundleVerifier=bundleVerifier;
+  this.sessions=new Map();
   this.pending=new Map();
  }
  status(){
   let installed=false;
   try{require.resolve('camoufox');installed=true;}catch(_){}
-  return {installed,active:this.sessions.size,
-   note:installed?'Camoufox launcher found; browser binary has not been verified by LHM':
-    'Camoufox launcher unavailable. No binary is bundled with this preview.'};
+  const bundle=this.bundleVerifier?.status?.()||
+   {valid:false,available:false,reason:'No signed Camoufox release configured'};
+  return {installed,binaryVerified:bundle.valid===true,version:bundle.version||null,
+   active:this.sessions.size,
+   ready:installed&&bundle.valid===true,
+   note:installed&&bundle.valid?
+    'Camoufox launcher and signed distribution verified. Windows runtime acceptance is still required.':
+    'Camoufox launcher or signed Windows browser distribution is missing; no automatic download is permitted.'};
  }
  isBusy(id){return this.sessions.has(id)||this.pending.has(id);}
  async start(profile,{url,onClosed}={}){
@@ -48,11 +54,22 @@ class CamoufoxAdapter{
   const {profileDir}=validateCamoufoxProfile(profile,this.baseDir);
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
   const operation=(async()=>{
-   ensureIsolatedDirectory(this.baseDir,profileDir);
+   // Verify before calling the upstream launcher. Some Camoufox versions
+   // automatically download browser assets when no executable_path is given.
+   // That is forbidden for unattended customer installations.
+   if(!this.bundleVerifier||typeof this.bundleVerifier.resolve!=='function')
+    throw Error('Camoufox requires a trusted, release-signed browser distribution');
+   const executablePath=this.bundleVerifier.resolve('camoufox');
+   if(typeof executablePath!=='string'||!path.isAbsolute(executablePath))
+    throw Error('Camoufox release verifier did not supply an absolute executable path');
    const Camoufox=await this.loader();
+   ensureIsolatedDirectory(this.baseDir,profileDir);
    let context=null;
    try{
-    context=await Camoufox({headless:false,user_data_dir:profileDir});
+    // The official TypeScript launcher supports persistent_context and
+    // executable_path. Explicit path prevents first-launch auto-download.
+    context=await Camoufox({headless:false,persistent_context:true,
+     user_data_dir:profileDir,executable_path:executablePath});
     if(!context||typeof context.newPage!=='function'||
        typeof context.close!=='function'||typeof context.on!=='function')
       throw Error('Camoufox persistent context did not expose the expected Playwright API');

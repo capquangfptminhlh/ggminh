@@ -83,3 +83,48 @@ https://www.electron.build/docs/contents/
 `node test/bundled-engine-status.js` validates signed fixture behavior,
 selector wiring and external resource packaging declarations. It does not
 pretend to ship or launch a real patched browser.
+
+## Signed Camoufox runtime staging (PR #14 hardening)
+
+LHM now requires the upstream TypeScript Camoufox launcher **and** a
+release-signed Camoufox Firefox executable. The adapter passes
+`persistent_context: true`, a private per-profile `user_data_dir`, and
+an explicit `executable_path` verified against the signed manifest.
+It refuses to call the upstream launcher at all when no signed binary is
+present. This prevents an unapproved first-run binary auto-download.
+The independent runtime lives at `resources/lhm-camoufox` in packaged
+Electron builds, or `resources/camoufox-engine` in development. No
+Camoufox binary or private signing key is committed to the repository.
+The current application package still defaults to installed browsers.
+
+Release maintainers can stage approved Windows Camoufox assets privately,
+then issue a manifest with:
+
+`node tools/sign-bundled-engine.js ABSOLUTE_CAMOUFOX_ASSETS_DIR VERSION camoufox`
+
+using `LHM_ENGINE_SIGNING_KEY_FILE` held outside the source tree.
+The manifest must list every resource file; `camoufox.exe` is required.
+Review third-party notices, redistributed license obligations, antivirus
+reports and the real executable's provenance. Do NOT disable Windows
+Defender or add the installation directory to exclusions. A code-signing
+certificate alone never guarantees malware safety or SmartScreen approval.
+
+## SQLite migration preview (no automatic cut-over)
+
+An explicit offline operator tool now exports the existing `db.json`
+into `db-preview.sqlite` using Node 22+ built-in SQLite:
+
+`node tools/preview-sqlite-migration.js ABSOLUTE_DATA_DIR --confirm-preview`
+
+The tool validates and hashes the source, checks duplicate profile IDs,
+exports all profiles and their engine types, retains a complete original
+JSON snapshot in SQLite, runs `PRAGMA integrity_check`, and atomically
+publishes only if the preview destination does not already exist.
+**The application continues to use the original JSON database.**
+No original file is renamed, removed, overwritten, or automatically
+converted. The SQLite preview is an additional local, unencrypted
+copy of the profile metadata: secure disk permissions and backups matter,
+and it must not be distributed or uploaded to Cloud Sync.
+A live SQLite backend cut-over requires transactional migration,
+encryption-at-rest policy, schema versioning, backward compatibility,
+backup/rollback and concurrent writer tests before production.

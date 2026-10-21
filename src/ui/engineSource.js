@@ -20,9 +20,10 @@ window.addEventListener('DOMContentLoaded',()=>{
    const {source,bundle,geckoProvider,camoufox}=await window.api.bundledEngineStatus();
    selector.value=source;
    geckoChoice.value=geckoProvider;
-   geckoResult.textContent=camoufox.installed?
-     'Đã tìm thấy thư viện Camoufox. Browser binary và tính tương thích chưa được xác nhận.':
-     'Chưa cài thư viện Camoufox. Không có binary đi kèm bộ cài.';
+   geckoResult.textContent=camoufox.ready?
+     'Thư viện và engine Camoufox đã xác minh · '+camoufox.version+
+       '. Cần kiểm thử Windows thật trước khi sử dụng production.':
+     'Camoufox chưa sẵn sàng: cần thư viện TypeScript và bản Windows đã ký, xác minh SHA-256. Không tự tải browser.';
    result.textContent=bundle.valid?
     'Engine đóng gói hợp lệ · phiên bản '+bundle.version+
      ' · '+bundle.fileCount+' tệp · SHA-256: '+bundle.sha256.slice(0,16)+'…':
