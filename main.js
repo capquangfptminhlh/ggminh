@@ -174,7 +174,14 @@ function createWindow() {
           await new Promise(resolve=>setTimeout(resolve,350));
           const syncImage=await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.join(__dirname,'dist','workspace-synchronizer-preview.png'),syncImage.toPNG());
-          console.log('[UI smoke] Verified integrated Team, Cloud Sync and Synchronizer modals');
+          const engineCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('wm-done').click(); document.getElementById('btn-engine-source').click(); return {open:document.getElementById('modal-engine-source').classList.contains('open'),chromium:!!document.getElementById('engine-source-select'),gecko:!!document.getElementById('engine-gecko-provider'),apply:!!document.getElementById('engine-gecko-save')}; })()",true);
+          if(!Object.values(engineCheck).every(Boolean))
+            throw Error('Camoufox Gecko provider UI failed: '+JSON.stringify(engineCheck));
+          await new Promise(resolve=>setTimeout(resolve,300));
+          const engineImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-engine-provider-preview.png'),engineImage.toPNG());
+          console.log('[UI smoke] Verified integrated Team, Cloud Sync, Synchronizer and Gecko provider modals');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
