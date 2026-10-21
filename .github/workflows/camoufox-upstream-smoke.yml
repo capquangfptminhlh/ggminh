@@ -1,0 +1,52 @@
+name: Camoufox Windows upstream smoke (no redistribution)
+
+on:
+  push:
+    branches:
+      - feat/per-profile-engine-factory-20261021
+    paths:
+      - .github/workflows/camoufox-upstream-smoke.yml
+      - tools/stage-camoufox-upstream-smoke.ps1
+      - tools/test-camoufox-real.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-camoufox-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-windows-camoufox:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up compatible Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned TypeScript launcher (test runner only)
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund camoufox@0.5.7 playwright-core@1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Install pinned test-only Camoufox launcher failed' }
+      - name: Download official pinned Windows x64 release and verify it
+        shell: pwsh
+        run: |
+          ./tools/stage-camoufox-upstream-smoke.ps1
+      - name: Launch real Camoufox and test two isolated persistent profiles
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-real.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox smoke failed' }
+      - name: Verify test did not stage browsers in the shipping installer
+        shell: pwsh
+        run: |
+          if (Test-Path .\dist\win-unpacked\resources\lhm-camoufox\firefox.exe) {
+            throw 'Upstream smoke asset unexpectedly copied into app installer'
+          }
+          Write-Host 'Official upstream browser was used only in transient CI workspace.'
