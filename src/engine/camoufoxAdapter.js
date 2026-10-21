@@ -6,7 +6,14 @@ const path=require('path');
 const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 
+function camoufoxRuntimeSupported(version=process.versions.node){
+ const [major,minor]=String(version).split('.').map(Number);
+ return Number.isInteger(major)&&Number.isInteger(minor)&&
+   (major>22||major===22&&minor>=15);
+}
 async function officialLauncher(){
+ if(!camoufoxRuntimeSupported())
+  throw Error('Camoufox requires Node.js 22.15+ inside Electron; update the Electron runtime first');
  let module;
  try{module=await import('camoufox');}
  catch(_){throw Error('Camoufox TypeScript launcher is not installed or cannot be loaded');}
@@ -42,8 +49,11 @@ class CamoufoxAdapter{
    {valid:false,available:false,reason:'No signed Camoufox release configured'};
   return {installed,binaryVerified:bundle.valid===true,version:bundle.version||null,
    active:this.sessions.size,
-   ready:installed&&bundle.valid===true,
-   note:installed&&bundle.valid?
+   runtimeCompatible:camoufoxRuntimeSupported(),
+   ready:installed&&bundle.valid===true&&camoufoxRuntimeSupported(),
+   note:!camoufoxRuntimeSupported()?
+    'Electron/Node runtime is too old; Camoufox requires Node.js 22.15+.':
+    installed&&bundle.valid?
     'Camoufox launcher and signed distribution verified. Windows runtime acceptance is still required.':
     'Camoufox launcher or signed Windows browser distribution is missing; no automatic download is permitted.'};
  }
@@ -57,6 +67,8 @@ class CamoufoxAdapter{
    // Verify before calling the upstream launcher. Some Camoufox versions
    // automatically download browser assets when no executable_path is given.
    // That is forbidden for unattended customer installations.
+   if(!camoufoxRuntimeSupported())
+    throw Error('Camoufox needs Node.js 22.15+; current Electron runtime is unsupported');
    if(!this.bundleVerifier||typeof this.bundleVerifier.resolve!=='function')
     throw Error('Camoufox requires a trusted, release-signed browser distribution');
    const executablePath=this.bundleVerifier.resolve('camoufox');
@@ -114,4 +126,4 @@ class CamoufoxAdapter{
  }
  getActive(id){return this.sessions.get(id)?.info||null;}
 }
-module.exports={CamoufoxAdapter,validateCamoufoxProfile,officialLauncher};
+module.exports={CamoufoxAdapter,validateCamoufoxProfile,officialLauncher,camoufoxRuntimeSupported};
