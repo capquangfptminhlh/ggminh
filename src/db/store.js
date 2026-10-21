@@ -83,11 +83,13 @@ class Store {
     if(!['chromium','gecko'].includes(engineFamily))
       throw Error('Invalid browser engine family');
     let type=input.engine_type===undefined
-      ? input.engine!==undefined&&input.engine!==old.engine
-        ? engineFamily==='gecko'?'firefox':'chromium'
-        : old.engine_type||resolveEngineType({
-            engine:engineFamily
-          },this.data.settings||{})
+      ? existingIndex<0
+        ? resolveEngineType({engine:engineFamily},this.data.settings||{})
+        : input.engine!==undefined&&input.engine!==old.engine
+          ? engineFamily==='gecko'?'firefox':'chromium'
+          : old.engine_type||resolveEngineType({
+              engine:engineFamily
+            },this.data.settings||{})
       : input.engine_type;
     if(!SUPPORTED.includes(type))throw Error('Invalid engine_type');
     if((type==='chromium'?'chromium':'gecko')!==engineFamily)
