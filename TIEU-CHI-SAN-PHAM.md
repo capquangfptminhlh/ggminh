@@ -5,6 +5,10 @@
 > với file này. Nếu một đề xuất mâu thuẫn với file này, đề xuất đó sai —
 > không tự ý diễn giải lại tiêu chí của chủ dự án.
 > Cập nhật gốc: 2026-10-21, theo các quyết định đã chốt của chủ dự án.
+> Bản v1.1 (2026-10-21): bổ sung 6 mục do chủ dự án duyệt — học thuyết độ
+> mạnh tín hiệu (Mục 5), quy tắc theo engine (Mục 8), phạm vi kết luận =
+> phạm vi đã đo (Mục 3.5, Mục 6), kỷ luật phát ngôn (Mục 11), chuỗi cổng
+> nghiệm thu (Mục 12), một nguồn sự thật cho code (Mục 13).
 
 ## 1. Mục đích sản phẩm
 
@@ -40,6 +44,9 @@ khi mất tài khoản, không phải mò mẫm.
 4. Tiêu chuẩn thực tế của chủ dự án: tạo Gmail không bị yêu cầu xác minh
    điện thoại = lần thử đó đạt. Đây là *quan sát của một lần thử*, không
    phải bằng chứng cho các lần khác; tài khoản vẫn có thể bị kiểm tra sau.
+5. **Phạm vi kết luận = phạm vi đã đo** — một kết luận "sạch" chỉ có giá
+   trị trên đúng những điểm đã có phép đo. Điểm chưa có đầu đo phải ghi
+   CHƯA ĐO, không bao giờ được im lặng bỏ qua như thể đã đạt.
 
 ## 4. Nền tảng quét gì — danh mục điểm quét (Google/Facebook)
 
@@ -88,6 +95,21 @@ không chứng minh được "người mới" với nền tảng.
    email khôi phục dùng chung, phương thức thanh toán dùng chung,
    quan hệ bạn bè/Business Manager, uy tín IP.
 
+### Độ mạnh của tín hiệu liên kết (thứ tự ưu tiên xử lý)
+
+1. Mạnh nhất: **lưu trữ dùng chung** (cookie/định danh đăng nhập) và
+   **IP thoát dùng chung** — xử lý hai lớp này trước mọi thứ khác.
+2. Tiếp theo: **cả bộ dấu vết là một thiết bị khả tín, nhất quán** —
+   giá trị nằm ở tính nhất quán của cả bộ, không ở từng giá trị riêng.
+3. Yếu tự nó: **dấu vết trùng nhau giữa các hồ sơ** — hàng triệu người
+   dùng thật dùng chung mẫu máy/phiên bản trình duyệt; trùng dấu vết
+   không tự nó kết luận được "cùng một người", và khác dấu vết cũng
+   không tách được hồ sơ dùng chung lưu trữ/IP/thanh toán.
+4. Hệ quả bắt buộc: **cấm tính năng cho cảm giác an toàn giả** — không
+   làm nút/công tắc đổi một giá trị đơn độc (ví dụ đổi riêng User
+   Agent) khiến người dùng tưởng hồ sơ đã thành người khác. Muốn khác
+   thì sinh lại cả bộ danh tính theo Mục 5.1.
+
 ## 6. Tính năng độc quyền (ẩn): Hộ vệ Liên đới
 
 Tính năng riêng của LHM, chạy ngầm, không phô trương cơ chế ra ngoài:
@@ -103,7 +125,9 @@ Kết luận "sạch" là một **bảng kiểm theo tiêu chí** (tự nhất q
 danh tính đã ghim / cách ly lưu trữ / không trùng tín hiệu tránh được /
 đường mạng đúng khai báo), mỗi tiêu chí: ĐẠT / KHÔNG ĐẠT / CHƯA ĐO kèm
 số đo. Không chấm điểm số. Không kết luận về khả năng liên kết của
-nền tảng.
+nền tảng. Bảng kiểm chỉ phủ đúng các điểm đã có đầu đo (Mục 3.5);
+điểm nào trong danh mục Mục 4 chưa đo được thì tiêu chí tương ứng bắt
+buộc là CHƯA ĐO.
 
 Các khối đã có và thuộc tính năng này: Signal Chain Preflight,
 danh tính ghim theo hồ sơ (CAMOU_CONFIG), GraphDefense, cảnh báo IP
@@ -139,6 +163,24 @@ dụng); kiểm chứng bằng phép đo.
   chính thức, kiểm tra kích thước + SHA-256 + manifest ký Ed25519
   bằng khóa publisher riêng (không dùng khóa license).
 
+### Áp dụng nguyên tắc theo từng engine
+
+- **Chromium, chế độ native:** không can thiệp giá trị nào; hồ sơ dùng
+  môi trường thật của trình duyệt đã cài.
+- **Chromium, chế độ tùy chỉnh:** UA chỉ đặt qua tham số khởi chạy
+  (`--user-agent`), phải sinh theo đúng phiên bản engine thật của
+  trình duyệt đã chọn và khớp Client Hints; việc ghi đè bằng
+  JavaScript (extension shim) là phương án heuristic, phải được cảnh
+  báo là không đảm bảo nhất quán tầng gốc. Múi giờ theo hồ sơ qua CDP
+  `Emulation.setTimezoneOverride` chỉ áp dụng cho phiên đang được
+  điều khiển — không khẳng định hiệu lực cho phiên chạy tay.
+- **Camoufox:** danh tính chỉ qua cơ chế chính thức của thư viện
+  (danh tính fpgen được ghim và phát lại qua `CAMOU_CONFIG`); cấm đặt
+  tay từng khóa cấu hình; UA là một thành phần của cả bộ danh tính,
+  không có đường đổi riêng.
+- **Firefox/Gecko thường:** chỉ chạy tay (automation bị API từ chối
+  theo fail-closed), không áp cấu hình dấu vết riêng.
+
 ## 9. Kỷ luật làm việc cho mọi agent
 
 1. Đo trước, khẳng định sau. Báo cáo phải tách rõ: *quan sát đo được* /
@@ -165,3 +207,49 @@ dụng); kiểm chứng bằng phép đo.
   chứng engine thật cục bộ; chưa nối luồng tạo hồ sơ trong ứng dụng,
   chưa chạy phép đo cấu hình trên CI Windows (chờ áp file vá workflow),
   chưa nghiệm thu máy Windows thật, chưa gộp `main`, chưa gắn tag.
+
+## 11. Kỷ luật phát ngôn và thương mại
+
+Áp dụng cho mọi văn bản hướng ra ngoài (trang bán hàng, quảng cáo,
+bài giới thiệu, câu chữ trong ứng dụng) và mọi báo cáo nội bộ:
+
+1. Cấm con số phần trăm không có phép đo đứng sau (kiểu "vô hiệu hóa
+   90% bẫy"). Muốn nói tỉ lệ phải có tập đo và phương pháp đo.
+2. Cấm khẳng định sự thật về đối thủ khi chưa tự kiểm chứng được bằng
+   bằng chứng. Định vị của LHM chỉ dựa trên những gì LHM đo được về
+   chính LHM (ví dụ: local-first, kiểm chứng được) — không dựa trên
+   lỗi bị gán cho đối thủ.
+3. Cấm câu chữ bảo chứng an toàn tài khoản (kiểu "hồ sơ này AN TOÀN
+   để chạy Ads"). Cách diễn đạt duy nhất được phép: liệt kê tiêu chí
+   đã đo và trạng thái của chúng, kèm số đo.
+4. Cấm tuyệt đối hóa: "không bao giờ", "100%", "luôn là người mới",
+   "đè bẹp nền tảng". Nền tảng thay đổi liên tục; mọi khẳng định phải
+   có thời điểm và phạm vi đo.
+5. Báo cáo của agent ngoài (kể cả văn phong tích cực, khen sản phẩm)
+   vẫn phải qua kiểm chứng độc lập như mọi báo cáo khác (Mục 9.2).
+
+## 12. Chuỗi cổng nghiệm thu (thứ tự bắt buộc trước phát hành)
+
+Không bước nào được bỏ qua hay đảo thứ tự:
+
+1. Test đơn vị + test tích hợp cục bộ đạt trên code của chính nhánh.
+2. CI Windows trên nhánh đó đạt, gồm cả các phép đo chạy trên runner
+   Windows (không chỉ build/đóng gói).
+3. Đo và nghiệm thu trên máy Windows thật của chủ dự án bằng EXE đã
+   cài đặt, có gói bằng chứng (báo cáo đo, ảnh chụp, nhật ký).
+4. Chỉ sau cổng 3, chủ dự án mới quyết định gắn tag và gộp vào
+   `main`. Agent đề xuất, chủ dự án quyết.
+
+## 13. Một nguồn sự thật cho code + quản trị file này
+
+1. Mọi thay đổi code phải nằm trên một nhánh GitHub có tên rõ ràng.
+   Thay đổi chỉ tồn tại ở máy local (chưa commit/chưa đẩy) không được
+   tính là "đã làm" trong bất kỳ báo cáo nào; phải đẩy lên trước khi
+   báo cáo hoàn thành.
+2. Không để nhiều trạng thái code song song không ai đối chiếu (bản
+   local, bản gửi đi, bản trên GitHub). Khi phát hiện lệch nhau, việc
+   đầu tiên là đối chiếu và hợp nhất về một trạng thái duy nhất, có
+   ghi lại.
+3. File tiêu chí này chỉ thay đổi theo quyết định của chủ dự án.
+   Agent được đề xuất sửa đổi kèm lý do; không tự ý sửa tiêu chí để
+   hợp thức hóa việc mình đã làm.
