@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {EventEmitter}=require('node:events');
-const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
+const {CamoufoxPlaywrightController}=require('../../src/engine/CamoufoxPlaywrightController');
 (async()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-camoufox-close-'));
  let closeCalls=0,gatewayCloses=0;
