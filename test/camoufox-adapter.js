@@ -30,7 +30,11 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
    fingerprint:{mode:'native'},startUrl:'https://example.com/',proxy:{type:'direct'}});
   const b=store.saveProfile({name:'Account B',engine:'gecko',
    fingerprint:{mode:'native'},startUrl:'https://example.com/',proxy:{type:'direct'}});
-  const adapter=new CamoufoxAdapter(base,{loader});
+  const fakeBinary=path.join(base,'approved-camoufox','firefox.exe');
+  const bundleVerifier={resolve:engine=>{
+   assert.strictEqual(engine,'camoufox');return fakeBinary;
+  },status:()=>({valid:true,version:'134.0.2'})};
+  const adapter=new CamoufoxAdapter(base,{loader,bundleVerifier});
   const launcher=new BrowserLauncher(store);
   launcher.camoufoxAdapter=adapter;
   launcher.findBrowserBinary=()=>{throw Error('Camoufox must not call system Firefox');};
@@ -50,7 +54,9 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
   assert(options[0].user_data_dir.includes(path.join('camoufox-profiles',a.id)));
   assert(options[1].user_data_dir.includes(path.join('camoufox-profiles',b.id)));
   assert.deepStrictEqual(options.map(o=>Object.keys(o).sort()),
-   [['headless','user_data_dir'],['headless','user_data_dir']]);
+   [['executable_path','headless','persistent_context','user_data_dir'],
+    ['executable_path','headless','persistent_context','user_data_dir']]);
+  assert(options.every(o=>o.executable_path===fakeBinary&&o.persistent_context===true));
   assert(visited.every(item=>item.url==='https://example.com/'));
   assert(launcher.listActive().every(s=>s.port===null&&s.provider==='camoufox'));
   assert.strictEqual(launcher.stop(a.id).success,true);
