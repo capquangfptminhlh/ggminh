@@ -30,7 +30,10 @@ function validateCamoufoxProfile(profile,baseDir){
 }
 function nativeArgs(profileDir,url){
  if(!path.isAbsolute(profileDir))throw Error('Camoufox profile path must be absolute');
- return ['-no-remote','-profile',profileDir,'-new-window',safeWebUrl(url)];
+ // Firefox for Windows normally detaches a launcher process. The documented
+ // -wait-for-browser flag keeps that launcher alive through browser shutdown.
+ return ['-no-remote','-wait-for-browser','-profile',profileDir,
+  '-new-window',safeWebUrl(url)];
 }
 function powershell(command,timeoutMs=5000){
  return new Promise((resolve,reject)=>{
@@ -41,12 +44,37 @@ function powershell(command,timeoutMs=5000){
 }
 // Window visibility, not PID alone, is used as a limited *manual UI* health
 // indicator. It does NOT prove page navigation, a WebSocket, or automation.
+// The Windows launcher is not necessarily the visible browser process.
+// Resolve a window *within its child process tree*; never trust a window
+// belonging to a different profile or unrelated PID.
 async function windowsWindowProbe(pid){
  if(!Number.isSafeInteger(pid)||pid<=0)return false;
+ const command=[
+  '$root='+pid,
+  '$queue=New-Object System.Collections.Generic.Queue[int]',
+  '$seen=New-Object System.Collections.Generic.HashSet[int]',
+  '$queue.Enqueue($root)',
+  '$count=0',
+  'while($queue.Count -gt 0 -and $count -lt 60){',
+  ' $id=$queue.Dequeue()',
+  ' if(-not $seen.Add([int]$id)){continue}',
+  ' $count++',
+  ' $p=Get-Process -Id $id -ErrorAction SilentlyContinue',
+  ' if($p -and $p.MainWindowHandle -ne 0){',
+  '   Write-Output ("WINDOW_READY:"+$id);exit 0',
+  ' }',
+  ' foreach($child in @(Get-CimInstance Win32_Process -Filter',
+  '  ("ParentProcessId = "+$id) -ErrorAction SilentlyContinue)){',
+  '   if($child.Name -ieq "camoufox.exe"){',
+  '     $queue.Enqueue([int]$child.ProcessId)',
+  '   }',
+  ' }',
+  '}'
+ ].join(';');
  try{
-  return await powershell('$p=Get-Process -Id '+pid+
-   ' -ErrorAction SilentlyContinue; if($p -and $p.MainWindowHandle -ne 0){"WINDOW_READY"}')
-   ==='WINDOW_READY';
+  const output=await powershell(command,6000);
+  const match=/^WINDOW_READY:(\d+)$/.exec(output);
+  return match?{ready:true,windowPid:Number(match[1])}:false;
  }catch(_){return false;}
 }
 async function requestWindowClose(pid){
@@ -155,19 +183,21 @@ class CamoufoxAdapter{
    if(!Number.isSafeInteger(child.pid)||child.pid<=0)
     throw Error('Camoufox process spawned without a valid PID');
    const until=Date.now()+this.startupTimeoutMs;
-   let windowFound=false;
+   let windowPid=null;
    while(Date.now()<until){
     if(exited)throw Error('Camoufox exited before window readiness ('+
      String(exitCode??exitSignal??'unknown')+')');
-    if(await this.windowProbe(child.pid)){
-     windowFound=true;break;
+    const evidence=await this.windowProbe(child.pid);
+    if(evidence===true||evidence?.ready===true){
+     windowPid=evidence?.windowPid||child.pid;break;
     }
     await sleep(250);
    }
-   if(!windowFound)throw Error('Camoufox browser window not confirmed before timeout');
+   if(!windowPid)throw Error('Camoufox browser window not confirmed before timeout');
    if(exited)throw Error('Camoufox exited immediately after window appeared');
    const info={profileId:id,name:profile.name,engine:'gecko',
     provider:'camoufox',engineType:'camoufox',pid:child.pid,
+    windowPid,
     port:null,wsEndpoint:null,manualOnly:true,automationAvailable:false,
     startupEvidence:'native-window',startedAt:new Date().toISOString(),stopping:false};
    entry={child,info,closing:false,forceTimer:null};
@@ -194,7 +224,7 @@ class CamoufoxAdapter{
    try{entry.child.kill('SIGTERM');}catch(_){}
   },8000);
   entry.forceTimer.unref?.();
-  Promise.resolve().then(()=>this.closeWindow(entry.child.pid)).then(closed=>{
+  Promise.resolve().then(()=>this.closeWindow(entry.info.windowPid)).then(closed=>{
    if(!closed&&this.sessions.get(id)===entry){
     try{entry.child.kill('SIGTERM');}catch(_){}
    }
