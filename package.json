@@ -1,6 +1,6 @@
 {
   "name": "power-browser",
-  "version": "5.8.0-preview.0",
+  "version": "5.8.0",
   "description": "LHM Ads Browser local-first profile operations, Proxy Center and approval-gated Automation Studio",
   "main": "main.js",
   "scripts": {
@@ -74,7 +74,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "LHM-Ads-Browser-${version}-Setup-${arch}.${ext}"
+      "artifactName": "LHM-Ads-Browser-${version}-Preview-Setup-${arch}.${ext}"
     },
     "extraResources": [
       {

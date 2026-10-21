@@ -1,7 +1,7 @@
 name: Build Windows EXE
 on:
   push:
-    branches: [main, integration/v5.8-core-selective]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
