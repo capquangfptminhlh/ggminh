@@ -12,12 +12,20 @@
 > Bản v1.2 (2026-10-21): Mục 4 mở rộng thành bản đăng ký chi tiết từng
 > điểm quét (cách quan sát — xử lý bắt buộc — trạng thái đo), theo yêu cầu
 > của chủ dự án: danh mục điểm quét là phần quan trọng nhất của Hiến pháp.
+> Bản v1.3 (2026-10-21): tích hợp các đính chính đã qua rà soát — nguyên
+> tắc nhận định ba mức (Mục 14), định nghĩa "người dùng mới" (Mục 15),
+> định nghĩa "sạch" và trạng thái báo cáo (Mục 16), lưu trữ (Mục 17),
+> tính nhất quán (Mục 18), diễn giải IP/mạng (Mục 19), hành vi (Mục 20),
+> phân biệt web/native/OS (Mục 21), bằng chứng cảnh báo (Mục 22), hồ sơ
+> nghiệm thu (Mục 23); Mục 8 phân biệt trạng thái hiện tại và ĐỊNH HƯỚNG
+> GECKO do chủ dự án duyệt — ghi định hướng không phải phép đổi code.
 
 ## 1. Mục đích sản phẩm
 
 LHM Ads Browser giúp người vận hành nhiều tài khoản quảng cáo quản lý nhiều
-hồ sơ trình duyệt trên một máy Windows, sao cho mỗi hồ sơ **sạch, nhất quán
-với chính nó, và không liên đới tới các hồ sơ khác**.
+hồ sơ trình duyệt trên một máy Windows, sao cho mỗi hồ sơ **sạch, nhất quán với chính nó, dữ liệu được cách ly giữa các
+hồ sơ, và được cảnh báo khi có tài nguyên dùng chung quan sát được**
+giữa các hồ sơ (định nghĩa "sạch": Mục 16).
 
 Khách hàng trả tiền cho *sự an toàn khi vận hành nhiều hồ sơ*: hồ sơ tách
 biệt thật, môi trường nhất quán, được cảnh báo trước khi thao tác hoặc mạng
@@ -39,14 +47,17 @@ khi mất tài khoản, không phải mò mẫm.
 
 1. **Không tự mâu thuẫn** — các giá trị một hồ sơ lộ ra phải khớp nhau
    (UA ↔ platform ↔ GPU ↔ fonts ↔ ngôn ngữ ↔ múi giờ).
-2. **Không rò rỉ chéo** — dữ liệu và tín hiệu của hồ sơ A không xuất hiện
-   ở hồ sơ B.
+2. **Không rò rỉ chéo** — dữ liệu riêng của hồ sơ A không bị truy cập
+   hoặc dùng lại ngoài chính sách ở hồ sơ B; đặc điểm môi trường dùng
+   chung được đánh giá riêng, không gộp vào kết luận cách ly (Mục 17.1).
 3. **Đo được và kiểm chứng được** — mọi khẳng định phải có phép đo đi kèm.
    Cấm chấm điểm (score) không có cơ sở đo. Cấm kết luận "nền tảng không
    thể liên kết hồ sơ" từ dấu vết trình duyệt.
 4. Tiêu chuẩn thực tế của chủ dự án: tạo Gmail không bị yêu cầu xác minh
-   điện thoại = lần thử đó đạt. Đây là *quan sát của một lần thử*, không
-   phải bằng chứng cho các lần khác; tài khoản vẫn có thể bị kiểm tra sau.
+   điện thoại = lần thử đó đạt. Cách ghi duy nhất được phép: *"Lần thử
+   này hoàn tất mà không xuất hiện yêu cầu xác minh số điện thoại."*
+   Đây là quan sát của một lần thử, không phải bằng chứng cho các lần
+   khác, và không thay cho nghiệm thu cách ly/mạng (chi tiết: Mục 15).
 5. **Phạm vi kết luận = phạm vi đã đo** — một kết luận "sạch" chỉ có giá
    trị trên đúng những điểm đã có phép đo. Điểm chưa có đầu đo phải ghi
    CHƯA ĐO, không bao giờ được im lặng bỏ qua như thể đã đạt.
@@ -61,8 +72,10 @@ mục — không phải hứa hẹn vượt qua 100% kiểm tra của nền tả
 Mục 11): kết quả mỗi lần thử do nền tảng quyết định và còn phụ thuộc
 tín hiệu ngoài trình duyệt.
 
-Danh mục là tài liệu sống: phát hiện điểm quét mới thì bổ sung vào đây
-trước, rồi mới làm tính năng. Cột *Trạng thái* là sổ đo sống — mọi PR
+Mức độ mỗi nền tảng thực tế sử dụng từng điểm được ghi riêng theo bằng
+chứng; tên gọi "điểm quét" không khẳng định mọi điểm đều được cả hai nền
+tảng dùng như nhau. Danh mục là tài liệu sống: phát hiện điểm quét mới
+thì bổ sung vào đây trước, rồi mới làm tính năng. Cột *Trạng thái* là sổ đo sống — mọi PR
 chạm vào một điểm phải cập nhật trạng thái của điểm đó (ĐẠT = đã có
 phép đo xác nhận trên đường chạy thật; CHƯA ĐO = chưa có phép đo).
 
@@ -205,7 +218,8 @@ Tính năng riêng của LHM, chạy ngầm, không phô trương cơ chế ra n
 2. So chéo toàn bộ đội hồ sơ theo từng cặp: tín hiệu quan sát được nào
    đang trùng nhau (IP thoát//24, bộ giá trị lộ ra, lệch địa lý...).
 3. Canh gác liên tục khi vận hành: trôi IP giữa phiên, trôi giá trị
-   lộ ra, hành vi đồng bộ — cảnh báo trước khi nền tảng dùng chúng.
+   lộ ra, hành vi đồng bộ — cảnh báo sau khi LHM quan sát thấy sự kiện
+   đáp ứng điều kiện cảnh báo, ghi rõ thời điểm và độ trễ đo (Mục 22).
 
 Kết luận "sạch" là một **bảng kiểm theo tiêu chí** (tự nhất quán / khớp
 danh tính đã ghim / cách ly lưu trữ / không trùng tín hiệu tránh được /
@@ -260,6 +274,19 @@ dụng); kiểm chứng bằng phép đo.
   báo là không đảm bảo nhất quán tầng gốc. Múi giờ theo hồ sơ qua CDP
   `Emulation.setTimezoneOverride` chỉ áp dụng cho phiên đang được
   điều khiển — không khẳng định hiệu lực cho phiên chạy tay.
+- **Trạng thái hiện tại và định hướng engine (chủ dự án duyệt
+  2026-10-21):** trong giai đoạn kiểm thử hiện tại, giữ nguyên mặc
+  định đang có (Chromium là engine mặc định, Camoufox là adapter tùy
+  chọn theo hồ sơ). ĐỊNH HƯỚNG: sau khi engine Gecko được chọn đã
+  qua nghiệm thu (tương thích, cập nhật bảo mật, dữ liệu và mạng
+  theo chuỗi cổng Mục 12), mặc định tạo hồ sơ MỚI trên giao diện sẽ
+  chuyển sang engine Gecko đó. Hồ sơ cũ giữ nguyên engine của chúng;
+  API cũ giữ tương thích; Chromium vẫn là lựa chọn khi người dùng
+  chủ động chọn; không chuyển ngầm engine khi gặp lỗi. **Việc ghi
+  định hướng này vào Hiến pháp không đồng nghĩa đã cho phép đổi mặc
+  định trong code** — đổi mặc định chỉ thực hiện theo một quyết định
+  riêng của chủ dự án sau nghiệm thu. Tên engine không phải bằng
+  chứng về mức riêng tư hay khả năng bị nền tảng nhận diện.
 - **Camoufox:** danh tính chỉ qua cơ chế chính thức của thư viện
   (danh tính fpgen được ghim và phát lại qua `CAMOU_CONFIG`); cấm đặt
   tay từng khóa cấu hình; UA là một thành phần của cả bộ danh tính,
@@ -339,3 +366,224 @@ Không bước nào được bỏ qua hay đảo thứ tự:
 3. File tiêu chí này chỉ thay đổi theo quyết định của chủ dự án.
    Agent được đề xuất sửa đổi kèm lý do; không tự ý sửa tiêu chí để
    hợp thức hóa việc mình đã làm.
+
+## 14. Nguyên tắc nhận định và kiểm chứng
+
+Mọi nhận định trong dự án thuộc đúng một trong ba mức:
+
+1. **Quan sát đo được:** có kết quả từ đúng phiên bản ứng dụng, engine
+   và môi trường kiểm thử.
+2. **Suy luận kỹ thuật:** giải thích hợp lý từ kiến trúc hoặc quan sát,
+   chưa được chứng minh trực tiếp.
+3. **Chưa xác minh:** thiếu phép đo, nguồn hoặc điều kiện kiểm thử.
+
+Không được chuyển một suy luận thành sự thật chỉ vì nhiều AI, nhiều
+bài viết hoặc nhiều agent cùng nhắc lại. Khi các báo cáo mâu thuẫn,
+ưu tiên bằng chứng có thể tái hiện; số lượng bên đồng ý không thay
+thế chất lượng kiểm chứng.
+
+Phải phân biệt bốn bước khác nhau: trình duyệt *có thể cung cấp* thông
+tin; một trang *đã đọc* thông tin; thông tin *đã truyền* tới máy chủ;
+máy chủ *đã dùng* thông tin để ra quyết định. Chứng minh một bước
+không tự chứng minh các bước sau.
+
+## 15. "Người dùng mới" và giới hạn nhận diện
+
+"Người dùng mới" có thể mang nhiều nghĩa không tương đương: tài khoản
+mới đăng ký; hồ sơ trình duyệt mới tạo; phiên chưa có định danh lưu
+trữ trước đó; thiết bị chưa từng được quan sát; một người chưa từng
+dùng dịch vụ.
+
+Hồ sơ trình duyệt mới không bảo đảm thiết bị, mạng hoặc người vận
+hành là mới đối với nền tảng. Ngược lại, môi trường quen thuộc cũng
+không tự đồng nghĩa hoạt động không hợp lệ.
+
+Không giả định nền tảng chỉ có một điểm tín nhiệm chung: nhận ra
+phiên, liên hệ tài khoản, đánh giá rủi ro và yêu cầu xác minh có thể
+là những quyết định khác nhau, với ngưỡng khác nhau.
+
+Kết quả tạo tài khoản không bị yêu cầu số điện thoại chỉ được ghi
+đúng một cách: **"Lần thử này hoàn tất mà không xuất hiện yêu cầu
+xác minh số điện thoại."** Không dùng kết quả đó thay cho nghiệm thu
+cách ly dữ liệu, quyền riêng tư hoặc an toàn mạng.
+
+## 16. Định nghĩa "sạch" và trạng thái báo cáo
+
+Trong sản phẩm này, "sạch" chỉ có nghĩa là đạt các tiêu chí kỹ thuật
+đã kiểm thử trong phạm vi công bố:
+
+- Dữ liệu giữa các hồ sơ được cách ly trong các phép thử đã thực hiện.
+- Cấu hình thực tế phù hợp với cấu hình được hỗ trợ và đã khai báo.
+- Kết nối đi theo chính sách mạng đã chọn.
+- Không phát hiện đường truyền ngoài chính sách trong phạm vi phép đo.
+- Không phát hiện thay đổi ngoài dự kiến trong khoảng thời gian quan sát.
+
+Không dùng "sạch" để khẳng định: nền tảng coi đây là người mới; nền
+tảng không thể liên hệ các phiên; IP có uy tín tốt; tài khoản sẽ không
+bị yêu cầu xác minh hoặc hạn chế.
+
+Trạng thái báo cáo chỉ có ba giá trị: **ĐẠT** (phép thử đã chạy và đáp
+ứng điều kiện nghiệm thu cụ thể), **KHÔNG ĐẠT** (phép thử đã chạy và
+phát hiện vi phạm), **CHƯA ĐO** (chưa có bằng chứng đủ để kết luận).
+API không hỗ trợ, thiếu quyền, timeout và thiếu hạ tầng phải ghi lý
+do riêng dưới trạng thái phù hợp — không được chuyển lỗi thu thập dữ
+liệu thành ĐẠT. Không xuất kết luận "sạch toàn bộ" khi còn tiêu chí
+bắt buộc chưa đo.
+
+## 17. Trình duyệt và dữ liệu lưu trữ
+
+**17.1. Cách ly dữ liệu khác với khác biệt đặc điểm thiết bị.** Hai
+hồ sơ có thể cùng GPU, hệ điều hành, fonts hoặc kích thước màn hình
+mà vẫn cách ly dữ liệu đúng. Ngược lại, hai hồ sơ có đặc điểm thiết
+bị khác nhau vẫn có thể bị dùng lẫn cookie hoặc dữ liệu phiên nếu
+triển khai sai. Không dùng fingerprint khác nhau làm bằng chứng cách
+ly lưu trữ.
+
+**17.2. Phép thử cách ly phải kiểm tra đường đi của dữ liệu**, bằng
+website kiểm thử và dữ liệu tổng hợp do nhóm kiểm soát: ghi dữ liệu
+đánh dấu vào hồ sơ A; kiểm tra hồ sơ B không nhận được dữ liệu đó;
+đóng và mở lại để kiểm tra tính bền vững; thử chạy đồng thời và sau
+khi tiến trình gặp sự cố; kiểm tra các loại lưu trữ trong phạm vi hỗ
+trợ (cookie, localStorage, IndexedDB, Cache Storage, Service
+Worker). Cơ chế khác như HTTP cache hay favicon cache cần phép thử
+riêng nếu có tuyên bố liên quan. Không thu thập cookie đăng nhập
+thật của khách hàng để chứng minh cách ly.
+
+**17.3. Giới hạn của việc xóa dữ liệu.** Xóa dữ liệu trong hồ sơ
+không có nghĩa xóa bản ghi đã nằm trên máy chủ bên ngoài. Không
+tuyên bố mọi cookie đã xóa sẽ được khôi phục qua cache; cũng không
+tuyên bố phân vùng cache loại bỏ mọi hình thức liên kết dữ liệu.
+
+## 18. Đặc điểm trình duyệt và tính nhất quán
+
+Các thuộc tính trình duyệt là tín hiệu mô tả môi trường, không mặc
+nhiên là căn cước duy nhất của thiết bị hoặc con người:
+
+- Hash giống nhau không chứng minh cùng thiết bị; hash khác nhau
+  không chứng minh khác người.
+- Cập nhật engine, hệ điều hành hoặc driver có thể thay đổi kết quả.
+- Khả năng truy cập API khác nhau giữa các engine, phiên bản và quyền.
+- Thuộc tính không được hỗ trợ không tự đồng nghĩa cấu hình lỗi.
+
+"Tính nhất quán" phải đánh giá bằng quy tắc có căn cứ, lấy **cấu hình
+đã khai báo của hồ sơ** làm chuẩn đối chiếu. Không tự đặt quy tắc
+tuyệt đối kiểu: ngôn ngữ phải trùng quốc gia của IP; múi giờ khác vị
+trí IP là rò rỉ; tổ hợp hệ điều hành/GPU ít gặp chắc chắn là giả;
+không có chuyển động chuột chắc chắn là tự động hóa. Người dùng có
+thể đi công tác, làm việc từ xa, dùng nhiều ngôn ngữ hoặc công cụ
+trợ năng.
+
+Đối với các phép đo cụ thể: Canvas — chỉ so kết quả của cùng tác vụ
+và cùng điều kiện; khi so các đường xuất ảnh, chuẩn hóa về dữ liệu
+pixel tương ứng. WebGL — ghi nhận khả năng API, giá trị thực tế và
+trường không truy cập được. Audio — phân biệt AudioContext và
+OfflineAudioContext; không gọi kết quả render offline là phép đo
+trực tiếp sai số card âm thanh. Fonts/media — ghi rõ đây là kết quả
+dò hoặc khả năng được phép truy cập, không mặc định là toàn bộ phần
+cứng/phần mềm của máy. TLS/HTTP — không diễn giải một chữ ký giao
+thức thành nhận diện chính xác duy nhất một người, thiết bị hoặc
+hệ điều hành.
+
+## 19. IP và Network Safety — diễn giải và giới hạn
+
+**19.1. Phạm vi LHM chịu trách nhiệm:** cấu hình proxy; IP thoát
+thực tế của phiên kiểm thử; tính liên tục của kết nối; thay đổi IP
+trong thời gian quan sát; các đường truyền ngoài chính sách đã cấu
+hình; việc dùng chung tài nguyên mạng giữa các hồ sơ. LHM không tự
+chấm uy tín IP và không thay thế hệ thống kiểm IP riêng của chủ
+dự án (Mục 7).
+
+**19.2. Diễn giải kết quả mạng:** cùng IP không chứng minh cùng
+người; cùng subnet /24 không chứng minh cùng hộ gia đình hoặc chủ
+thể; IP datacenter không tự chứng minh kết nối không an toàn; địa
+lý IP là ước lượng, không mặc định là vị trí vật lý chính xác; địa
+chỉ LAN phổ biến trùng nhau giữa hai nơi không tạo bằng chứng liên
+hệ có ý nghĩa. Cảnh báo phải mô tả điều quan sát được — ví dụ "Hai
+hồ sơ có cùng IP thoát tại thời điểm đo" — không đổi thành "Nền
+tảng đã liên kết hai hồ sơ".
+
+**19.3. Không đơn giản hóa phép đo rò rỉ:** không áp dụng quy tắc
+"mọi IP WebRTC khác IP proxy đều là IP thật bị lộ" — phải phân biệt
+loại candidate, địa chỉ riêng/công khai, mDNS, relay và chính sách
+mạng; không xác định được địa chỉ thuộc đường nào thì ghi chưa xác
+minh. DNS phải kiểm tra bằng phương pháp quan sát phù hợp; quốc gia
+của DNS resolver khác quốc gia proxy không đủ chứng minh rò rỉ. Kết
+quả IP từ tiến trình quản lý không thay thế kết quả từ runtime của
+hồ sơ.
+
+**19.4. Fail-closed:** chặn khi không đáp ứng điều kiện mạng bắt
+buộc của hồ sơ (proxy bắt buộc không kết nối được; phát hiện kết
+nối trực tiếp trái chính sách; phép kiểm bắt buộc không hoàn thành
+nên không đủ căn cứ cho phép sử dụng). Thiếu bằng chứng phải báo là
+thiếu bằng chứng, không báo sai rằng đã phát hiện rò rỉ. Không tự
+chuyển sang đường mạng hoặc engine khác (xem thêm Mục 8).
+
+## 20. Hành vi và cảnh báo vận hành
+
+**20.1. Phạm vi quan sát:** LHM chỉ phân tích những sự kiện thực sự
+quan sát được trong ứng dụng hoặc trong phép kiểm thử được cho
+phép: thời điểm mở/đóng hồ sơ; số hồ sơ hoạt động đồng thời; các
+thao tác do chính LHM điều phối; chuỗi sự kiện được ghi nhận rõ
+nguồn; tần suất và sự lặp lại trong khoảng thời gian xác định.
+Không suy diễn rằng LHM biết toàn bộ thao tác trên website nếu chưa
+có cơ chế thu thập tương ứng.
+
+**20.2. Giới hạn suy luận:** không coi các hành vi sau là bằng chứng
+chắc chắn về người hay máy: gõ nhanh hoặc chậm; dán nội dung; dùng
+autofill; không có lỗi chính tả; di chuyển chuột thẳng; chỉ dùng bàn
+phím; làm việc đều đặn theo lịch. Không tuyên bố nhận diện cùng một
+người qua nhịp gõ hoặc quỹ đạo chuột nếu chưa có nghiên cứu và phép
+nghiệm thu phù hợp. Cảnh báo hành vi chỉ mô tả mẫu quan sát được,
+không kết luận nền tảng sẽ xử lý tài khoản ra sao.
+
+**20.3. Bảo vệ dữ liệu hành vi:** ưu tiên dữ liệu sự kiện tổng hợp
+tối thiểu. Không ghi mật khẩu, nội dung phím gõ, clipboard, nội dung
+biểu mẫu nhạy cảm hoặc nội dung trao đổi của khách hàng để phân tích
+hành vi. Cơ chế nội bộ có thể là bí mật sản phẩm, nhưng việc thu
+thập dữ liệu khách hàng phải được mô tả minh bạch, có thời hạn lưu
+và khả năng xóa.
+
+## 21. Phân biệt website, ứng dụng native và hệ điều hành
+
+Không gán quyền của hệ điều hành cho một trang web thông thường:
+
+- Website không có quyền chung để quét SSID/BSSID xung quanh.
+- Truy cập vị trí, cảm biến và thiết bị media phụ thuộc API, quyền
+  và chính sách của từng nền tảng.
+- Dữ liệu một ứng dụng native nhận được không chứng minh website
+  cùng thương hiệu cũng nhận được.
+- Thông tin có ở một dịch vụ không chứng minh nó được dùng trong
+  mọi quyết định của dịch vụ khác.
+
+Không diễn giải khả năng theo dõi ngoài website thành "nền tảng
+thấy toàn bộ lịch sử duyệt web".
+
+## 22. Yêu cầu đối với cảnh báo và bằng chứng
+
+Mỗi cảnh báo phải trả lời được sáu câu hỏi: (1) quan sát thấy gì;
+(2) ở hồ sơ hoặc phiên nào; (3) lúc nào và bằng cách nào; (4) so với
+cấu hình hoặc tiêu chí nào; (5) giới hạn của kết luận là gì; (6)
+người dùng có thể kiểm tra hoặc xử lý gì tiếp theo.
+
+Diễn đạt phải bám thời điểm và độ trễ đo: viết "IP thoát thay đổi
+từ A sang B giữa hai lần đo lúc 10:02 và 10:07; chưa xác định được
+thời điểm thay đổi chính xác", không viết "đã phát hiện ngay khi IP
+thay đổi". Tương tự, cụm "cảnh báo trước khi nền tảng dùng tín hiệu"
+bị thay bằng "cảnh báo sau khi LHM quan sát thấy sự kiện đáp ứng
+điều kiện cảnh báo, ghi rõ thời điểm và độ trễ đo" — không thể
+nghiệm thu thời điểm một hệ thống bên ngoài sử dụng dữ liệu nếu
+không có quyền quan sát hệ thống đó.
+
+## 23. Hồ sơ nghiệm thu
+
+Mỗi kết quả đo phải gắn với: commit của ứng dụng; phiên bản và hash
+của engine; hệ điều hành và môi trường kiểm thử; cấu hình liên quan
+(đã loại bỏ bí mật); thời gian, phương pháp và phạm vi đo; kết quả
+kỳ vọng, thực tế và trạng thái; các phần chưa đo hoặc không hỗ trợ.
+
+Phải phân biệt rõ: test mô phỏng, integration test, engine thật,
+EXE chạy qua giao diện thật — không dùng kết quả của tầng này làm
+bằng chứng cho tầng khác. Báo cáo số trường đạt phải ghi đúng số
+trường đã đo; không dùng "khớp toàn bộ" khi còn trường thiếu. Kết
+quả cũ phải có điều kiện hết hiệu lực hoặc cần đo lại khi engine,
+cấu hình, proxy hay môi trường thay đổi.
