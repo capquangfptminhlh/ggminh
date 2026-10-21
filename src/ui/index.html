@@ -1359,6 +1359,19 @@ run();
           <div id="health-readiness-summary" class="health-readiness-summary" role="status">Nhấn kiểm tra để xem trạng thái hệ thống.</div>
           <div id="health-readiness-items" class="health-readiness-items"></div>
         </section>
+        <section class="health-readiness" aria-labelledby="local-drift-title">
+          <div class="isolation-audit-head">
+            <strong id="local-drift-title">Theo dõi thay đổi chất lượng cấu hình (chỉ lưu máy)</strong>
+            <div class="health-readiness-buttons">
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-record">Lưu lượt kiểm tra</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-refresh">Xem xu hướng</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-export">Xuất JSON</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-clear">Xóa lịch sử</button>
+            </div>
+          </div>
+          <p class="health-footnote">Chỉ lưu tổng số hồ sơ lỗi/cảnh báo, số đang chạy và phiên bản LHM khi bạn bấm lưu. Không thu thập phím, chuột, vị trí trang, cookie, IP hay điểm CAPTCHA; không gửi về máy chủ.</p>
+          <div id="local-drift-results" role="status" aria-live="polite">Chưa đọc lịch sử kiểm tra.</div>
+        </section>
         <div id="health-items" class="health-list"></div>
         <section class="engine-diagnostics">
           <div class="isolation-audit-head">

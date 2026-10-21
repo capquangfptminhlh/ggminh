@@ -20,6 +20,7 @@ const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
+const {LocalHealthDrift}=require('./src/health/localDrift');
 const {buildReadiness}=require('./src/health/releaseReadiness');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
@@ -55,6 +56,7 @@ let runtimeRegistry = null;
 let bundledEngine = null;
 let camoufoxAdapter = null;
 let behaviorMonitor = null;
+let localHealthDrift = null;
 let workflowStore = null;
 let automationRunner = null;
 let batchAutomation = null;
@@ -427,6 +429,41 @@ function initIPC() {
   });
   ipcMain.handle('get-all-profile-health', () =>
     store.getProfiles().map(profile => checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault })));
+  ipcMain.handle('health-drift-report',()=>{
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    return localHealthDrift.report();
+  });
+  ipcMain.handle('health-drift-snapshot',()=>{
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    const profiles=store.getProfiles();
+    const reports=profiles.map(p=>checkProfile(p,{
+      settings:store.getSettings(),proxies:store.data.proxies,vault:proxyVault,
+      pathExists:fs.existsSync
+    }));
+    return localHealthDrift.add({
+      profiles:profiles.length,
+      errors:reports.filter(r=>r.status==='error').length,
+      warnings:reports.filter(r=>r.status==='warning').length,
+      active:launcher.listActive().length,
+      appVersion:app.getVersion()
+    });
+  });
+  ipcMain.handle('health-drift-clear',(_,confirmation)=>{
+    if(confirmation!=='CLEAR HEALTH')throw Error('Explicit clearing confirmation required');
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    return localHealthDrift.clear();
+  });
+  ipcMain.handle('health-drift-export',async()=>{
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Xuất lịch sử kiểm tra cấu hình (không có dữ liệu duyệt web)',
+      defaultPath:'LHM-Local-Health-'+new Date().toISOString().slice(0,10)+'.json',
+      filters:[{name:'JSON Aggregate Health Report',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    fs.writeFileSync(filePath,localHealthDrift.exportReport(),{mode:0o600});
+    return {canceled:false,stored:localHealthDrift.report().stored};
+  });
   ipcMain.handle('get-local-readiness', () => {
     const profiles=store.getProfiles();
     const reports=profiles.map(profile=>checkProfile(profile,{
@@ -661,6 +698,11 @@ app.whenReady().then(async () => {
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
   store = new Store(storageDir);
+  try{localHealthDrift=new LocalHealthDrift(storageDir);}
+  catch(error){
+    console.warn('[HealthDrift] History unavailable:',error.message);
+    localHealthDrift=null; // Preserve corrupted history for manual recovery.
+  }
   runtimeRegistry = new RuntimeRegistry(storageDir);
   try { store.purgeExpiredTrashedProfiles(); }
   catch(error) { console.warn('[ProfileTrash] startup cleanup deferred:',error.message); }
