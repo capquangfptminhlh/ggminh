@@ -26,9 +26,9 @@ function fileName(name){
 function canonicalManifest(payload){
  if(!payload||typeof payload!=='object'||Array.isArray(payload)||
     Object.keys(payload).sort().join(',')!=='engine,entry,files,schema,version'||
-    payload.schema!==1||payload.engine!=='chromium'||
+    payload.schema!==1||!['chromium','camoufox'].includes(payload.engine)||
     !VERSION.test(payload.version||'')||
-    !['chrome.exe','msedge.exe'].includes(payload.entry)||
+    !(payload.engine==='chromium'?['chrome.exe','msedge.exe']:['firefox.exe']).includes(payload.entry)||
     !Array.isArray(payload.files)||!payload.files.length||
     payload.files.length>MAX_FILES)
   throw Error('Invalid bundled engine manifest');
@@ -49,7 +49,7 @@ function canonicalManifest(payload){
   throw Error('Bundled engine exceeds the declared size limit');
  if(files.some((f,i)=>i>0&&files[i-1].path>=f.path))
   throw Error('Bundled manifest files must be sorted by path');
- return JSON.stringify({schema:1,engine:'chromium',version:payload.version,
+ return JSON.stringify({schema:1,engine:payload.engine,version:payload.version,
   entry:payload.entry,files});
 }
 function signedPayload(manifest){
@@ -118,8 +118,11 @@ function listFiles(root){
 }
 class BundledEngineManager{
  constructor(resourcesRoot,{
-  publicKey=PUBLIC_KEY,platform=process.platform,inspect=inspectBinary
+  publicKey=PUBLIC_KEY,platform=process.platform,inspect=inspectBinary,
+  engine='chromium'
  }={}){
+  if(!['chromium','camoufox'].includes(engine))throw Error('Unknown bundled browser engine');
+  this.engine=engine;
   this.root=path.resolve(resourcesRoot);
   this.publicKey=publicKey;
   this.platform=platform;
@@ -134,6 +137,7 @@ class BundledEngineManager{
   const doc=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
   if(!doc||Object.keys(doc).sort().join(',')!=='engine,entry,files,schema,signature,version')
    throw Error('Unexpected engine manifest fields');
+  if(doc.engine!==this.engine)throw Error('Unexpected engine type in release manifest');
   const signed=signedPayload(doc);
   const signature=decodeSignature(doc.signature);
   if(!crypto.verify(null,signed,this.publicKey,signature))
@@ -151,15 +155,16 @@ class BundledEngineManager{
     throw Error('Bundled engine SHA-256 mismatch: '+f.path);
   }
   const executable=checkNoLinks(this.root,path.join(this.root,doc.entry));
-  const binary=this.inspect('chromium',executable,{platform:this.platform});
+  const binary=this.inspect(this.engine==='camoufox'?'gecko':'chromium',
+   executable,{platform:this.platform});
   const declared=doc.files.find(f=>f.path===doc.entry);
   if(binary.sha256!==declared.sha256||binary.bytes!==declared.bytes)
    throw Error('Bundled browser executable changed during verification');
   return {executable,version:doc.version,fileCount:doc.files.length,
-   sha256:declared.sha256,engine:'chromium'};
+   sha256:declared.sha256,engine:this.engine};
  }
  resolve(engine){
-  if(engine!=='chromium')throw Error('Bundled engine not available for this browser family');
+  if(engine!==this.engine)throw Error('Bundled engine not available for this browser family');
   return this.verify().executable;
  }
  status(){
