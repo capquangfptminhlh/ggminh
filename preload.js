@@ -129,6 +129,8 @@ contextBridge.exposeInMainWorld('api', {
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   bundledEngineStatus: () => ipcRenderer.invoke('bundled-engine-status'),
+  camoufoxInstallStatus: () => ipcRenderer.invoke('camoufox-install-status'),
+  installCamoufoxEngine: () => ipcRenderer.invoke('camoufox-install'),
   selectCamoufoxProvider: provider => ipcRenderer.invoke('camoufox-provider-select',provider),
   selectBundledEngine: source => ipcRenderer.invoke('bundled-engine-select',source),
   getSettings: () => ipcRenderer.invoke('get-settings'),

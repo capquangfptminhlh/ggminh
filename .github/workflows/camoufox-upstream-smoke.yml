@@ -4,10 +4,18 @@ on:
   push:
     branches:
       - feat/per-profile-engine-factory-20261021
+      - feat/camoufox-secure-installer-diagnostics-20261021
     paths:
       - .github/workflows/camoufox-upstream-smoke.yml
       - tools/stage-camoufox-upstream-smoke.ps1
       - tools/test-camoufox-real.mjs
+      - tools/test-camoufox-native-windows.js
+      - tools/test-camoufox-direct-playwright.mjs
+      - tools/test-camoufox-electron-main.js
+      - tools/test-camoufox-synthetic-auth-proxy.js
+      - tools/test-camoufox-playwright-controller-windows.js
+      - src/engine/CamoufoxPlaywrightController.js
+      - src/engine/camoufoxAdapter.js
   workflow_dispatch:
 
 permissions:
@@ -43,6 +51,52 @@ jobs:
         run: |
           node tools/test-camoufox-real.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox smoke failed' }
+      - name: Switch to packaged Electron-compatible Node.js 20 for native smoke
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Launch real Camoufox as a native Windows GUI without TypeScript wrapper
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-native-windows.js
+          if ($LASTEXITCODE -ne 0) { throw 'Native Win32 Camoufox launch smoke failed' }
+      - name: Probe direct playwright-core Firefox persistent context (Node 20, upstream only)
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-direct-playwright.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Direct Playwright/Camoufox compatibility NOT established' }
+      - name: Test LHM gated Playwright controller against the real official Windows browser
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-playwright-controller-windows.js
+          if ($LASTEXITCODE -ne 0) { throw 'In-process Playwright controller compatibility not verified' }
+      - name: Install Electron 33 runtime binary for actual main-process smoke
+        shell: pwsh
+        timeout-minutes: 6
+        run: |
+          # CI initially installs npm packages with --ignore-scripts. Explicitly
+          # install the genuine Electron runtime only for this diagnostic.
+          node node_modules/electron/install.js
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Electron binary installation failed; packaged-runtime smoke not run'
+          }
+      - name: Probe Camoufox Playwright inside real Electron 33 main process
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          if (-not (Test-Path ".\\node_modules\\.bin\\electron.cmd")) {
+            throw 'Electron 33 runtime is missing from the test checkout'
+          }
+          & ".\\node_modules\\.bin\\electron.cmd" ".\\tools\\test-camoufox-electron-main.js"
+          if ($LASTEXITCODE -ne 0) { throw 'Electron 33 main-process Playwright compatibility failed' }
+      - name: Test real Camoufox to synthetic authenticated SOCKS5 proxy (CONNECT refused)
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          node tools/test-camoufox-synthetic-auth-proxy.js
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
+          }
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |

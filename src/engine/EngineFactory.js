@@ -4,6 +4,7 @@
 const ChromiumAdapter=require('./adapters/ChromiumAdapter');
 const FirefoxAdapter=require('./adapters/FirefoxAdapter');
 const CamoufoxAdapter=require('./adapters/CamoufoxAdapter');
+const NetworkSafetyCheck=require('./NetworkSafetyCheck');
 const SUPPORTED=Object.freeze(['chromium','firefox','camoufox']);
 function resolveEngineType(profile,settings={}){
  if(!profile||typeof profile!=='object'||Array.isArray(profile))
@@ -38,6 +39,20 @@ class EngineFactory{
  async launchProfile(profile,{customUrl}={}){
   const {engineType,adapter}=this.select(profile,
    this.adapters.chromium.launcher.store.getSettings());
+  if(engineType==='camoufox'){
+   const launcher=this.adapters.camoufox.launcher;
+   const lab=launcher.camoufoxPlaywrightController?.enabled===true
+     ?launcher.camoufoxPlaywrightController.labApproved
+     :launcher.camoufoxAdapter?.allowProxyLab===true;
+   const report=NetworkSafetyCheck.evaluate(profile,{
+    labApproved:lab,store:launcher.store,proxyVault:launcher.proxyVault
+   });
+   if(!report.safeToLaunch){
+    const error=new Error('NETWORK_BLOCKED: '+report.reason);
+    error.code='NETWORK_BLOCKED';
+    throw error;
+   }
+  }
   const result=await adapter.launch(profile,{customUrl});
   if(result.engineType&&result.engineType!==engineType)
    throw Error('Engine provider response mismatch');

@@ -229,6 +229,21 @@ class BrowserLauncher {
     const active = this.activeProcesses.get(profileId);
     if (!active) return { success: false, message: 'Browser is not running' };
     if (active.stopping) return { success: false, message: 'Browser is already stopping' };
+    if(active.provider==='camoufox'&&active.protocol==='playwright-internal'){
+      const controller=this.camoufoxPlaywrightController;
+      if(!controller?.contextFor(profileId))
+        return {success:false,message:'No active Playwright session'};
+      active.stopping=true;
+      Promise.resolve().then(()=>controller.stop(profileId)).catch(error=>{
+        console.warn('[Camoufox] Playwright context close failed:',
+          String(error.message).slice(0,160));
+        // A rejected close does not mean Firefox exited. Do not unlock the
+        // profile or drop its active record while a browser may still run.
+        const current=this.activeProcesses.get(profileId);
+        if(current===active)current.stopping=false;
+      });
+      return {success:true,pendingExit:true};
+    }
     if(active.provider==='camoufox'){
       const outcome=this.camoufoxAdapter.stop(profileId);
       if(outcome.success)active.stopping=true;

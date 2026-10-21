@@ -1,117 +1,268 @@
 'use strict';
-// Experimental Firefox provider. Uses the documented Camoufox TypeScript
-// persistent-context API. No invented Firefox CLI, CDP, stealth flags or
-// automatic lock-file deletion. Package/binary provisioning is separate.
+/**
+ * Experimental native, manual Camoufox launcher. No Camoufox npm package.
+ * Uses only documented Firefox CLI arguments; Camoufox-specific proxy,
+ * GeoIP, Juggler/CDP control and config-file injection are NOT assumed.
+ * A process PID or stdout text is not a browser-readiness signal.
+ */
 const path=require('path');
+const {spawn,execFile}=require('child_process');
 const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
+const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
 
-async function officialLauncher(){
- let module;
- try{module=await import('camoufox');}
- catch(_){throw Error('Camoufox TypeScript launcher is not installed or cannot be loaded');}
- if(typeof module.Camoufox!=='function')
-  throw Error('Installed Camoufox package has no supported Camoufox API');
- return module.Camoufox;
-}
+const MIN_STARTUP_MS=1000;
+const MAX_STARTUP_MS=45000;
 function validateCamoufoxProfile(profile,baseDir){
  assertProfileId(profile?.id);
- if(!path.isAbsolute(baseDir))throw Error('Profile storage root must be absolute');
+ if(typeof baseDir!=='string'||!path.isAbsolute(baseDir))
+  throw Error('Profile storage root must be absolute');
  if(profile.engine!=='gecko')throw Error('Camoufox requires a Gecko profile');
  if(profile.fingerprint?.mode!=='native')
-  throw Error('Camoufox preview requires native profile settings; legacy JS fingerprint unsupported');
- const proxy=profile.proxy||{type:'direct'};
- if(proxy.type!=='direct'&&proxy.type!=='none')
-  throw Error('Camoufox preview does not support a configured proxy until network routing is verified');
- if(proxy.authProxyId)
-  throw Error('Camoufox preview cannot accept stored proxy secrets');
- const profileDir=path.join(baseDir,'camoufox-profiles',profile.id);
- return {profileDir,headless:false};
+  throw Error('Camoufox native preview requires native profile settings');
+ // Reject inline secrets, ambiguous proxy settings and unsupported types
+ // before creating an executable process.
+ normalizedProxy(profile.proxy);
+ if(profile.geoip===true||profile.geoip?.enabled===true||
+    profile.geolocation?.mode==='proxy')
+  throw Error('Camoufox native preview does not support automatic GeoIP flags');
+ return {profileDir:path.join(baseDir,'camoufox-profiles',profile.id)};
 }
+function nativeArgs(profileDir,url){
+ if(!path.isAbsolute(profileDir))throw Error('Camoufox profile path must be absolute');
+ // Firefox for Windows normally detaches a launcher process. The documented
+ // -wait-for-browser flag keeps that launcher alive through browser shutdown.
+ return ['-no-remote','-wait-for-browser','-profile',profileDir,
+  '-new-window',safeWebUrl(url)];
+}
+function powershell(command,timeoutMs=5000){
+ return new Promise((resolve,reject)=>{
+  execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],
+   {timeout:timeoutMs,windowsHide:true,encoding:'utf8'},
+   (error,stdout)=>error?reject(error):resolve(String(stdout||'').trim()));
+ });
+}
+// Window visibility, not PID alone, is used as a limited *manual UI* health
+// indicator. It does NOT prove page navigation, a WebSocket, or automation.
+// The Windows launcher is not necessarily the visible browser process.
+// Resolve a window *within its child process tree*; never trust a window
+// belonging to a different profile or unrelated PID.
+async function windowsWindowProbe(pid){
+ if(!Number.isSafeInteger(pid)||pid<=0)return false;
+ const command=[
+  '$root='+pid,
+  '$queue=New-Object System.Collections.Generic.Queue[int]',
+  '$seen=New-Object System.Collections.Generic.HashSet[int]',
+  '$queue.Enqueue($root)',
+  '$count=0',
+  'while($queue.Count -gt 0 -and $count -lt 60){',
+  ' $id=$queue.Dequeue()',
+  ' if(-not $seen.Add([int]$id)){continue}',
+  ' $count++',
+  ' $p=Get-Process -Id $id -ErrorAction SilentlyContinue',
+  ' if($p -and $p.MainWindowHandle -ne 0){',
+  '   Write-Output ("WINDOW_READY:"+$id);exit 0',
+  ' }',
+  ' foreach($child in @(Get-CimInstance Win32_Process -Filter ("ParentProcessId = "+$id) -ErrorAction SilentlyContinue)){',
+  '   if($child.Name -ieq "camoufox.exe"){',
+  '     $queue.Enqueue([int]$child.ProcessId)',
+  '   }',
+  ' }',
+  '}'
+ ].join('\n');
+ try{
+  const output=await powershell(command,6000);
+  const match=/^WINDOW_READY:(\d+)$/.exec(output);
+  return match?{ready:true,windowPid:Number(match[1])}:false;
+ }catch(_){return false;}
+}
+async function requestWindowClose(pid){
+ if(!Number.isSafeInteger(pid)||pid<=0)return false;
+ try{
+  return await powershell('$p=Get-Process -Id '+pid+
+   ' -ErrorAction SilentlyContinue; if($p -and $p.MainWindowHandle -ne 0)'+
+   '{if($p.CloseMainWindow()){"CLOSE_REQUESTED"}}')==='CLOSE_REQUESTED';
+ }catch(_){return false;}
+}
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 class CamoufoxAdapter{
- constructor(baseDir,{loader=officialLauncher,bundleVerifier=null}={}){
-  if(typeof loader!=='function')throw Error('Invalid Camoufox loader');
-  this.baseDir=baseDir;this.loader=loader;this.bundleVerifier=bundleVerifier;
-  this.sessions=new Map();
-  this.pending=new Map();
+ constructor(baseDir,{
+  bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
+  closeWindow=requestWindowClose,platform=process.platform,
+  startupTimeoutMs=20000,store=null,proxyVault=null,
+  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false
+ }={}){
+  if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
+     typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
+  if(!Number.isInteger(startupTimeoutMs)||startupTimeoutMs<MIN_STARTUP_MS||
+     startupTimeoutMs>MAX_STARTUP_MS)throw Error('Invalid Camoufox startup timeout');
+  this.baseDir=baseDir;this.bundleVerifier=bundleVerifier;
+  this.spawnProcess=spawnProcess;this.windowProbe=windowProbe;
+  if(typeof prepareProxy!=='function')throw Error('Invalid Camoufox proxy configurator');
+  this.closeWindow=closeWindow;this.platform=platform;
+  this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
+  this.allowProxyLab=allowProxyLab===true;
+  this.startupTimeoutMs=startupTimeoutMs;
+  this.sessions=new Map();this.pending=new Map();
  }
  status(){
-  let installed=false;
-  try{require.resolve('camoufox');installed=true;}catch(_){}
-  const bundle=this.bundleVerifier?.status?.()||
-   {valid:false,available:false,reason:'No signed Camoufox release configured'};
-  return {installed,binaryVerified:bundle.valid===true,version:bundle.version||null,
-   active:this.sessions.size,
-   ready:installed&&bundle.valid===true,
-   note:installed&&bundle.valid?
-    'Camoufox launcher and signed distribution verified. Windows runtime acceptance is still required.':
-    'Camoufox launcher or signed Windows browser distribution is missing; no automatic download is permitted.'};
+  const signed=this.bundleVerifier?.status?.()||
+   {valid:false,reason:'No signed Camoufox executable'};
+  return {installed:signed.valid===true,binaryVerified:signed.valid===true,
+   version:signed.version||null,active:this.sessions.size,
+   runtimeCompatible:this.platform==='win32',manualOnly:true,
+   automationAvailable:false,
+   ready:signed.valid===true&&this.platform==='win32',
+   note:signed.valid?
+    'Signed native EXE available; manual UI only. Proxy auth is opt-in lab-only until DNS/WebRTC checks pass.':
+    'Independent publisher-signed Camoufox EXE is not installed or verified.'};
  }
  isBusy(id){return this.sessions.has(id)||this.pending.has(id);}
+ async launchProfile(profile,options={}){return this.start(profile,options);}
  async start(profile,{url,onClosed}={}){
   const id=assertProfileId(profile?.id);
   if(this.isBusy(id))throw Error('Camoufox profile is already running or starting');
   const {profileDir}=validateCamoufoxProfile(profile,this.baseDir);
+  if(normalizedProxy(profile.proxy).type!=='direct'&&!this.allowProxyLab)
+   throw Error('Camoufox authenticated proxy is experimental and requires an approved proxy/DNS/WebRTC lab; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
-  const operation=(async()=>{
-   // Verify before calling the upstream launcher. Some Camoufox versions
-   // automatically download browser assets when no executable_path is given.
-   // That is forbidden for unattended customer installations.
-   if(!this.bundleVerifier||typeof this.bundleVerifier.resolve!=='function')
-    throw Error('Camoufox requires a trusted, release-signed browser distribution');
-   const executablePath=this.bundleVerifier.resolve('camoufox');
-   if(typeof executablePath!=='string'||!path.isAbsolute(executablePath))
-    throw Error('Camoufox release verifier did not supply an absolute executable path');
-   const Camoufox=await this.loader();
-   ensureIsolatedDirectory(this.baseDir,profileDir);
-   let context=null;
-   try{
-    // The official TypeScript launcher supports persistent_context and
-    // executable_path. Explicit path prevents first-launch auto-download.
-    context=await Camoufox({headless:false,persistent_context:true,
-     user_data_dir:profileDir,executable_path:executablePath});
-    if(!context||typeof context.newPage!=='function'||
-       typeof context.close!=='function'||typeof context.on!=='function')
-      throw Error('Camoufox persistent context did not expose the expected Playwright API');
-    const info={profileId:id,name:profile.name,engine:'gecko',provider:'camoufox',
-     pid:null,port:null,wsEndpoint:null,startedAt:new Date().toISOString(),stopping:false};
-    const item={context,info,closing:false};
-    item.onClosed=()=>{
-     if(this.sessions.get(id)===item){
-      this.sessions.delete(id);
-      try{onClosed?.(info);}catch(_){}
-     }
-    };
-    context.on('close',item.onClosed);
-    const page=await context.newPage();
-    await page.goto(target,{waitUntil:'domcontentloaded',timeout:15000});
-    this.sessions.set(id,item);
-    return {...info};
-   }catch(error){
-    if(context&&typeof context.close==='function'){
-     try{await context.close();}catch(_){}
-    }
-    throw error;
+  const task=this._startVerified({profile,id,profileDir,target,onClosed});
+  this.pending.set(id,task);
+  try{return await task;}
+  finally{if(this.pending.get(id)===task)this.pending.delete(id);}
+ }
+ async _startVerified({profile,id,profileDir,target,onClosed}){
+  if(this.platform!=='win32')
+   throw Error('Native Camoufox desktop process is supported only on Windows');
+  if(!this.bundleVerifier||typeof this.bundleVerifier.resolve!=='function')
+   throw Error('Camoufox requires a trusted, release-signed browser distribution');
+  // Verifier must reject absent, modified, extra, symlinked or unsigned files.
+  const executable=this.bundleVerifier.resolve('camoufox');
+  if(typeof executable!=='string'||!path.isAbsolute(executable)||
+     path.basename(executable).toLowerCase()!=='camoufox.exe')
+   throw Error('Camoufox verifier did not supply an approved absolute executable');
+  ensureIsolatedDirectory(this.baseDir,profileDir);
+  const args=nativeArgs(profileDir,target);
+  let proxyPlan=null;
+  let proxyClosed=false;
+  const closeProxy=()=>{
+   if(proxyClosed)return;
+   proxyClosed=true;
+   if(proxyPlan)Promise.resolve(proxyPlan.close()).catch(error=>
+    console.warn('[Camoufox] Proxy gateway cleanup failed:',String(error.message).slice(0,180)));
+  };
+  let child;
+  let exited=false;
+  let exitCode=null;
+  let exitSignal=null;
+  let entry=null;
+  const finish=()=>{
+   // Firefox descendants may inherit the redirected pipe handles. Closing
+   // our read ends after process exit prevents abandoned CI/app listeners.
+   child?.stdout?.destroy?.();
+   child?.stderr?.destroy?.();
+   closeProxy();
+   if(entry&&this.sessions.get(id)===entry){
+    this.sessions.delete(id);
+    try{onClosed?.(entry.info);}catch(_){}
    }
-  })();
-  this.pending.set(id,operation);
-  try{return await operation;}
-  finally{if(this.pending.get(id)===operation)this.pending.delete(id);}
+  };
+  try{
+   // A new local gateway gets its own dynamic port; the Firefox profile
+   // user.js is refreshed before launch. No --proxy-server CLI is assumed.
+   proxyPlan=await this.prepareProxy(profile,profileDir,{
+    store:this.store,proxyVault:this.proxyVault
+   });
+   child=this.spawnProcess(executable,args,{
+    cwd:path.dirname(executable),windowsHide:false,
+    detached:false,stdio:['ignore','pipe','pipe']
+   });
+   if(!child||typeof child.once!=='function'||typeof child.kill!=='function')
+    throw Error('Camoufox spawn did not return a child process');
+   child.once('exit',(code,signal)=>{
+    exited=true;exitCode=code;exitSignal=signal;
+    finish();
+   });
+   // ChildProcess can emit 'error' after initial spawn (not only ENOENT).
+   // Do not let a late process error become an uncaught Electron crash.
+   child.on('error',error=>{
+    exited=true;exitSignal='process-error';
+    finish();
+   });
+   // Draining output avoids OS pipe back-pressure, but stdout is NEVER parsed
+   // as PID/WebSocket/readiness: upstream executable does not promise one.
+   child.stdout?.resume?.();
+   child.stderr?.resume?.();
+   await new Promise((resolve,reject)=>{
+    const onSpawn=()=>{child.removeListener('error',onError);resolve();};
+    const onError=error=>{child.removeListener('spawn',onSpawn);reject(error);};
+    child.once('spawn',onSpawn);
+    child.once('error',onError);
+   });
+   if(!Number.isSafeInteger(child.pid)||child.pid<=0)
+    throw Error('Camoufox process spawned without a valid PID');
+   const until=Date.now()+this.startupTimeoutMs;
+   let windowPid=null;
+   while(Date.now()<until){
+    if(exited)throw Error('Camoufox exited before window readiness ('+
+     String(exitCode??exitSignal??'unknown')+')');
+    const evidence=await this.windowProbe(child.pid);
+    if(evidence===true||evidence?.ready===true){
+     windowPid=evidence?.windowPid||child.pid;break;
+    }
+    await sleep(250);
+   }
+   if(!windowPid)throw Error('Camoufox browser window not confirmed before timeout');
+   if(exited)throw Error('Camoufox exited immediately after window appeared');
+   const info={profileId:id,name:profile.name,engine:'gecko',
+    provider:'camoufox',engineType:'camoufox',pid:child.pid,
+    windowPid,
+    port:null,wsEndpoint:null,debugPort:null,
+    proxyMode:proxyPlan.mode,manualOnly:true,automationAvailable:false,
+    startupEvidence:'native-window',startedAt:new Date().toISOString(),stopping:false};
+   entry={child,info,closing:false,forceTimer:null};
+   this.sessions.set(id,entry);
+   return {...info};
+  }catch(error){
+   if(child&&!exited){
+    try{child.kill('SIGTERM');}catch(_){}
+   }
+   child?.stdout?.destroy?.();
+   child?.stderr?.destroy?.();
+   closeProxy();
+   throw error;
+  }
  }
  stop(id){
-  const item=this.sessions.get(id);
-  if(!item)return {success:false,message:'Camoufox profile is not running'};
-  if(item.closing)return {success:false,message:'Camoufox profile is already closing'};
-  item.closing=true;item.info.stopping=true;
-  Promise.resolve().then(()=>item.context.close()).then(()=>{
-   // Some patched Playwright builds resolve close without an event.
-   item.onClosed();
-  }).catch(error=>{
-   item.closing=false;item.info.stopping=false;
-   console.warn('[Camoufox] Context close failed:',String(error.message).slice(0,180));
+  const entry=this.sessions.get(id);
+  if(!entry)return {success:false,message:'Camoufox profile is not running'};
+  if(entry.closing)return {success:false,message:'Camoufox profile is already closing'};
+  entry.closing=true;entry.info.stopping=true;
+  // Graceful Windows UI close lets Firefox write its profile database.
+  // Avoid terminating immediately; hard kill only on explicit timeout.
+  entry.forceTimer=setTimeout(()=>{
+   if(this.sessions.get(id)!==entry)return;
+   try{entry.child.kill('SIGTERM');}catch(_){}
+  },8000);
+  entry.forceTimer.unref?.();
+  Promise.resolve().then(()=>this.closeWindow(entry.info.windowPid)).then(closed=>{
+   if(!closed&&this.sessions.get(id)===entry){
+    try{entry.child.kill('SIGTERM');}catch(_){}
+   }
+  }).catch(()=>{
+   if(this.sessions.get(id)===entry)
+    try{entry.child.kill('SIGTERM');}catch(_){}
   });
+  entry.child.once('exit',()=>clearTimeout(entry.forceTimer));
   return {success:true,pendingExit:true};
+ }
+ // A Firefox DevTools port cannot be passed to firefox.connectOverCDP().
+ // This stays unsupported until a compatible, authenticated Playwright
+ // BrowserServer/Juggler transport exists and is independently tested.
+ async connectPlaywright(){
+  throw Error('Camoufox native browser has no supported Playwright websocket; Firefox DevTools is not CDP');
  }
  getActive(id){return this.sessions.get(id)?.info||null;}
 }
-module.exports={CamoufoxAdapter,validateCamoufoxProfile,officialLauncher};
+module.exports={CamoufoxAdapter,validateCamoufoxProfile,nativeArgs,
+ windowsWindowProbe,requestWindowClose};
