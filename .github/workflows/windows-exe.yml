@@ -33,6 +33,8 @@ jobs:
           }
       - name: Smoke real Chrome or Edge profile and active tab
         run: node test/real-chromium-smoke.js
+      - name: Real two-Chromium Synchronizer smoke test
+        run: node test/real-navigation-sync-smoke.js
       - name: Build Windows installer
         run: npm run build:win
       - name: Verify packaged Win32 helper is unpacked
