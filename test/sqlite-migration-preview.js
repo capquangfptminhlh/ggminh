@@ -37,7 +37,7 @@ try{
  for(const issue of ['invalid-json','duplicate']){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-sqlite-bad-'));
   try{
-   const altered=issue==='invalid-json'?'{bad json':JSON.stringify({
+   const altered=issue==='invalid-json'?'{bad JSON is intentionally invalid':JSON.stringify({
     settings:{},profiles:[{...x},{...x}]
    });
    fs.writeFileSync(path.join(dir,'db.json'),altered);
