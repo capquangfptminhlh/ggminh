@@ -930,9 +930,10 @@
             <label for="field-browser-engine">Công nghệ trình duyệt</label>
             <select id="field-browser-engine">
               <option value="chromium">Chrome / Edge — tương thích bản hiện tại</option>
-              <option value="gecko">Gecko — Firefox (không dùng Chromium)</option>
+              <option value="gecko">Firefox / Gecko — browser cài trên máy</option>
+              <option value="camoufox">Camoufox / Gecko — thử nghiệm riêng từng profile</option>
             </select>
-            <p style="margin-top:7px;font-size:12px;color:#9ca3af">Gecko đang ở chế độ thử nghiệm, mở bằng Firefox cài trên máy. Bản browser engine độc lập thương hiệu LHM cần được build riêng.</p>
+            <p style="margin-top:7px;font-size:12px;color:#9ca3af">Engine lưu theo từng profile. Camoufox cần launcher và binary riêng được kiểm chứng, chưa hỗ trợ proxy/RPA trong bản preview. Đổi engine không mang theo phiên đăng nhập.</p>
           </div>
           <div class="form-group" id="gecko-path-control" hidden>
             <label for="field-gecko-path">Đường dẫn Firefox / Gecko exe (có thể để trống nếu cài đặt chuẩn)</label>
