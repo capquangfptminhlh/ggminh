@@ -21,6 +21,10 @@ function applyCloudMetadata(store,launcher,profiles,{
  let created=0,updated=0;
  for(const item of safe){
   const existing=staged.getProfile(item.id);
+  // Browser engine is part of the local session directory layout. Never
+  // change it implicitly while preserving local cookies or profile folders.
+  if(existing&&existing.engine!==item.engine)
+   throw Error('Browser engine conflict for profile '+item.id+'; resolve manually');
   staged.saveProfile({
    id:item.id,name:item.name,group:item.group,engine:item.engine,tags:item.tags,
    ...(existing?{}:{proxy:{type:'direct'},fingerprint:{mode:'native'},
