@@ -33,7 +33,9 @@ class MaturationEngine{
     if(!r||!ID.test(r.profileId||'')||!ID.test(r.actorId||'')||
        !Object.hasOwn(APPROVALS,r.type)||typeof r.at!=='number'||
        r.at<0||!Number.isSafeInteger(r.at)||typeof r.id!=='string'||
-       !/^ap_[a-f0-9]{24}$/.test(r.id))
+       !/^ap_[a-f0-9]{24}$/.test(r.id)||
+       (r.revokedAt!==undefined&&(!Number.isSafeInteger(r.revokedAt)||r.revokedAt<r.at))||
+       (r.revokedBy!==undefined&&!ID.test(r.revokedBy)))
      throw Error('Corrupt approval record');
    }
   }
@@ -56,7 +58,7 @@ class MaturationEngine{
   if(value!==1||options.source!=='manual'||options.confirmation!=='CONFIRM')
    throw Error('Explicit one-time operator approval required');
   const actorId=checkId(options.actorId,'operator ID');
-  if(this.records.some(x=>x.profileId===profileId&&x.type===actionType))
+  if(this.records.some(x=>x.profileId===profileId&&x.type===actionType&&!x.revokedAt))
    throw Error('Milestone already approved; revoke it before reapproval');
   if(this.records.length>=2000)throw Error('Maximum approval entries reached');
   const record={
@@ -68,7 +70,7 @@ class MaturationEngine{
  }
  async checkUnlockStatus(profileId){
   checkId(profileId,'profile ID');
-  const completed=new Set(this.records.filter(x=>x.profileId===profileId).map(x=>x.type));
+  const completed=new Set(this.records.filter(x=>x.profileId===profileId&&!x.revokedAt).map(x=>x.type));
   const missing=Object.entries(APPROVALS)
    .filter(([type])=>!completed.has(type))
    .map(([type,label])=>({type,label}));
@@ -84,8 +86,12 @@ class MaturationEngine{
   checkId(profileId,'profile ID');checkId(actorId,'operator ID');
   if(!Object.hasOwn(APPROVALS,actionType)||confirmation!=='REVOKE')
    throw Error('Explicit revocation required');
-  const after=this.records.filter(r=>!(r.profileId===profileId&&r.type===actionType));
-  if(after.length===this.records.length)return {revoked:false};
+  let found=false;
+  const after=this.records.map(r=>{
+   if(r.profileId!==profileId||r.type!==actionType||r.revokedAt)return r;
+   found=true;return {...r,revokedAt:this.now(),revokedBy:actorId};
+  });
+  if(!found)return {revoked:false};
   this.save(after);
   return {revoked:true};
  }
