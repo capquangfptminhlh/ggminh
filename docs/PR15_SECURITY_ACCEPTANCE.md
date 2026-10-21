@@ -78,11 +78,15 @@ be reused as proof of the latest code. Artifact digests describe the
   only after using `-wait-for-browser` to keep the Windows launcher attached
   to its child browser lifetime. This does **not** establish an installed
   LHM EXE test, cookie verification, or proxy/WebRTC/DNS safety.
-- [ ] **Native Node 20 real Windows regression:** the CI workflow now
-  switches to Node 20 before the native smoke. Follow
+- [x] **Native Node 20 real Windows regression PASS:**
   [run 39555947478](https://github.com/capquangfptminhlh/ggminh/actions/runs/39555947478)
-  to establish an independently verified result. Node 20 CLI smoke
-  is not an installed Electron 33 process.
+  first ran upstream Playwright smoke under Node 22, then switched to
+  **Node 20** on the same Windows GitHub Actions runner and successfully
+  launched Camoufox via native `spawn`. Actual logged outcomes include
+  Windows window readiness, two parallel profile directories, close/reopen,
+  and unsupported proxy rejected before spawn. The native launcher imported
+  no `camoufox` or `playwright-core` package. **This is not an installed
+  Electron 33 EXE smoke on a clean consumer Windows VM.**
 - [ ] **Blocker:** LHM-controlled Camoufox distribution signed under a
   *separate engine publisher key*, with approved license/redistribution,
   vetted per-file manifest and build-time `release.json`. None was provided.
