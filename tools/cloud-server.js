@@ -3,6 +3,7 @@
 // Provision random 32+ byte bearer secrets out of band; persist only SHA-256 digests.
 const fs=require('fs'),https=require('https'),path=require('path');
 const {createCloudService}=require('../src/sync/cloudService');
+const {acquireServerLock}=require('../src/sync/serverLock');
 function required(name){
  const value=process.env[name];
  if(!value)throw Error('Missing environment variable: '+name);
@@ -19,6 +20,7 @@ function start(){
  const configPath=regularFile(required('LHM_CLOUD_ACTORS_FILE'));
  const config=JSON.parse(fs.readFileSync(configPath,'utf8'));
  const stateDir=path.resolve(required('LHM_CLOUD_DATA_DIR'));
+ const releaseLock=acquireServerLock(stateDir);
  const tlsCert=fs.readFileSync(regularFile(required('LHM_CLOUD_TLS_CERT')));
  const tlsKey=fs.readFileSync(regularFile(required('LHM_CLOUD_TLS_KEY')));
  const host=process.env.LHM_CLOUD_HOST||'127.0.0.1';
@@ -27,8 +29,13 @@ function start(){
  const {app}=createCloudService({storageDir:stateDir,
   actors:config.actors,initialMemberships:config.initialMemberships});
  const server=https.createServer({cert:tlsCert,key:tlsKey,minVersion:'TLSv1.2'},app);
+ server.once('error',error=>{
+  releaseLock();
+  console.error('[Cloud] HTTPS server failed:',error.message);
+  process.exitCode=1;
+ });
  server.listen(port,host,()=>console.log('LHM Cloud HTTPS listening on '+host+':'+port));
- const shutdown=()=>server.close(()=>process.exit(0));
+ const shutdown=()=>server.close(()=>{releaseLock();process.exit(0);});
  process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }
 if(require.main===module)start();
