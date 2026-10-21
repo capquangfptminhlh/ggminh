@@ -377,7 +377,9 @@ async function openProfileModal(existingProfile = null) {
   if (existingProfile) {
     document.getElementById('modal-title').textContent = 'Chỉnh sửa Profile';
     fieldId.value = existingProfile.id;
-    fieldBrowserEngine.value=existingProfile.engine_type==='camoufox'?
+    fieldBrowserEngine.value=(existingProfile.engine_type==='camoufox'||
+      !existingProfile.engine_type&&existingProfile.engine==='gecko'&&
+      settings.geckoProvider==='camoufox')?
       'camoufox':existingProfile.engine==='gecko'?'gecko':'chromium';
     fieldName.value = existingProfile.name;
     fieldGroup.value = existingProfile.group || 'Default';
