@@ -18,6 +18,7 @@ async function main(){
   status(){return {valid:true,version:'upstream-verified-test-only'};}
  };
  const adapter=new CamoufoxAdapter(root,{bundleVerifier:verifier,startupTimeoutMs:30000});
+ let completed=false;
  const profile=id=>({id,name:'Windows native '+id,engine:'gecko',
   fingerprint:{mode:'native'},proxy:{type:'direct'},
   startUrl:'https://example.com/'});
@@ -53,6 +54,7 @@ async function main(){
   assert(adapter.stop('A').success);
   assert(adapter.stop('B').success);
   await Promise.all([awaitClosed('A'),awaitClosed('B')]);
+  completed=true;
   console.log(JSON.stringify({result:'PASS',mode:'native-windows',
    windowReadiness:true,parallelProfiles:true,reopenSameProfile:true,
    brokenProxy:'fail-closed-before-process',wrapperRequired:false,
@@ -63,8 +65,15 @@ async function main(){
   for(const [id,p] of adapter.sessions){
    try{p.child.kill('SIGTERM');}catch(_){}
   }
-  await new Promise(r=>setTimeout(r,400));
-  fs.rmSync(root,{recursive:true,force:true});
+  await new Promise(r=>setTimeout(r,900));
+  try{
+   fs.rmSync(root,{recursive:true,force:true,maxRetries:20,retryDelay:300});
+  }catch(error){
+   // An earlier launch or stop failure must not be hidden by an EBUSY
+   // exception from deleting the temporary Firefox cookie database.
+   console.error('Windows temp browser profile still locked:',error.message);
+   if(completed)throw error;
+  }
  }
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});
