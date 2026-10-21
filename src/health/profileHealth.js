@@ -1,6 +1,7 @@
 const net = require('net');
 const fs = require('fs');
 const { optionsFor } = require('../engine/browserDiagnostics');
+const {checkProfileSignalChain}=require('./signalChain');
 
 function checkProfile(profile, options = {}) {
   const issues = [];
@@ -62,12 +63,16 @@ function checkProfile(profile, options = {}) {
   if (engine === 'chromium' && fp.mode !== 'native') issues.push({
     level: 'notice', code: 'privacy_unverified', message: 'Cơ chế Canvas/WebGL/WebRTC hiện chưa được kiểm thử xuyên phiên bản; không bảo đảm ẩn danh.'
   });
+  // Offline coherence check. Do not report proxy UDP safety without packet proof.
+  const audit=checkProfileSignalChain(profile);
+  for(const issue of audit.issues)
+    issues.push({level:issue.level,code:'signal_'+issue.code,message:issue.message});
   const errors = issues.filter(i => i.level === 'error').length;
   const warnings = issues.filter(i => i.level === 'warning').length;
   return {
     profileId: profile?.id || null, engine,
     status: errors ? 'error' : warnings ? 'warning' : 'ready',
-    errorCount: errors, warningCount: warnings, issues,
+    errorCount: errors, warningCount: warnings, issues, signalChain:audit,
     note: 'Health Check chỉ xác nhận khả năng cấu hình; không đo khả năng Google nhận diện.'
   };
 }
