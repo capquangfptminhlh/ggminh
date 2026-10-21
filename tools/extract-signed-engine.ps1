@@ -7,6 +7,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 $root=[IO.Path]::GetFullPath($Destination).TrimEnd('\')+'\'
 $doc=Get-Content -LiteralPath $Manifest -Raw -Encoding UTF8 | ConvertFrom-Json
 if($doc.engine -ne 'camoufox' -or $doc.entry -ne 'camoufox.exe'){ throw 'Wrong engine manifest identity' }
@@ -21,7 +22,7 @@ foreach($item in $doc.files){
  $expected.Add($name,[long]$item.bytes)
 }
 $seen=New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
-$zip=[IO.Compression.ZipFile]::OpenRead($Archive)
+$zip=[System.IO.Compression.ZipFile]::OpenRead($Archive)
 try{
  $total=[long]0
  foreach($entry in $zip.Entries){
