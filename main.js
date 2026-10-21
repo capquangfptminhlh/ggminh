@@ -341,8 +341,8 @@ function initIPC() {
     if(!['firefox','camoufox'].includes(provider))throw Error('Invalid Firefox provider');
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả trình duyệt trước khi thay đổi engine Firefox');
-    if(provider==='camoufox'&&!camoufoxAdapter.status().installed)
-      throw Error('Camoufox TypeScript package not installed; no browser binary is bundled');
+    if(provider==='camoufox'&&!camoufoxAdapter.status().ready)
+      throw Error('Camoufox needs an installed TypeScript launcher AND a signed verified Windows distribution');
     store.updateSettings({geckoProvider:provider});
     return {provider,status:camoufoxAdapter.status()};
   });
@@ -785,7 +785,10 @@ app.whenReady().then(async () => {
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));
   launcher.bundledEngine=bundledEngine;
-  camoufoxAdapter=new CamoufoxAdapter(storageDir);
+  const camoufoxBundle=new BundledEngineManager(app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-camoufox')
+    :path.join(__dirname,'resources','camoufox-engine'),{engine:'camoufox'});
+  camoufoxAdapter=new CamoufoxAdapter(storageDir,{bundleVerifier:camoufoxBundle});
   launcher.camoufoxAdapter=camoufoxAdapter;
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
