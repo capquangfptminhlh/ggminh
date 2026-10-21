@@ -8,6 +8,7 @@ const fs=require('fs');
 const path=require('path');
 const {authorize,activeMember,TeamInvitations}=require('../team/policy');
 const {KIND}=require('./encryptedMetadata');
+const {issueDevice,verifyDevice,revokeDevice,listDevices}=require('./deviceRegistry');
 
 const IDENT=/^[a-zA-Z0-9_-]{1,80}$/;
 const MAX_CIPHER=1024*1024;
@@ -59,7 +60,7 @@ function prepareState(initialMemberships){
  });
  if(!memberships.some(m=>m.role==='owner'&&m.groups.includes('*')))
   throw Error('An owner with all group scopes is required');
- return {schema:1,memberships,invites:[],audit:[],sync:{}};
+ return {schema:1,memberships,invites:[],audit:[],sync:{},devices:[],history:{}};
 }
 function createCloudService({storageDir,actors,initialMemberships,now=()=>Date.now()}={}){
  if(typeof storageDir!=='string'||!storageDir)throw Error('Missing storageDir');
@@ -78,6 +79,11 @@ function createCloudService({storageDir,actors,initialMemberships,now=()=>Date.n
  if(state.schema!==1||!Array.isArray(state.memberships)||!Array.isArray(state.invites)||
    !Array.isArray(state.audit)||!state.sync||typeof state.sync!=='object')
   throw Error('Invalid persisted cloud state');
+ // Backwards-compatible schema extension for existing encrypted metadata.
+ // Existing clients need explicit device enrollment before further sync access.
+ if(!Array.isArray(state.devices))state.devices=[];
+ if(!state.history||typeof state.history!=='object'||Array.isArray(state.history))
+  state.history={};
  function persist(next){
   const scratch=filename+'.'+crypto.randomBytes(8).toString('hex')+'.tmp';
   try{
@@ -114,15 +120,68 @@ function createCloudService({storageDir,actors,initialMemberships,now=()=>Date.n
   return isId(tenantId)&&authorize(state,{tenantId,subjectId:actor.subjectId,
    action,...(groupId?{groupId}:{})});
  }
+ function deviceAllowed(req,tenantId){
+  return verifyDevice(state,{tenantId,subjectId:req.actor.subjectId,
+   deviceId:req.get('x-lhm-device-id')||'',
+   deviceKey:req.get('x-lhm-device-key')||''});
+ }
+ app.get('/v1/workspaces/:tenantId/devices',(req,res)=>{
+  try{return res.json({devices:listDevices(state,req.params.tenantId,req.actor.subjectId)});}
+  catch(_){return res.status(403).json({error:'Forbidden'});}
+ });
+ app.post('/v1/workspaces/:tenantId/devices',(req,res)=>{
+  const tenantId=req.params.tenantId;
+  try{
+   const next=structuredClone(state);
+   const created=issueDevice(next,{tenantId,actorId:req.actor.subjectId,
+    subjectId:req.body?.subjectId,deviceId:req.body?.deviceId,now});
+   next.audit=next.audit.slice(-1000);
+   persist(next);
+   return res.status(201).json(created);
+  }catch(error){return res.status(403).json({error:error.message});}
+ });
+ app.delete('/v1/workspaces/:tenantId/devices/:deviceId',(req,res)=>{
+  const {tenantId,deviceId}=req.params;
+  try{
+   const next=structuredClone(state);
+   const result=revokeDevice(next,{tenantId,deviceId,actorId:req.actor.subjectId,now});
+   next.audit=next.audit.slice(-1000);
+   persist(next);
+   return res.json(result);
+  }catch(error){return res.status(403).json({error:error.message});}
+ });
+ app.get('/v1/workspaces/:tenantId/sync/history',(req,res)=>{
+  const {tenantId}=req.params;
+  if(!guard('sync:read',{tenantId},req.actor)||!deviceAllowed(req,tenantId))
+   return res.status(403).json({error:'Forbidden'});
+  const current=state.sync[tenantId],prior=state.history[tenantId]||[];
+  const values=prior.map(x=>({revision:x.revision,recordedAt:x.recordedAt}));
+  if(current)values.push({revision:current.revision,recordedAt:current.recordedAt||null});
+  return res.json({revisions:values.sort((a,b)=>b.revision-a.revision)});
+ });
+ app.get('/v1/workspaces/:tenantId/sync/history/:revision',(req,res)=>{
+  const {tenantId}=req.params,revision=Number(req.params.revision);
+  if(!guard('sync:read',{tenantId},req.actor)||!deviceAllowed(req,tenantId))
+   return res.status(403).json({error:'Forbidden'});
+  if(!Number.isSafeInteger(revision)||revision<1)
+   return res.status(400).json({error:'Invalid revision'});
+  const current=state.sync[tenantId];
+  const record=current?.revision===revision?current:
+   (state.history[tenantId]||[]).find(x=>x.revision===revision);
+  if(!record)return res.status(404).json({error:'Revision not retained'});
+  return res.json({revision,envelope:record.envelope});
+ });
  app.get('/v1/workspaces/:tenantId/sync',(req,res)=>{
   const {tenantId}=req.params;
-  if(!guard('sync:read',{tenantId},req.actor))return res.status(403).json({error:'Forbidden'});
+  if(!guard('sync:read',{tenantId},req.actor)||!deviceAllowed(req,tenantId))
+   return res.status(403).json({error:'Forbidden'});
   const item=state.sync[tenantId];
   return res.json({revision:item?.revision||0,envelope:item?.envelope||null});
  });
  app.put('/v1/workspaces/:tenantId/sync',(req,res)=>{
   const {tenantId}=req.params;
-  if(!guard('sync:write',{tenantId},req.actor))return res.status(403).json({error:'Forbidden'});
+  if(!guard('sync:write',{tenantId},req.actor)||!deviceAllowed(req,tenantId))
+   return res.status(403).json({error:'Forbidden'});
   try{
    const expectedRevision=req.body?.expectedRevision;
    if(!Number.isSafeInteger(expectedRevision)||expectedRevision<0)
@@ -131,9 +190,16 @@ function createCloudService({storageDir,actors,initialMemberships,now=()=>Date.n
    if(previous!==expectedRevision)return res.status(409).json({
     error:'Revision conflict',revision:previous});
    verifyEnvelope(req.body?.envelope,tenantId,previous+1);
+   if(req.body.envelope.deviceId!==req.get('x-lhm-device-id'))
+    throw invalid('Device ID does not match encrypted envelope');
    // No await between version comparison and atomic persistence: single process CAS.
    const next=structuredClone(state);
-   next.sync[tenantId]={revision:previous+1,envelope:req.body.envelope};
+   if(previous){
+    const history=next.history[tenantId]||[];
+    history.push(next.sync[tenantId]);
+    next.history[tenantId]=history.slice(-25);
+   }
+   next.sync[tenantId]={revision:previous+1,envelope:req.body.envelope,recordedAt:now()};
    next.audit.push({at:now(),tenantId,actorId:req.actor.subjectId,
     event:'sync.metadata.updated',revision:previous+1});
    next.audit=next.audit.slice(-1000);
@@ -199,6 +265,11 @@ function createCloudService({storageDir,actors,initialMemberships,now=()=>Date.n
   const next=structuredClone(state);
   const member=next.memberships.find(x=>x.tenantId===tenantId&&x.subjectId===subjectId);
   member.status='revoked';
+  for(const device of next.devices||[]){
+   if(device.tenantId===tenantId&&device.subjectId===subjectId&&device.status==='active'){
+    device.status='revoked';device.revokedAt=now();device.hash=null;
+   }
+  }
   next.audit.push({at:now(),tenantId,actorId:actor.subjectId,
    event:'team.member.revoked',target:subjectId});
   next.audit=next.audit.slice(-1000);

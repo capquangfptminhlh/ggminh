@@ -563,6 +563,18 @@ function initIPC() {
     cloudClientFor(event,options).revokeMember(memberId));
   ipcMain.handle('cloud-team-redeem',async(event,options,token)=>
     cloudClientFor(event,options).redeemInvite(token));
+  ipcMain.handle('cloud-team-devices',async(event,options)=>
+    cloudClientFor(event,options).listDevices());
+  ipcMain.handle('cloud-team-enroll-device',async(event,options,request)=>
+    cloudClientFor(event,options).enrollDevice(request));
+  ipcMain.handle('cloud-team-revoke-device',async(event,options,id)=>
+    cloudClientFor(event,options).revokeDevice(id));
+  ipcMain.handle('cloud-sync-history',async(event,options)=>
+    cloudClientFor(event,options).listHistory());
+  ipcMain.handle('cloud-sync-restore-history',async(event,options,revision,confirmation)=>{
+    if(confirmation!=='RESTORE CLOUD')throw Error('Type RESTORE CLOUD to confirm');
+    return cloudClientFor(event,options).restoreHistory(options.passphrase,revision);
+  });
   ipcMain.handle('check-proxy', (_, proxy) => checkProxy(proxy));
   ipcMain.handle('generate-fingerprint', (_, options) => generateFingerprint(options));
   ipcMain.handle('get-settings', () => store.getSettings());

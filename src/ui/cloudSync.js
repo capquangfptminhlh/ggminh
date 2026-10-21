@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   return {baseUrl:el('cloud-sync-url').value.trim(),
    tenantId:el('cloud-sync-tenant').value.trim(),
    deviceId:el('cloud-sync-device').value.trim(),
+   deviceKey:el('cloud-sync-device-key').value,
    token:el('cloud-sync-token').value,
    passphrase:el('cloud-sync-passphrase').value};
  }
@@ -24,6 +25,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(busy)return;
   modal.classList.remove('open');
   el('cloud-sync-token').value='';
+  el('cloud-sync-device-key').value='';
   el('cloud-sync-passphrase').value='';
   el('cloud-sync-confirm').value='';
   resetPreview();
@@ -31,6 +33,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   el('cloud-team-list').replaceChildren();
   el('cloud-team-email').value='';
   el('cloud-team-invite-token').value='';
+  el('cloud-team-device-result').textContent='';
+  el('cloud-team-devices').replaceChildren();
+  el('cloud-team-device-subject').value='';
+  el('cloud-team-device-id').value='';
+  el('cloud-sync-history-confirm').value='';
+  el('cloud-sync-history-revision').replaceChildren();
+  el('cloud-sync-history-restore').disabled=true;
  }
  trigger.addEventListener('click',()=>{
   modal.classList.add('open');
@@ -40,7 +49,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  el('cloud-sync-close').addEventListener('click',close);
  el('cloud-sync-done').addEventListener('click',close);
  for(const id of ['cloud-sync-url','cloud-sync-tenant','cloud-sync-device',
-  'cloud-sync-token','cloud-sync-passphrase']){
+  'cloud-sync-token','cloud-sync-device-key','cloud-sync-passphrase']){
   el(id).addEventListener('input',resetPreview);
  }
  el('cloud-sync-preview').addEventListener('click',async()=>{
@@ -153,6 +162,89 @@ window.addEventListener('DOMContentLoaded',()=>{
     ' với vai trò '+accepted.role+'.';
    el('cloud-team-invite-token').value='';
   }catch(error){teamResult.textContent='Không nhận được lời mời: '+error.message;}
+  finally{toggleBusy(false);}
+ });
+ const historySelect=el('cloud-sync-history-revision');
+ el('cloud-sync-history').addEventListener('click',async()=>{
+  toggleBusy(true);
+  try{
+   const versions=await window.api.cloudSyncHistory(options());
+   historySelect.replaceChildren();
+   for(const item of versions){
+    const choice=document.createElement('option');
+    choice.value=String(item.revision);
+    choice.textContent='Revision '+item.revision+(item.recordedAt?' · '+item.recordedAt:'');
+    historySelect.append(choice);
+   }
+   el('cloud-sync-history-restore').disabled=!versions.length;
+   el('cloud-sync-history-result').textContent='Đã tải '+versions.length+' bản lịch sử.';
+  }catch(error){el('cloud-sync-history-result').textContent='Lỗi lịch sử: '+error.message;}
+  finally{toggleBusy(false);}
+ });
+ el('cloud-sync-history-restore').addEventListener('click',async()=>{
+  const revision=Number(historySelect.value);
+  const confirm=el('cloud-sync-history-confirm').value;
+  if(!Number.isSafeInteger(revision)||confirm!=='RESTORE CLOUD'){
+   el('cloud-sync-history-result').textContent='Chọn revision và nhập RESTORE CLOUD.';return;
+  }
+  if(!window.confirm('Khôi phục revision '+revision+' thành phiên bản Cloud mới?'))return;
+  toggleBusy(true);resetPreview();
+  try{
+   const restored=await window.api.cloudSyncRestoreHistory(options(),revision,confirm);
+   el('cloud-sync-history-result').textContent='Đã khôi phục bản '+restored.restoredFrom+
+    ' thành revision '+restored.revision+' · '+restored.profiles+' hồ sơ.';
+   el('cloud-sync-history-confirm').value='';
+  }catch(error){el('cloud-sync-history-result').textContent='Không thể khôi phục: '+error.message;}
+  finally{toggleBusy(false);}
+ });
+ const deviceArea=el('cloud-team-devices');
+ function showDevices(data){
+  deviceArea.replaceChildren();
+  for(const d of data){
+   const row=document.createElement('div');row.className='lhm-wm-row';
+   const label=document.createElement('span');
+   label.textContent=d.deviceId+' · '+d.subjectId+' · '+d.status;
+   row.append(label);
+   if(d.status==='active'){
+    const button=document.createElement('button');
+    button.type='button';button.className='btn btn-sm btn-danger';
+    button.textContent='Thu hồi thiết bị';
+    button.addEventListener('click',async()=>{
+     if(!window.confirm('Thu hồi ngay thiết bị '+d.deviceId+'?'))return;
+     toggleBusy(true);
+     try{
+      await window.api.cloudTeamRevokeDevice(credentials(),d.deviceId);
+      showDevices(await window.api.cloudTeamDevices(credentials()));
+      el('cloud-team-device-result').textContent='Đã thu hồi thiết bị '+d.deviceId+'.';
+     }catch(error){el('cloud-team-device-result').textContent=error.message;}
+     finally{toggleBusy(false);}
+    });
+    row.append(button);
+   }
+   deviceArea.append(row);
+  }
+  if(!data.length)deviceArea.textContent='Chưa có thiết bị.';
+ }
+ el('cloud-team-device-list').addEventListener('click',async()=>{
+  toggleBusy(true);
+  try{
+   const devices=await window.api.cloudTeamDevices(credentials());
+   showDevices(devices);
+   el('cloud-team-device-result').textContent='Đã tải '+devices.length+' thiết bị.';
+  }catch(error){el('cloud-team-device-result').textContent=error.message;}
+  finally{toggleBusy(false);}
+ });
+ el('cloud-team-device-enroll').addEventListener('click',async()=>{
+  const subjectId=el('cloud-team-device-subject').value.trim();
+  const deviceId=el('cloud-team-device-id').value.trim();
+  if(!subjectId||!deviceId){el('cloud-team-device-result').textContent='Nhập thành viên và mã thiết bị.';return;}
+  if(!window.confirm('Cấp khóa thiết bị mới '+deviceId+' cho '+subjectId+'?'))return;
+  toggleBusy(true);
+  try{
+   const enrolled=await window.api.cloudTeamEnrollDevice(credentials(),{subjectId,deviceId});
+   el('cloud-team-device-result').textContent='Khóa một lần: '+enrolled.deviceKey+
+    ' · Sao chép qua kênh riêng. Không chia sẻ công khai.';
+  }catch(error){el('cloud-team-device-result').textContent='Lỗi cấp thiết bị: '+error.message;}
   finally{toggleBusy(false);}
  });
 });

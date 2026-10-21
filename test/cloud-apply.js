@@ -21,6 +21,11 @@ const {applyCloudMetadata}=require('../src/sync/applyMetadata');
   assert.throws(()=>applyCloudMetadata(store,launcher,data,{
    remoteRevision:1,expectedRevision:1,confirmation:'APPLY CLOUD'}),/Stop/);
   busy.clear();
+  const conflicting=data.map(x=>({...x,...(x.id===old.id?{engine:'gecko'}:{})}));
+  assert.throws(()=>applyCloudMetadata(store,launcher,conflicting,{
+   remoteRevision:1,expectedRevision:1,confirmation:'APPLY CLOUD'
+  }),/engine conflict/);
+  assert.strictEqual(store.getProfiles().length,1);
   const result=applyCloudMetadata(store,launcher,data,{
    remoteRevision:1,expectedRevision:1,confirmation:'APPLY CLOUD'});
   assert.deepStrictEqual(result,{created:1,updated:1,total:2,revision:1});

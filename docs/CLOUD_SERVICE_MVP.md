@@ -82,6 +82,33 @@ backup management, key lifecycle and platform security review.
 TLS is mandatory in this standalone server. The browser app accepts only
 bare HTTPS server origins (no HTTP, redirects, embedded credentials or query).
 
+## Device authorization and recovery (vNext)
+
+Cloud Sync now requires **two independent credentials**: the person's
+server-provisioned bearer token plus a unique 64-character device key.
+The owner/admin uses **Cloud Sync → Team → Quản lý thiết bị** to enroll a
+device for an existing active member. The key is shown only once; deliver
+it securely to that member, who enters it into the new device-key field.
+A team member whose device has not been approved cannot download or write
+encrypted metadata. Revoking a device invalidates its hash immediately
+in the server's state. Revoking a member also revokes all that member's
+devices. Admin cannot revoke owner devices.
+
+Each successful upload retains up to 25 prior encrypted metadata
+envelopes, along with the current revision. Use **Xem lịch sử** to view
+these revisions, select a revision and type `RESTORE CLOUD`. The client
+decrypts the chosen revision locally and encrypts it again as a *new*
+revision. The previous revision is not edited. Version conflicts cause
+an error and require another review. Historic data stays server-side
+encrypted; restoring Cloud does not restore local browser sessions.
+
+**Security limitations:** A device key is not hardware-backed: theft of
+both an actor bearer token and its device key allows access until revoked.
+Use MFA and managed short-lived identities before commercial exposure.
+The local JSON persistence still supports only one server process per
+directory. No external hosting, distributed storage or IdP is provisioned
+by this PR, and the device UI does not remotely install software.
+
 ## UI flow
 
 1. Open **Cloud Sync** from the desktop workspace toolbar.
