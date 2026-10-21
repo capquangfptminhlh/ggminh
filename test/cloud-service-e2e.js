@@ -26,9 +26,10 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
   const s=app.listen(0,'127.0.0.1',()=>resolve(s));
  });
  const origin='http://127.0.0.1:'+server.address().port;
- const req=(token,method,route,body)=>fetch(origin+route,{
+ const req=(token,method,route,body,device)=>fetch(origin+route,{
   method,headers:{Authorization:'Bearer '+token,
-   ...(body?{'Content-Type':'application/json'}:{})},
+   ...(body?{'Content-Type':'application/json'}:{}),
+   ...(device?{'X-LHM-Device-ID':device.id,'X-LHM-Device-Key':device.key}:{})},
   ...(body?{body:JSON.stringify(body)}:{})
  });
  const mockHttps=(url,options)=>{
@@ -43,6 +44,11 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
    token:owner,tenantId:'tenantA',deviceId:'device1'},{fetcher:mockHttps});
   const client2=new CloudClient({baseUrl:'https://cloud.example.test',
    token:reader,tenantId:'tenantA',deviceId:'device2'},{fetcher:mockHttps});
+  const ownerDevice=await admin.enrollDevice({subjectId:'ownerA',deviceId:'device1'});
+  const viewerDevice=await admin.enrollDevice({subjectId:'readerA',deviceId:'device2'});
+  admin.deviceKey=ownerDevice.deviceKey;
+  client2.deviceKey=viewerDevice.deviceKey;
+  assert((await admin.listDevices()).length===2);
   assert((await admin.listMembers()).some(x=>x.subjectId==='ownerA'));
   await assert.rejects(()=>client2.listMembers(),/Team permission denied/);
   const serviceInvite=await admin.issueInvite({email:'future@example.com',
@@ -58,6 +64,7 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
   const raw=fs.readFileSync(path.join(directory,'cloud-state.json'),'utf8');
   assert(!raw.includes('SESSION_SECRET')&&!raw.includes('PROXY_SECRET'));
   assert(!raw.includes(owner)&&!raw.includes(reader)&&!raw.includes(pending));
+  assert(!raw.includes(ownerDevice.deviceKey)&&!raw.includes(viewerDevice.deviceKey));
   const pulled=await client2.pull(passphrase);
   assert.strictEqual(pulled.revision,1);
   assert.strictEqual(pulled.profiles[0].name,'Work');
@@ -72,17 +79,30 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
   const crossOrigin=await fetch(origin+'/v1/workspaces/tenantA/sync',
    {headers:{Authorization:'Bearer '+owner,Origin:'https://evil.test'}});
   assert.strictEqual(crossOrigin.status,403);
+  const badDevice=await req(owner,'GET','/v1/workspaces/tenantA/sync',null,
+   {id:'device1',key:viewerDevice.deviceKey});
+  assert.strictEqual(badDevice.status,403);
+  const noDevice=await req(owner,'GET','/v1/workspaces/tenantA/sync');
+  assert.strictEqual(noDevice.status,403);
   const two=encryptMetadata({tenantId:'tenantA',deviceId:'device1',
    revision:2,profiles:sample,passphrase});
   const good=await req(owner,'PUT','/v1/workspaces/tenantA/sync',
-   {expectedRevision:1,envelope:two});
+   {expectedRevision:1,envelope:two},{id:'device1',key:admin.deviceKey});
   assert.strictEqual(good.status,201);
   const conflict=await req(owner,'PUT','/v1/workspaces/tenantA/sync',
-   {expectedRevision:1,envelope:two});
+   {expectedRevision:1,envelope:two},{id:'device1',key:admin.deviceKey});
   assert.strictEqual(conflict.status,409);
   const badEnv=await req(owner,'PUT','/v1/workspaces/tenantA/sync',
-   {expectedRevision:2,envelope:{...two,revision:3,extra:'unwanted'}});
+   {expectedRevision:2,envelope:{...two,revision:3,extra:'unwanted'}},
+   {id:'device1',key:admin.deviceKey});
   assert.strictEqual(badEnv.status,400);
+  const history=await admin.listHistory();
+  assert.deepStrictEqual(history.map(x=>x.revision),[2,1]);
+  const old=await admin.pullHistory(passphrase,1);
+  assert.strictEqual(old.profiles.length,1);
+  const recovered=await admin.restoreHistory(passphrase,1);
+  assert.strictEqual(recovered.revision,3);
+  assert.deepStrictEqual((await admin.listHistory()).map(x=>x.revision),[3,2,1]);
   const pendingDenied=await req(pending,'GET','/v1/workspaces/tenantA/sync');
   assert.strictEqual(pendingDenied.status,403);
   const inviteResponse=await req(owner,'POST','/v1/workspaces/tenantA/invites',{
@@ -99,20 +119,29 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
    token:pending,tenantId:'tenantA',deviceId:'device3'},{fetcher:mockHttps});
   const redeem=await recipient.redeemInvite(invitation.token);
   assert.strictEqual(redeem.role,'viewer');
-  const nowMember=await req(pending,'GET','/v1/workspaces/tenantA/sync');
-  assert.strictEqual(nowMember.status,200);
+  const newMemberDevice=await admin.enrollDevice({subjectId:'pendingA',deviceId:'device3'});
+  recipient.deviceKey=newMemberDevice.deviceKey;
+  const nowMember=await recipient.pull(passphrase);
+  assert.strictEqual(nowMember.revision,3);
   const members=await req(owner,'GET','/v1/workspaces/tenantA/members');
   assert.strictEqual(members.status,200);
   assert((await members.json()).members.some(x=>x.subjectId==='pendingA'));
   const revocation=await admin.revokeMember('pendingA');
   assert.strictEqual(revocation.revoked,true);
-  const afterRevocation=await req(pending,'GET','/v1/workspaces/tenantA/sync');
+  const afterRevocation=await req(pending,'GET','/v1/workspaces/tenantA/sync',null,
+   {id:'device3',key:newMemberDevice.deviceKey});
   assert.strictEqual(afterRevocation.status,403);
+  const enrolled=await admin.listDevices();
+  assert(enrolled.some(x=>x.deviceId==='device3'&&x.status==='revoked'));
+  assert.deepStrictEqual(await admin.revokeDevice('device2'),{revoked:true});
+  await assert.rejects(()=>client2.pull(passphrase),/Cloud permission denied/);
+  assert.strictEqual((await admin.listDevices()).find(x=>x.deviceId==='device2').status,'revoked');
   const audit=await req(owner,'GET','/v1/workspaces/tenantA/audit');
   assert.strictEqual(audit.status,200);
   assert((await audit.json()).events.some(e=>e.event==='team.member.revoked'));
   const reloaded=createCloudService({storageDir:directory,actors,initialMemberships});
-  assert.strictEqual(reloaded.readState().sync.tenantA.revision,2);
+  assert.strictEqual(reloaded.readState().sync.tenantA.revision,3);
+  assert.strictEqual(reloaded.readState().history.tenantA.length,2);
   assert(reloaded.readState().memberships.some(m=>m.subjectId==='pendingA'&&m.status==='revoked'));
   console.log('Cloud HTTPS client + HTTP test service: ciphertext, auth, tenants, team invite, revocation, persistence and CAS passed');
  }finally{
