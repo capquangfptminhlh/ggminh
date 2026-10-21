@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { checkProxy } = require('../engine/proxyChecker');
+const {resolveEngineType}=require('../engine/EngineFactory');
 
 function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null, licensePolicy=null } = {}) {
   const service = express();
@@ -35,6 +36,15 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       const id = req.query.user_id || req.query.serial_number || req.query.id;
       if (typeof id !== 'string' || !id) return res.status(400).json({ code: -1, msg: 'Missing user_id' });
       const profile = store.getProfile(id);
+      if(profile&&resolveEngineType(profile,store.getSettings())==='camoufox'){
+        // Native spawn is a manual GUI. Firefox's DevTools debugger does NOT
+        // expose Chrome CDP nor a Playwright/Juggler BrowserServer websocket.
+        // Never invent a debug port or return code:0 for unsupported control.
+        return res.status(409).json({code:-1,
+          msg:'Camoufox automation unavailable: native EXE has no verified Playwright/Juggler endpoint; Firefox DevTools is not CDP.',
+          data:{engine:'camoufox',protocol:'unavailable',
+            debug_port:null,ws:{playwright:null}}});
+      }
       if (profile?.engine === 'gecko') return res.status(409).json({ code: -1, msg: 'Gecko profile is manual-only; CDP API is not supported.' });
       const instance = await launcher.start(id, req.query.open_url);
       if (behaviorMonitor) behaviorMonitor.record('profile_open', id, 'api');
