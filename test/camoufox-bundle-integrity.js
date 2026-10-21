@@ -14,13 +14,13 @@ function peFixture(destination){
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-signed-camoufox-'));
  let invokes=0;
  try{
-  const binary=path.join(base,'firefox.exe');
+  const binary=path.join(base,'camoufox.exe');
   peFixture(binary);
   const dll=path.join(base,'omni.ja');
   fs.writeFileSync(dll,'approved engine resource');
   const keys=crypto.generateKeyPairSync('ed25519');
   const release=(engine='camoufox')=>{
-   const files=['firefox.exe','omni.ja'].map(name=>({
+   const files=['camoufox.exe','omni.ja'].map(name=>({
     path:name,...sha256File(path.join(base,name))
    }));
    const document={schema:1,engine,version:'134.0.2',entry:'firefox.exe',files};
