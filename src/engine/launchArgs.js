@@ -44,6 +44,11 @@ function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, pro
   if (fingerprint.mode !== 'native' && fingerprint.userAgent) args.push('--user-agent=' + fingerprint.userAgent);
   if (fingerprint.languages?.[0]) args.push('--lang=' + fingerprint.languages[0]);
   if (proxy.host || proxy.port) {
+    // Fail closed for HTTP/3 UDP egress and non-proxied WebRTC UDP in
+    // proxied Chromium. Does NOT implement SOCKS5 UDP ASSOCIATE or prove
+    // the absence of every OS/browser UDP pathway.
+    args.push('--disable-quic');
+    args.push('--force-webrtc-ip-handling-policy=disable_non_proxied_udp');
     if (!proxy.host || !/^[A-Za-z0-9_.:-]+$/.test(proxy.host)) throw new Error('Invalid proxy hostname');
     const proxyPort = Number(proxy.port);
     if (!Number.isInteger(proxyPort) || proxyPort <= 0 || proxyPort > 65535) throw new Error('Invalid proxy port');
