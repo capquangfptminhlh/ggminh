@@ -237,7 +237,10 @@ class BrowserLauncher {
       Promise.resolve().then(()=>controller.stop(profileId)).catch(error=>{
         console.warn('[Camoufox] Playwright context close failed:',
           String(error.message).slice(0,160));
-        this.activeProcesses.delete(profileId);
+        // A rejected close does not mean Firefox exited. Do not unlock the
+        // profile or drop its active record while a browser may still run.
+        const current=this.activeProcesses.get(profileId);
+        if(current===active)current.stopping=false;
       });
       return {success:true,pendingExit:true};
     }
