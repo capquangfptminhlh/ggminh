@@ -43,8 +43,8 @@
     "id": "synchronizer",
     "name": "Multiwindow Synchronizer",
     "state": "partial",
-    "evidence": "Win32 foreground, grid, cascade and shared startup URLs; explicit new-tab navigation via localhost Chrome DevTools on running profiles",
-    "gaps": "No master/slave click/input/scroll/tab synchronization, multi-monitor layout or keyboard shortcuts",
+    "evidence": "Win32 foreground, grid, cascade and shared startup URLs; explicit new-tab navigation via localhost Chrome DevTools on running profiles; opt-in same-host Chromium master-tab HTTPS navigation to follower new tabs, exact allowlist, 15-event cap, explicit stop",
+    "gaps": "No click/input/scroll/same-tab follower sync, multi-monitor routing, keyboard hotkeys or real Windows multi-profile E2E acceptance",
     "acceptance": "Real desktop synchronized interactions tested with explicit user authorization"
   },
   {
