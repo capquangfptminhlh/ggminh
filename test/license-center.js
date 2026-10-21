@@ -24,7 +24,10 @@ try{
  assert.strictEqual(verifyLicense(signed,pub).maxProfiles,80);
  assert.throws(()=>verifyLicense(signed,PUBLIC_KEY),/signature/,'Dev test key must not match vendor production key');
  assert(!signed.includes('PRIVATE KEY'));
- assert.throws(()=>manager.activate(signed.slice(0,-2)+'AA'),/signature|encoding/);
+ const parts=signed.split('.');
+ const tampered=parts[0]+'.'+parts[1]+'.'+
+  (parts[2][0]==='A'?'B':'A')+parts[2].slice(1);
+ assert.throws(()=>manager.activate(tampered),/signature|encoding/);
  assert.strictEqual(manager.status().status,'inactive');
  assert.throws(()=>manager.activate(signLicense(claims({installationId:crypto.randomUUID()}),privateKey)),/different installation/);
  assert.throws(()=>manager.activate(signLicense(claims({
