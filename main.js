@@ -881,7 +881,7 @@ app.whenReady().then(async () => {
       return camoufoxInstall.verifier().resolve(engine);
     }
   };
-  camoufoxAdapter=new CamoufoxAdapter(storageDir,{bundleVerifier:verifiedProviders});
+  camoufoxAdapter=new CamoufoxAdapter(storageDir,{bundleVerifier:verifiedProviders,store,proxyVault});
   launcher.camoufoxAdapter=camoufoxAdapter;
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
