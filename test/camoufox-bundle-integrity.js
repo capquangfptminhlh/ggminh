@@ -53,35 +53,45 @@ function peFixture(destination){
   fs.writeFileSync(path.join(base,'unlisted.dll'),'unlisted');
   assert.throws(()=>manager.verify(),/missing or unlisted/);
   fs.rmSync(path.join(base,'unlisted.dll'));
+  const procFactory=()=>{
+   const emitter=new (require('events').EventEmitter)();
+   emitter.pid=44519;
+   emitter.stdout={resume(){}};
+   emitter.stderr={resume(){}};
+   emitter.kill=()=>{process.nextTick(()=>emitter.emit('exit',0,null));return true;};
+   process.nextTick(()=>emitter.emit('spawn'));
+   return emitter;
+  };
   const noRelease=new CamoufoxAdapter(base,{
-   loader:async()=>{invokes++;throw Error('Should not load Camoufox');}
+   spawnProcess:()=>{invokes++;return procFactory();},platform:'win32'
   });
   const profile={id:'testcamoufox',name:'Test',engine:'gecko',
    fingerprint:{mode:'native'},proxy:{type:'direct'},startUrl:'https://example.com/'};
   await assert.rejects(()=>noRelease.start(profile),/trusted, release-signed/);
   assert.strictEqual(invokes,0);
   assert(!fs.existsSync(path.join(base,'camoufox-profiles','testcamoufox')));
-  // Signed and verified executable is always supplied to the upstream loader:
-  const mock=new CamoufoxAdapter(base,{bundleVerifier:manager,loader:async()=>{
-   invokes++;
-   return async args=>{
-    assert.strictEqual(args.executable_path,binary);
-    assert.strictEqual(args.persistent_context,true);
-    const context=require('events').EventEmitter;
-    const instance=new context();
-    instance.newPage=async()=>({goto:async()=>{}});
-    instance.close=async()=>instance.emit('close');
-    return instance;
-   };
-  }});
+  const mock=new CamoufoxAdapter(base,{
+   bundleVerifier:manager,platform:'win32',
+   windowProbe:async()=>true,
+   closeWindow:async()=>false,
+   spawnProcess:(executable,args)=>{
+    assert.strictEqual(executable,binary);
+    assert(args.includes(path.join(base,'camoufox-profiles','testcamoufox')));
+    invokes++;
+    return procFactory();
+   }
+  });
   const launched=await mock.start(profile);
   assert.strictEqual(launched.provider,'camoufox');
+  assert.strictEqual(launched.manualOnly,true);
+  assert.strictEqual(launched.wsEndpoint,null);
   assert.strictEqual(invokes,1);
   assert(mock.stop(profile.id).success);
+  await new Promise(resolve=>setImmediate(resolve));
   await new Promise(resolve=>setImmediate(resolve));
   assert.strictEqual(mock.sessions.size,0);
   assert(pkg.build.extraResources.some(x=>x.to==='lhm-camoufox'));
   assert(pkg.build.files.includes('!resources/camoufox-engine/**'));
-  console.log('Signed Camoufox distribution verification, tamper rejection, no downloads and persistent context contract passed');
+  console.log('Signed Camoufox distribution verification, tamper rejection, no downloads and native spawn contract passed');
  }finally{fs.rmSync(base,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});
