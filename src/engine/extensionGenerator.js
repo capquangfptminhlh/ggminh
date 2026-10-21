@@ -1,6 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 
+// Legacy JS fingerprint shim; never interpolate raw user strings as code.
+function boundedInteger(value,fallback,max=16384){
+ return Number.isInteger(value)&&value>0&&value<=max?value:fallback;
+}
+function boundedSeed(value){
+ return Number.isSafeInteger(value)&&value>=1&&value<=0xffffffff?value:0;
+}
+function safeString(value,fallback){
+ return JSON.stringify(typeof value==='string'&&value.length<=256?value:fallback);
+}
 function generateExtension(profile, outputDir) {
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
@@ -60,15 +70,15 @@ function generateExtension(profile, outputDir) {
   // --- 2. Hardware & Platform Spoofing ---
   try {
     Object.defineProperty(navigator, 'platform', {
-      get: () => '${fp.platform || 'Win32'}',
+      get: () => ${safeString(fp.platform,'Win32')},
       configurable: true
     });
     Object.defineProperty(navigator, 'hardwareConcurrency', {
-      get: () => ${fp.hardwareConcurrency || 8},
+      get: () => ${boundedInteger(fp.hardwareConcurrency,8,256)},
       configurable: true
     });
     Object.defineProperty(navigator, 'deviceMemory', {
-      get: () => ${fp.deviceMemory || 8},
+      get: () => ${boundedInteger(fp.deviceMemory,8,256)},
       configurable: true
     });
     Object.defineProperty(navigator, 'languages', {
@@ -76,7 +86,7 @@ function generateExtension(profile, outputDir) {
       configurable: true
     });
     Object.defineProperty(navigator, 'language', {
-      get: () => '${(fp.languages && fp.languages[0]) || 'vi-VN'}',
+      get: () => ${safeString(fp.languages?.[0],'vi-VN')},
       configurable: true
     });
   } catch (e) {}
@@ -84,12 +94,12 @@ function generateExtension(profile, outputDir) {
   // --- 3. Screen Dimension Spoofing ---
   try {
     const screenOverrides = {
-      width: ${screen.width || 1920},
-      height: ${screen.height || 1080},
-      availWidth: ${screen.availWidth || 1920},
-      availHeight: ${screen.availHeight || 1040},
-      colorDepth: ${screen.colorDepth || 24},
-      pixelDepth: ${screen.pixelDepth || 24}
+      width: ${boundedInteger(screen.width,1920)},
+      height: ${boundedInteger(screen.height,1080)},
+      availWidth: ${boundedInteger(screen.availWidth,1920)},
+      availHeight: ${boundedInteger(screen.availHeight,1040)},
+      colorDepth: ${boundedInteger(screen.colorDepth,24)},
+      pixelDepth: ${boundedInteger(screen.pixelDepth,24)}
     };
     for (const [prop, val] of Object.entries(screenOverrides)) {
       Object.defineProperty(window.screen, prop, {
@@ -101,10 +111,10 @@ function generateExtension(profile, outputDir) {
 
   // --- 4. WebGL Vendor & Renderer Spoofing ---
   try {
-    const unmaskedVendor = '${webgl.unmaskedVendor || 'NVIDIA Corporation'}';
-    const unmaskedRenderer = '${webgl.unmaskedRenderer || 'NVIDIA GeForce RTX 3060/PCIe/SSE2'}';
-    const vendor = '${webgl.vendor || 'Google Inc. (NVIDIA)'}';
-    const renderer = '${webgl.renderer || 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)'}';
+    const unmaskedVendor = ${safeString(webgl.unmaskedVendor,'NVIDIA Corporation')};
+    const unmaskedRenderer = ${safeString(webgl.unmaskedRenderer,'NVIDIA GeForce RTX 3060/PCIe/SSE2')};
+    const vendor = ${safeString(webgl.vendor,'Google Inc. (NVIDIA)')};
+    const renderer = ${safeString(webgl.renderer,'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)')};
 
     function patchWebGL(proto) {
       if (!proto) return;
@@ -124,8 +134,8 @@ function generateExtension(profile, outputDir) {
   } catch (e) {}
 
   // --- 5. Canvas Noise (Per-profile consistent micro-noise) ---
-  if (${Number(fp.canvasNoiseSeed) > 0}) try {
-    const seed = ${Number(fp.canvasNoiseSeed) || 0};
+  if (${boundedSeed(fp.canvasNoiseSeed) > 0}) try {
+    const seed = ${boundedSeed(fp.canvasNoiseSeed)};
     function pseudoRandom(x, y) {
       const val = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
       return (val - Math.floor(val));
@@ -161,8 +171,8 @@ function generateExtension(profile, outputDir) {
   } catch (e) {}
 
   // --- 6. WebAudio Noise (Subtle frequency perturbation) ---
-  if (${Number(fp.audioNoiseSeed) > 0}) try {
-    const audioSeed = ${Number(fp.audioNoiseSeed) || 0};
+  if (${boundedSeed(fp.audioNoiseSeed) > 0}) try {
+    const audioSeed = ${boundedSeed(fp.audioNoiseSeed)};
     if (window.AnalyserNode) {
       const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
       AnalyserNode.prototype.getFloatFrequencyData = function(array) {
@@ -178,7 +188,7 @@ function generateExtension(profile, outputDir) {
 
   // --- 7. WebRTC Leak Protection ---
   try {
-    const webrtcMode = '${fp.webrtc || 'spoof'}';
+    const webrtcMode = ${safeString(fp.webrtc,'real')};
     if (webrtcMode === 'disable') {
       delete window.RTCPeerConnection;
       delete window.webkitRTCPeerConnection;

@@ -3,3 +3,4 @@ data/
 data_test/
 *.log
 .DS_Store
+stage0-measure-results/

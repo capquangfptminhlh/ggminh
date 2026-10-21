@@ -1,6 +1,7 @@
-const net = require('net');
+const {validateProxy}=require('./proxyValidation');
 const fs = require('fs');
 const { optionsFor } = require('../engine/browserDiagnostics');
+const {checkProfileSignalChain}=require('./signalChain');
 
 function checkProfile(profile, options = {}) {
   const issues = [];
@@ -62,27 +63,18 @@ function checkProfile(profile, options = {}) {
   if (engine === 'chromium' && fp.mode !== 'native') issues.push({
     level: 'notice', code: 'privacy_unverified', message: 'Cơ chế Canvas/WebGL/WebRTC hiện chưa được kiểm thử xuyên phiên bản; không bảo đảm ẩn danh.'
   });
+  // Offline coherence check. Do not report proxy UDP safety without packet proof.
+  const audit=checkProfileSignalChain(profile);
+  for(const issue of audit.issues)
+    issues.push({level:issue.level,code:'signal_'+issue.code,message:issue.message});
   const errors = issues.filter(i => i.level === 'error').length;
   const warnings = issues.filter(i => i.level === 'warning').length;
   return {
     profileId: profile?.id || null, engine,
     status: errors ? 'error' : warnings ? 'warning' : 'ready',
-    errorCount: errors, warningCount: warnings, issues,
+    errorCount: errors, warningCount: warnings, issues, signalChain:audit,
     note: 'Health Check chỉ xác nhận khả năng cấu hình; không đo khả năng Google nhận diện.'
   };
 }
 
-function validateProxy(input) {
-  if (!input || input.type === 'direct' || input.type === 'none' || !input.type) return { ok: true, type: 'direct' };
-  const type = String(input.type).toLowerCase();
-  if (!['http','socks5'].includes(type)) return { ok: false, type, message: 'Chỉ hỗ trợ HTTP hoặc SOCKS5.' };
-  if (input.user || input.pass || input.password) return { ok: false, type, message: 'Proxy có tài khoản/mật khẩu chưa được hỗ trợ trong trình duyệt.' };
-  const host = String(input.host || '');
-  const port = Number(input.port);
-  if (!host || host.length > 253 || /\s|\/|@/.test(host) || (!net.isIP(host) && !/^[a-z0-9.-]+$/i.test(host))) {
-    return { ok: false, type, message: 'Địa chỉ proxy không hợp lệ.' };
-  }
-  if (!Number.isInteger(port) || port < 1 || port > 65535) return { ok: false, type, message: 'Cổng proxy phải từ 1 đến 65535.' };
-  return { ok: true, type, host, port };
-}
 module.exports = { checkProfile, validateProxy };

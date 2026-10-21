@@ -1,0 +1,41 @@
+name: Stage-2 Ten-Lane Parallel Evidence Audit
+
+on:
+  push:
+    branches: [integration/v5.8-core-selective]
+    paths:
+      - 'stage0-measure/**'
+      - '.github/workflows/stage2-parallel-audit.yml'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parallel-contract-lanes:
+    name: Contract ${{ matrix.lane }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        lane:
+          - 01-hash-input
+          - 02-storage-isolation
+          - 03-restart-retention
+          - 04-browser-snapshot
+          - 05-header-minimization
+          - 06-header-coherence
+          - 07-network-evidence
+          - 08-report-integrity
+          - 09-evidence-gate
+          - 10-release-boundary
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static contract check (NO browser, NO secret, NO network verification)
+        run: node stage0-measure/lane-check.js "${{ matrix.lane }}"

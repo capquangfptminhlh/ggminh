@@ -41,6 +41,33 @@ jobs:
           if (-not (Test-Path ".\dist\win-unpacked\resources\app.asar.unpacked\src\ops\windowControl.ps1")) {
             throw "PowerShell helper missing from Electron unpacked bundle"
           }
+      - name: Verify external bundled engine staging
+        shell: pwsh
+        run: |
+          $resources = ".\\dist\\win-unpacked\\resources\\lhm-engines"
+          if (-not (Test-Path (Join-Path $resources "README.md"))) {
+            throw "External bundled browser resources missing from packaged installer"
+          }
+          if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\bundled-engines") {
+            throw "Bundled engine resources unexpectedly duplicated inside app bundle"
+          }
+          if (-not (Test-Path ".\\dist\\win-unpacked\\resources\\lhm-camoufox\\README.md")) {
+            throw "Camoufox external release staging directory missing"
+          }
+          if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\camoufox-engine") {
+            throw "Camoufox resource folder was packed inside app bundle unexpectedly"
+          }
+          $extractor = Join-Path $PWD "dist/win-unpacked/resources/app.asar.unpacked/tools/extract-signed-engine.ps1"
+          if (-not (Test-Path $extractor)) {
+            throw "Signed extraction helper missing from unpacked Electron resources"
+          }
+          $camoufoxStaging = Join-Path $PWD "dist/win-unpacked/resources/lhm-camoufox"
+          foreach ($unsafe in @("camoufox.exe", "release.json", "publisher-ed25519.pub")) {
+            if (Test-Path (Join-Path $camoufoxStaging $unsafe)) {
+              throw "Draft preview unexpectedly contains unapproved Camoufox commercial asset: $unsafe"
+            }
+          }
+          node -e "const m=require('./src/engine/bundledEngineManager'); if(typeof m.BundledEngineManager!=='function')process.exit(1)"
       - name: Capture actual Electron UI (sample data)
         shell: pwsh
         env:
@@ -52,7 +79,7 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
               throw "Electron UI capture timed out"
             }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png")) {
               if (-not (Test-Path ("dist\" + $screen))) { throw "Missing actual Electron screenshot: $screen" }
             }
           } finally {
