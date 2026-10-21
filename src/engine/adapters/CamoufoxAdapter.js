@@ -7,7 +7,7 @@ class CamoufoxAdapter{
   const launcher=this.launcher;
   if(!launcher.camoufoxAdapter)
    throw Error('Camoufox adapter is not available; no engine binary bundled');
-  const details=await launcher.camoufoxAdapter.start(profile,{
+  const details=await launcher.camoufoxAdapter.launchProfile(profile,{
    url:customUrl||profile.startUrl,
    onClosed:()=>{
     const current=launcher.activeProcesses.get(profile.id);
