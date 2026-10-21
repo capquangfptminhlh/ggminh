@@ -1,6 +1,6 @@
 'use strict';
-// Thin lifecycle bridge to the supported Camoufox TypeScript persistent
-// BrowserContext launcher in ../camoufoxAdapter.js. No guessed Firefox flags.
+// Thin lifecycle bridge to the signed native Windows Camoufox executable.
+// Manual GUI only; no Playwright, CDP or assumed WebSocket endpoint.
 class CamoufoxAdapter{
  constructor(launcher){this.launcher=launcher;}
  async launch(profile,{customUrl}={}){
