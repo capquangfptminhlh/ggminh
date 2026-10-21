@@ -573,8 +573,10 @@
           </select>
           <p id="engine-gecko-result" role="status" aria-live="polite">Chưa kiểm tra Camoufox.</p>
           <button type="button" class="btn btn-secondary" id="engine-gecko-save">Áp dụng nguồn Firefox</button>
+          <p class="lhm-bulk-help" id="camoufox-install-info" role="status" aria-live="polite">Kiểm tra bản Camoufox đã ký…</p>
+          <button type="button" class="btn btn-secondary" id="camoufox-install-button" disabled>Cài đặt Camoufox được xác minh</button>
         </div>
-        <p class="lhm-bulk-help">Camoufox chạy qua TypeScript/Playwright persistent context (không phải CDP). Preview chỉ nhận profile Gecko mặc định, không dùng proxy, chưa hỗ trợ Automation Studio; không tự tải binary. Không chuyển/xóa khóa Firefox thủ công. Đổi nguồn chỉ thực hiện khi đã đóng tất cả browser.</p>
+        <p class="lhm-bulk-help">Camoufox chạy qua TypeScript/Playwright persistent context (không phải CDP). Preview chỉ nhận profile Gecko mặc định, không dùng proxy, chưa hỗ trợ Automation Studio; chỉ tải engine sau khi người dùng xác nhận và chữ ký phát hành hợp lệ. Không chuyển/xóa khóa Firefox thủ công. Đổi nguồn chỉ thực hiện khi đã đóng tất cả browser.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="engine-source-refresh">Kiểm tra lại</button>
