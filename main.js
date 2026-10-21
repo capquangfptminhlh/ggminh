@@ -881,7 +881,12 @@ app.whenReady().then(async () => {
       return camoufoxInstall.verifier().resolve(engine);
     }
   };
-  camoufoxAdapter=new CamoufoxAdapter(storageDir,{bundleVerifier:verifiedProviders,store,proxyVault});
+  camoufoxAdapter=new CamoufoxAdapter(storageDir,{
+    bundleVerifier:verifiedProviders,store,proxyVault,
+    // Explicit operator-only opt-in. Production defaults fail closed until
+    // independently verified proxy/DNS/WebRTC lab acceptance.
+    allowProxyLab:process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+  });
   launcher.camoufoxAdapter=camoufoxAdapter;
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
