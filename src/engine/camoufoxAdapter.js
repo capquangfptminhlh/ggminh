@@ -56,7 +56,7 @@ class CamoufoxAdapter{
     if(!context||typeof context.newPage!=='function'||
        typeof context.close!=='function'||typeof context.on!=='function')
       throw Error('Camoufox persistent context did not expose the expected Playwright API');
-    const info={profileId:id,engine:'gecko',provider:'camoufox',
+    const info={profileId:id,name:profile.name,engine:'gecko',provider:'camoufox',
      pid:null,port:null,wsEndpoint:null,startedAt:new Date().toISOString(),stopping:false};
     const item={context,info,closing:false};
     context.on('close',()=>{
