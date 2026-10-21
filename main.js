@@ -613,7 +613,7 @@ function initIPC() {
     let allowEngineChange=false;
     if(existing){
       const oldType=resolveEngineType(existing,store.getSettings());
-      const selected=resolveEngineType(profile,store.getSettings());
+      const selected=resolveEngineType({...existing,...profile},store.getSettings());
       if(oldType!==selected){
         const answer=await dialog.showMessageBox(mainWindow,{
           type:'warning',buttons:['Hủy','Đổi engine'],defaultId:0,
