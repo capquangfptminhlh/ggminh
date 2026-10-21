@@ -70,6 +70,16 @@ jobs:
         run: |
           node tools/test-camoufox-playwright-controller-windows.js
           if ($LASTEXITCODE -ne 0) { throw 'In-process Playwright controller compatibility not verified' }
+      - name: Install Electron 33 runtime binary for actual main-process smoke
+        shell: pwsh
+        timeout-minutes: 6
+        run: |
+          # CI initially installs npm packages with --ignore-scripts. Explicitly
+          # install the genuine Electron runtime only for this diagnostic.
+          node node_modules/electron/install.js
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Electron binary installation failed; packaged-runtime smoke not run'
+          }
       - name: Probe Camoufox Playwright inside real Electron 33 main process
         shell: pwsh
         timeout-minutes: 8
