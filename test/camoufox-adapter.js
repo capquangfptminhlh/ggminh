@@ -30,7 +30,7 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
    fingerprint:{mode:'native'},startUrl:'https://example.com/',proxy:{type:'direct'}});
   const b=store.saveProfile({name:'Account B',engine:'gecko',
    fingerprint:{mode:'native'},startUrl:'https://example.com/',proxy:{type:'direct'}});
-  const fakeBinary=path.join(base,'approved-camoufox','firefox.exe');
+  const fakeBinary=path.join(base,'approved-camoufox','camoufox.exe');
   const bundleVerifier={resolve:engine=>{
    assert.strictEqual(engine,'camoufox');return fakeBinary;
   },status:()=>({valid:true,version:'134.0.2'})};
