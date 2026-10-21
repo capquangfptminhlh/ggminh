@@ -11,6 +11,8 @@ on:
       - tools/test-camoufox-real.mjs
       - tools/test-camoufox-native-windows.js
       - tools/test-camoufox-direct-playwright.mjs
+      - tools/test-camoufox-playwright-controller-windows.js
+      - src/engine/CamoufoxPlaywrightController.js
       - src/engine/camoufoxAdapter.js
   workflow_dispatch:
 
@@ -61,6 +63,11 @@ jobs:
         run: |
           node tools/test-camoufox-direct-playwright.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Direct Playwright/Camoufox compatibility NOT established' }
+      - name: Test LHM gated Playwright controller against the real official Windows browser
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-playwright-controller-windows.js
+          if ($LASTEXITCODE -ne 0) { throw 'In-process Playwright controller compatibility not verified' }
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
