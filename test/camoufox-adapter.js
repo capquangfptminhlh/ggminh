@@ -84,7 +84,7 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   assert.strictEqual(launcher.listActive().length,0);
   const bad=store.saveProfile({name:'Proxy profile',engine:'gecko',
    fingerprint:{mode:'native'},proxy:{type:'socks5',host:'proxy.example',port:1080}});
-  await assert.rejects(()=>launcher.start(bad.id),/does not support a configured proxy/);
+  await assert.rejects(()=>launcher.start(bad.id),/credential reference|vault|direct fallback/);
   assert.strictEqual(processes.length,3);
   // Store normalizes away unsupported extraneous profile fields. Test the
   // native adapter boundary directly with an explicit GeoIP request.
@@ -95,6 +95,7 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   await assert.rejects(()=>launcher.start(custom.id),/requires native profile settings/);
   assert(!fs.existsSync(path.join(base,'camoufox-profiles',custom.id)));
   await assert.rejects(()=>launcher.start(a.id,'file:///etc/passwd'),/Start URL/);
+  await assert.rejects(()=>adapter.connectPlaywright(9222),/no supported Playwright websocket/);
   const noRelease=new CamoufoxAdapter(base,{spawnProcess:mockSpawn,platform:'win32'});
   await assert.rejects(()=>noRelease.start(a),/trusted, release-signed/);
   const failures=processes.length;
