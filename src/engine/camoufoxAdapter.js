@@ -63,14 +63,13 @@ async function windowsWindowProbe(pid){
   ' if($p -and $p.MainWindowHandle -ne 0){',
   '   Write-Output ("WINDOW_READY:"+$id);exit 0',
   ' }',
-  ' foreach($child in @(Get-CimInstance Win32_Process -Filter',
-  '  ("ParentProcessId = "+$id) -ErrorAction SilentlyContinue)){',
+  ' foreach($child in @(Get-CimInstance Win32_Process -Filter ("ParentProcessId = "+$id) -ErrorAction SilentlyContinue)){',
   '   if($child.Name -ieq "camoufox.exe"){',
   '     $queue.Enqueue([int]$child.ProcessId)',
   '   }',
   ' }',
   '}'
- ].join(';');
+ ].join('\n');
  try{
   const output=await powershell(command,6000);
   const match=/^WINDOW_READY:(\d+)$/.exec(output);
