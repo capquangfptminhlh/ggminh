@@ -91,6 +91,15 @@ class BehaviorMonitor {
         'Số yêu cầu mở hồ sơ trong 10 phút tăng cao trên toàn ứng dụng. Kiểm tra tác vụ hàng loạt.', allOpens);
     }
 
+    try {
+      const { behaviorPatternWarnings } = require('./behaviorPatterns');
+      const patterns = behaviorPatternWarnings(recent);
+      for (const p of patterns.alerts) {
+        if (!alerts.some(a => a.code === p.code && a.profileId === p.profileId)) {
+          alerts.push(p);
+        }
+      }
+    } catch (_) {}
     const levelOrder = { high: 0, medium: 1 };
     alerts.sort((a, b) => levelOrder[a.level] - levelOrder[b.level] || b.latestAt - a.latestAt);
     return {
