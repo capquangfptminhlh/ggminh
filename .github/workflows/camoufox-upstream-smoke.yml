@@ -10,6 +10,7 @@ on:
       - tools/stage-camoufox-upstream-smoke.ps1
       - tools/test-camoufox-real.mjs
       - tools/test-camoufox-native-windows.js
+      - tools/test-camoufox-direct-playwright.mjs
       - src/engine/camoufoxAdapter.js
   workflow_dispatch:
 
@@ -55,6 +56,11 @@ jobs:
         run: |
           node tools/test-camoufox-native-windows.js
           if ($LASTEXITCODE -ne 0) { throw 'Native Win32 Camoufox launch smoke failed' }
+      - name: Probe direct playwright-core Firefox persistent context (Node 20, upstream only)
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-direct-playwright.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Direct Playwright/Camoufox compatibility NOT established' }
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
