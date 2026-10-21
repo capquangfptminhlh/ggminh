@@ -1,0 +1,67 @@
+{
+  "commit": "5023bbfaa2f110aacfeb459cc5762c10b4766731",
+  "os": "Linux 7.0.0-39-generic x64",
+  "node": "v24.20.0",
+  "executable": "/home/hatch/tmp-big/cfx-build/camoufox-bin",
+  "startedAt": "2026-10-21T14:49:35.188Z",
+  "engineSha256": "2a2cb03f6ca4cfa96cdb9d0991b52f4dc02d7f097d3253d355f6a6361ce28669",
+  "camoufoxPackage": "camoufox@0.5.8",
+  "finishedAt": "2026-10-21T14:50:05.165Z",
+  "results": [
+    {
+      "step": "prerequisites",
+      "status": "PASS",
+      "detail": "engine sha256=2a2cb03f6ca4cfa9… package=camoufox@0.5.8"
+    },
+    {
+      "step": "provision+validate real-us",
+      "status": "PASS",
+      "detail": "9/9 expectation fields; language=en-US tz=America/New_York screen=1366x768 webgl=ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11…"
+    },
+    {
+      "step": "provision+validate real-vn",
+      "status": "PASS",
+      "detail": "9/9 expectation fields; language=vi-VN tz=Asia/Ho_Chi_Minh screen=2560x1440 webgl=ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11…"
+    },
+    {
+      "step": "identities differ",
+      "status": "PASS",
+      "detail": "language en-US vs vi-VN; timezone America/New_York vs Asia/Ho_Chi_Minh; drawn fields differing: screenWidth, screenHeight"
+    },
+    {
+      "step": "regression languages-array",
+      "status": "PASS",
+      "detail": "declared languages[0]=vi-VN became the pinned identity language (was null before the fix)"
+    },
+    {
+      "step": "replay env real-us",
+      "status": "PASS",
+      "detail": "7 chunks, max 2047 chars, byte-join matches"
+    },
+    {
+      "step": "replay env real-vn",
+      "status": "PASS",
+      "detail": "6 chunks, max 2047 chars, byte-join matches"
+    },
+    {
+      "step": "live session real-us",
+      "status": "PASS",
+      "detail": "7/7 compared fields match expectations"
+    },
+    {
+      "step": "live webgl real-us",
+      "status": "NOT_RUN",
+      "detail": "no WebGL context in this headless Linux environment — 0 comparable fields, NOT a mismatch (needs a WebGL-capable environment, e.g. Windows acceptance)"
+    },
+    {
+      "step": "live session real-vn",
+      "status": "PASS",
+      "detail": "7/7 compared fields match expectations"
+    },
+    {
+      "step": "live webgl real-vn",
+      "status": "NOT_RUN",
+      "detail": "no WebGL context in this headless Linux environment — 0 comparable fields, NOT a mismatch (needs a WebGL-capable environment, e.g. Windows acceptance)"
+    }
+  ]
+}

@@ -19,8 +19,21 @@
  *  - generated output that fails the repo's own validator is NEVER
  *    attached (status 'invalid'); a profile must not be bricked by a
  *    blob its launch path would reject.
+ *  - generated output that CONTRADICTS the profile's own declared
+ *    fields (the launch-time consistency gate,
+ *    assertIdentityMatchesProfile) is likewise never attached
+ *    (status 'invalid', reason
+ *    'generated-identity-contradicts-profile'): provisioning must not
+ *    hand the launch path an identity it is guaranteed to reject.
+ *
+ * Declared-field vocabulary follows the repo's canonical fingerprint
+ * shape (src/engine/fingerprint.js): the primary locale is
+ * `fingerprint.language` when present, otherwise the first entry of
+ * the `fingerprint.languages` array; the timezone is
+ * `fingerprint.timezone`. (Verified against a real run of the
+ * official generator — test/camoufox-provisioning-real.js.)
  */
-const { validateStoredIdentity } = require('./camoufoxIdentity');
+const { validateStoredIdentity, assertIdentityMatchesProfile } = require('./camoufoxIdentity');
 
 function isCamoufoxNativeProfile(profile) {
   return !!profile && profile.engine === 'gecko' &&
@@ -92,12 +105,16 @@ async function provisionCamoufoxIdentity(profile, deps = {}) {
   }
   const generate = typeof deps.generate === 'function' ? deps.generate : defaultGenerate;
   const fp = profile.fingerprint;
+  const declaredLocale = typeof fp.language === 'string' && fp.language
+    ? fp.language
+    : (Array.isArray(fp.languages) && typeof fp.languages[0] === 'string' && fp.languages[0]
+      ? fp.languages[0] : null);
   let identity;
   try {
     identity = await generate({
       executablePath,
       os: 'windows',
-      locale: typeof fp.language === 'string' && fp.language ? fp.language : null,
+      locale: declaredLocale,
       timezone: typeof fp.timezone === 'string' && fp.timezone ? fp.timezone : null,
     });
   } catch (error) {
@@ -112,6 +129,11 @@ async function provisionCamoufoxIdentity(profile, deps = {}) {
   catch (_) {
     profile.fingerprint.identityProvisioning = 'invalid';
     return { status: 'invalid', reason: 'generated-identity-failed-validation' };
+  }
+  try { assertIdentityMatchesProfile(profile, identity.expectations); }
+  catch (_) {
+    profile.fingerprint.identityProvisioning = 'invalid';
+    return { status: 'invalid', reason: 'generated-identity-contradicts-profile' };
   }
   fp.identity = identity;
   fp.identityProvisioning = 'provisioned';
