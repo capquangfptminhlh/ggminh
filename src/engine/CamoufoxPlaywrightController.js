@@ -78,11 +78,18 @@ class CamoufoxPlaywrightController{
     protocol:'playwright-internal',manualOnly:false,
     automationAvailable:true,port:null,wsEndpoint:null,debugPort:null,
     proxyMode:proxyPlan.mode,startedAt:new Date().toISOString()};
-   const session={info,context,browser,proxyPlan,closing:false};
+   let gatewayClosed=false;
+   const closeGateway=async()=>{
+    if(gatewayClosed)return;
+    gatewayClosed=true;
+    await proxyPlan?.close?.();
+   };
+   const session={info,context,browser,proxyPlan,closing:false,closeGateway};
    const finish=()=>{
     if(this.sessions.get(id)===session){
      this.sessions.delete(id);
-     Promise.resolve(proxyPlan?.close?.()).catch(()=>{});
+     Promise.resolve(closeGateway()).catch(error=>
+      console.warn('[Camoufox] Proxy gateway close failed:',String(error.message).slice(0,160)));
      try{onClosed?.(info)}catch(_){}
     }
    };
@@ -107,9 +114,15 @@ class CamoufoxPlaywrightController{
   if(session.closing)return {success:false,reason:'Already stopping'};
   session.closing=true;
   try{await session.context.close()}
-  finally{
+  catch(error){
+   // A rejected close operation is NOT an exited browser. Keep the profile
+   // locked and its proxy gateway alive until an actual context close event.
+   if(this.sessions.get(id)===session)session.closing=false;
+   throw error;
+  }
+  if(this.sessions.get(id)===session){
    this.sessions.delete(id);
-   try{await session.proxyPlan?.close?.()}catch(_){}
+   await session.closeGateway();
   }
   return {success:true};
  }
