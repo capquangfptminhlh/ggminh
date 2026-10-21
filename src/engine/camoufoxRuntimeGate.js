@@ -15,7 +15,7 @@ function assessRuntime({
   ready:platformCompatible&&verifiedBundle===true,
   reason:!platformCompatible?'Native Camoufox desktop launch is Windows-only':
    !verifiedBundle?'Separately publisher-signed Camoufox EXE not available':
-   'Native manual browser UI launcher ready; proxy, GeoIP and automation are not supported'
+   'Native manual browser UI launcher ready; proxy lab-only, GeoIP and automation not verified'
  };
 }
 module.exports={assessRuntime};
