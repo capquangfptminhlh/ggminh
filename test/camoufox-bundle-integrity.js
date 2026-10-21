@@ -3,6 +3,7 @@ const assert=require('assert'),crypto=require('crypto'),fs=require('fs');
 const os=require('os'),path=require('path');
 const {BundledEngineManager,sha256File,signedPayload}=require('../src/engine/bundledEngineManager');
 const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
+const {validatePath,inspectBinary}=require('../src/engine/runtimeRegistry');
 const pkg=require('../package.json');
 function peFixture(destination){
  const buf=Buffer.alloc(10000);
@@ -32,10 +33,15 @@ function peFixture(destination){
    engine:'camoufox',publicKey:keys.publicKey,platform:'win32',
    inspect:(engine,filename)=>{
     assert.strictEqual(engine,'gecko');
+    assert.strictEqual(path.basename(filename),'camoufox.exe');
     return sha256File(filename);
    }
   });
   assert.strictEqual(manager.resolve('camoufox'),binary);
+  if(process.platform==='win32'){
+   assert.throws(()=>validatePath('gecko',binary),/official Chrome\/Edge or Firefox/);
+   assert.strictEqual(validatePath('gecko',binary,{trustedCamoufox:true}),binary);
+  }
   assert.strictEqual(manager.status().available,true);
   assert.throws(()=>manager.resolve('chromium'),/not available/);
   assert.throws(()=>new BundledEngineManager(base,{platform:'win32',
