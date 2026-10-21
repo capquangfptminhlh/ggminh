@@ -29,6 +29,7 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
+const {NavigationSynchronizer}=require('./src/ops/navigationSynchronizer');
 const {CloudClient}=require('./src/sync/cloudClient');
 const {applyCloudMetadata}=require('./src/sync/applyMetadata');
 const cacheManager = require('./src/ops/cacheManager');
@@ -54,6 +55,7 @@ let workflowStore = null;
 let automationRunner = null;
 let batchAutomation = null;
 let sessionSnapshots = null;
+let navigationSynchronizer = null;
 let localScheduler = null;
 let schedulerTimer = null;
 let recorderManager = null;
@@ -532,6 +534,9 @@ function initIPC() {
     openUrlForStoppedProfiles(store,launcher,ids,url,behaviorMonitor));
   ipcMain.handle('window-manager-open-live-url', (_, ids, url) =>
     openInRunning(store,launcher,ids,url));
+  ipcMain.handle('navigation-sync-status',()=>navigationSynchronizer.status());
+  ipcMain.handle('navigation-sync-start',(_,options)=>navigationSynchronizer.start(options));
+  ipcMain.handle('navigation-sync-stop',()=>navigationSynchronizer.stop());
   // Cloud Sync is always explicit. Keep API secrets ephemeral; never persist
   // customer bearer tokens or encryption passphrases in the local store.
   const cloudClientFor=(event,options)=>{
@@ -632,6 +637,7 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
+  navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;
   extensionManager = new ExtensionManager(store,launcher);
@@ -681,6 +687,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', () => {
+  if (navigationSynchronizer) navigationSynchronizer.stop();
   if (schedulerTimer) clearInterval(schedulerTimer);
   if (licenseTimer) clearInterval(licenseTimer);
   if (batchAutomation) batchAutomation.stop();
