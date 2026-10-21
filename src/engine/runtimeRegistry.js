@@ -10,7 +10,8 @@ const allowedWindowsNames={
  chromium:new Set(['chrome.exe','msedge.exe']),
  gecko:new Set(['firefox.exe'])
 };
-function validatePath(engine,filename,{platform=process.platform}={}){
+function validatePath(engine,filename,opts={}){
+ const {platform=process.platform}=opts;
  if(!ENGINES.has(engine))throw Error('Unsupported browser engine');
  if(typeof filename!=='string'||!path.isAbsolute(filename)||filename.includes('\0'))
   throw Error('Choose an absolute browser executable path');
