@@ -7,6 +7,7 @@ const { createLaunchArgs } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
 const { updateGeckoProxy } = require('./geckoProxy');
 const { optionsFor } = require('./browserDiagnostics');
+const {checkProfileSignalChain}=require('../health/signalChain');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null } = {}) {
@@ -99,6 +100,11 @@ class BrowserLauncher {
       throw new Error(`Profile not found: ${profileId}`);
     }
 
+    const preflight=checkProfileSignalChain(profile);
+    if(preflight.status==='blocked'){
+      const failures=preflight.issues.filter(x=>x.level==='error').map(x=>x.code);
+      throw Error('Signal-chain preflight blocked inconsistent profile: '+failures.join(', '));
+    }
     if (profile.requiresProxySetup === true)
       throw Error('Hồ sơ nhập từ bản sao lưu cần gán lại proxy trước khi mở.');
     const engine = profile.engine === 'gecko' ? 'gecko' : 'chromium';
