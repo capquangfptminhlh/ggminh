@@ -28,7 +28,7 @@ function canonicalManifest(payload){
     Object.keys(payload).sort().join(',')!=='engine,entry,files,schema,version'||
     payload.schema!==1||!['chromium','camoufox'].includes(payload.engine)||
     !VERSION.test(payload.version||'')||
-    !(payload.engine==='chromium'?['chrome.exe','msedge.exe']:['firefox.exe']).includes(payload.entry)||
+    !(payload.engine==='chromium'?['chrome.exe','msedge.exe']:['camoufox.exe']).includes(payload.entry)||
     !Array.isArray(payload.files)||!payload.files.length||
     payload.files.length>MAX_FILES)
   throw Error('Invalid bundled engine manifest');
@@ -156,7 +156,7 @@ class BundledEngineManager{
   }
   const executable=checkNoLinks(this.root,path.join(this.root,doc.entry));
   const binary=this.inspect(this.engine==='camoufox'?'gecko':'chromium',
-   executable,{platform:this.platform});
+   executable,{platform:this.platform,trustedCamoufox:this.engine==='camoufox'});
   const declared=doc.files.find(f=>f.path===doc.entry);
   if(binary.sha256!==declared.sha256||binary.bytes!==declared.bytes)
    throw Error('Bundled browser executable changed during verification');
