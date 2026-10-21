@@ -143,6 +143,7 @@
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
             <button type="button" class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
+            <button type="button" class="btn btn-secondary" id="btn-cloud-sync"><span data-lhm-icon="cloud"></span> Cloud Sync</button>
             <button type="button" class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
             <button type="button" class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
             <button type="button" class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
@@ -524,6 +525,19 @@
             <button type="button" class="btn btn-primary" id="wm-open-live-url">Mở tab trên hồ sơ đang chạy</button>
           </div>
         </div>
+        <section class="form-group" aria-label="Synchronizer">
+          <h3>Synchronizer · Đồng bộ tab (thử nghiệm)</h3>
+          <p class="lhm-bulk-help">Chỉ đồng bộ chuyển trang HTTPS từ tab chính sang các cửa sổ phụ bằng tab mới; tối đa 15 lần. Không sao chép click, nhập liệu, cookie, form hoặc tham số URL. Cần bật Local API.</p>
+          <label for="wm-sync-master">Hồ sơ chính</label>
+          <select id="wm-sync-master"></select>
+          <label for="wm-sync-hosts">Tên miền được phép (1–5, ngăn cách bằng dấu phẩy)</label>
+          <input id="wm-sync-hosts" type="text" value="example.com" placeholder="example.com, other.org" autocomplete="off" spellcheck="false">
+          <div class="lhm-wm-actions">
+            <button id="wm-sync-start" class="btn btn-primary" type="button">Bắt đầu đồng bộ</button>
+            <button id="wm-sync-stop" class="btn btn-secondary" type="button">Dừng</button>
+          </div>
+          <p id="wm-sync-state" role="status" aria-live="polite">Đã tắt</p>
+        </section>
         <p id="wm-result" class="lhm-wm-result" aria-live="polite"></p>
       </div>
       <div class="modal-footer">
@@ -533,6 +547,92 @@
     </div>
   </div>
 
+  <!-- Manual metadata-only Cloud Sync; secrets live only in the input fields. -->
+  <div class="modal-overlay" id="modal-cloud-sync">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="cloud-sync-title">
+      <div class="modal-header">
+        <h2 id="cloud-sync-title">Cloud Sync · Bản thử nghiệm</h2>
+        <button type="button" class="btn-close" id="cloud-sync-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Chỉ chuyển tên, nhóm, engine, tags và mã hồ sơ đã mã hóa đầu-cuối; KHÔNG đồng bộ cookie, tài khoản, mật khẩu, token, URL, fingerprint hoặc phiên đăng nhập. Máy chủ HTTPS và token phải được cấp riêng cho từng người dùng.</p>
+        <div class="form-group"><label for="cloud-sync-url">Địa chỉ máy chủ HTTPS</label>
+          <input type="url" id="cloud-sync-url" placeholder="https://cloud.example.com" autocomplete="off">
+        </div>
+        <div class="form-group"><label for="cloud-sync-tenant">Mã Workspace</label>
+          <input id="cloud-sync-tenant" placeholder="workspace1" autocomplete="off">
+        </div>
+        <div class="form-group"><label for="cloud-sync-device">Mã thiết bị</label>
+          <input id="cloud-sync-device" placeholder="windows1" autocomplete="off">
+        </div>
+        <div class="form-group"><label for="cloud-sync-device-key">Khóa riêng thiết bị (không lưu)</label>
+          <input type="password" id="cloud-sync-device-key" autocomplete="off" placeholder="Khóa 64 ký tự do quản trị viên cấp">
+        </div>
+        <div class="form-group"><label for="cloud-sync-token">Token cá nhân (không lưu)</label>
+          <input type="password" id="cloud-sync-token" autocomplete="off">
+        </div>
+        <div class="form-group"><label for="cloud-sync-passphrase">Mật khẩu mã hóa (tối thiểu 16 ký tự, không lưu)</label>
+          <input type="password" id="cloud-sync-passphrase" autocomplete="off">
+        </div>
+        <div class="lhm-wm-actions">
+          <button type="button" class="btn btn-secondary" id="cloud-sync-preview">Xem bản Cloud</button>
+          <button type="button" class="btn btn-primary" id="cloud-sync-push">Đẩy metadata đã mã hóa</button>
+        </div>
+        <p id="cloud-sync-result" role="status" aria-live="polite">Chưa kết nối. Chỉ dùng máy chủ được bạn tin cậy.</p>
+        <section class="form-group" aria-label="Lịch sử Cloud">
+          <h3>Lịch sử và khôi phục Cloud (tối đa 25 bản cũ)</h3>
+          <button type="button" class="btn btn-secondary" id="cloud-sync-history">Xem lịch sử</button>
+          <label for="cloud-sync-history-revision">Phiên bản cần phục hồi</label>
+          <select id="cloud-sync-history-revision"></select>
+          <label for="cloud-sync-history-confirm">Nhập RESTORE CLOUD để xác nhận</label>
+          <input id="cloud-sync-history-confirm" autocomplete="off" placeholder="RESTORE CLOUD">
+          <button type="button" class="btn btn-secondary" id="cloud-sync-history-restore" disabled>Khôi phục bản Cloud đã chọn</button>
+          <p id="cloud-sync-history-result" role="status" aria-live="polite">Khôi phục tạo một revision mới đã mã hóa; không sửa trực tiếp hồ sơ trên máy.</p>
+        </section>
+        <div class="form-group">
+          <label for="cloud-sync-confirm">Khôi phục metadata về máy: nhập APPLY CLOUD để xác nhận</label>
+          <input id="cloud-sync-confirm" autocomplete="off" placeholder="APPLY CLOUD">
+          <p class="lhm-bulk-help">Khôi phục chỉ cập nhật metadata; profile đang mở sẽ bị từ chối. Profile mới được tạo trống, không mang theo cookie, mật khẩu hay phiên.</p>
+          <button type="button" class="btn btn-secondary" id="cloud-sync-apply" disabled>Áp dụng bản đã xem</button>
+        </div>
+        <section class="form-group" aria-label="Team Management">
+          <h3>Team · Thành viên Workspace</h3>
+          <p class="lhm-bulk-help">Chỉ chủ sở hữu/Admin mới xem và quản lý được thành viên. Tài khoản người nhận phải được quản trị viên máy chủ xác minh danh tính và cấp token riêng trước khi chấp nhận lời mời.</p>
+          <button type="button" class="btn btn-secondary" id="cloud-team-load">Xem thành viên</button>
+          <div id="cloud-team-list" class="lhm-wm-list" aria-live="polite"></div>
+          <div class="form-group"><label for="cloud-team-email">Email thành viên đã được xác minh</label>
+            <input type="email" id="cloud-team-email" placeholder="user@example.com" autocomplete="off">
+          </div>
+          <div class="form-group"><label for="cloud-team-role">Quyền được mời</label>
+            <select id="cloud-team-role">
+              <option value="viewer">Viewer · Chỉ xem</option>
+              <option value="operator">Operator · Vận hành</option>
+              <option value="admin">Admin · Quản lý</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary" id="cloud-team-invite">Tạo lời mời (24 giờ)</button>
+          <p id="cloud-team-result" role="status" aria-live="polite">Lời mời chỉ sử dụng một lần. Không chia sẻ token quản trị.</p>
+          <h3>Quản lý thiết bị được cấp phép</h3>
+          <div class="lhm-wm-actions"><button type="button" id="cloud-team-device-list" class="btn btn-secondary">Xem thiết bị</button></div>
+          <div id="cloud-team-devices" class="lhm-wm-list" aria-live="polite"></div>
+          <div class="form-group"><label for="cloud-team-device-subject">Mã thành viên được cấp thiết bị</label>
+            <input id="cloud-team-device-subject" autocomplete="off" placeholder="owner1">
+          </div>
+          <div class="form-group"><label for="cloud-team-device-id">Mã thiết bị mới</label>
+            <input id="cloud-team-device-id" autocomplete="off" placeholder="windows-01">
+          </div>
+          <button type="button" id="cloud-team-device-enroll" class="btn btn-primary">Cấp khóa thiết bị một lần</button>
+          <p id="cloud-team-device-result" role="status" aria-live="polite">Khóa chỉ hiện một lần. Gửi riêng cho đúng thành viên.</p>
+          <div class="form-group">
+            <label for="cloud-team-invite-token">Nhận lời mời: nhập mã lời mời một lần</label>
+            <input type="password" id="cloud-team-invite-token" autocomplete="off" placeholder="Mã lời mời đã được cấp">
+            <button type="button" class="btn btn-secondary" id="cloud-team-redeem">Chấp nhận lời mời</button>
+          </div>
+        </section>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" id="cloud-sync-done">Đóng</button></div>
+    </div>
+  </div>
   <!-- Local Chromium MV3 extension catalog; explicit user consent for local code. -->
   <div class="modal-overlay" id="modal-extension-center">
     <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="ext-title">
@@ -1448,6 +1548,7 @@ run();
   <script src="profileCsvUpdate.js"></script>
   <script src="tablePreferences.js"></script>
   <script src="windowManager.js"></script>
+  <script src="cloudSync.js"></script>
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>

@@ -33,6 +33,8 @@ jobs:
           }
       - name: Smoke real Chrome or Edge profile and active tab
         run: node test/real-chromium-smoke.js
+      - name: Real two-Chromium Synchronizer smoke test
+        run: node test/real-navigation-sync-smoke.js
       - name: Build Windows installer
         run: npm run build:win
       - name: Verify packaged Win32 helper is unpacked
@@ -41,6 +43,36 @@ jobs:
           if (-not (Test-Path ".\dist\win-unpacked\resources\app.asar.unpacked\src\ops\windowControl.ps1")) {
             throw "PowerShell helper missing from Electron unpacked bundle"
           }
+      - name: Package standalone Cloud API (no customer secrets)
+        shell: pwsh
+        run: |
+          $root = 'dist/cloud-service'
+          foreach ($dir in @("$root", "$root/src", "$root/src/sync", "$root/src/team", "$root/tools", "$root/docs")) {
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          }
+          Copy-Item package.json,package-lock.json -Destination $root
+          Copy-Item tools/cloud-server.js -Destination "$root/tools"
+          foreach ($file in @('cloudService.js','encryptedMetadata.js','deviceRegistry.js','serverLock.js')) {
+            Copy-Item ("src/sync/" + $file) -Destination "$root/src/sync"
+          }
+          Copy-Item src/team/policy.js -Destination "$root/src/team"
+          Copy-Item docs/CLOUD_SERVICE_MVP.md -Destination "$root/docs"
+          Push-Location $root
+          try {
+            npm ci --omit=dev
+            if ($LASTEXITCODE -ne 0) { throw "Production Cloud dependencies failed to install" }
+            node -e "require('./src/sync/cloudService');require('./src/sync/serverLock');console.log('Cloud server smoke OK')"
+            if ($LASTEXITCODE -ne 0) { throw "Cloud server module smoke failed" }
+          } finally { Pop-Location }
+          Remove-Item -Path "$root/node_modules" -Recurse -Force
+          Compress-Archive -Path "$root/*" -DestinationPath "dist/LHM-Cloud-Service-v5.8.0.zip"
+      - name: Upload Cloud Service package
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Cloud-Service-v5.8.0
+          path: dist/LHM-Cloud-Service-v5.8.0.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Capture actual Electron UI (sample data)
         shell: pwsh
         env:
@@ -52,7 +84,7 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
               throw "Electron UI capture timed out"
             }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-cloud-sync-preview.png", "workspace-synchronizer-preview.png")) {
               if (-not (Test-Path ("dist\" + $screen))) { throw "Missing actual Electron screenshot: $screen" }
             }
           } finally {

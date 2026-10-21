@@ -43,8 +43,8 @@
     "id": "synchronizer",
     "name": "Multiwindow Synchronizer",
     "state": "partial",
-    "evidence": "Win32 foreground, grid, cascade and shared startup URLs; explicit new-tab navigation via localhost Chrome DevTools on running profiles",
-    "gaps": "No master/slave click/input/scroll/tab synchronization, multi-monitor layout or keyboard shortcuts",
+    "evidence": "Win32 foreground, grid, cascade and shared startup URLs; explicit new-tab navigation via localhost Chrome DevTools on running profiles; opt-in same-host Chromium master-tab HTTPS navigation to follower new tabs, exact allowlist, 15-event cap, explicit stop",
+    "gaps": "No click/input/scroll/same-tab follower sync, multi-monitor routing, keyboard hotkeys or real Windows multi-profile E2E acceptance",
     "acceptance": "Real desktop synchronized interactions tested with explicit user authorization"
   },
   {
@@ -74,17 +74,17 @@
   {
     "id": "teams",
     "name": "Team roles, permissions and activity logging",
-    "state": "missing",
-    "evidence": "Only local activity/reporting, no remote identities",
-    "gaps": "No team authentication, RBAC, scoped profile groups, invitations or per-member audit",
+    "state": "partial",
+    "evidence": "Tenant- and group-scoped Team policy, self-hosted HTTPS service with administrator-provisioned bearer token identities, single-use invite/redeem, membership revocation/audit and desktop member UI; Windows HTTP e2e tests; manual enrollment/revocation of device credentials with server-side enforcement",
+    "gaps": "No hosted public Team deployment, external identity provider/passkeys/MFA, automated credential onboarding, full group grants UI, high availability or independent security review",
     "acceptance": "Independent account RBAC and tenant isolation penetration tests"
   },
   {
     "id": "cloud-sync",
     "name": "Secure multi-device cloud sync",
-    "state": "missing",
-    "evidence": "Local-only data; encrypted configuration backup does not include browser sessions",
-    "gaps": "No encrypted sync server, snapshot conflict resolution, revocation, history or migration",
+    "state": "partial",
+    "evidence": "AES-256-GCM ciphertext-only self-hosted HTTPS sync service, manual Electron push/preview/import of strictly whitelisted profile metadata, local revision CAS and tests, single-instance durable file persistence; admin-approved per-device secret hashes, immediate revocation and up to 25 encrypted prior revisions with explicit re-encrypted rollback",
+    "gaps": "No public hosted service, database-backed multi-replica transactions, automatic/offline incremental sync, MFA/IdP, key recovery/rotation, production two-device proof or browser session sharing",
     "acceptance": "Encrypted transport/rest, cross-device conflict tests, recovery and secure sharing"
   },
   {

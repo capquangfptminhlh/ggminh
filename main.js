@@ -29,6 +29,9 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
+const {NavigationSynchronizer}=require('./src/ops/navigationSynchronizer');
+const {CloudClient}=require('./src/sync/cloudClient');
+const {applyCloudMetadata}=require('./src/sync/applyMetadata');
 const cacheManager = require('./src/ops/cacheManager');
 const {SessionSnapshots} = require('./src/ops/sessionSnapshots');
 const {exportEncrypted,importEncrypted} = require('./src/ops/snapshotPortability');
@@ -52,6 +55,7 @@ let workflowStore = null;
 let automationRunner = null;
 let batchAutomation = null;
 let sessionSnapshots = null;
+let navigationSynchronizer = null;
 let localScheduler = null;
 let schedulerTimer = null;
 let recorderManager = null;
@@ -152,6 +156,21 @@ function createWindow() {
           const paletteImage=await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.join(__dirname,'dist','workspace-command-preview.png'),paletteImage.toPNG());
           console.log('[UI smoke] Verified expanded profile workspace and keyboard palette');
+          const cloudCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('lhm-v7-command-close').click(); document.getElementById('btn-cloud-sync').click(); return {open:document.getElementById('modal-cloud-sync').classList.contains('open'),token:!!document.getElementById('cloud-sync-token'),device:!!document.getElementById('cloud-sync-device-key'),team:!!document.getElementById('cloud-team-invite'),history:!!document.getElementById('cloud-sync-history')}; })()",true);
+          if(!Object.values(cloudCheck).every(Boolean))
+            throw Error('Cloud Sync + Team UI failed: '+JSON.stringify(cloudCheck));
+          await new Promise(resolve=>setTimeout(resolve,300));
+          const cloudImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-cloud-sync-preview.png'),cloudImage.toPNG());
+          const syncCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('cloud-sync-done').click(); document.getElementById('btn-window-manager').click(); return {open:document.getElementById('modal-window-manager').classList.contains('open'),master:!!document.getElementById('wm-sync-master'),hosts:!!document.getElementById('wm-sync-hosts'),start:!!document.getElementById('wm-sync-start'),stop:!!document.getElementById('wm-sync-stop')}; })()",true);
+          if(!Object.values(syncCheck).every(Boolean))
+            throw Error('Synchronizer modal UI failed: '+JSON.stringify(syncCheck));
+          await new Promise(resolve=>setTimeout(resolve,350));
+          const syncImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-synchronizer-preview.png'),syncImage.toPNG());
+          console.log('[UI smoke] Verified integrated Team, Cloud Sync and Synchronizer modals');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
@@ -530,6 +549,52 @@ function initIPC() {
     openUrlForStoppedProfiles(store,launcher,ids,url,behaviorMonitor));
   ipcMain.handle('window-manager-open-live-url', (_, ids, url) =>
     openInRunning(store,launcher,ids,url));
+  ipcMain.handle('navigation-sync-status',()=>navigationSynchronizer.status());
+  ipcMain.handle('navigation-sync-start',(_,options)=>navigationSynchronizer.start(options));
+  ipcMain.handle('navigation-sync-stop',()=>navigationSynchronizer.stop());
+  // Cloud Sync is always explicit. Keep API secrets ephemeral; never persist
+  // customer bearer tokens or encryption passphrases in the local store.
+  const cloudClientFor=(event,options)=>{
+    if(event.sender!==mainWindow?.webContents)throw Error('Untrusted Cloud Sync IPC caller');
+    return new CloudClient(options);
+  };
+  ipcMain.handle('cloud-sync-preview',async(event,options)=>{
+    const cloud=cloudClientFor(event,options);
+    return cloud.pull(options.passphrase);
+  });
+  ipcMain.handle('cloud-sync-push',async(event,options)=>{
+    const cloud=cloudClientFor(event,options);
+    return cloud.push(options.passphrase,store.getProfiles());
+  });
+  ipcMain.handle('cloud-sync-apply',async(event,options)=>{
+    const cloud=cloudClientFor(event,options);
+    const remote=await cloud.pull(options.passphrase);
+    if(remote.empty)throw Error('Cloud is empty; nothing to apply');
+    return applyCloudMetadata(store,launcher,remote.profiles,{
+      remoteRevision:remote.revision,expectedRevision:options.expectedRevision,
+      confirmation:options.confirmation
+    },behaviorMonitor);
+  });
+  ipcMain.handle('cloud-team-members',async(event,options)=>
+    cloudClientFor(event,options).listMembers());
+  ipcMain.handle('cloud-team-invite',async(event,options,invite)=>
+    cloudClientFor(event,options).issueInvite(invite));
+  ipcMain.handle('cloud-team-revoke',async(event,options,memberId)=>
+    cloudClientFor(event,options).revokeMember(memberId));
+  ipcMain.handle('cloud-team-redeem',async(event,options,token)=>
+    cloudClientFor(event,options).redeemInvite(token));
+  ipcMain.handle('cloud-team-devices',async(event,options)=>
+    cloudClientFor(event,options).listDevices());
+  ipcMain.handle('cloud-team-enroll-device',async(event,options,request)=>
+    cloudClientFor(event,options).enrollDevice(request));
+  ipcMain.handle('cloud-team-revoke-device',async(event,options,id)=>
+    cloudClientFor(event,options).revokeDevice(id));
+  ipcMain.handle('cloud-sync-history',async(event,options)=>
+    cloudClientFor(event,options).listHistory());
+  ipcMain.handle('cloud-sync-restore-history',async(event,options,revision,confirmation)=>{
+    if(confirmation!=='RESTORE CLOUD')throw Error('Type RESTORE CLOUD to confirm');
+    return cloudClientFor(event,options).restoreHistory(options.passphrase,revision);
+  });
   ipcMain.handle('check-proxy', (_, proxy) => checkProxy(proxy));
   ipcMain.handle('generate-fingerprint', (_, options) => generateFingerprint(options));
   ipcMain.handle('get-settings', () => store.getSettings());
@@ -587,6 +652,7 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
+  navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;
   extensionManager = new ExtensionManager(store,launcher);
@@ -636,6 +702,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', () => {
+  if (navigationSynchronizer) navigationSynchronizer.stop();
   if (schedulerTimer) clearInterval(schedulerTimer);
   if (licenseTimer) clearInterval(licenseTimer);
   if (batchAutomation) batchAutomation.stop();

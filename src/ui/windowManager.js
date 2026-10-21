@@ -7,6 +7,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   const listing=el('wm-profile-list');
   const buttonIds=['wm-focus','wm-grid','wm-cascade','wm-open-url','wm-refresh'];
   let active=[],all=[],targetIds=[];
+  let syncing=false;
   const selected=()=>window.LHMProfileSelection?.getSelected()||[];
   function render(){
     listing.replaceChildren();
@@ -28,6 +29,18 @@ window.addEventListener('DOMContentLoaded',()=>{
     el('wm-cascade').disabled=currentlyRunning.length===0||targetIds.length>10;
     el('wm-open-url').disabled=!targetIds.length||targetIds.length>10;
     el('wm-open-live-url').disabled=!currentlyRunning.length||targetIds.length>10;
+    const picker=el('wm-sync-master'),value=picker.value;
+    picker.replaceChildren();
+    for(const id of currentlyRunning){
+      const profile=byId.get(id);
+      if(profile?.engine!=='chromium')continue;
+      const option=document.createElement('option');
+      option.value=id;option.textContent=profile.name;
+      picker.append(option);
+    }
+    if([...picker.options].some(x=>x.value===value))picker.value=value;
+    el('wm-sync-start').disabled=syncing||picker.options.length<2;
+    el('wm-sync-stop').disabled=!syncing;
   }
   async function refresh(){
     const [profiles,live]=await Promise.all([
@@ -37,6 +50,16 @@ window.addEventListener('DOMContentLoaded',()=>{
     const selection=selected();
     targetIds=selection.length?selection:live.map(x=>x.profileId);
     render();
+    await showSyncStatus();
+  }
+  async function showSyncStatus(){
+    const s=await window.api.getNavigationSyncStatus();
+    syncing=s.active;
+    el('wm-sync-state').textContent=s.active
+      ?'Đang chạy · '+s.events+'/'+s.maxEvents+' lần · '+(s.error||'Chỉ URL HTTPS được phép')
+      :'Đã tắt · Không theo dõi click hay nhập liệu';
+    el('wm-sync-stop').disabled=!syncing;
+    el('wm-sync-start').disabled=syncing||el('wm-sync-master').options.length<2;
   }
   async function perform(mode){
     const button=el('wm-'+mode);
@@ -91,4 +114,22 @@ window.addEventListener('DOMContentLoaded',()=>{
     el('wm-'+mode).addEventListener('click',()=>perform(mode));
   el('wm-open-url').addEventListener('click',openUrl);
   el('wm-open-live-url').addEventListener('click',openLiveUrl);
+  el('wm-sync-start').addEventListener('click',async()=>{
+    const masterId=el('wm-sync-master').value;
+    const followerIds=targetIds.filter(id=>id!==masterId&&
+      active.some(x=>x.profileId===id)&&all.some(p=>p.id===id&&p.engine==='chromium'));
+    try{
+      await window.api.startNavigationSync({masterId,followerIds,hosts:el('wm-sync-hosts').value});
+      message.textContent='Đã bật đồng bộ điều hướng (chỉ HTTPS, giới hạn 15 lần).';
+      await showSyncStatus();
+    }catch(error){message.textContent='Lỗi đồng bộ: '+error.message;}
+  });
+  el('wm-sync-stop').addEventListener('click',async()=>{
+    try{await window.api.stopNavigationSync();await showSyncStatus();}
+    catch(error){message.textContent='Không dừng được: '+error.message;}
+  });
+  setInterval(()=>{
+    if(modal.classList.contains('open'))
+      showSyncStatus().catch(error=>{el('wm-sync-state').textContent=error.message;});
+  },3000);
 });
