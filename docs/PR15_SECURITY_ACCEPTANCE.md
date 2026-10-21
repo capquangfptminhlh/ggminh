@@ -138,6 +138,64 @@ Do **not** mark unsupported proxy/GeoIP requests as success. Users
 requesting an authenticated proxy are blocked instead of accidentally
 browsing directly, and the live proxy/WebRTC/DNS lab stays blocked.
 
+
+## Playwright integration — guarded experimental implementation (2026-10-21)
+
+**Direct upstream compatibility — verified**:
+[Windows run 39562345794](https://github.com/capquangfptminhlh/ggminh/actions/runs/39562345794)
+used Node 20.20.2 and pinned playwright-core 1.62.0 with an official
+SHA-256-checked Camoufox Windows x64 executable. Direct
+firefox.launchPersistentContext() worked: two profile directories,
+about:blank, navigator.userAgent and unreachable loopback proxy
+**navigation blocked**. No Camoufox TypeScript launcher required.
+
+**Actual project controller — verified**:
+[Windows run 39564124178](https://github.com/capquangfptminhlh/ggminh/actions/runs/39564124178)
+used CamoufoxPlaywrightController.js (not just a standalone Playwright
+call), with two real upstream persistent contexts, in-browser navigation
+and closed sessions. Proxy lacking an approved lab was rejected as
+NETWORK_BLOCKED **before launch**. This is a verified upstream test
+binary, **not an LHM-signed distribution or installed consumer EXE**.
+
+### Implementation and review
+
+- [x] Playwright Core 1.62.0 pinned in package.json and package-lock.json
+  (Node 20 supported), without Camoufox's Node 22 TypeScript wrapper.
+- [x] CamoufoxPlaywrightController.js holds BrowserContext objects
+  in process, with explicit profile storage/lifecycle. Persistent
+  context.browser() may be null; neither object is placed into JSON.
+- [x] EngineFactory invokes NetworkSafetyCheck before Camoufox launch;
+  unsupported proxy/GeoIP is rejected. Experimental Playwright failure
+  does **not** retry through native spawn. The prior manual launcher
+  remains separately selected until release acceptance.
+- [x] Proxy Center vault/HTTP CONNECT gateway can map an authenticated
+  SOCKS5 or HTTP proxy into Playwright's localhost proxy.server option.
+  Secrets are not serialized into CLI args or API response; this
+  option was tested with a **mock gateway**, not a real paid proxy.
+- [x] CamoufoxProfileManager.js supplies supported Firefox prefs,
+  including network.proxy.socks_remote_dns. No unsupported
+  camoufox.geoip preference is invented.
+- [x] NetworkSafetyCheck.inspectContext() accepts a Playwright context,
+  examines page ICE candidates with STUN lab inputs, and returns
+  NOT_RUN or INCONCLUSIVE when evidence is insufficient.
+  Separate DNS resolver logs remain required.
+- [x] Authenticated Local API can operate a running in-process context
+  and returns protocol playwright-internal, ws.playwright null.
+  Neither Firefox CDP nor an invented NATIVE_PLAYWRIGHT URL is used.
+- [x] Test suite covers context isolation, mocked authenticated
+  gateway option, API auth, URL rejection and conservative network
+  states; npm test includes all four integration test files.
+- [x] README documents these limits and working APIs.
+- [ ] **BLOCKER:** Installed LHM EXE and Automation Studio customer
+  workflow testing, currently lab-only and disabled when app.isPackaged.
+- [ ] **BLOCKER:** Real authorized upstream proxy, broken proxy network
+  route-bypass, DNS resolver and WebRTC/STUN evidence.
+- [ ] **BLOCKER:** LHM-signed redistribution/permissions, clean Windows
+  VM, Authenticode, and release/update rollback process.
+
+**Draft only**. Successful browser compatibility is not a guarantee
+of detection evasion, leak immunity, or commercial readiness.
+
 ## Reproduction
 
 Run `npm ci && npm test` on Windows to check local security tests,
