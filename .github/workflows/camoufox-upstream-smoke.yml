@@ -12,6 +12,7 @@ on:
       - tools/test-camoufox-native-windows.js
       - tools/test-camoufox-direct-playwright.mjs
       - tools/test-camoufox-electron-main.js
+      - tools/test-camoufox-synthetic-auth-proxy.js
       - tools/test-camoufox-playwright-controller-windows.js
       - src/engine/CamoufoxPlaywrightController.js
       - src/engine/camoufoxAdapter.js
@@ -78,6 +79,14 @@ jobs:
           }
           & ".\\node_modules\\.bin\\electron.cmd" ".\\tools\\test-camoufox-electron-main.js"
           if ($LASTEXITCODE -ne 0) { throw 'Electron 33 main-process Playwright compatibility failed' }
+      - name: Test real Camoufox to synthetic authenticated SOCKS5 proxy (CONNECT refused)
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          node tools/test-camoufox-synthetic-auth-proxy.js
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
+          }
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
