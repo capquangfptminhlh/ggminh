@@ -6,21 +6,23 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
-import {Camoufox} from 'camoufox';
-
+// Import only after verifying all required lab inputs, so missing test
+// infrastructure reports NOT_RUN instead of an unrelated module error.
 const exe=process.env.LHM_CAMOUFOX_EXECUTABLE;
 const proxyServer=process.env.LHM_PROXY_SERVER;
 const expected=process.env.LHM_EXPECTED_EGRESS_IP;
 const echo=process.env.LHM_IP_ECHO_URL;
 const stun=process.env.LHM_STUN_SERVER;
-if(!exe||!path.isAbsolute(exe)||!fs.statSync(exe).isFile())
- throw Error('Verify and explicitly provide an approved Camoufox executable');
 if(!proxyServer||!expected||!echo){
  console.log(JSON.stringify({status:'NOT_RUN',
   reason:'Operator proxy server, expected public IPv4 and authorized HTTPS IP echo endpoint are all required',
   webrtc:'not-tested'}));
  process.exit(2); // Explicit NOT_RUN is a blocked release gate, never CI PASS.
 }
+if(!exe||!path.isAbsolute(exe)||!fs.existsSync(exe)||
+   !fs.statSync(exe).isFile())
+ throw Error('Verify and explicitly provide an approved Camoufox executable');
+const {Camoufox}=await import('camoufox');
 const proxyUrl=new URL(proxyServer);
 if(!['http:','https:','socks5:'].includes(proxyUrl.protocol)||
    proxyUrl.username||proxyUrl.password||proxyUrl.hash||proxyUrl.search||
