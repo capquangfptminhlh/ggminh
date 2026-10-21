@@ -7,12 +7,16 @@ window.addEventListener('DOMContentLoaded',()=>{
  const result=el('engine-source-result');
  const geckoChoice=el('engine-gecko-provider');
  const geckoResult=el('engine-gecko-result');
+ const installInfo=el('camoufox-install-info');
+ const installButton=el('camoufox-install-button');
+ let releaseAvailable=false;
  let busy=false;
  function busyState(value){
   busy=value;
   for(const id of ['engine-source-select','engine-source-save','engine-source-refresh',
    'engine-gecko-provider','engine-gecko-save'])
    el(id).disabled=value;
+  installButton.disabled=value||!releaseAvailable;
  }
  async function refresh(){
   busyState(true);
@@ -20,6 +24,14 @@ window.addEventListener('DOMContentLoaded',()=>{
    const {source,bundle,geckoProvider,camoufox}=await window.api.bundledEngineStatus();
    selector.value=source;
    geckoChoice.value=geckoProvider;
+   const availability=await window.api.camoufoxInstallStatus();
+   releaseAvailable=availability.available&&!availability.alreadyInstalled;
+   installButton.disabled=busy||!releaseAvailable;
+   installInfo.textContent=availability.alreadyInstalled?
+     'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng.':
+     availability.available?'Có bản Camoufox được LHM ký số: '+availability.version+
+       '. Cần xác nhận riêng trước khi tải.':
+       'Chưa có bản Camoufox được LHM ký và phê duyệt; nút cài đặt chưa khả dụng.';
    geckoResult.textContent=camoufox.ready?
      'Thư viện và engine Camoufox đã xác minh · '+camoufox.version+
        '. Cần kiểm thử Windows thật trước khi sử dụng production.':
@@ -56,6 +68,22 @@ window.addEventListener('DOMContentLoaded',()=>{
     'Đã chọn trình duyệt hệ thống. Đường dẫn ghim hiện có vẫn được ưu tiên.';
   }catch(error){result.textContent='Không thay đổi Engine: '+error.message;}
   finally{busyState(false);}
+ });
+ installButton.addEventListener('click',async()=>{
+  if(busy||!releaseAvailable)return;
+  busyState(true);
+  installInfo.textContent='Đang thực hiện quy trình tải và xác minh engine đã ký…';
+  try{
+   const result=await window.api.installCamoufoxEngine();
+   if(result.canceled)installInfo.textContent='Đã hủy cài đặt.';
+   else{
+    installInfo.textContent='Đã cài và xác minh Camoufox '+result.version+
+      '. Không tự chuyển hoặc sao chép session giữa các engine.';
+    releaseAvailable=false;
+   }
+  }catch(error){
+   installInfo.textContent='Cài Camoufox không thành công: '+error.message;
+  }finally{busyState(false);}
  });
  el('engine-gecko-save').addEventListener('click',async()=>{
   const provider=geckoChoice.value;
