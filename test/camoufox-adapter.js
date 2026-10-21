@@ -84,9 +84,10 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
    fingerprint:{mode:'native'},proxy:{type:'socks5',host:'proxy.example',port:1080}});
   await assert.rejects(()=>launcher.start(bad.id),/does not support a configured proxy/);
   assert.strictEqual(processes.length,3);
-  const geo=store.saveProfile({name:'GeoIP',engine:'gecko',
-   fingerprint:{mode:'native'},proxy:{type:'direct'},geoip:true});
-  await assert.rejects(()=>launcher.start(geo.id),/does not support automatic GeoIP/);
+  // Store normalizes away unsupported extraneous profile fields. Test the
+  // native adapter boundary directly with an explicit GeoIP request.
+  await assert.rejects(()=>adapter.start({...a,geoip:true}),
+   /does not support automatic GeoIP/);
   const custom=store.saveProfile({name:'Custom',engine:'gecko',
    fingerprint:{mode:'custom',userAgent:'custom'},proxy:{type:'direct'}});
   await assert.rejects(()=>launcher.start(custom.id),/requires native profile settings/);
