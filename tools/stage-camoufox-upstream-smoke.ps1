@@ -35,7 +35,16 @@ $resolved=(Resolve-Path $browserRoot).Path
 $exe=Get-ChildItem -LiteralPath $browserRoot -Filter firefox.exe -Recurse -File -ErrorAction Stop |
   Where-Object { $_.FullName.StartsWith($resolved+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) } |
   Select-Object -First 1
-if (-not $exe) { throw 'Official archive contains no firefox.exe' }
+if (-not $exe) {
+  $candidates=@(Get-ChildItem -LiteralPath $browserRoot -Recurse -Force -File -ErrorAction Stop |
+    Where-Object { $_.Extension -eq '.exe' } |
+    Select-Object -First 30 -ExpandProperty FullName)
+  Write-Host 'Extracted executable candidates:'
+  foreach ($candidate in $candidates) {
+    Write-Host (' - '+[IO.Path]::GetRelativePath($resolved,$candidate))
+  }
+  throw 'Official archive contains no firefox.exe. Review the upstream layout; do not guess or relabel a binary.'
+}
 # Reject linked files and tree escapes, including malicious archive surprises.
 if (($exe.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
   throw 'Unexpected linked Firefox executable in extracted release'
