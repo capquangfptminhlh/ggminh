@@ -116,6 +116,10 @@ class CamoufoxAdapter{
   let exitSignal=null;
   let entry=null;
   const finish=()=>{
+   // Firefox descendants may inherit the redirected pipe handles. Closing
+   // our read ends after process exit prevents abandoned CI/app listeners.
+   child?.stdout?.destroy?.();
+   child?.stderr?.destroy?.();
    if(entry&&this.sessions.get(id)===entry){
     this.sessions.delete(id);
     try{onClosed?.(entry.info);}catch(_){}
@@ -130,6 +134,12 @@ class CamoufoxAdapter{
     throw Error('Camoufox spawn did not return a child process');
    child.once('exit',(code,signal)=>{
     exited=true;exitCode=code;exitSignal=signal;
+    finish();
+   });
+   // ChildProcess can emit 'error' after initial spawn (not only ENOENT).
+   // Do not let a late process error become an uncaught Electron crash.
+   child.on('error',error=>{
+    exited=true;exitSignal='process-error';
     finish();
    });
    // Draining output avoids OS pipe back-pressure, but stdout is NEVER parsed
@@ -167,6 +177,8 @@ class CamoufoxAdapter{
    if(child&&!exited){
     try{child.kill('SIGTERM');}catch(_){}
    }
+   child?.stdout?.destroy?.();
+   child?.stderr?.destroy?.();
    throw error;
   }
  }
