@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {stageStorageResult,safeOptions,FIELDS}=require('./core');
+const markers={a:'a-synthetic',b:'b-synthetic'};
+const left=Object.fromEntries(FIELDS.map(x=>[x,markers.a]));
+const right=Object.fromEntries(FIELDS.map(x=>[x,markers.b]));
+const empty=Object.fromEntries(FIELDS.map(x=>[x,null]));
+assert.equal(stageStorageResult(empty,left,right,left,right,markers).pass,true);
+assert.equal(stageStorageResult({...empty,cookie:markers.a},left,right,left,right,markers).pass,false);
+assert.equal(stageStorageResult(empty,left,{...right,indexedDB:markers.a},left,right,markers).pass,false);
+assert.equal(stageStorageResult(empty,left,right,{...left,cacheStorage:null},right,markers).pass,false);
+assert.throws(()=>safeOptions({LHM_CAMOUFOX_EXECUTABLE:'C:\\camoufox.exe',LHM_CAMOUFOX_EXE_SHA256:'bad'}),/digest/);
+assert.equal(safeOptions({LHM_CAMOUFOX_EXECUTABLE:'C:\\camoufox.exe',LHM_CAMOUFOX_EXE_SHA256:'A'.repeat(64)}).expectedSha256,'a'.repeat(64));
+assert.throws(()=>stageStorageResult(empty,left,right,left,right,{a:'same',b:'same'}),/Distinct/);
+console.log('Stage-0 contract: PASS; real Windows browser measurements NOT_RUN');
