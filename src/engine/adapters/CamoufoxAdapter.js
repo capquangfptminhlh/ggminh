@@ -7,7 +7,10 @@ class CamoufoxAdapter{
   const launcher=this.launcher;
   if(!launcher.camoufoxAdapter)
    throw Error('Camoufox adapter is not available; no engine binary bundled');
-  const details=await launcher.camoufoxAdapter.launchProfile(profile,{
+  const native=launcher.camoufoxAdapter;
+  const open=native.launchProfile||native.start;
+  if(typeof open!=='function')throw Error('Camoufox launcher exposes no profile start method');
+  const details=await open.call(native,profile,{
    url:customUrl||profile.startUrl,
    onClosed:()=>{
     const current=launcher.activeProcesses.get(profile.id);
