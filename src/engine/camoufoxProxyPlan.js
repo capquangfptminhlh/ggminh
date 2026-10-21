@@ -41,7 +41,7 @@ async function prepareCamoufoxProxy(profile,profileDir,{
 }={}){
  const proxy=normalizedProxy(profile?.proxy);
  if(proxy.type==='direct'){
-  applyPrefs(profileDir,{type:'direct'});
+  await applyPrefs(profileDir,{type:'direct'});
   return {mode:'direct',gateway:null,close:async()=>{}};
  }
  if(!store||!proxyVault||!Array.isArray(store.data?.proxies)||
@@ -65,7 +65,7 @@ async function prepareCamoufoxProxy(profile,profileDir,{
   if(gateway?.host!=='127.0.0.1'||!Number.isInteger(gateway.port)||
      gateway.port<1||gateway.port>65535||typeof gateway.close!=='function')
    throw Error('Authenticated proxy gateway did not bind a valid loopback listener');
-  applyPrefs(profileDir,{type:'http',host:'127.0.0.1',port:gateway.port});
+  await applyPrefs(profileDir,{type:'http',host:'127.0.0.1',port:gateway.port});
   return {mode:'authenticated-connect',gateway,close:()=>gateway.close()};
  }catch(error){
   if(gateway&&typeof gateway.close==='function'){
