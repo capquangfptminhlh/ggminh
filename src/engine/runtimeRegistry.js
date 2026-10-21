@@ -18,7 +18,9 @@ function validatePath(engine,filename,{platform=process.platform}={}){
  if(platform==='win32'){
   if(!/^[a-zA-Z]:[\\/]/.test(filename))
    throw Error('Only local Windows drive paths are permitted');
-  if(!allowedWindowsNames[engine].has(path.basename(filename).toLowerCase()))
+  const allowed=engine==='gecko'&&opts.trustedCamoufox===true
+   ?new Set(['camoufox.exe']):allowedWindowsNames[engine];
+  if(!allowed.has(path.basename(filename).toLowerCase()))
    throw Error('Only official Chrome/Edge or Firefox executable names are accepted');
  }else if(!['.exe',''].includes(ext)){
   throw Error('Executable extension not supported');
