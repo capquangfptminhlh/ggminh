@@ -5,6 +5,8 @@ const fs=require('fs'),os=require('os'),path=require('path');
 const {spawnSync}=require('child_process');
 const {CamoufoxInstallService,validateRelease}=require('../src/engine/camoufoxInstallService');
 const {signedPayload,sha256File}=require('../src/engine/bundledEngineManager');
+const {loadCamoufoxPublisherKey}=require('../src/engine/camoufoxPublisherTrust');
+const {PUBLIC_KEY:APP_LICENSE_KEY}=require('../src/licensing/manager');
 (async()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-signed-download-'));
  const source=path.join(root,'release');
@@ -23,6 +25,17 @@ const {signedPayload,sha256File}=require('../src/engine/bundledEngineManager');
  manifest.signature=crypto.sign(null,signedPayload(manifest),keys.privateKey).toString('base64url');
  let downloads=0;
  try{
+  const pubFolder=path.join(root,'publisher');
+  fs.mkdirSync(pubFolder);
+  assert.strictEqual(loadCamoufoxPublisherKey(pubFolder,{licenseKey:APP_LICENSE_KEY}),null);
+  const keyFile=path.join(pubFolder,'publisher-ed25519.pub');
+  fs.writeFileSync(keyFile,keys.publicKey.export({format:'pem',type:'spki'}));
+  assert.strictEqual(
+   loadCamoufoxPublisherKey(pubFolder,{licenseKey:APP_LICENSE_KEY}).asymmetricKeyType,'ed25519');
+  fs.writeFileSync(keyFile,APP_LICENSE_KEY);
+  assert.throws(()=>loadCamoufoxPublisherKey(pubFolder,{licenseKey:APP_LICENSE_KEY}),
+    /independent of license signing key/);
+  fs.writeFileSync(keyFile,keys.publicKey.export({format:'pem',type:'spki'}));
   const release={
    schema:1,url:'https://github.com/owner/engine/releases/download/v1/camoufox.zip',
    archiveSha256:'a'.repeat(64),archiveBytes:4567,manifest
@@ -35,7 +48,7 @@ const {signedPayload,sha256File}=require('../src/engine/bundledEngineManager');
     /release|URL|HTTPS/);
   assert.throws(()=>validateRelease({...release,archiveSha256:'0'},{publicKey:keys.publicKey}),
     /Invalid browser release descriptor/);
-  assert.throws(()=>validateRelease(release),/not signed/);
+  assert.throws(()=>validateRelease(release),/publisher public key is required/);
   const forged=JSON.parse(JSON.stringify(release));
   forged.manifest.files[0].sha256='f'.repeat(64);
   assert.throws(()=>validateRelease(forged,{publicKey:keys.publicKey}),/not signed/);
@@ -73,6 +86,16 @@ const {signedPayload,sha256File}=require('../src/engine/bundledEngineManager');
    }
   });
   assert.strictEqual(service.status().valid,false);
+  const poisoned=path.join(root,'poisoned');
+  fs.mkdirSync(poisoned);
+  fs.writeFileSync(path.join(poisoned,'engines'),'not a directory');
+  const early=new CamoufoxInstallService(poisoned,{
+    publicKey:keys.publicKey,platform:'win32',
+    inspect:(_engine,filename)=>sha256File(filename),
+    download:async()=>{throw Error('No download should start');}
+  });
+  await assert.rejects(()=>early.install(releaseDoc),/ENOTDIR|EEXIST/);
+  assert.strictEqual(early.running,false);
   const installed=await service.install(releaseDoc);
   assert.strictEqual(installed.installed,true);
   assert.strictEqual(installed.alreadyPresent,false);
