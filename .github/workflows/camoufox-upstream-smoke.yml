@@ -46,6 +46,10 @@ jobs:
         run: |
           node tools/test-camoufox-real.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox smoke failed' }
+      - name: Switch to packaged Electron-compatible Node.js 20 for native smoke
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Launch real Camoufox as a native Windows GUI without TypeScript wrapper
         shell: pwsh
         run: |
