@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
 const { safeWebUrls } = require('../engine/launchArgs');
+const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -16,6 +17,12 @@ function cleanTags(input) {
   }
   return tags;
 }
+// Every per-profile directory the app writes under the storage root:
+// Chromium sessions, Gecko sessions, Camoufox sessions, and the
+// per-profile extension copies materialised at launch. Permanent
+// deletion must remove ALL of them; a root missing here leaves a
+// profile's session data on disk forever after purge.
+const PROFILE_DATA_ROOTS = ['profiles', 'gecko-profiles', 'camoufox-profiles', 'extensions'];
 const VALID_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 function assertId(id) {
   if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
@@ -74,6 +81,29 @@ class Store {
     if(existingIndex<0 && this.licensePolicy && options.recovery!==true)
       this.licensePolicy.assertCapacity(this.data.profiles.length,1);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
+    const engineFamily=input.engine===undefined
+      ? input.engine_type!==undefined
+        ? input.engine_type==='chromium'?'chromium':'gecko'
+        : (old.engine==='gecko'?'gecko':'chromium')
+      : input.engine;
+    if(!['chromium','gecko'].includes(engineFamily))
+      throw Error('Invalid browser engine family');
+    let type=input.engine_type===undefined
+      ? existingIndex<0
+        ? resolveEngineType({engine:engineFamily},this.data.settings||{})
+        : input.engine!==undefined&&input.engine!==old.engine
+          ? engineFamily==='gecko'?'firefox':'chromium'
+          : old.engine_type||resolveEngineType({
+              engine:engineFamily
+            },this.data.settings||{})
+      : input.engine_type;
+    if(!SUPPORTED.includes(type))throw Error('Invalid engine_type');
+    if((type==='chromium'?'chromium':'gecko')!==engineFamily)
+      throw Error('Browser engine family and engine_type disagree');
+    if(existingIndex>=0&&resolveEngineType(old,this.data.settings||{})!==type&&
+       !options.allowEngineChange)
+      throw Error('Changing browser provider needs explicit confirmation');
+
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
     if (typeof incomingProxy !== 'object' || Array.isArray(incomingProxy)) throw new Error('Invalid proxy configuration');
     const forbidden = ['user','username','pass','password','credentials','token','secret','authorization','apiKey','proxyAuthorization'];
@@ -106,8 +136,7 @@ class Store {
       ...old, id, name,
       // A partial edit must preserve the selected engine, especially
       // when clients POST only {id, name} through the Local API.
-      engine: input.engine === 'gecko' || input.engine === 'chromium'
-        ? input.engine : (old.engine === 'gecko' ? 'gecko' : 'chromium'),
+      engine:engineFamily,engine_type:type,
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: startUrls[0], startUrls, tags,
       // An explicit empty string clears notes; omitted notes preserve the old value.
@@ -227,7 +256,7 @@ class Store {
         if (this.data.profiles.some(p=>p.id===id) ||
             (this.data.trash || []).some(x=>x.profile?.id===id))
           throw Error('ID is still referenced by a profile');
-        for (const part of ['profiles','gecko-profiles']) {
+        for (const part of PROFILE_DATA_ROOTS) {
           const target=path.join(this.baseDir,part,id);
           if (fs.existsSync(target))
             fs.rmSync(target,{recursive:true,force:true});
@@ -285,10 +314,10 @@ class Store {
     if (prev === this.data.profiles.length) return false;
     try{this.saveData();}
     catch(error){this.data.profiles=original;throw error;}
-    const directory = path.join(this.baseDir, 'profiles', id);
-    if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
-    const geckoDirectory = path.join(this.baseDir, 'gecko-profiles', id);
-    if (fs.existsSync(geckoDirectory)) fs.rmSync(geckoDirectory, { recursive: true, force: true });
+    for (const part of PROFILE_DATA_ROOTS) {
+      const directory = path.join(this.baseDir, part, id);
+      if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
+    }
     return true;
   }
   getSettings() { return { ...(this.data.settings || {}) }; }

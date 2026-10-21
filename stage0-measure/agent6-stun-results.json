@@ -1,0 +1,375 @@
+{
+ "status": "RAN",
+ "boundTo": {
+  "baseCommit": "07150d6 (integration/v5.8-phase-c)",
+  "engineExecutable": "/home/hatch/tmp-big/cfx-build/camoufox-bin",
+  "engineSha256": "2a2cb03f6ca4cfa96cdb9d0991b52f4dc02d7f097d3253d355f6a6361ce28669",
+  "os": "linux 7.0.0-39-generic",
+  "node": "v24.20.0",
+  "at": "2026-10-21T15:47:02.110Z"
+ },
+ "question": "Does the browser consult the configured STUN server (send RFC 5389 Binding requests) in each tried configuration?",
+ "engineConfigFacts": {
+  "source": "camoufox.cfg inside the lab engine build",
+  "prefs": {
+   "media.peerconnection.ice.no_host": false,
+   "media.peerconnection.ice.default_address_only": true,
+   "media.peerconnection.ice.proxy_only_if_behind_proxy": true,
+   "media.peerconnection.ice.proxy_only_if_pbmode": true,
+   "media.peerconnection.ice.obfuscate_host_addresses": true
+  },
+  "note": "The same file documents that behind a proxy the engine fabricates a synthetic srflx instead of sending real UDP (webrtc-ip-spoofing.patch / WebRTCIPManager). These are the vendor build’s own statements, quoted as configuration facts — the variants below are the observations."
+ },
+ "environmentUdpDelivery": {
+  "trials": [
+   {
+    "family": "udp4",
+    "host": "127.0.0.1",
+    "delivered": false,
+    "detail": "timeout — no datagram delivered"
+   },
+   {
+    "family": "udp4",
+    "host": "198.19.0.2",
+    "delivered": false,
+    "detail": "timeout — no datagram delivered"
+   },
+   {
+    "family": "udp6",
+    "host": "::1",
+    "delivered": false,
+    "detail": "timeout — no datagram delivered"
+   }
+  ],
+  "note": "If no trial delivers, UDP transport does not exist in this sandbox at all and browser STUN observations made here cannot distinguish engine behaviour — see conclusion fields in INTEGRATION-NOTES (Agent 6)."
+ },
+ "machineNetwork": {
+  "defaultRouteIPv4": "198.19.0.2",
+  "interfaces": {
+   "lo": [
+    "IPv4 127.0.0.1 (internal)",
+    "IPv6 ::1 (internal)"
+   ],
+   "host0": [
+    "IPv4 198.19.0.2",
+    "IPv6 fd8b:4f84:7d32:99::2",
+    "IPv6 fe80::70dc:7cff:fe34:2ffd"
+   ]
+  }
+ },
+ "variants": [
+  {
+   "id": "S0",
+   "kind": "control-node-udp-client",
+   "stunUrl": "stun:127.0.0.1:38141",
+   "result": {
+    "responded": false
+   },
+   "serverStats": {
+    "datagrams": 0,
+    "bindingRequests": 0
+   }
+  },
+  {
+   "id": "S1-baseline-127.0.0.1",
+   "kind": "raw-launch",
+   "stunUrl": "stun:127.0.0.1:60730",
+   "prefs": null,
+   "rawCandidates": [
+    "candidate:0 1 UDP 2122187007 35c8234a-fa0e-4aec-ae41-72ae794a9c14.local 55611 typ host",
+    "candidate:2 1 UDP 2122252543 e0a67f92-c948-4ea4-b28d-1a5997584897.local 56166 typ host",
+    "candidate:3 1 TCP 2105458943 35c8234a-fa0e-4aec-ae41-72ae794a9c14.local 9 typ host tcptype active",
+    "candidate:4 1 TCP 2105524479 e0a67f92-c948-4ea4-b28d-1a5997584897.local 9 typ host tcptype active"
+   ],
+   "classified": [
+    {
+     "type": "host",
+     "address": "35c8234a-fa0e-4aec-ae41-72ae794a9c14.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "e0a67f92-c948-4ea4-b28d-1a5997584897.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "35c8234a-fa0e-4aec-ae41-72ae794a9c14.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "e0a67f92-c948-4ea4-b28d-1a5997584897.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    }
+   ],
+   "gatheringStates": [
+    {
+     "state": "gathering",
+     "atMs": 20
+    },
+    {
+     "state": "complete",
+     "atMs": 23
+    }
+   ],
+   "iceErrors": [
+    {
+     "url": "stun:127.0.0.1:60730",
+     "errorCode": 701,
+     "errorText": null,
+     "atMs": 20
+    }
+   ],
+   "waitedMs": 23,
+   "serverDelta": {
+    "datagrams": 0,
+    "bindingRequests": 0,
+    "fromSources": {}
+   }
+  },
+  {
+   "id": "S2-stun-on-interface-address",
+   "kind": "raw-launch",
+   "stunUrl": "stun:198.19.0.2:35552",
+   "prefs": null,
+   "rawCandidates": [
+    "candidate:0 1 UDP 2122187007 eda6f025-c6ad-49c9-b8e8-b97af5ca2f29.local 51682 typ host",
+    "candidate:2 1 UDP 2122252543 628da5e8-521b-4b3e-bd83-24ac2e94474d.local 60897 typ host",
+    "candidate:3 1 TCP 2105458943 eda6f025-c6ad-49c9-b8e8-b97af5ca2f29.local 9 typ host tcptype active",
+    "candidate:4 1 TCP 2105524479 628da5e8-521b-4b3e-bd83-24ac2e94474d.local 9 typ host tcptype active"
+   ],
+   "classified": [
+    {
+     "type": "host",
+     "address": "eda6f025-c6ad-49c9-b8e8-b97af5ca2f29.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "628da5e8-521b-4b3e-bd83-24ac2e94474d.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "eda6f025-c6ad-49c9-b8e8-b97af5ca2f29.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "628da5e8-521b-4b3e-bd83-24ac2e94474d.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    }
+   ],
+   "gatheringStates": [
+    {
+     "state": "gathering",
+     "atMs": 58
+    },
+    {
+     "state": "complete",
+     "atMs": 62
+    }
+   ],
+   "iceErrors": [
+    {
+     "url": "stun:198.19.0.2:35552",
+     "errorCode": 701,
+     "errorText": null,
+     "atMs": 60
+    }
+   ],
+   "waitedMs": 62,
+   "serverDelta": {
+    "datagrams": 0,
+    "bindingRequests": 0,
+    "fromSources": {}
+   }
+  },
+  {
+   "id": "S3-stun-on-127.0.0.2",
+   "kind": "raw-launch",
+   "stunUrl": "stun:127.0.0.2:44326",
+   "prefs": null,
+   "rawCandidates": [
+    "candidate:0 1 UDP 2122187007 fb746299-a1a9-4cc1-b192-d9f25ba11831.local 50885 typ host",
+    "candidate:2 1 UDP 2122252543 4645259a-19ee-480c-951a-1fa233fe713a.local 34745 typ host",
+    "candidate:3 1 TCP 2105458943 fb746299-a1a9-4cc1-b192-d9f25ba11831.local 9 typ host tcptype active",
+    "candidate:4 1 TCP 2105524479 4645259a-19ee-480c-951a-1fa233fe713a.local 9 typ host tcptype active"
+   ],
+   "classified": [
+    {
+     "type": "host",
+     "address": "fb746299-a1a9-4cc1-b192-d9f25ba11831.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "4645259a-19ee-480c-951a-1fa233fe713a.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "fb746299-a1a9-4cc1-b192-d9f25ba11831.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "4645259a-19ee-480c-951a-1fa233fe713a.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    }
+   ],
+   "gatheringStates": [
+    {
+     "state": "gathering",
+     "atMs": 25
+    },
+    {
+     "state": "complete",
+     "atMs": 26
+    }
+   ],
+   "iceErrors": [
+    {
+     "url": "stun:127.0.0.2:44326",
+     "errorCode": 701,
+     "errorText": null,
+     "atMs": 23
+    }
+   ],
+   "waitedMs": 26,
+   "serverDelta": {
+    "datagrams": 0,
+    "bindingRequests": 0,
+    "fromSources": {}
+   }
+  },
+  {
+   "id": "S4-pref-overrides",
+   "kind": "raw-launch",
+   "stunUrl": "stun:127.0.0.1:57302",
+   "prefs": {
+    "media.peerconnection.ice.default_address_only": false,
+    "media.peerconnection.ice.proxy_only_if_behind_proxy": false
+   },
+   "rawCandidates": [
+    "candidate:0 1 UDP 2122187007 d9e922da-7275-4e79-a25a-d2e49e09a01b.local 33368 typ host",
+    "candidate:2 1 UDP 2122252543 345aa35e-d4b8-4b8f-90c9-6b78fcd8ebb9.local 38010 typ host",
+    "candidate:3 1 TCP 2105458943 d9e922da-7275-4e79-a25a-d2e49e09a01b.local 9 typ host tcptype active",
+    "candidate:4 1 TCP 2105524479 345aa35e-d4b8-4b8f-90c9-6b78fcd8ebb9.local 9 typ host tcptype active"
+   ],
+   "classified": [
+    {
+     "type": "host",
+     "address": "d9e922da-7275-4e79-a25a-d2e49e09a01b.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "345aa35e-d4b8-4b8f-90c9-6b78fcd8ebb9.local",
+     "addressKind": "mdns",
+     "protocol": "udp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "d9e922da-7275-4e79-a25a-d2e49e09a01b.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    },
+    {
+     "type": "host",
+     "address": "345aa35e-d4b8-4b8f-90c9-6b78fcd8ebb9.local",
+     "addressKind": "mdns",
+     "protocol": "tcp",
+     "valid": true
+    }
+   ],
+   "gatheringStates": [
+    {
+     "state": "gathering",
+     "atMs": 29
+    },
+    {
+     "state": "complete",
+     "atMs": 29
+    }
+   ],
+   "iceErrors": [
+    {
+     "url": "stun:127.0.0.1:57302",
+     "errorCode": 701,
+     "errorText": null,
+     "atMs": 28
+    }
+   ],
+   "waitedMs": 30,
+   "serverDelta": {
+    "datagrams": 0,
+    "bindingRequests": 0,
+    "fromSources": {}
+   }
+  },
+  {
+   "id": "S5-behind-app-proxy",
+   "kind": "app-controller",
+   "stunUrl": "stun:127.0.0.1:60799",
+   "rawCandidates": [],
+   "classified": [],
+   "gatheringStates": [
+    {
+     "state": "gathering",
+     "atMs": 28
+    },
+    {
+     "state": "complete",
+     "atMs": 148
+    }
+   ],
+   "iceErrors": [],
+   "waitedMs": 148,
+   "serverDelta": {
+    "datagrams": 0,
+    "bindingRequests": 0,
+    "fromSources": {}
+   },
+   "upstreamConnects": [
+    {
+     "target": "127.0.0.10:44311",
+     "at": "2026-10-21T15:47:00.497Z"
+    }
+   ]
+  }
+ ],
+ "notRun": {
+  "windows": "NOT_RUN — Linux lab binary only",
+  "publicStun": "NOT_RUN — no public STUN server is operated by this lab; only lab-controlled endpoints were consulted"
+ }
+}

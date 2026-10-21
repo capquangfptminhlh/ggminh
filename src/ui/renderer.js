@@ -70,6 +70,95 @@ const fieldFpCanvas = document.getElementById('field-fp-canvas');
 const fieldFpAudio = document.getElementById('field-fp-audio');
 const fieldFpWebrtc = document.getElementById('field-fp-webrtc');
 
+// First-run guidance for Camoufox identity provisioning. The main process
+// records the provisioning outcome on the saved profile
+// (fingerprint.identityProvisioning); these helpers turn that stored
+// status into an explanation plus a concrete next step, instead of the
+// save dialog closing silently (the pre-existing behaviour).
+function provisioningReasonText(reason) {
+  switch (reason) {
+    case 'engine-not-installed-or-unverified':
+      return 'engine Camoufox chưa được cài đặt hoặc chưa qua kiểm chứng trên máy này';
+    case 'generator-package-missing':
+      return 'thành phần sinh danh tính chưa sẵn sàng trong bản cài đặt này';
+    case 'no-verified-engine-resolver':
+      return 'ứng dụng chưa sẵn sàng kiểm chứng engine Camoufox';
+    case 'generator-failed':
+      return 'quá trình sinh danh tính gặp lỗi';
+    default:
+      return 'máy này chưa đủ điều kiện để cấp danh tính';
+  }
+}
+function provisioningSaveNotice(saved) {
+  if (!saved || saved.engine_type !== 'camoufox') return null;
+  const status = saved.fingerprint?.identityProvisioning;
+  if (status === 'provisioned') return 'Đã tạo hồ sơ Camoufox "' + saved.name + '" và cấp danh tính đã ghim: ' +
+    'một bộ thông số nhất quán (User-Agent, nền tảng, ngôn ngữ, múi giờ, màn hình) sinh bằng cơ chế ' +
+    'chính thức của Camoufox. Hồ sơ sẽ dùng đúng bộ danh tính này ở các lần mở sau.';
+  if (status === 'unavailable') return 'Đã tạo hồ sơ Camoufox "' + saved.name + '" nhưng chưa cấp được ' +
+    'danh tính đã ghim. Hồ sơ vẫn chạy bằng thông số gốc của engine, chưa có bộ danh tính riêng được ghim.\n' +
+    'Việc bạn có thể làm: mở hộp thoại "Engine" trên thanh công cụ để cài và kiểm chứng Camoufox, ' +
+    'sau đó bấm "Cấp danh tính" ngay tại hàng của hồ sơ này trong bảng hồ sơ. Nếu đã cài engine mà vẫn ' +
+    'chưa cấp được, hãy liên hệ bên bán để kiểm tra tình trạng engine.';
+  if (status === 'invalid') return 'Đã tạo hồ sơ Camoufox "' + saved.name + '" nhưng bộ danh tính vừa sinh ' +
+    'không qua được kiểm chứng nên ứng dụng không gắn vào hồ sơ; hồ sơ chạy bằng thông số gốc.\n' +
+    'Việc bạn có thể làm: bấm "Cấp danh tính" tại hàng của hồ sơ để thử lại. Nếu tình trạng lặp lại, ' +
+    'hãy liên hệ bên bán kèm theo thông báo này.';
+  return null;
+}
+function provisioningActionMessage(profile, result) {
+  const status = result?.status;
+  if (status === 'provisioned') return 'Đã cấp và ghim danh tính cho hồ sơ "' + profile.name + '". ' +
+    'Các lần mở sau sẽ dùng đúng bộ danh tính này.';
+  if (status === 'already-present') return 'Hồ sơ "' + profile.name + '" đã có danh tính đã ghim.';
+  if (status === 'invalid') return 'Không cấp được danh tính cho hồ sơ "' + profile.name + '": bộ danh tính ' +
+    'sinh ra không qua được kiểm chứng nên không được gắn.\n' +
+    'Hãy thử lại sau; nếu tình trạng lặp lại, hãy liên hệ bên bán kèm theo thông báo này.';
+  return 'Không cấp được danh tính cho hồ sơ "' + profile.name + '": ' +
+    provisioningReasonText(result?.reason) + '.\n' +
+    'Mở hộp thoại "Engine" trên thanh công cụ để cài và kiểm chứng Camoufox, rồi bấm "Cấp danh tính" thử lại.';
+}
+function identityMetaText(profile) {
+  const fp = profile.fingerprint || {};
+  if (profile.engine_type === 'camoufox') {
+    if (fp.identity) return 'Danh tính đã ghim';
+    if (fp.identityProvisioning === 'invalid') return 'Danh tính sinh ra không hợp lệ — chưa gắn';
+    return 'Chưa cấp danh tính đã ghim';
+  }
+  return fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh';
+}
+window.LHMFirstRunGuide = { provisioningSaveNotice, provisioningActionMessage, provisioningReasonText, identityMetaText };
+
+// Live Camoufox readiness hint inside the profile form. The static note
+// under the engine select cannot say whether THIS machine already has a
+// verified engine; this hint fills that gap when Camoufox is selected.
+let camoufoxHintEl = null;
+async function updateCamoufoxFormHint() {
+  const group = fieldBrowserEngine.closest('.form-group');
+  if (!group) return;
+  if (!camoufoxHintEl) {
+    camoufoxHintEl = document.createElement('p');
+    camoufoxHintEl.id = 'camoufox-form-hint';
+    camoufoxHintEl.setAttribute('role', 'status');
+    camoufoxHintEl.style.cssText = 'margin-top:6px;font-size:12px;color:#dba66f';
+    group.appendChild(camoufoxHintEl);
+  }
+  if (fieldBrowserEngine.value !== 'camoufox') { camoufoxHintEl.hidden = true; return; }
+  camoufoxHintEl.hidden = false;
+  camoufoxHintEl.textContent = 'Đang kiểm tra tình trạng engine Camoufox trên máy này…';
+  try {
+    const availability = await window.api.camoufoxInstallStatus();
+    if (fieldBrowserEngine.value !== 'camoufox') return; // selection changed meanwhile
+    camoufoxHintEl.textContent = availability.alreadyInstalled
+      ? 'Engine Camoufox đã cài và xác minh trên máy này: khi lưu hồ sơ, ứng dụng sẽ thử cấp một danh tính đã ghim cho hồ sơ.'
+      : availability.available
+        ? 'Máy này chưa cài Camoufox nhưng đã có bản được LHM ký để cài. Bạn vẫn tạo hồ sơ được ngay (chưa có danh tính đã ghim), hoặc mở hộp thoại "Engine" để cài trước rồi tạo hồ sơ sau.'
+        : 'Máy này chưa có engine Camoufox đã kiểm chứng: hồ sơ vẫn được tạo và chạy bằng thông số gốc, nhưng chưa cấp được danh tính đã ghim. Mở hộp thoại "Engine" để kiểm tra khả năng cài đặt, hoặc liên hệ bên bán nếu chưa có bản phát hành đã ký.';
+  } catch (_) {
+    camoufoxHintEl.textContent = 'Không kiểm tra được tình trạng engine Camoufox. Hồ sơ vẫn tạo được; kết quả cấp danh tính sẽ được thông báo sau khi lưu.';
+  }
+}
+
 // Init
 window.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
@@ -159,7 +248,7 @@ async function refreshBehaviorAlerts() {
   counter.hidden = report.alertCount === 0;
   trigger.classList.toggle('has-warning', report.alertCount > 0);
   document.getElementById('behavior-level').textContent =
-    report.level === 'high' ? 'Cần kiểm tra' : report.level === 'medium' ? 'Chú ý' : 'Bình thường';
+    report.level === 'high' ? 'Cần kiểm tra' : report.level === 'medium' ? 'Chú ý' : 'Chưa vượt ngưỡng';
   document.getElementById('behavior-activities').textContent = String(report.activities10m);
   document.getElementById('behavior-profiles').textContent = String(report.profileCount10m);
   renderBehaviorRows('behavior-alert-list', report.alerts, makeBehaviorAlert);
@@ -188,7 +277,8 @@ function setupEventListeners() {
     fpAuditResults.textContent = 'Đang chẩn đoán...';
     try {
       const audit = await window.api.inspectFingerprint({
-        engine: fieldBrowserEngine.value, fingerprint: selectedFingerprintConfig()
+        engine:fieldBrowserEngine.value==='chromium'?'chromium':'gecko',
+        fingerprint:selectedFingerprintConfig()
       });
       fpAuditResults.replaceChildren();
       const title = document.createElement('div');
@@ -209,10 +299,11 @@ function setupEventListeners() {
     } catch (error) { fpAuditResults.textContent = 'Kiểm tra thất bại: ' + error.message; }
   });
   fieldBrowserEngine.addEventListener('change', () => {
-    const gecko = fieldBrowserEngine.value === 'gecko';
-    geckoPathControl.hidden = !gecko;
+    const gecko = fieldBrowserEngine.value !== 'chromium';
+    geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
     if (gecko) setFingerprintMode('native');
     fieldFpMode.disabled = gecko;
+    updateCamoufoxFormHint();
   });
   document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
     await refreshBehaviorAlerts();
@@ -234,7 +325,7 @@ function setupEventListeners() {
   });
   document.getElementById('btn-api-copy').addEventListener('click', async () => {
     try { await window.api.copyApiKey(); alert('Đã sao chép API Key vào clipboard. Không chia sẻ với người khác.'); }
-    catch (error) { alert(error.message); }
+    catch (error) { alert('Không sao chép được API Key: ' + error.message + '\nKiểm tra Local API đang bật rồi thử lại.'); }
   });
   // Proxy Type Toggle
   fieldProxyType.addEventListener('change', () => {
@@ -312,7 +403,8 @@ function setupEventListeners() {
     const profile = {
       id: fieldId.value || undefined,
       name,
-      engine: fieldBrowserEngine.value,
+      engine:fieldBrowserEngine.value==='chromium'?'chromium':'gecko',
+      engine_type:fieldBrowserEngine.value==='gecko'?'firefox':fieldBrowserEngine.value,
       group: fieldGroup.value.trim() || 'Default',
       startUrls: parseStartupUrls(fieldStartUrl.value),
       tags: parseTags(fieldTags.value),
@@ -327,16 +419,24 @@ function setupEventListeners() {
       fingerprint: selectedFingerprintConfig()
     };
 
+    const isCreate = !fieldId.value;
+    let savedProfile = null;
     try {
       if (fieldBrowserEngine.value === 'gecko' && fieldGeckoPath.value.trim()) {
         await window.api.saveSettings({ geckoPath: fieldGeckoPath.value.trim() });
       }
-      await window.api.saveProfile(profile);
+      savedProfile = await window.api.saveProfile(profile);
     }
     catch (error) { alert('Không lưu được hồ sơ: ' + error.message); return; }
     closeModal(modalProfile);
     await loadProfiles();
     await refreshBehaviorAlerts();
+    // A new Camoufox profile always gets a provisioning verdict; surface
+    // it instead of closing silently (see LHMFirstRunGuide above).
+    if (isCreate) {
+      const notice = provisioningSaveNotice(savedProfile);
+      if (notice) alert(notice);
+    }
   });
 
   // Select all currently visible (filtered) profiles.
@@ -375,7 +475,10 @@ async function openProfileModal(existingProfile = null) {
   if (existingProfile) {
     document.getElementById('modal-title').textContent = 'Chỉnh sửa Profile';
     fieldId.value = existingProfile.id;
-    fieldBrowserEngine.value = existingProfile.engine === 'gecko' ? 'gecko' : 'chromium';
+    fieldBrowserEngine.value=(existingProfile.engine_type==='camoufox'||
+      !existingProfile.engine_type&&existingProfile.engine==='gecko'&&
+      settings.geckoProvider==='camoufox')?
+      'camoufox':existingProfile.engine==='gecko'?'gecko':'chromium';
     fieldName.value = existingProfile.name;
     fieldGroup.value = existingProfile.group || 'Default';
     fieldStartUrl.value = (existingProfile.startUrls || [existingProfile.startUrl || 'https://ads.google.com/']).join('\n');
@@ -409,8 +512,9 @@ async function openProfileModal(existingProfile = null) {
     setFingerprintMode('native');
   }
   geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
-  fieldFpMode.disabled = fieldBrowserEngine.value === 'gecko';
+  fieldFpMode.disabled = fieldBrowserEngine.value !== 'chromium';
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
+  updateCamoufoxFormHint();
   openModal(modalProfile);
 }
 
@@ -421,7 +525,7 @@ function parseTags(value) {
   return value.split(',').map(tag => tag.trim()).filter(Boolean);
 }
 function selectedFingerprintConfig() {
-  if (fieldFpMode.value === 'native' || fieldBrowserEngine.value === 'gecko')
+  if (fieldFpMode.value === 'native' || fieldBrowserEngine.value !== 'chromium')
     return { mode: 'native' };
   const [width,height] = fieldFpScreen.value.split('x').map(Number);
   return {
@@ -538,6 +642,19 @@ function renderProfiles() {
 
   if (filtered.length === 0) {
     emptyState.style.display = 'block';
+    // The static markup text describes a fresh install; when profiles
+    // exist but the search/filters hide all of them, say that instead.
+    const emptyTitle = emptyState.querySelector('h3');
+    const emptyCopy = emptyState.querySelector('p');
+    if (allProfiles.length === 0) {
+      if (emptyTitle) emptyTitle.textContent = 'Chưa có hồ sơ';
+      if (emptyCopy) emptyCopy.textContent = 'Bấm "Tạo hồ sơ" trên thanh công cụ để tạo hồ sơ đầu tiên. ' +
+        'Nếu định dùng Camoufox, hãy mở hộp thoại "Engine" trước để cài và kiểm chứng engine trên máy này.';
+    } else {
+      if (emptyTitle) emptyTitle.textContent = 'Không có hồ sơ nào khớp';
+      if (emptyCopy) emptyCopy.textContent = 'Không có hồ sơ nào khớp từ khóa hoặc bộ lọc hiện tại. ' +
+        'Thử xóa từ khóa tìm kiếm hoặc đặt các bộ lọc về "Tất cả".';
+    }
     document.getElementById('select-all').checked = false;
     document.getElementById('select-all').indeterminate = false;
     window.LHMControlTower?.updateSelection();
@@ -557,11 +674,12 @@ function renderProfiles() {
       <td data-table-col="id"><code class="profile-id">${escapeHtml(profile.id)}</code></td>
       <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
-      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine === 'gecko' ? 'Firefox / Gecko' : 'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
+      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span></div></td>
       <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
         <button type="button" class="btn btn-sm btn-secondary btn-health lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Kiểm tra cấu hình" aria-label="Kiểm tra cấu hình"><span data-lhm-icon="shield-check"></span></button>
+        ${profile.engine_type === 'camoufox' && !fp.identity ? '<button type="button" class="btn btn-sm btn-secondary btn-provision" data-id="' + escapeHtml(profile.id) + '" title="Cấp danh tính đã ghim cho hồ sơ Camoufox này">Cấp danh tính</button>' : ''}
         <button type="button" class="btn btn-sm btn-secondary btn-copy-rpa lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Tùy chọn RPA" aria-label="Tùy chọn RPA"><span data-lhm-icon="terminal"></span></button>
         <button type="button" class="btn btn-sm btn-secondary btn-edit lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Sửa hồ sơ" aria-label="Sửa hồ sơ"><span data-lhm-icon="edit"></span></button>
         <button type="button" class="btn btn-sm btn-secondary btn-delete lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Xóa hồ sơ" aria-label="Xóa hồ sơ"><span data-lhm-icon="trash"></span></button>
@@ -588,6 +706,18 @@ function renderProfiles() {
     });
 
     tr.querySelector('.btn-health').addEventListener('click', () => window.LHMMaintenance.showHealth(profile.id));
+    const btnProvision = tr.querySelector('.btn-provision');
+    if (btnProvision) btnProvision.addEventListener('click', async () => {
+      btnProvision.disabled = true;
+      try {
+        const result = await window.api.provisionCamoufoxIdentity(profile.id);
+        alert(provisioningActionMessage(profile, result));
+      } catch (error) {
+        alert('Không cấp được danh tính cho hồ sơ "' + profile.name + '": ' + error.message + '\n' +
+          'Mở hộp thoại "Engine" trên thanh công cụ để kiểm tra engine Camoufox, rồi thử lại.');
+      }
+      await loadProfiles();
+    });
     const btnRpa = tr.querySelector('.btn-copy-rpa');
     if (profile.engine === 'gecko') {
       btnRpa.disabled = true;

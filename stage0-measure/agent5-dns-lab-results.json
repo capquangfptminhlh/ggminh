@@ -1,0 +1,803 @@
+{
+ "status": "RAN",
+ "tier": "real engine (lab Camoufox binary), loopback, direct — not the packaged app, not Windows, not the proxy path",
+ "commit": "07150d6f4e85ed26d26fc1895a811f58b8588a35",
+ "engine": {
+  "path": "/home/hatch/tmp-big/cfx-build/camoufox-bin",
+  "sha256": "2a2cb03f6ca4cfa96cdb9d0991b52f4dc02d7f097d3253d355f6a6361ce28669"
+ },
+ "os": "linux 7.0.0-39-generic",
+ "node": "v24.20.0",
+ "startedAt": "2026-10-21T14:55:56.432Z",
+ "finishedAt": "2026-10-21T14:56:35.584Z",
+ "zone": "a5dns.test",
+ "resolverRedirection": {
+  "mechanism": "mount namespace bind-mount of /etc/resolv.conf (host file never modified; verified unchanged after runs)",
+  "resolvConf": "nameserver 127.0.0.1 + options use-vc timeout:2 attempts:2",
+  "transportsBound": [
+   "udp/53",
+   "tcp/53"
+  ],
+  "useVcReason": "this sandbox does not deliver UDP loopback (raw Node and Python probes, DNS-LAB.md); glibc is therefore told to use TCP. On hosts with working UDP the lab receives UDP normally and use-vc is unnecessary."
+ },
+ "upstreamProbe": {
+  "upstream": "198.19.0.1",
+  "reachable": false,
+  "note": "no answer to a UDP probe within 1500ms — forwarding disabled for this run; out-of-zone queries are REFUSED fast and logged, not timed out"
+ },
+ "browserEnv": "sandbox egress proxy variables (*_PROXY) removed for the browser process only — see the hygiene note in the runner source; with them present, a control run produced zero lab queries and NS_ERROR_NET_RESET (names resolved at the sandbox proxy, not by the profile runtime)",
+ "variants": [
+  {
+   "variant": "default",
+   "prefsApplied": null,
+   "label": "2d441a2c",
+   "navError": null,
+   "pageReport": {
+    "label": "2d441a2c",
+    "states": {
+     "img": true,
+     "frame": true
+    },
+    "jsLoaded": true,
+    "api": true,
+    "resources": [
+     "http://css.2d441a2c.a5dns.test:34593/r/style.css",
+     "http://img.2d441a2c.a5dns.test:34593/r/pixel.gif",
+     "http://js.2d441a2c.a5dns.test:34593/r/app.js",
+     "http://frame.2d441a2c.a5dns.test:34593/r/frame.html",
+     "http://www.2d441a2c.a5dns.test:34593/favicon.ico"
+    ],
+    "at": "2026-10-21T14:56:15.439Z"
+   },
+   "resolutionSequence": [
+    "_34593._https.www.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "www.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "www.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "www.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "www.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "www.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "prefetch.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "prefetch.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "prefetch.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.css.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "css.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "css.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "css.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "css.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "css.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.js.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "js.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "js.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "js.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "js.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "js.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.frame.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "frame.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "frame.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "frame.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "frame.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "frame.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.img.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "img.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "img.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "img.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "img.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "img.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.api.2d441a2c.a5dns.test HTTPS [tcp] nodata",
+    "api.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "api.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "api.2d441a2c.a5dns.test AAAA [tcp] nodata",
+    "api.2d441a2c.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "api.2d441a2c.a5dns.test AAAA [tcp] nodata"
+   ],
+   "perName": {
+    "www": {
+     "qname": "www.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.www.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:13.786Z"
+      },
+      {
+       "qname": "www.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:13.798Z"
+      },
+      {
+       "qname": "www.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:13.799Z"
+      },
+      {
+       "qname": "www.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:13.799Z"
+      },
+      {
+       "qname": "www.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:13.858Z"
+      },
+      {
+       "qname": "www.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:13.859Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "css": {
+     "qname": "css.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.css.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.132Z"
+      },
+      {
+       "qname": "css.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.132Z"
+      },
+      {
+       "qname": "css.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.133Z"
+      },
+      {
+       "qname": "css.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.176Z"
+      },
+      {
+       "qname": "css.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.206Z"
+      },
+      {
+       "qname": "css.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.211Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "js": {
+     "qname": "js.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.js.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.232Z"
+      },
+      {
+       "qname": "js.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.242Z"
+      },
+      {
+       "qname": "js.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.243Z"
+      },
+      {
+       "qname": "js.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.245Z"
+      },
+      {
+       "qname": "js.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.261Z"
+      },
+      {
+       "qname": "js.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.261Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "img": {
+     "qname": "img.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.img.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.378Z"
+      },
+      {
+       "qname": "img.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.381Z"
+      },
+      {
+       "qname": "img.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.383Z"
+      },
+      {
+       "qname": "img.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.383Z"
+      },
+      {
+       "qname": "img.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.401Z"
+      },
+      {
+       "qname": "img.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.403Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "api": {
+     "qname": "api.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.api.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:15.408Z"
+      },
+      {
+       "qname": "api.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:15.410Z"
+      },
+      {
+       "qname": "api.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:15.413Z"
+      },
+      {
+       "qname": "api.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:15.425Z"
+      },
+      {
+       "qname": "api.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:15.426Z"
+      },
+      {
+       "qname": "api.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:15.428Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "frame": {
+     "qname": "frame.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.frame.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.279Z"
+      },
+      {
+       "qname": "frame.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.287Z"
+      },
+      {
+       "qname": "frame.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.288Z"
+      },
+      {
+       "qname": "frame.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.295Z"
+      },
+      {
+       "qname": "frame.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.296Z"
+      },
+      {
+       "qname": "frame.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.296Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "prefetch": {
+     "qname": "prefetch.2d441a2c.a5dns.test",
+     "queries": [
+      {
+       "qname": "prefetch.2d441a2c.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.008Z"
+      },
+      {
+       "qname": "prefetch.2d441a2c.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:14.017Z"
+      },
+      {
+       "qname": "prefetch.2d441a2c.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:14.017Z"
+      }
+     ],
+     "httpHit": false
+    }
+   },
+   "externalQueries": []
+  },
+  {
+   "variant": "trr-off",
+   "prefsApplied": {
+    "network.trr.mode": 5
+   },
+   "label": "3f342c87",
+   "navError": null,
+   "pageReport": {
+    "label": "3f342c87",
+    "states": {
+     "img": true,
+     "frame": true
+    },
+    "jsLoaded": true,
+    "api": true,
+    "resources": [
+     "http://css.3f342c87.a5dns.test:34593/r/style.css",
+     "http://img.3f342c87.a5dns.test:34593/r/pixel.gif",
+     "http://js.3f342c87.a5dns.test:34593/r/app.js",
+     "http://frame.3f342c87.a5dns.test:34593/r/frame.html",
+     "http://www.3f342c87.a5dns.test:34593/favicon.ico"
+    ],
+    "at": "2026-10-21T14:56:32.291Z"
+   },
+   "resolutionSequence": [
+    "_34593._https.www.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "www.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "www.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "www.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "www.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "www.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "prefetch.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "prefetch.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "prefetch.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.frame.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "frame.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "frame.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "frame.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "frame.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "frame.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.css.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "css.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "css.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "css.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "css.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "css.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.js.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "js.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "js.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "js.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "js.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "js.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.img.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "img.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "img.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "img.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "img.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "img.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "_34593._https.api.3f342c87.a5dns.test HTTPS [tcp] nodata",
+    "api.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "api.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "api.3f342c87.a5dns.test AAAA [tcp] nodata",
+    "api.3f342c87.a5dns.test A [tcp] answer-a-127.0.0.1",
+    "api.3f342c87.a5dns.test AAAA [tcp] nodata"
+   ],
+   "perName": {
+    "www": {
+     "qname": "www.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.www.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:30.683Z"
+      },
+      {
+       "qname": "www.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:30.684Z"
+      },
+      {
+       "qname": "www.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:30.687Z"
+      },
+      {
+       "qname": "www.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:30.687Z"
+      },
+      {
+       "qname": "www.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:30.708Z"
+      },
+      {
+       "qname": "www.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:30.712Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "css": {
+     "qname": "css.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.css.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.306Z"
+      },
+      {
+       "qname": "css.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.306Z"
+      },
+      {
+       "qname": "css.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.307Z"
+      },
+      {
+       "qname": "css.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.307Z"
+      },
+      {
+       "qname": "css.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.309Z"
+      },
+      {
+       "qname": "css.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.309Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "js": {
+     "qname": "js.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.js.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.313Z"
+      },
+      {
+       "qname": "js.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.314Z"
+      },
+      {
+       "qname": "js.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.314Z"
+      },
+      {
+       "qname": "js.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.314Z"
+      },
+      {
+       "qname": "js.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.316Z"
+      },
+      {
+       "qname": "js.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.317Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "img": {
+     "qname": "img.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.img.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.326Z"
+      },
+      {
+       "qname": "img.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.334Z"
+      },
+      {
+       "qname": "img.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.336Z"
+      },
+      {
+       "qname": "img.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.340Z"
+      },
+      {
+       "qname": "img.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.341Z"
+      },
+      {
+       "qname": "img.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.345Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "api": {
+     "qname": "api.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.api.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:32.206Z"
+      },
+      {
+       "qname": "api.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:32.206Z"
+      },
+      {
+       "qname": "api.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:32.206Z"
+      },
+      {
+       "qname": "api.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:32.206Z"
+      },
+      {
+       "qname": "api.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:32.215Z"
+      },
+      {
+       "qname": "api.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:32.216Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "frame": {
+     "qname": "frame.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "_34593._https.frame.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.294Z"
+      },
+      {
+       "qname": "frame.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.295Z"
+      },
+      {
+       "qname": "frame.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.295Z"
+      },
+      {
+       "qname": "frame.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.296Z"
+      },
+      {
+       "qname": "frame.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.302Z"
+      },
+      {
+       "qname": "frame.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.303Z"
+      }
+     ],
+     "httpHit": true
+    },
+    "prefetch": {
+     "qname": "prefetch.3f342c87.a5dns.test",
+     "queries": [
+      {
+       "qname": "prefetch.3f342c87.a5dns.test",
+       "qtypeName": "HTTPS",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.239Z"
+      },
+      {
+       "qname": "prefetch.3f342c87.a5dns.test",
+       "qtypeName": "A",
+       "transport": "tcp",
+       "action": "answer-a-127.0.0.1",
+       "at": "2026-10-21T14:56:31.240Z"
+      },
+      {
+       "qname": "prefetch.3f342c87.a5dns.test",
+       "qtypeName": "AAAA",
+       "transport": "tcp",
+       "action": "nodata",
+       "at": "2026-10-21T14:56:31.240Z"
+      }
+     ],
+     "httpHit": false
+    }
+   },
+   "externalQueries": []
+  }
+ ],
+ "notRun": {
+  "proxyPathDns": "NOT_RUN — no controlled proxy in this lab; whether profile DNS follows the proxy route (the 4.1 handling decision) needs the proxy lab / SOCKS-UDP or proxy-side resolver observation",
+  "dohBehaviour": "NOT_RUN — whether this build attempts DNS-over-HTTPS for names it cannot resolve natively is not observable from the resolver log alone (DoH bypasses resolv.conf); needs a trusted DoH endpoint or packet capture",
+  "udpTransportHere": "NOT_RUN in this sandbox — UDP loopback undelivered (probe evidence); the lab server implements UDP and its UDP battery runs where the transport works",
+  "windowsExe": "NOT_RUN — acceptance environment is the installed Windows EXE (Constitution 12, gate 3)"
+ }
+}

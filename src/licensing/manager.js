@@ -88,7 +88,15 @@ class LicenseManager{
   if(oldClock&&(!Number.isSafeInteger(oldClock.highestSeen)||oldClock.highestSeen<0))
    throw Error('License clock metadata invalid');
   this.highestSeen=oldClock?.highestSeen||0;
-  const record=readJson(this.tokenFile);
+  // A syntactically corrupt activation file must fail closed as an
+  // 'invalid' license state, not crash construction with a raw
+  // SyntaxError (main.js builds this manager unguarded at startup).
+  let record=null;
+  try{record=readJson(this.tokenFile);}
+  catch(error){
+   if(!(error instanceof SyntaxError))throw error;
+   this.tokenFileCorrupt=true;
+  }
   this.token=typeof record?.token==='string'?record.token:null;
  }
  clockStatus(){
@@ -106,6 +114,7 @@ class LicenseManager{
   const base={installationId:this.installationId,active:false,
    status:'inactive',plan:null,expiresAt:null,remainingDays:0,maxProfiles:null,features:[]};
   if(!measured.ok)return {...base,status:'clock_error'};
+  if(this.tokenFileCorrupt)return {...base,status:'invalid'};
   if(!this.token)return base;
   try{
    const c=verifyLicense(this.token,this.publicKey);
@@ -130,6 +139,7 @@ class LicenseManager{
   try{
    writeAtomic(this.tokenFile,{version:1,token:token.trim()});
    this.token=token.trim();
+   this.tokenFileCorrupt=false;
   }catch(error){this.token=previous;throw error;}
   return this.status();
  }
@@ -138,6 +148,7 @@ class LicenseManager{
   // revocation requires an online entitlement service.
   writeAtomic(this.tokenFile,{version:1,token:null});
   this.token=null;
+  this.tokenFileCorrupt=false;
   return this.status();
  }
 }

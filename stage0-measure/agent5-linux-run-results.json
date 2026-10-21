@@ -1,0 +1,780 @@
+{
+  "classification": "AGENT5_LINUX_REAL_ENGINE_PROBE (direct playwright-core launch; app controller NOT used; not Windows acceptance)",
+  "executedAt": "2026-10-21T14:11:33.990Z",
+  "repoHead": "8349f38b829a133ab53bc4b0a874c3f7b4ff8b22 + agent-5/runtime-measure working tree",
+  "executable": "/home/hatch/tmp-big/cfx-build/camoufox",
+  "profileA": {
+    "tag": "a",
+    "expectations": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+      "platform": "Win32",
+      "language": "en-US",
+      "timezone": "America/New_York",
+      "screenWidth": 3440,
+      "screenHeight": 1440,
+      "hardwareConcurrency": 4,
+      "webglVendor": "Google Inc. (Intel)",
+      "webglRenderer": "ANGLE (Intel, Intel(R) HD Graphics 400 Direct3D11 vs_5_0 ps_5_0), or similar"
+    },
+    "base": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+      "platform": "Win32",
+      "language": "en-US",
+      "languages": [
+        "en-US",
+        "en"
+      ],
+      "hardwareConcurrency": 4,
+      "screen": {
+        "width": 3440,
+        "height": 1440,
+        "colorDepth": 24
+      },
+      "devicePixelRatio": 1,
+      "timezone": "America/New_York",
+      "hasUserAgentData": false,
+      "isSecureContext": true
+    },
+    "identityMatch": {
+      "fields": {
+        "userAgent": {
+          "expected": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+          "observed": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+          "match": true
+        },
+        "platform": {
+          "expected": "Win32",
+          "observed": "Win32",
+          "match": true
+        },
+        "language": {
+          "expected": "en-US",
+          "observed": "en-US",
+          "match": true
+        },
+        "timezone": {
+          "expected": "America/New_York",
+          "observed": "America/New_York",
+          "match": true
+        },
+        "hardwareConcurrency": {
+          "expected": 4,
+          "observed": 4,
+          "match": true
+        },
+        "screenWidth": {
+          "expected": 3440,
+          "observed": 3440,
+          "match": true
+        },
+        "screenHeight": {
+          "expected": 1440,
+          "observed": 1440,
+          "match": true
+        }
+      },
+      "compared": 7,
+      "pass": true
+    },
+    "webglMatch": {
+      "fields": {
+        "webglVendor": {
+          "expected": "Google Inc. (Intel)",
+          "observed": null,
+          "match": null
+        },
+        "webglRenderer": {
+          "expected": "ANGLE (Intel, Intel(R) HD Graphics 400 Direct3D11 vs_5_0 ps_5_0), or similar",
+          "observed": null,
+          "match": null
+        }
+      },
+      "compared": 0,
+      "pass": false,
+      "status": "UNSUPPORTED"
+    },
+    "points": {
+      "webgl.vendorRenderer": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.extensions": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.parameters": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.shaderPrecision": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.renderHash": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "canvas2d.hash": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "pixelHash": "171044c7",
+          "dataUrlHash": "a8fabe62",
+          "decodedPixelHash": "171044c7",
+          "exportsConsistent": true
+        }
+      },
+      "canvas2d.fontMetrics": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "sans-serif": {
+            "width": 574.7666625976562,
+            "actualBoundingBoxAscent": 25,
+            "actualBoundingBoxDescent": 0
+          },
+          "serif": {
+            "width": 574.7666625976562,
+            "actualBoundingBoxAscent": 25,
+            "actualBoundingBoxDescent": 0
+          },
+          "monospace": {
+            "width": 574.7666625976562,
+            "actualBoundingBoxAscent": 25,
+            "actualBoundingBoxDescent": 0
+          }
+        }
+      },
+      "audio.basic": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "sampleRate": 44100,
+          "state": "suspended",
+          "baseLatency": 0,
+          "outputLatency": 0,
+          "maxChannelCount": 0,
+          "channelCount": 2
+        }
+      },
+      "audio.offlineHash": {
+        "row": "4.3",
+        "status": "BLOCKED",
+        "error": "Error: Accessing TypedArray data over Xrays is slow, and forbidden in order to encourage performant code. To copy TypedArrays a"
+      },
+      "fonts.detected": {
+        "row": "4.4",
+        "status": "MEASURED",
+        "value": {
+          "tested": 45,
+          "detected": [
+            "Arial",
+            "Arial Black",
+            "Calibri",
+            "Cambria",
+            "Candara",
+            "Comic Sans MS",
+            "Consolas",
+            "Courier New",
+            "Georgia",
+            "Helvetica",
+            "Impact",
+            "Lucida Console",
+            "Lucida Sans Unicode",
+            "Microsoft Sans Serif",
+            "Palatino Linotype",
+            "Segoe UI",
+            "Segoe UI Symbol",
+            "Tahoma",
+            "Times New Roman",
+            "Trebuchet MS",
+            "Verdana",
+            "Courier",
+            "MS Gothic",
+            "MS PGothic",
+            "Malgun Gothic",
+            "SimSun",
+            "Microsoft YaHei",
+            "Microsoft JhengHei",
+            "Wingdings"
+          ],
+          "methodNote": "Width-comparison probing result only; not the machine full font inventory (Constitution Section 18)."
+        }
+      },
+      "media.devices": {
+        "row": "4.4",
+        "status": "MEASURED",
+        "value": {
+          "total": 1,
+          "byKind": {
+            "audioinput": 1
+          },
+          "labelsPresent": 0,
+          "labelsEmpty": 1,
+          "groupIdsPresent": 0
+        }
+      },
+      "media.voices": {
+        "row": "4.4",
+        "status": "MEASURED",
+        "value": {
+          "count": 5,
+          "voices": [
+            {
+              "name": "Microsoft David - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Mark - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Zira - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft David Desktop - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Zira Desktop - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            }
+          ]
+        }
+      },
+      "clientHints.low": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "clientHints.high": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "navigator.misc": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "webdriver": false,
+          "oscpu": "Windows NT 10.0; Win64; x64",
+          "deviceMemory": null,
+          "maxTouchPoints": 0,
+          "cookieEnabled": true,
+          "doNotTrack": "unspecified",
+          "globalPrivacyControl": false,
+          "pdfViewerEnabled": true,
+          "vendor": "",
+          "plugins": [
+            "PDF Viewer",
+            "Chrome PDF Viewer",
+            "Chromium PDF Viewer",
+            "Microsoft Edge PDF Viewer",
+            "WebKit built-in PDF"
+          ],
+          "pluginsCount": 5,
+          "mimeTypesCount": 2,
+          "connection": null
+        }
+      },
+      "navigator.storageEstimate": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "estimate": {
+            "quota": 53687091,
+            "usage": 0
+          },
+          "persisted": false
+        }
+      },
+      "navigator.permissions": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "notifications": "prompt",
+          "geolocation": "prompt",
+          "camera": "prompt",
+          "microphone": "prompt",
+          "clipboard-read": "error:TypeError",
+          "clipboard-write": "error:TypeError"
+        }
+      },
+      "navigator.keyboard": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "navigator.battery": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "window.metrics": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "outerWidth": 1280,
+          "outerHeight": 806,
+          "availWidth": 3440,
+          "availHeight": 1392,
+          "pixelDepth": 24
+        }
+      },
+      "locale.formats": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "locale": "en-US",
+          "calendar": "gregory",
+          "numberingSystem": "latn",
+          "dateSample": "Tuesday, December 31, 2024 at 7:00:00 PM EST",
+          "numberSample": "1,234,567.89"
+        }
+      },
+      "display.mediaQueries": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "prefersDark": false,
+          "prefersLight": true,
+          "reducedMotion": false,
+          "forcedColors": false,
+          "contrastMore": false
+        }
+      },
+      "offscreenCanvas": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "available": true,
+          "context2d": true
+        }
+      }
+    },
+    "counts": {
+      "MEASURED": 13,
+      "UNSUPPORTED": 9,
+      "BLOCKED": 1
+    },
+    "total": 23
+  },
+  "profileB": {
+    "tag": "b",
+    "expectations": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+      "platform": "Win32",
+      "language": "vi-VN",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "screenWidth": 1382,
+      "screenHeight": 864,
+      "hardwareConcurrency": 4,
+      "webglVendor": "Google Inc. (NVIDIA)",
+      "webglRenderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar"
+    },
+    "base": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+      "platform": "Win32",
+      "language": "vi-VN",
+      "languages": [
+        "vi-VN",
+        "vi"
+      ],
+      "hardwareConcurrency": 4,
+      "screen": {
+        "width": 1382,
+        "height": 864,
+        "colorDepth": 24
+      },
+      "devicePixelRatio": 1,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "hasUserAgentData": false,
+      "isSecureContext": true
+    },
+    "identityMatch": {
+      "fields": {
+        "userAgent": {
+          "expected": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+          "observed": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+          "match": true
+        },
+        "platform": {
+          "expected": "Win32",
+          "observed": "Win32",
+          "match": true
+        },
+        "language": {
+          "expected": "vi-VN",
+          "observed": "vi-VN",
+          "match": true
+        },
+        "timezone": {
+          "expected": "Asia/Ho_Chi_Minh",
+          "observed": "Asia/Ho_Chi_Minh",
+          "match": true
+        },
+        "hardwareConcurrency": {
+          "expected": 4,
+          "observed": 4,
+          "match": true
+        },
+        "screenWidth": {
+          "expected": 1382,
+          "observed": 1382,
+          "match": true
+        },
+        "screenHeight": {
+          "expected": 864,
+          "observed": 864,
+          "match": true
+        }
+      },
+      "compared": 7,
+      "pass": true
+    },
+    "webglMatch": {
+      "fields": {
+        "webglVendor": {
+          "expected": "Google Inc. (NVIDIA)",
+          "observed": null,
+          "match": null
+        },
+        "webglRenderer": {
+          "expected": "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar",
+          "observed": null,
+          "match": null
+        }
+      },
+      "compared": 0,
+      "pass": false,
+      "status": "UNSUPPORTED"
+    },
+    "points": {
+      "webgl.vendorRenderer": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.extensions": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.parameters": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.shaderPrecision": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "webgl.renderHash": {
+        "row": "4.3",
+        "status": "UNSUPPORTED"
+      },
+      "canvas2d.hash": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "pixelHash": "171044c7",
+          "dataUrlHash": "e015b502",
+          "decodedPixelHash": "171044c7",
+          "exportsConsistent": true
+        }
+      },
+      "canvas2d.fontMetrics": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "sans-serif": {
+            "width": 574.7666625976562,
+            "actualBoundingBoxAscent": 25,
+            "actualBoundingBoxDescent": 0
+          },
+          "serif": {
+            "width": 574.7666625976562,
+            "actualBoundingBoxAscent": 25,
+            "actualBoundingBoxDescent": 0
+          },
+          "monospace": {
+            "width": 574.7666625976562,
+            "actualBoundingBoxAscent": 25,
+            "actualBoundingBoxDescent": 0
+          }
+        }
+      },
+      "audio.basic": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "sampleRate": 44100,
+          "state": "suspended",
+          "baseLatency": 0,
+          "outputLatency": 0,
+          "maxChannelCount": 0,
+          "channelCount": 2
+        }
+      },
+      "audio.offlineHash": {
+        "row": "4.3",
+        "status": "BLOCKED",
+        "error": "Error: Accessing TypedArray data over Xrays is slow, and forbidden in order to encourage performant code. To copy TypedArrays a"
+      },
+      "fonts.detected": {
+        "row": "4.4",
+        "status": "MEASURED",
+        "value": {
+          "tested": 45,
+          "detected": [
+            "Arial",
+            "Arial Black",
+            "Calibri",
+            "Cambria",
+            "Candara",
+            "Comic Sans MS",
+            "Consolas",
+            "Courier New",
+            "Georgia",
+            "Helvetica",
+            "Impact",
+            "Lucida Console",
+            "Lucida Sans Unicode",
+            "Microsoft Sans Serif",
+            "Palatino Linotype",
+            "Segoe UI",
+            "Segoe UI Symbol",
+            "Tahoma",
+            "Times New Roman",
+            "Trebuchet MS",
+            "Verdana",
+            "Courier",
+            "MS Gothic",
+            "MS PGothic",
+            "Malgun Gothic",
+            "SimSun",
+            "Microsoft YaHei",
+            "Microsoft JhengHei",
+            "Wingdings"
+          ],
+          "methodNote": "Width-comparison probing result only; not the machine full font inventory (Constitution Section 18)."
+        }
+      },
+      "media.devices": {
+        "row": "4.4",
+        "status": "MEASURED",
+        "value": {
+          "total": 2,
+          "byKind": {
+            "audioinput": 1,
+            "videoinput": 1
+          },
+          "labelsPresent": 0,
+          "labelsEmpty": 2,
+          "groupIdsPresent": 0
+        }
+      },
+      "media.voices": {
+        "row": "4.4",
+        "status": "MEASURED",
+        "value": {
+          "count": 8,
+          "voices": [
+            {
+              "name": "Microsoft David - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Mark - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Zira - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Hedda - German (Germany)",
+              "lang": "de-DE",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Katja - German (Germany)",
+              "lang": "de-DE",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Stefan - German (Germany)",
+              "lang": "de-DE",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft David Desktop - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            },
+            {
+              "name": "Microsoft Zira Desktop - English (United States)",
+              "lang": "en-US",
+              "default": false,
+              "localService": true
+            }
+          ]
+        }
+      },
+      "clientHints.low": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "clientHints.high": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "navigator.misc": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "webdriver": false,
+          "oscpu": "Windows NT 10.0; Win64; x64",
+          "deviceMemory": null,
+          "maxTouchPoints": 0,
+          "cookieEnabled": true,
+          "doNotTrack": "unspecified",
+          "globalPrivacyControl": false,
+          "pdfViewerEnabled": true,
+          "vendor": "",
+          "plugins": [
+            "PDF Viewer",
+            "Chrome PDF Viewer",
+            "Chromium PDF Viewer",
+            "Microsoft Edge PDF Viewer",
+            "WebKit built-in PDF"
+          ],
+          "pluginsCount": 5,
+          "mimeTypesCount": 2,
+          "connection": null
+        }
+      },
+      "navigator.storageEstimate": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "estimate": {
+            "quota": 53687091,
+            "usage": 0
+          },
+          "persisted": false
+        }
+      },
+      "navigator.permissions": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "notifications": "prompt",
+          "geolocation": "prompt",
+          "camera": "prompt",
+          "microphone": "prompt",
+          "clipboard-read": "error:TypeError",
+          "clipboard-write": "error:TypeError"
+        }
+      },
+      "navigator.keyboard": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "navigator.battery": {
+        "row": "4.2",
+        "status": "UNSUPPORTED"
+      },
+      "window.metrics": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "outerWidth": 1280,
+          "outerHeight": 806,
+          "availWidth": 1382,
+          "availHeight": 816,
+          "pixelDepth": 24
+        }
+      },
+      "locale.formats": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "locale": "en-US",
+          "calendar": "gregory",
+          "numberingSystem": "latn",
+          "dateSample": "Wednesday, January 1, 2025 at 7:00:00 AM GMT+7",
+          "numberSample": "1,234,567.89"
+        }
+      },
+      "display.mediaQueries": {
+        "row": "4.2",
+        "status": "MEASURED",
+        "value": {
+          "prefersDark": false,
+          "prefersLight": true,
+          "reducedMotion": false,
+          "forcedColors": false,
+          "contrastMore": false
+        }
+      },
+      "offscreenCanvas": {
+        "row": "4.3",
+        "status": "MEASURED",
+        "value": {
+          "available": true,
+          "context2d": true
+        }
+      }
+    },
+    "counts": {
+      "MEASURED": 13,
+      "UNSUPPORTED": 9,
+      "BLOCKED": 1
+    },
+    "total": 23
+  },
+  "crossProfile": {
+    "webgl.vendorRenderer": "not-comparable",
+    "webgl.extensions": "not-comparable",
+    "webgl.parameters": "not-comparable",
+    "webgl.shaderPrecision": "not-comparable",
+    "webgl.renderHash": "not-comparable",
+    "canvas2d.hash": "differ",
+    "canvas2d.fontMetrics": "equal",
+    "audio.basic": "equal",
+    "audio.offlineHash": "not-comparable",
+    "fonts.detected": "equal",
+    "media.devices": "differ",
+    "media.voices": "differ",
+    "clientHints.low": "not-comparable",
+    "clientHints.high": "not-comparable",
+    "navigator.misc": "equal",
+    "navigator.storageEstimate": "equal",
+    "navigator.permissions": "equal",
+    "navigator.keyboard": "not-comparable",
+    "navigator.battery": "not-comparable",
+    "window.metrics": "differ",
+    "locale.formats": "differ",
+    "display.mediaQueries": "equal",
+    "offscreenCanvas": "equal"
+  }
+}

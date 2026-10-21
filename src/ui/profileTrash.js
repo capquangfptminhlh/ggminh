@@ -58,7 +58,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
   for(const id of ['trash-dialog-close','trash-dialog-done'])
     document.getElementById(id).addEventListener('click',close);
-  document.getElementById('trash-dialog-refresh').addEventListener('click',()=>refresh().catch(error=>alert(error.message)));
+  document.getElementById('trash-dialog-refresh').addEventListener('click',()=>refresh().catch(error=>alert('Không tải lại được thùng rác: '+error.message+'\nDữ liệu đang hiển thị có thể chưa mới — hãy thử lại.')));
   btnExpired.addEventListener('click',async()=>{
     btnExpired.disabled=true;
     try{
