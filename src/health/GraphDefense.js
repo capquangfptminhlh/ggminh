@@ -5,7 +5,6 @@
  * collected from browser traffic, user behavior, or third-party accounts.
  */
 const net=require('net');
-const crypto=require('crypto');
 const ID=/^[a-zA-Z0-9_-]{1,64}$/;
 function profileId(value){
  if(typeof value!=='string'||!ID.test(value))throw Error('Invalid profile ID');
@@ -80,38 +79,6 @@ class GraphDefense{
     'Another managed profile on this /24 has overlapping scheduled usage; review resource contention.':
     'No overlapping scheduled usage among supplied managed profiles.',
    note:'This is a scheduling/conflict report, not a way to avoid account-linking.'};
- }
- static checkPaymentRisk(cardBin,existingPayments){
-  // A six-digit BIN describes an issuer/product range, not an individual
-  // funding instrument. Never treat a matching BIN as proof of shared payer.
-  if(typeof cardBin!=='string'||!/^[0-9]{6,8}$/.test(cardBin))
-   throw Error('BIN must be a 6- or 8-digit issuer identifier');
-  if(!Array.isArray(existingPayments)||existingPayments.length>10000)
-   throw Error('Invalid payment list');
-  const similar=existingPayments.filter(p=>{
-   const candidate=typeof p==='string'?p:p?.cardBin;
-   return candidate===cardBin;
-  }).length;
-  return {isRisk:false,similarIssuerRanges:similar,
-   message:'BIN identifies an issuer range, not a unique card or account. Do not infer shared payment ownership.',
-   note:'Never store PAN, CVV, expiry or raw card details in browser profile records.'};
- }
- static paymentReferenceDigest(providerReference,key){
-  if(typeof providerReference!=='string'||!/^[a-z][a-z0-9_-]{1,24}:[-_a-zA-Z0-9]{8,128}$/.test(providerReference))
-   throw Error('Use a payment-provider-issued opaque reference, not a card number');
-  if(!Buffer.isBuffer(key)||key.length<32)
-   throw Error('Use an application secret of at least 32 bytes');
-  return crypto.createHmac('sha256',key).update('lhm-billing-ref-v1\n').update(providerReference).digest('hex');
- }
- static checkPaymentReferenceReuse(referenceDigest,known){
-  if(typeof referenceDigest!=='string'||!/^[a-f0-9]{64}$/.test(referenceDigest))
-   throw Error('Invalid payment reference digest');
-  if(!Array.isArray(known)||known.length>10000)throw Error('Invalid payment-reference list');
-  const same=known.filter(x=>x===referenceDigest).length;
-  return {requiresReview:same>0,matches:same,
-   message:same?'Identical provider reference already used internally; confirm authorized billing sharing.':
-    'No duplicate provider reference among supplied internal records.',
-   note:'Compare only opaque provider references where billing authorization permits.'};
  }
 }
 module.exports={GraphDefense,interval};
