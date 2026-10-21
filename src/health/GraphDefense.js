@@ -97,7 +97,7 @@ class GraphDefense{
    note:'Never store PAN, CVV, expiry or raw card details in browser profile records.'};
  }
  static paymentReferenceDigest(providerReference,key){
-  if(typeof providerReference!=='string'||!/^[-_a-zA-Z0-9:]{8,160}$/.test(providerReference))
+  if(typeof providerReference!=='string'||!/^[a-z][a-z0-9_-]{1,24}:[-_a-zA-Z0-9]{8,128}$/.test(providerReference))
    throw Error('Use a payment-provider-issued opaque reference, not a card number');
   if(!Buffer.isBuffer(key)||key.length<32)
    throw Error('Use an application secret of at least 32 bytes');
