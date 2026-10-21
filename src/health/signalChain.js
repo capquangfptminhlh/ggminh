@@ -3,7 +3,7 @@
  * Conservative, offline prelaunch inspection. This does NOT predict anti-bot
  * decisions or alter fingerprints. It checks contradictions and disclosures.
  */
-const {validateProxy}=require('../health/profileHealth');
+const {validateProxy}=require('./proxyValidation');
 const ENGINE=new Set(['chromium','gecko']);
 const GPU_BRANDS=['nvidia','intel','amd','radeon','apple','qualcomm','adreno','mali','swiftshader'];
 const EXPECTED_PLATFORMS={
