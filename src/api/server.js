@@ -52,7 +52,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
           }});
         }
         return res.status(409).json({code:-1,
-          msg:'Camoufox automation unavailable: no validated in-process Playwright context; Firefox DevTools is not CDP.',
+          msg:'Camoufox automation unavailable: no verified Playwright/Juggler endpoint or validated in-process context; Firefox DevTools is not CDP.',
           data:{engine:'camoufox',protocol:'unavailable',
             debug_port:null,ws:{playwright:null}}});
       }
