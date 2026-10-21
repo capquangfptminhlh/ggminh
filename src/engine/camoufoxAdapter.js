@@ -59,12 +59,13 @@ class CamoufoxAdapter{
     const info={profileId:id,name:profile.name,engine:'gecko',provider:'camoufox',
      pid:null,port:null,wsEndpoint:null,startedAt:new Date().toISOString(),stopping:false};
     const item={context,info,closing:false};
-    context.on('close',()=>{
+    item.onClosed=()=>{
      if(this.sessions.get(id)===item){
       this.sessions.delete(id);
       try{onClosed?.(info);}catch(_){}
      }
-    });
+    };
+    context.on('close',item.onClosed);
     const page=await context.newPage();
     await page.goto(target,{waitUntil:'domcontentloaded',timeout:15000});
     this.sessions.set(id,item);
@@ -86,7 +87,8 @@ class CamoufoxAdapter{
   if(item.closing)return {success:false,message:'Camoufox profile is already closing'};
   item.closing=true;item.info.stopping=true;
   Promise.resolve().then(()=>item.context.close()).then(()=>{
-   if(this.sessions.get(id)===item)this.sessions.delete(id);
+   // Some patched Playwright builds resolve close without an event.
+   item.onClosed();
   }).catch(error=>{
    item.closing=false;item.info.stopping=false;
    console.warn('[Camoufox] Context close failed:',String(error.message).slice(0,180));
