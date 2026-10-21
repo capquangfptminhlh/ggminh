@@ -74,7 +74,12 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
           code: -1, msg: 'Stop browser and wait for exit before editing profile'
         });
       }
-      const saved = store.saveProfile(req.body);
+      // Only an explicitly supplied engine field may change an offline
+      // profile's provider through this authenticated loopback API.
+      const requestedChange=!!req.body&&(
+        Object.hasOwn(req.body,'engine')||
+        Object.hasOwn(req.body,'engine_type'));
+      const saved = store.saveProfile(req.body,{allowEngineChange:requestedChange});
       if (behaviorMonitor) behaviorMonitor.record('profile_save', saved.id, 'api');
       res.json(saved);
     } catch (error) { fail(res, error); }
