@@ -34,6 +34,7 @@ const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
 const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
+const {assessRuntime}=require('./src/engine/camoufoxRuntimeGate');
 const {PUBLIC_KEY:LICENSE_PUBLIC_KEY}=require('./src/licensing/manager');
 const {resolveEngineType}=require('./src/engine/EngineFactory');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
@@ -342,16 +343,24 @@ function initIPC() {
     geckoProvider:store.getSettings().geckoProvider==='camoufox'?'camoufox':'firefox',
     camoufox:camoufoxAdapter.status()
   }));
-  ipcMain.handle('camoufox-install-status',()=>({
-    available:!!camoufoxApprovedRelease,
-    version:camoufoxApprovedRelease?.manifest?.version||null,
-    alreadyInstalled:camoufoxInstall?.status().valid===true,
-    installInProgress:camoufoxInstall?.running===true,
-    notice:'Requires publisher-signed manifest. No antivirus exemptions or silent downloads.'
-  }));
+  ipcMain.handle('camoufox-install-status',()=>{
+    const runtime=assessRuntime({launcherPresent:camoufoxAdapter.status().installed});
+    return {
+      available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.ready,
+      version:camoufoxApprovedRelease?.manifest?.version||null,
+      alreadyInstalled:camoufoxInstall?.status().valid===true,
+      installInProgress:camoufoxInstall?.running===true,
+      runtime,
+      notice:!runtime.ready?runtime.reason:
+        !camoufoxApprovedRelease?'No separately signed LHM Camoufox release is configured.':
+        'Requires explicit confirmation. No antivirus exemptions or silent downloads.'
+    };
+  });
   ipcMain.handle('camoufox-install',async()=>{
     if(!camoufoxApprovedRelease||!camoufoxInstall)
       throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
+    const runtime=assessRuntime({launcherPresent:camoufoxAdapter.status().installed});
+    if(!runtime.ready)throw Error(runtime.reason);
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả browser trước khi cài engine');
     if(camoufoxInstall.running)throw Error('Đang cài đặt engine');
