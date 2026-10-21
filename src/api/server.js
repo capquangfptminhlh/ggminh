@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { checkProxy } = require('../engine/proxyChecker');
 const {resolveEngineType}=require('../engine/EngineFactory');
+const {safeWebUrl}=require('../engine/launchArgs');
 
 function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null, licensePolicy=null } = {}) {
   const service = express();
@@ -37,11 +38,21 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       if (typeof id !== 'string' || !id) return res.status(400).json({ code: -1, msg: 'Missing user_id' });
       const profile = store.getProfile(id);
       if(profile&&resolveEngineType(profile,store.getSettings())==='camoufox'){
-        // Native spawn is a manual GUI. Firefox's DevTools debugger does NOT
-        // expose Chrome CDP nor a Playwright/Juggler BrowserServer websocket.
-        // Never invent a debug port or return code:0 for unsupported control.
+        const controller=launcher.camoufoxPlaywrightController;
+        if(controller?.enabled===true){
+          const instance=await launcher.start(id,req.query.open_url);
+          if(instance.protocol!=='playwright-internal'||!controller.contextFor(id))
+            throw Error('Playwright BrowserContext was not established');
+          if(behaviorMonitor)behaviorMonitor.record('profile_open',id,'api');
+          // This is an in-process controller, NOT an attachable network socket.
+          return res.json({code:0,msg:'success',data:{
+            engine:'camoufox',protocol:'playwright-internal',
+            control:'authenticated-local-api',profile_id:id,
+            debug_port:null,ws:{playwright:null}
+          }});
+        }
         return res.status(409).json({code:-1,
-          msg:'Camoufox automation unavailable: native EXE has no verified Playwright/Juggler endpoint; Firefox DevTools is not CDP.',
+          msg:'Camoufox automation unavailable: no validated in-process Playwright context; Firefox DevTools is not CDP.',
           data:{engine:'camoufox',protocol:'unavailable',
             debug_port:null,ws:{playwright:null}}});
       }
@@ -54,6 +65,24 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
         debug_port: instance.port, webdriver: 'chrome'
       }, msg: 'success' });
     } catch (error) { fail(res, error); }
+  });
+  // Explicit, authenticated navigation through the *internal* Playwright
+  // BrowserContext; external users cannot attach to a made-up WebSocket.
+  service.post('/api/v1/browser/navigate',async(req,res)=>{
+    try{
+      const id=req.body?.user_id||req.body?.id;
+      if(typeof id!=='string'||!id)return res.status(400).json({code:-1,msg:'Missing user_id'});
+      const controller=launcher.camoufoxPlaywrightController;
+      if(controller?.enabled!==true)return res.status(409).json({code:-1,msg:'Playwright lab unavailable'});
+      const context=controller.contextFor(id);
+      if(!context)return res.status(409).json({code:-1,msg:'No active Camoufox Playwright context'});
+      const url=safeWebUrl(req.body?.url);
+      const page=context.pages?.()[0]||await context.newPage();
+      await page.goto(url,{timeout:15000});
+      return res.json({code:0,msg:'success',data:{
+        engine:'camoufox',protocol:'playwright-internal',url:page.url()
+      }});
+    }catch(error){return fail(res,error);}
   });
   service.get('/api/v1/browser/stop', (req, res) => {
     try {
