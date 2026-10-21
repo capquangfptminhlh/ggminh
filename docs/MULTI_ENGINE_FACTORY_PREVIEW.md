@@ -93,7 +93,7 @@ then issue a manifest with:
 `node tools/sign-bundled-engine.js ABSOLUTE_CAMOUFOX_ASSETS_DIR VERSION camoufox`
 
 using `LHM_ENGINE_SIGNING_KEY_FILE` held outside the source tree.
-The manifest must list every resource file; `firefox.exe` is required.
+The manifest must list every resource file; `camoufox.exe` is required.
 Review third-party notices, redistributed license obligations, antivirus
 reports and the real executable's provenance. Do NOT disable Windows
 Defender or add the installation directory to exclusions. A code-signing
