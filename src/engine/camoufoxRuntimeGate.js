@@ -1,17 +1,21 @@
 'use strict';
-// A signed binary alone is insufficient: the TypeScript launcher needs
-// a compatible Node runtime *inside the packaged Electron application*.
-function compatibleNode(version=process.versions.node){
- if(typeof version!=='string'||!/^(\d+)\.(\d+)\.(\d+)$/.test(version))
-  throw Error('Invalid Node runtime version');
- const [major,minor]=version.split('.').map(Number);
- return major>22||(major===22&&minor>=15);
+// Native spawn does not require the Camoufox TypeScript module or Node 22.
+// It is a MANUAL browser UI launcher, not a Playwright automation connection.
+// A separately signed engine binary is still mandatory for real launches.
+function assessRuntime({
+ platform=process.platform,verifiedBundle=false
+}={}){
+ const platformCompatible=platform==='win32';
+ return {
+  platformCompatible,
+  launcherPresent:false,
+  nodeVersionRequired:false,
+  manualOnly:true,
+  canInstall:platformCompatible,
+  ready:platformCompatible&&verifiedBundle===true,
+  reason:!platformCompatible?'Native Camoufox desktop launch is Windows-only':
+   !verifiedBundle?'Separately publisher-signed Camoufox EXE not available':
+   'Native manual browser UI launcher ready; proxy, GeoIP and automation are not supported'
+ };
 }
-function assessRuntime({nodeVersion=process.versions.node,launcherPresent=false}={}){
- const nodeCompatible=compatibleNode(nodeVersion);
- return {nodeCompatible,launcherPresent:!!launcherPresent,
-  ready:nodeCompatible&&!!launcherPresent,
-  reason:!nodeCompatible?'Packaged Electron requires Node.js 22.15+ for the Camoufox TypeScript launcher':
-   !launcherPresent?'Camoufox TypeScript launcher is not in the packaged application':'Compatible launcher runtime'};
-}
-module.exports={compatibleNode,assessRuntime};
+module.exports={assessRuntime};
