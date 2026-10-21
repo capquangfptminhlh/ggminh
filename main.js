@@ -156,6 +156,21 @@ function createWindow() {
           const paletteImage=await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.join(__dirname,'dist','workspace-command-preview.png'),paletteImage.toPNG());
           console.log('[UI smoke] Verified expanded profile workspace and keyboard palette');
+          const cloudCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('lhm-v7-command-close').click(); document.getElementById('btn-cloud-sync').click(); return {open:document.getElementById('modal-cloud-sync').classList.contains('open'),token:!!document.getElementById('cloud-sync-token'),device:!!document.getElementById('cloud-sync-device-key'),team:!!document.getElementById('cloud-team-invite'),history:!!document.getElementById('cloud-sync-history')}; })()",true);
+          if(!Object.values(cloudCheck).every(Boolean))
+            throw Error('Cloud Sync + Team UI failed: '+JSON.stringify(cloudCheck));
+          await new Promise(resolve=>setTimeout(resolve,300));
+          const cloudImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-cloud-sync-preview.png'),cloudImage.toPNG());
+          const syncCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('cloud-sync-done').click(); document.getElementById('btn-window-manager').click(); return {open:document.getElementById('modal-window-manager').classList.contains('open'),master:!!document.getElementById('wm-sync-master'),hosts:!!document.getElementById('wm-sync-hosts'),start:!!document.getElementById('wm-sync-start'),stop:!!document.getElementById('wm-sync-stop')}; })()",true);
+          if(!Object.values(syncCheck).every(Boolean))
+            throw Error('Synchronizer modal UI failed: '+JSON.stringify(syncCheck));
+          await new Promise(resolve=>setTimeout(resolve,350));
+          const syncImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-synchronizer-preview.png'),syncImage.toPNG());
+          console.log('[UI smoke] Verified integrated Team, Cloud Sync and Synchronizer modals');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
