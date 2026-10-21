@@ -12,6 +12,9 @@ const { generateFingerprint } = require('./src/engine/fingerprint');
 const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
+const { createWarningService } = require('./src/monitor/warningService');
+const { ExitIpObservationStore } = require('./src/health/exitIpObservations');
+const { provisionCamoufoxIdentity } = require('./src/engine/camoufoxProvisioning');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
 const { BatchAutomation } = require('./src/automation/batch');
 const { LocalScheduler } = require('./src/automation/localScheduler');
@@ -20,6 +23,8 @@ const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
+const {LocalHealthDrift}=require('./src/health/localDrift');
+const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
@@ -27,6 +32,14 @@ const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
+const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
+const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
+const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
+const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
+const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
+const {assessRuntime}=require('./src/engine/camoufoxRuntimeGate');
+const {PUBLIC_KEY:LICENSE_PUBLIC_KEY}=require('./src/licensing/manager');
+const {resolveEngineType}=require('./src/engine/EngineFactory');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
 const cacheManager = require('./src/ops/cacheManager');
@@ -47,7 +60,16 @@ let mainWindow = null;
 let store = null;
 let launcher = null;
 let runtimeRegistry = null;
+let bundledEngine = null;
+let camoufoxAdapter = null;
+let camoufoxInstall = null;
+let camoufoxApprovedRelease = null;
 let behaviorMonitor = null;
+let warningService = null;
+let ipObservationStore = null;
+let camoufoxExecutableResolver = null;
+const appSessionId = require('crypto').randomUUID();
+let localHealthDrift = null;
 let workflowStore = null;
 let automationRunner = null;
 let batchAutomation = null;
@@ -152,6 +174,15 @@ function createWindow() {
           const paletteImage=await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.join(__dirname,'dist','workspace-command-preview.png'),paletteImage.toPNG());
           console.log('[UI smoke] Verified expanded profile workspace and keyboard palette');
+          await mainWindow.webContents.executeJavaScript("document.getElementById('lhm-v7-command-close').click()",true);
+          const engineCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-engine-source').click(); return {open:document.getElementById('modal-engine-source').classList.contains('open'),chromium:!!document.getElementById('engine-source-select'),gecko:!!document.getElementById('engine-gecko-provider'),apply:!!document.getElementById('engine-gecko-save')}; })()",true);
+          if(!Object.values(engineCheck).every(Boolean))
+            throw Error('Camoufox Gecko provider UI failed: '+JSON.stringify(engineCheck));
+          await new Promise(resolve=>setTimeout(resolve,300));
+          const engineImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-engine-provider-preview.png'),engineImage.toPNG());
+          console.log('[UI smoke] Verified selected Camoufox and browser-engine provider modal');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
@@ -165,6 +196,12 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('agency-network-preview',(_,input)=>{
+    if(!input||!store.getProfile(input.profileId))throw Error('Hồ sơ không hợp lệ');
+    if(!Array.isArray(input.entries)||input.entries.length>100)
+      throw Error('Tối đa 100 địa chỉ khác');
+    return GraphDefense.checkSubnetRisk(input.ip,input.entries,{profileId:input.profileId});
+  });
   ipcMain.handle('get-app-info', () => ({
     name:'LHM Ads Browser',
     version:app.getVersion(),
@@ -267,6 +304,65 @@ function initIPC() {
   });
   ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
   ipcMain.handle('engine-runtime-status', () => runtimeRegistry.status());
+  ipcMain.handle('bundled-engine-status', () => ({
+    source:store.getSettings().engineSource==='bundled'?'bundled':'system',
+    bundle:bundledEngine.status(),
+    geckoProvider:store.getSettings().geckoProvider==='camoufox'?'camoufox':'firefox',
+    camoufox:camoufoxAdapter.status()
+  }));
+  ipcMain.handle('camoufox-install-status',()=>{
+    const runtime=assessRuntime({
+      verifiedBundle:camoufoxAdapter.status().binaryVerified
+    });
+    return {
+      available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.canInstall,
+      version:camoufoxApprovedRelease?.manifest?.version||null,
+      alreadyInstalled:camoufoxInstall?.status().valid===true,
+      installInProgress:camoufoxInstall?.running===true,
+      runtime,
+      notice:!runtime.ready?runtime.reason:
+        !camoufoxApprovedRelease?'No separately signed LHM Camoufox release is configured.':
+        'Requires explicit confirmation. No antivirus exemptions or silent downloads.'
+    };
+  });
+  ipcMain.handle('camoufox-install',async()=>{
+    if(!camoufoxApprovedRelease||!camoufoxInstall)
+      throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
+    const runtime=assessRuntime();
+    if(!runtime.canInstall)throw Error(runtime.reason);
+    if(launcher.listActive().length||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả browser trước khi cài engine');
+    if(camoufoxInstall.running)throw Error('Đang cài đặt engine');
+    const approved=validateRelease(camoufoxApprovedRelease,{
+      publicKey:camoufoxInstall.publicKey
+    });
+    const result=await dialog.showMessageBox(mainWindow,{
+      type:'question',buttons:['Hủy','Tải và cài'],defaultId:0,cancelId:0,noLink:true,
+      title:'Cài đặt Camoufox được xác minh',
+      message:'Cài Camoufox '+approved.manifest.version+' từ nguồn phát hành đã ký?',
+      detail:'Tải qua HTTPS, xác minh SHA-256 và chữ ký trước khi sử dụng. Không tắt hoặc bỏ qua Windows Defender. Dung lượng tải '+Math.ceil(approved.bytes/1048576)+' MiB.'
+    });
+    if(result.response!==1)return {canceled:true};
+    const installed=await camoufoxInstall.install(camoufoxApprovedRelease);
+    return {...installed,status:camoufoxAdapter.status()};
+  });
+  ipcMain.handle('camoufox-provider-select', (_event,provider)=>{
+    if(!['firefox','camoufox'].includes(provider))throw Error('Invalid Firefox provider');
+    if(launcher.listActive().length||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả trình duyệt trước khi thay đổi engine Firefox');
+    if(provider==='camoufox'&&!camoufoxAdapter.status().ready)
+      throw Error('Camoufox needs an installed TypeScript launcher AND a signed verified Windows distribution');
+    store.updateSettings({geckoProvider:provider});
+    return {provider,status:camoufoxAdapter.status()};
+  });
+  ipcMain.handle('bundled-engine-select', (_event,source) => {
+    if(!['system','bundled'].includes(source))throw Error('Unsupported engine source');
+    if(launcher.listActive().length||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả trình duyệt trước khi đổi nguồn engine');
+    if(source==='bundled')bundledEngine.verify();
+    store.updateSettings({engineSource:source});
+    return {source,bundle:bundledEngine.status()};
+  });
   ipcMain.handle('engine-runtime-register', async (_,engine) => {
     if(!['chromium','gecko'].includes(engine))throw Error('Unknown browser engine');
     if(launcher.listActive().some(x=>x.engine===engine)||launcher.pendingStarts.size)
@@ -374,6 +470,41 @@ function initIPC() {
   });
   ipcMain.handle('get-all-profile-health', () =>
     store.getProfiles().map(profile => checkProfile(profile, { settings: store.getSettings(), proxies: store.data.proxies, vault: proxyVault })));
+  ipcMain.handle('health-drift-report',()=>{
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    return localHealthDrift.report();
+  });
+  ipcMain.handle('health-drift-snapshot',()=>{
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    const profiles=store.getProfiles();
+    const reports=profiles.map(p=>checkProfile(p,{
+      settings:store.getSettings(),proxies:store.data.proxies,vault:proxyVault,
+      pathExists:fs.existsSync
+    }));
+    return localHealthDrift.add({
+      profiles:profiles.length,
+      errors:reports.filter(r=>r.status==='error').length,
+      warnings:reports.filter(r=>r.status==='warning').length,
+      active:launcher.listActive().length,
+      appVersion:app.getVersion()
+    });
+  });
+  ipcMain.handle('health-drift-clear',(_,confirmation)=>{
+    if(confirmation!=='CLEAR HEALTH')throw Error('Explicit clearing confirmation required');
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    return localHealthDrift.clear();
+  });
+  ipcMain.handle('health-drift-export',async()=>{
+    if(!localHealthDrift)throw Error('Local health snapshot history unavailable');
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Xuất lịch sử kiểm tra cấu hình (không có dữ liệu duyệt web)',
+      defaultPath:'LHM-Local-Health-'+new Date().toISOString().slice(0,10)+'.json',
+      filters:[{name:'JSON Aggregate Health Report',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    fs.writeFileSync(filePath,localHealthDrift.exportReport(),{mode:0o600});
+    return {canceled:false,stored:localHealthDrift.report().stored};
+  });
   ipcMain.handle('get-local-readiness', () => {
     const profiles=store.getProfiles();
     const reports=profiles.map(profile=>checkProfile(profile,{
@@ -482,12 +613,42 @@ function initIPC() {
     batchAutomation.status().active?batchAutomation.stop():automationRunner.stop());
   ipcMain.handle('studio-approve', () => automationRunner.approve());
   ipcMain.handle('studio-status', () => automationRunner.status());
-  ipcMain.handle('save-profile', (_, profile) => {
+  ipcMain.handle('save-profile', async (_, profile) => {
     // The Local API already forbids all live profile edits. Apply the same
     // lifecycle rule to desktop edits, including URLs, fingerprint and notes.
     if (profile?.id && store.getProfile(profile.id) && launcher.isBusy(profile.id))
       throw new Error('Hãy đóng hồ sơ trước khi chỉnh sửa cấu hình để tránh sai lệch dữ liệu của phiên đang chạy');
-    const saved = store.saveProfile(profile);
+    const existing=profile?.id?store.getProfile(profile.id):null;
+    let allowEngineChange=false;
+    if(existing){
+      const oldType=resolveEngineType(existing,store.getSettings());
+      const selected=resolveEngineType({...existing,...profile},store.getSettings());
+      if(oldType!==selected){
+        const answer=await dialog.showMessageBox(mainWindow,{
+          type:'warning',buttons:['Hủy','Đổi engine'],defaultId:0,
+          cancelId:0,noLink:true,title:'Đổi engine của profile',
+          message:'Chuyển từ '+oldType+' sang '+selected+'?',
+          detail:'Dữ liệu phiên, cookie và thư mục Firefox/Chromium/Camoufox không được chuyển hoặc sao chép. Profile phải đang đóng.'
+        });
+        if(answer.response!==1)throw Error('Đã hủy chuyển đổi engine');
+        allowEngineChange=true;
+      }
+    }
+    let provisioning=null;
+    if(!existing){
+      // Provisioning (Constitution s.8 / contract C2): a NEW native
+      // Camoufox profile gets its pinned identity drawn here, at
+      // creation time, through the official generator. Unavailable
+      // generator/engine never blocks creation; the outcome is
+      // recorded on the profile (fingerprint.identityProvisioning).
+      try{
+        provisioning=await provisionCamoufoxIdentity(profile,{
+          resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
+      }catch(_){ provisioning=null; }
+    }
+    const saved = store.saveProfile(profile,{allowEngineChange});
+    if(provisioning&&provisioning.status==='provisioned')
+      behaviorMonitor.record('identity_provisioned', saved.id, 'manual');
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;
   });
@@ -514,6 +675,21 @@ function initIPC() {
   ipcMain.handle('start-browser', async (_, id) => {
     const opened = await launcher.start(id);
     behaviorMonitor.record('profile_open', id, 'manual');
+    // Exit-IP observation (Constitution s.19/22): record what the
+    // profile's configured proxy actually exits as, feeding the
+    // automatic IP warnings. Fire-and-forget: a failed measurement
+    // records nothing and never affects the launch.
+    void (async () => {
+      try{
+        if(!ipObservationStore) return;
+        const p=store.getProfile(id);
+        const proxy=p&&p.proxy;
+        if(!proxy||!proxy.type||proxy.type==='direct'||proxy.type==='none') return;
+        const result=await checkProxy(proxy);
+        if(result&&typeof result.ip==='string')
+          ipObservationStore.record({profileId:id,ip:result.ip,sessionId:appSessionId});
+      }catch(_){}
+    })();
     return { profileId: opened.profileId, port: opened.port, alreadyRunning: !!opened.alreadyRunning };
   });
   ipcMain.handle('stop-browser', (_, id) => {
@@ -541,6 +717,23 @@ function initIPC() {
     return store.updateSettings(allowed);
   });
   ipcMain.handle('get-behavior-report', () => behaviorMonitor.getReport());
+  ipcMain.handle('get-warning-report', () => {
+    if (!warningService) warningService = createWarningService();
+    return warningService.evaluate({
+      behaviorEvents: behaviorMonitor ? behaviorMonitor.events : [],
+      ipObservations: ipObservationStore ? ipObservationStore.list() : [],
+      healthDrift: localHealthDrift ? localHealthDrift.report() : null,
+      monitorAlerts: behaviorMonitor ? behaviorMonitor.getReport().alerts : [],
+    });
+  });
+  ipcMain.handle('provision-camoufox-identity', async (_, id) => {
+    const profile = store.getProfile(id);
+    if (!profile) throw Error('Profile not found');
+    const result = await provisionCamoufoxIdentity(profile, {
+      resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
+    if (result.status === 'provisioned') store.saveProfile(profile, {});
+    return { status: result.status, reason: result.reason || null };
+  });
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
   ipcMain.handle('copy-api-key', () => {
@@ -562,6 +755,11 @@ app.whenReady().then(async () => {
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
   store = new Store(storageDir);
+  try{localHealthDrift=new LocalHealthDrift(storageDir);}
+  catch(error){
+    console.warn('[HealthDrift] History unavailable:',error.message);
+    localHealthDrift=null; // Preserve corrupted history for manual recovery.
+  }
   runtimeRegistry = new RuntimeRegistry(storageDir);
   try { store.purgeExpiredTrashedProfiles(); }
   catch(error) { console.warn('[ProfileTrash] startup cleanup deferred:',error.message); }
@@ -587,12 +785,90 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
+  bundledEngine=new BundledEngineManager(app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-engines')
+    :path.join(__dirname,'resources','bundled-engines'));
+  launcher.bundledEngine=bundledEngine;
+  const releaseAssets=app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-camoufox')
+    :path.join(__dirname,'resources','camoufox-engine');
+  // Never use the app-license signing key to trust a downloadable browser.
+  // Without a separately provisioned publisher-ed25519.pub the entire
+  // Camoufox install/launch path remains disabled and fails closed.
+  let publisherKey=null;
+  try{
+    publisherKey=loadCamoufoxPublisherKey(releaseAssets,{
+      licenseKey:LICENSE_PUBLIC_KEY
+    });
+    if(publisherKey){
+      camoufoxInstall=new CamoufoxInstallService(storageDir,{
+        publicKey:publisherKey,
+        licenseKey:LICENSE_PUBLIC_KEY,
+        scriptPath:app.isPackaged
+          ?path.join(process.resourcesPath,'app.asar.unpacked','tools','extract-signed-engine.ps1')
+          :path.join(__dirname,'tools','extract-signed-engine.ps1')
+      });
+      const releaseFile=path.join(releaseAssets,'release.json');
+      if(fs.existsSync(releaseFile)){
+        if(fs.lstatSync(releaseFile).isSymbolicLink()||
+           fs.statSync(releaseFile).size>1024*1024)
+          throw Error('Invalid Camoufox release descriptor file');
+        const approved=JSON.parse(fs.readFileSync(releaseFile,'utf8'));
+        validateRelease(approved,{publicKey:publisherKey});
+        camoufoxApprovedRelease=approved;
+      }
+    }
+  }catch(error){
+    camoufoxApprovedRelease=null;
+    camoufoxInstall=null;
+    publisherKey=null;
+    console.warn('[Engine] Camoufox publisher trust unavailable:',
+      String(error.message).slice(0,200));
+  }
+  const camoufoxBundle=publisherKey?
+    new BundledEngineManager(releaseAssets,{
+      engine:'camoufox',publicKey:publisherKey
+    }):null;
+  const verifiedProviders={
+    status(){
+      if(!publisherKey)
+        return {valid:false,available:false,
+          reason:'Independent Camoufox publisher trust anchor missing'};
+      const bundled=camoufoxBundle.status();
+      return bundled.valid?bundled:camoufoxInstall.status();
+    },
+    resolve(engine){
+      if(engine!=='camoufox'||!publisherKey)
+        throw Error('Camoufox publisher signature is not trusted');
+      if(camoufoxBundle.status().valid)return camoufoxBundle.resolve(engine);
+      return camoufoxInstall.verifier().resolve(engine);
+    }
+  };
+  camoufoxAdapter=new CamoufoxAdapter(storageDir,{
+    bundleVerifier:verifiedProviders,store,proxyVault,
+    // Explicit operator-only opt-in. Production defaults fail closed until
+    // independently verified proxy/DNS/WebRTC lab acceptance.
+    allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+  });
+  launcher.camoufoxAdapter=camoufoxAdapter;
+  // Independent preview mode. Never enable third-party automation in the
+  // packaged app until signed distribution and network lab release gates pass.
+  launcher.camoufoxPlaywrightController=new CamoufoxPlaywrightController(storageDir,{
+    verifier:verifiedProviders,store,proxyVault,
+    enabled:!app.isPackaged&&process.env.LHM_CAMOUFOX_PLAYWRIGHT_LAB==='1',
+    labApproved:!app.isPackaged&&
+      process.env.LHM_CAMOUFOX_PLAYWRIGHT_LAB==='1'&&
+      process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+  });
   launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
+  try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
+  warningService = createWarningService();
+  camoufoxExecutableResolver = () => verifiedProviders.resolve('camoufox');
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);

@@ -143,6 +143,7 @@
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
             <button type="button" class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
+            <button type="button" class="btn btn-secondary" id="btn-engine-source"><span data-lhm-icon="hard-drive"></span> Engine</button>
             <button type="button" class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
             <button type="button" class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
             <button type="button" class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
@@ -228,7 +229,7 @@
         <article class="lhm-dash-panel lhm-profile-panel">
           <div class="lhm-panel-heading"><div><span class="lhm-eyebrow">PROFILE OPERATIONS</span><h3>Sức khỏe hồ sơ</h3></div><button type="button" class="lhm-link-btn" data-lhm-target="health">Xem tất cả </button></div>
           <div class="lhm-profile-health">
-            <div class="lhm-health-ring" id="lhm-health-ring"><strong id="lhm-health-ready">—</strong><span>không báo lỗi</span></div>
+            <div class="lhm-health-ring" id="lhm-health-ring"><strong id="lhm-health-ready">—</strong><span>không lỗi / cảnh báo cấu hình</span></div>
             <div class="lhm-health-breakdown"><div><span>● Thông số gốc</span><strong id="lhm-native-count">—</strong></div><div><span>● Cấu hình thử nghiệm</span><strong id="lhm-experimental-count">—</strong></div><div><span>● Lỗi cấu hình</span><strong id="lhm-error-count">—</strong></div></div>
           </div>
           <div id="lhm-attention-list" class="lhm-attention-list"><p class="lhm-empty">Đang đọc thông tin sức khỏe hồ sơ…</p></div>
@@ -533,6 +534,44 @@
     </div>
   </div>
 
+  <!-- Explicit runtime choice. Bundled mode requires a release-signed engine. -->
+  <div class="modal-overlay" id="modal-engine-source">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="engine-source-title">
+      <div class="modal-header">
+        <h2 id="engine-source-title">Browser Engine · Nguồn trình duyệt</h2>
+        <button type="button" class="btn-close" id="engine-source-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Chế độ System mở Chrome/Edge đã cài trên máy. Bundled chỉ mở bộ Chromium do nhà phát hành cung cấp khi chữ ký manifest và toàn bộ tệp khớp SHA-256. Không tự tải hay chạy bản engine không rõ nguồn gốc.</p>
+        <div class="form-group">
+          <label for="engine-source-select">Nguồn browser Chromium</label>
+          <select id="engine-source-select">
+            <option value="system">System · Chrome / Edge của Windows</option>
+            <option value="bundled">Bundled · Bộ engine đi kèm đã xác minh</option>
+          </select>
+        </div>
+        <p id="engine-source-result" role="status" aria-live="polite">Đang kiểm tra bộ engine...</p>
+        <div class="form-group">
+          <label for="engine-gecko-provider">Nguồn Firefox / Gecko</label>
+          <select id="engine-gecko-provider">
+            <option value="firefox">Firefox cài trên máy (mặc định)</option>
+            <option value="camoufox">Camoufox · Provider thử nghiệm, cần cài riêng</option>
+          </select>
+          <p id="engine-gecko-result" role="status" aria-live="polite">Chưa kiểm tra Camoufox.</p>
+          <button type="button" class="btn btn-secondary" id="engine-gecko-save">Áp dụng nguồn Firefox</button>
+          <p class="lhm-bulk-help" id="camoufox-install-info" role="status" aria-live="polite">Kiểm tra bản Camoufox đã ký…</p>
+          <button type="button" class="btn btn-secondary" id="camoufox-install-button" disabled>Cài đặt Camoufox được xác minh</button>
+        </div>
+        <p class="lhm-bulk-help">Camoufox native chạy bằng tiến trình Windows riêng, chỉ phục vụ duyệt web thủ công. Chỉ dùng tham số Firefox đã công bố cho profile và URL; proxy có mật khẩu chỉ thử nghiệm khi bật chế độ lab, qua gateway HTTPS CONNECT của Firefox. Chưa xác minh DNS/WebRTC, GeoIP tự động hoặc Automation Studio. Chỉ cài khi người dùng xác nhận và bản phát hành đã được LHM ký riêng. Không chuyển/xóa khóa Firefox thủ công. Đổi nguồn chỉ thực hiện khi đã đóng tất cả browser.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="engine-source-refresh">Kiểm tra lại</button>
+        <button type="button" class="btn btn-primary" id="engine-source-save">Lưu và áp dụng</button>
+        <button type="button" class="btn btn-secondary" id="engine-source-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Local Chromium MV3 extension catalog; explicit user consent for local code. -->
   <div class="modal-overlay" id="modal-extension-center">
     <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="ext-title">
@@ -756,7 +795,7 @@
       <div class="modal-body">
         <p class="behavior-disclaimer">Theo dõi thao tác <strong>trong LHM Ads Browser</strong> (mở/đóng/sửa hồ sơ, gọi Local API). Không theo dõi nhấp chuột trong trang Google Ads, không biết hệ thống Google đánh giá tài khoản thế nào.</p>
         <div class="behavior-metrics">
-          <div><span>Mức cảnh báo</span><strong id="behavior-level">Bình thường</strong></div>
+          <div><span>Mức cảnh báo</span><strong id="behavior-level">Chưa vượt ngưỡng</strong></div>
           <div><span>Hoạt động / 10 phút</span><strong id="behavior-activities">0</strong></div>
           <div><span>Hồ sơ liên quan</span><strong id="behavior-profiles">0</strong></div>
         </div>
@@ -793,9 +832,10 @@
             <label for="field-browser-engine">Công nghệ trình duyệt</label>
             <select id="field-browser-engine">
               <option value="chromium">Chrome / Edge — tương thích bản hiện tại</option>
-              <option value="gecko">Gecko — Firefox (không dùng Chromium)</option>
+              <option value="gecko">Firefox / Gecko — browser cài trên máy</option>
+              <option value="camoufox">Camoufox / Gecko — thử nghiệm riêng từng profile</option>
             </select>
-            <p style="margin-top:7px;font-size:12px;color:#9ca3af">Gecko đang ở chế độ thử nghiệm, mở bằng Firefox cài trên máy. Bản browser engine độc lập thương hiệu LHM cần được build riêng.</p>
+            <p style="margin-top:7px;font-size:12px;color:#9ca3af">Engine lưu theo từng profile. Camoufox cần launcher và binary riêng được kiểm chứng, chưa hỗ trợ proxy/RPA trong bản preview. Đổi engine không mang theo phiên đăng nhập.</p>
           </div>
           <div class="form-group" id="gecko-path-control" hidden>
             <label for="field-gecko-path">Đường dẫn Firefox / Gecko exe (có thể để trống nếu cài đặt chuẩn)</label>
@@ -1222,7 +1262,51 @@ run();
           <div id="health-readiness-summary" class="health-readiness-summary" role="status">Nhấn kiểm tra để xem trạng thái hệ thống.</div>
           <div id="health-readiness-items" class="health-readiness-items"></div>
         </section>
+        <section class="health-readiness" aria-labelledby="local-drift-title">
+          <div class="isolation-audit-head">
+            <strong id="local-drift-title">Theo dõi thay đổi chất lượng cấu hình (chỉ lưu máy)</strong>
+            <div class="health-readiness-buttons">
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-record">Lưu lượt kiểm tra</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-refresh">Xem xu hướng</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-export">Xuất JSON</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-clear">Xóa lịch sử</button>
+            </div>
+          </div>
+          <p class="health-footnote">Chỉ lưu tổng số hồ sơ lỗi/cảnh báo, số đang chạy và phiên bản LHM khi bạn bấm lưu. Không thu thập phím, chuột, vị trí trang, cookie, IP hay điểm CAPTCHA; không gửi về máy chủ.</p>
+          <div id="local-drift-results" role="status" aria-live="polite">Chưa đọc lịch sử kiểm tra.</div>
+        </section>
+        <section class="health-readiness" aria-labelledby="agency-controls-title">
+          <div class="isolation-audit-head">
+            <strong id="agency-controls-title">Kiểm tra IP / subnet của hồ sơ</strong>
+          </div>
+          <p class="health-footnote">Chỉ kiểm tra tài nguyên do agency được phép quản lý. Không phân tích cách Google liên kết tài khoản, không lưu IP người dùng, thông tin thẻ hoặc giả lập lịch sử tài khoản.</p>
+          <div class="form-group">
+            <label for="agency-profile">Hồ sơ nội bộ</label>
+            <select id="agency-profile"></select>
+          </div>
+          <div class="form-group">
+            <label for="agency-egress-ip">IPv4 exit đã kiểm tra thủ công</label>
+            <input id="agency-egress-ip" type="text" maxlength="45" placeholder="198.51.100.25" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="form-group">
+            <label for="agency-network-entries">Các IP exit khác của profile bạn quản lý (mỗi dòng: profile_id|IPv4)</label>
+            <textarea id="agency-network-entries" rows="3" maxlength="4000" placeholder="profile_a|198.51.100.12"></textarea>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" id="agency-network-check">Kiểm tra trùng subnet /24</button>
+          <div id="agency-network-result" role="status" aria-live="polite">Đây là kiểm tra xung đột tài nguyên, không phải công cụ tránh liên kết tài khoản.</div>
+        </section>
         <div id="health-items" class="health-list"></div>
+        <section class="criteria-checklist-section">
+          <div class="isolation-audit-head">
+            <strong>Bảng kiểm theo tiêu chí của hồ sơ</strong>
+          </div>
+          <p class="health-footnote">Mỗi tiêu chí chỉ hiển thị một trong ba trạng thái — ĐẠT, KHÔNG ĐẠT, CHƯA ĐO — kèm bằng chứng quan sát, giới hạn của kết luận và bước xử lý tiếp theo. Trạng thái chỉ đến từ dữ liệu đo của ứng dụng; chưa có dữ liệu đo thì tiêu chí là CHƯA ĐO.</p>
+          <div id="criteria-checklist" class="criteria-checklist" role="status"></div>
+          <div class="lhm-batch-actions">
+            <button type="button" class="btn btn-sm btn-secondary" id="criteria-checklist-sample">Xem ví dụ hiển thị (dữ liệu mẫu)</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="criteria-checklist-live" hidden>Quay lại trạng thái theo dữ liệu đo</button>
+          </div>
+        </section>
         <section class="engine-diagnostics">
           <div class="isolation-audit-head">
             <strong>Browser Engine Diagnostics</strong>
@@ -1448,6 +1532,7 @@ run();
   <script src="profileCsvUpdate.js"></script>
   <script src="tablePreferences.js"></script>
   <script src="windowManager.js"></script>
+  <script src="engineSource.js"></script>
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
@@ -1460,6 +1545,8 @@ run();
   <script src="bulkTags.js"></script>
   <script src="workflowStudio.js"></script>
   <script src="batchStudio.js"></script>
+  <script src="criteriaChecklist.js"></script>
+  <script src="criteriaChecklistProvider.js"></script>
   <script src="maintenance.js"></script>
   <script src="controlTower.js"></script>
   <script src="proxyCenter.js"></script>

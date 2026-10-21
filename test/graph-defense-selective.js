@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {GraphDefense}=require('../src/health/GraphDefense');
+assert.equal(GraphDefense.getSubnet24('198.51.100.9'),'198.51.100.0/24');
+const risk=GraphDefense.checkSubnetRisk('198.51.100.9',[{profileId:'a',subnet:'198.51.100.1'},{profileId:'b',subnet:'198.51.100.2'}],{profileId:'c'});
+assert.equal(risk.otherProfiles,2);assert.equal(risk.isRisk,true);
+assert.equal(GraphDefense.checkSubnetRisk('198.51.100.9',[{profileId:'c',subnet:'198.51.100.3'}],{profileId:'c'}).isRisk,false);
+assert.equal(GraphDefense.checkTemporalRisk({profileId:'a',subnet:'198.51.100.0/24',startTime:1000,endTime:2000},[{profileId:'b',subnet:'198.51.100.5',startTime:1500,endTime:1700}]).isRisk,true);
+assert.throws(()=>GraphDefense.getSubnet24('::1'));
+assert.equal(Object.hasOwn(GraphDefense,'checkPaymentRisk'),false);
+console.log('GraphDefense subnet and temporal review: PASS');

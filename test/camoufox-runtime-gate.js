@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('assert');
+const {assessRuntime}=require('../src/engine/camoufoxRuntimeGate');
+const legacy=assessRuntime({platform:'win32',verifiedBundle:false});
+assert.strictEqual(legacy.canInstall,true);
+assert.strictEqual(legacy.ready,false);
+assert.strictEqual(legacy.nodeVersionRequired,false);
+assert.strictEqual(legacy.manualOnly,true);
+const signed=assessRuntime({platform:'win32',verifiedBundle:true});
+assert.strictEqual(signed.ready,true);
+assert.strictEqual(signed.nodeVersionRequired,false);
+const unsupported=assessRuntime({platform:'linux',verifiedBundle:true});
+assert.strictEqual(unsupported.ready,false);
+assert.strictEqual(unsupported.canInstall,false);
+console.log('Native Camoufox manual launcher does not require Node 22 but still requires signed Windows engine');

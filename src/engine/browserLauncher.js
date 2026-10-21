@@ -7,6 +7,8 @@ const { createLaunchArgs } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
 const { updateGeckoProxy } = require('./geckoProxy');
 const { optionsFor } = require('./browserDiagnostics');
+const {checkProfileSignalChain}=require('../health/signalChain');
+const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null } = {}) {
@@ -17,9 +19,15 @@ class BrowserLauncher {
     this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
     this.baseDataDir = store.baseDir;
+    this.engineFactory=new EngineFactory(this);
   }
 
   findBrowserBinary(engine = 'chromium') {
+    // Explicit user selection; never silently fallback to a system browser.
+    if(engine==='chromium'&&this.store.getSettings().engineSource==='bundled'){
+      if(!this.bundledEngine)throw Error('Bundled browser verifier is unavailable');
+      return this.bundledEngine.resolve('chromium');
+    }
     // Explicitly pinned browser takes priority. Modified or missing binaries
     // fail closed instead of silently falling back to an unpinned version.
     const pinned=this.runtimeRegistry?.binaryFor(engine);
@@ -99,9 +107,21 @@ class BrowserLauncher {
       throw new Error(`Profile not found: ${profileId}`);
     }
 
+    const preflight=checkProfileSignalChain(profile);
+    if(preflight.status==='blocked'){
+      const failures=preflight.issues.filter(x=>x.level==='error').map(x=>x.code);
+      throw Error('Signal-chain preflight blocked inconsistent profile: '+failures.join(', '));
+    }
     if (profile.requiresProxySetup === true)
       throw Error('Hồ sơ nhập từ bản sao lưu cần gán lại proxy trước khi mở.');
-    const engine = profile.engine === 'gecko' ? 'gecko' : 'chromium';
+    // Resolve provider using the saved per-profile selection. Never fallback
+    // from a missing Camoufox release into a different browser engine.
+    return this.engineFactory.launchProfile(profile,{customUrl});
+  }
+
+  async _launchInstalled(profile,customUrl,engine){
+    if(!['chromium','gecko'].includes(engine))
+      throw Error('Installed runtime cannot handle this engine');
     const browserBin = this.findBrowserBinary(engine);
     // Manual browsing does not require a remotely controllable DevTools endpoint.
     const port = engine === 'chromium' && this.store.getSettings().apiEnabled === true ?
@@ -183,6 +203,7 @@ class BrowserLauncher {
 
     const instanceInfo = {
       profileId: profile.id, engine, name: profile.name,
+      engineType:engine==='gecko'?'firefox':'chromium',
       port, pid: proc.pid, startedAt: new Date().toISOString(), wsEndpoint: null
     };
     this.activeProcesses.set(profile.id, { process: proc, stopping: false, ...instanceInfo });
@@ -208,6 +229,26 @@ class BrowserLauncher {
     const active = this.activeProcesses.get(profileId);
     if (!active) return { success: false, message: 'Browser is not running' };
     if (active.stopping) return { success: false, message: 'Browser is already stopping' };
+    if(active.provider==='camoufox'&&active.protocol==='playwright-internal'){
+      const controller=this.camoufoxPlaywrightController;
+      if(!controller?.contextFor(profileId))
+        return {success:false,message:'No active Playwright session'};
+      active.stopping=true;
+      Promise.resolve().then(()=>controller.stop(profileId)).catch(error=>{
+        console.warn('[Camoufox] Playwright context close failed:',
+          String(error.message).slice(0,160));
+        // A rejected close does not mean Firefox exited. Do not unlock the
+        // profile or drop its active record while a browser may still run.
+        const current=this.activeProcesses.get(profileId);
+        if(current===active)current.stopping=false;
+      });
+      return {success:true,pendingExit:true};
+    }
+    if(active.provider==='camoufox'){
+      const outcome=this.camoufoxAdapter.stop(profileId);
+      if(outcome.success)active.stopping=true;
+      return outcome;
+    }
     const proc = active.process;
     try {
       const sent = proc.kill('SIGTERM');
@@ -238,6 +279,8 @@ class BrowserLauncher {
       list.push({
         profileId: id,
         engine: info.engine || 'chromium',
+        provider:info.provider||(info.engine==='gecko'?'firefox':'chromium'),
+        engineType:info.engineType||resolveEngineType(info,this.store.getSettings()),
         name: info.name,
         port: info.port,
         pid: info.pid,
