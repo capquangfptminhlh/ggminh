@@ -188,7 +188,8 @@ function setupEventListeners() {
     fpAuditResults.textContent = 'Đang chẩn đoán...';
     try {
       const audit = await window.api.inspectFingerprint({
-        engine: fieldBrowserEngine.value, fingerprint: selectedFingerprintConfig()
+        engine:fieldBrowserEngine.value==='chromium'?'chromium':'gecko',
+        fingerprint:selectedFingerprintConfig()
       });
       fpAuditResults.replaceChildren();
       const title = document.createElement('div');
@@ -209,8 +210,8 @@ function setupEventListeners() {
     } catch (error) { fpAuditResults.textContent = 'Kiểm tra thất bại: ' + error.message; }
   });
   fieldBrowserEngine.addEventListener('change', () => {
-    const gecko = fieldBrowserEngine.value === 'gecko';
-    geckoPathControl.hidden = !gecko;
+    const gecko = fieldBrowserEngine.value !== 'chromium';
+    geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
     if (gecko) setFingerprintMode('native');
     fieldFpMode.disabled = gecko;
   });
@@ -312,7 +313,8 @@ function setupEventListeners() {
     const profile = {
       id: fieldId.value || undefined,
       name,
-      engine: fieldBrowserEngine.value,
+      engine:fieldBrowserEngine.value==='chromium'?'chromium':'gecko',
+      engine_type:fieldBrowserEngine.value==='gecko'?'firefox':fieldBrowserEngine.value,
       group: fieldGroup.value.trim() || 'Default',
       startUrls: parseStartupUrls(fieldStartUrl.value),
       tags: parseTags(fieldTags.value),
@@ -375,7 +377,10 @@ async function openProfileModal(existingProfile = null) {
   if (existingProfile) {
     document.getElementById('modal-title').textContent = 'Chỉnh sửa Profile';
     fieldId.value = existingProfile.id;
-    fieldBrowserEngine.value = existingProfile.engine === 'gecko' ? 'gecko' : 'chromium';
+    fieldBrowserEngine.value=(existingProfile.engine_type==='camoufox'||
+      !existingProfile.engine_type&&existingProfile.engine==='gecko'&&
+      settings.geckoProvider==='camoufox')?
+      'camoufox':existingProfile.engine==='gecko'?'gecko':'chromium';
     fieldName.value = existingProfile.name;
     fieldGroup.value = existingProfile.group || 'Default';
     fieldStartUrl.value = (existingProfile.startUrls || [existingProfile.startUrl || 'https://ads.google.com/']).join('\n');
@@ -409,7 +414,7 @@ async function openProfileModal(existingProfile = null) {
     setFingerprintMode('native');
   }
   geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
-  fieldFpMode.disabled = fieldBrowserEngine.value === 'gecko';
+  fieldFpMode.disabled = fieldBrowserEngine.value !== 'chromium';
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   openModal(modalProfile);
 }
@@ -421,7 +426,7 @@ function parseTags(value) {
   return value.split(',').map(tag => tag.trim()).filter(Boolean);
 }
 function selectedFingerprintConfig() {
-  if (fieldFpMode.value === 'native' || fieldBrowserEngine.value === 'gecko')
+  if (fieldFpMode.value === 'native' || fieldBrowserEngine.value !== 'chromium')
     return { mode: 'native' };
   const [width,height] = fieldFpScreen.value.split('x').map(Number);
   return {
@@ -557,7 +562,7 @@ function renderProfiles() {
       <td data-table-col="id"><code class="profile-id">${escapeHtml(profile.id)}</code></td>
       <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
-      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine === 'gecko' ? 'Firefox / Gecko' : 'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
+      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh'}</span></div></td>
       <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
