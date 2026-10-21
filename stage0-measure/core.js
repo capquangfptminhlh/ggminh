@@ -36,4 +36,30 @@ function digestFile(file){
  }finally{fs.closeSync(fd)}
  return hash.digest('hex');
 }
-module.exports={FIELDS,safeOptions,stageStorageResult,digestFile};
+const IDENTITY_FIELD_MAP=Object.freeze({
+ userAgent:'userAgent',platform:'platform',language:'language',
+ timezone:'timezone',hardwareConcurrency:'hardwareConcurrency'
+});
+function identityExpectationResult(expectations,observed){
+ if(!expectations||typeof expectations!=='object')
+  throw Error('Identity expectations required');
+ if(!observed||typeof observed!=='object')
+  throw Error('Observed browser environment required');
+ const fields={};
+ for(const [expectedKey,observedKey] of Object.entries(IDENTITY_FIELD_MAP)){
+  const expected=expectations[expectedKey]??null;
+  fields[expectedKey]={expected,observed:observed[observedKey]??null,
+   match:expected===null?null:expected===observed[observedKey]};
+ }
+ for(const [expectedKey,screenKey] of [['screenWidth','width'],['screenHeight','height']]){
+  const expected=expectations[expectedKey]??null;
+  const seen=observed.screen?observed.screen[screenKey]??null:null;
+  fields[expectedKey]={expected,observed:seen,
+   match:expected===null?null:expected===seen};
+ }
+ const compared=Object.values(fields).filter(f=>f.match!==null);
+ return {fields,compared:compared.length,
+  pass:compared.length>0&&compared.every(f=>f.match===true)};
+}
+module.exports={FIELDS,safeOptions,stageStorageResult,digestFile,
+ IDENTITY_FIELD_MAP,identityExpectationResult};
