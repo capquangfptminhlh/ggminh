@@ -17,6 +17,12 @@ function cleanTags(input) {
   }
   return tags;
 }
+// Every per-profile directory the app writes under the storage root:
+// Chromium sessions, Gecko sessions, Camoufox sessions, and the
+// per-profile extension copies materialised at launch. Permanent
+// deletion must remove ALL of them; a root missing here leaves a
+// profile's session data on disk forever after purge.
+const PROFILE_DATA_ROOTS = ['profiles', 'gecko-profiles', 'camoufox-profiles', 'extensions'];
 const VALID_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 function assertId(id) {
   if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
@@ -250,7 +256,7 @@ class Store {
         if (this.data.profiles.some(p=>p.id===id) ||
             (this.data.trash || []).some(x=>x.profile?.id===id))
           throw Error('ID is still referenced by a profile');
-        for (const part of ['profiles','gecko-profiles']) {
+        for (const part of PROFILE_DATA_ROOTS) {
           const target=path.join(this.baseDir,part,id);
           if (fs.existsSync(target))
             fs.rmSync(target,{recursive:true,force:true});
@@ -308,10 +314,10 @@ class Store {
     if (prev === this.data.profiles.length) return false;
     try{this.saveData();}
     catch(error){this.data.profiles=original;throw error;}
-    const directory = path.join(this.baseDir, 'profiles', id);
-    if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
-    const geckoDirectory = path.join(this.baseDir, 'gecko-profiles', id);
-    if (fs.existsSync(geckoDirectory)) fs.rmSync(geckoDirectory, { recursive: true, force: true });
+    for (const part of PROFILE_DATA_ROOTS) {
+      const directory = path.join(this.baseDir, part, id);
+      if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
+    }
     return true;
   }
   getSettings() { return { ...(this.data.settings || {}) }; }

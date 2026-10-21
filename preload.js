@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('api', {
   studioStatus: () => ipcRenderer.invoke('studio-status'),
   getBehaviorReport: () => ipcRenderer.invoke('get-behavior-report'),
   getWarningReport: () => ipcRenderer.invoke('get-warning-report'),
+  clearWarningHistory: () => ipcRenderer.invoke('clear-warning-history'),
   provisionCamoufoxIdentity: (id) => ipcRenderer.invoke('provision-camoufox-identity', id),
   getApiStatus: () => ipcRenderer.invoke('get-api-status'),
   setApiEnabled: enabled => ipcRenderer.invoke('set-api-enabled', enabled),

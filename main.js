@@ -13,7 +13,9 @@ const { checkProxy } = require('./src/engine/proxyChecker');
 const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { createWarningService } = require('./src/monitor/warningService');
+const { createWarningHistory } = require('./src/monitor/warningHistory');
 const { ExitIpObservationStore } = require('./src/health/exitIpObservations');
+const { observeRuntimeExitIp } = require('./src/health/runtimeEgressObservation');
 const { provisionCamoufoxIdentity } = require('./src/engine/camoufoxProvisioning');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
 const { BatchAutomation } = require('./src/automation/batch');
@@ -66,6 +68,7 @@ let camoufoxInstall = null;
 let camoufoxApprovedRelease = null;
 let behaviorMonitor = null;
 let warningService = null;
+let warningHistory = null;
 let ipObservationStore = null;
 let camoufoxExecutableResolver = null;
 const appSessionId = require('crypto').randomUUID();
@@ -646,6 +649,11 @@ function initIPC() {
           resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
       }catch(_){ provisioning=null; }
     }
+    // Keep the provisioning reason on the profile so the UI can tell
+    // the user the specific cause (Agent 16): the renderer already has
+    // a translation for these reason codes.
+    if(provisioning&&provisioning.reason&&profile.fingerprint)
+      profile.fingerprint.identityProvisioningReason=provisioning.reason;
     const saved = store.saveProfile(profile,{allowEngineChange});
     if(provisioning&&provisioning.status==='provisioned')
       behaviorMonitor.record('identity_provisioned', saved.id, 'manual');
@@ -682,12 +690,30 @@ function initIPC() {
     void (async () => {
       try{
         if(!ipObservationStore) return;
+        // Runtime egress observation (Constitution s.19.3): when an
+        // LHM-controlled echo endpoint is configured (settings
+        // .runtimeEchoUrl — an owner decision, never hardcoded) and
+        // this session is controller-driven, measure the exit IP from
+        // inside the profile's own page context and label it
+        // 'browser-runtime'. Config-gated: with no endpoint set this
+        // is a no-op, and a failed measurement records nothing — it is
+        // never backfilled from the manager-process result below.
+        try{
+          const echoUrl=store.getSettings()?.runtimeEchoUrl;
+          const controller=launcher.camoufoxPlaywrightController;
+          const context=controller&&controller.contextFor?controller.contextFor(id):null;
+          if(typeof echoUrl==='string'&&echoUrl&&context){
+            void observeRuntimeExitIp({context,profileId:id,sessionId:appSessionId,
+              echoUrl,store:ipObservationStore,timeoutMs:8000}).catch(()=>{});
+          }
+        }catch(_){}
         const p=store.getProfile(id);
         const proxy=p&&p.proxy;
         if(!proxy||!proxy.type||proxy.type==='direct'||proxy.type==='none') return;
         const result=await checkProxy(proxy);
         if(result&&typeof result.ip==='string')
-          ipObservationStore.record({profileId:id,ip:result.ip,sessionId:appSessionId});
+          ipObservationStore.record({profileId:id,ip:result.ip,sessionId:appSessionId,
+            source:'manager-process'});
       }catch(_){}
     })();
     return { profileId: opened.profileId, port: opened.port, alreadyRunning: !!opened.alreadyRunning };
@@ -718,13 +744,27 @@ function initIPC() {
   });
   ipcMain.handle('get-behavior-report', () => behaviorMonitor.getReport());
   ipcMain.handle('get-warning-report', () => {
-    if (!warningService) warningService = createWarningService();
-    return warningService.evaluate({
+    if (!warningService) warningService = createWarningService({ seed: warningHistory ? warningHistory.seedRecords() : null });
+    const report = warningService.evaluate({
       behaviorEvents: behaviorMonitor ? behaviorMonitor.events : [],
       ipObservations: ipObservationStore ? ipObservationStore.list() : [],
       healthDrift: localHealthDrift ? localHealthDrift.report() : null,
       monitorAlerts: behaviorMonitor ? behaviorMonitor.getReport().alerts : [],
     });
+    // Durable warning history (Constitution s.20.3): fold this report
+    // into the on-disk ledger and expose the durable truth alongside
+    // the in-session report. The store only ever persists the
+    // normalised s.22 warning shape (whitelist projection).
+    if (warningHistory) {
+      warningHistory.record(report);
+      report.history = warningHistory.entries();
+      report.historyStatus = warningHistory.status();
+    }
+    return report;
+  });
+  ipcMain.handle('clear-warning-history', () => {
+    if (warningService) warningService.reset();
+    return warningHistory ? warningHistory.clear() : { ok: false, error: 'history not initialised' };
   });
   ipcMain.handle('provision-camoufox-identity', async (_, id) => {
     const profile = store.getProfile(id);
@@ -867,7 +907,16 @@ app.whenReady().then(async () => {
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
   try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
-  warningService = createWarningService();
+  // Durable warning history (s.20.3), paired with the service seed
+  // below: the store counts 'authoritative' because the seeded
+  // service registry already carries the accumulated totals.
+  try{
+    warningHistory=createWarningHistory({storageDir,countMode:'authoritative'});
+    const loadedHistory=warningHistory.load();
+    if(loadedHistory.status==='error')
+      console.warn('[warning-history]',loadedHistory.reason);
+  }catch(_){ warningHistory=null; }
+  warningService = createWarningService({seed:warningHistory?warningHistory.seedRecords():null});
   camoufoxExecutableResolver = () => verifiedProviders.resolve('camoufox');
   workflowStore = new WorkflowStore(storageDir);
   configBackup = new ConfigBackup(store, workflowStore);

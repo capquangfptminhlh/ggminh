@@ -4,6 +4,35 @@ const { checkProxy } = require('../engine/proxyChecker');
 const {resolveEngineType}=require('../engine/EngineFactory');
 const {safeWebUrl}=require('../engine/launchArgs');
 
+// Data minimization for profile payloads leaving over the Local API
+// (QA-003): publicProfile already strips proxy passwords, but it still
+// carries the user's private notes and the pinned D1 identity blob
+// (CAMOU_CONFIG env chunks + measurement expectations). No verified
+// HTTP consumer needs either: the desktop renderer reads full profiles
+// over Electron IPC, automation reads the store in-process, and the
+// documented list shape is /api/v1/user/list. Project at the HTTP
+// boundary only — stored data and IPC payloads are untouched. The
+// identity is replaced by its provenance metadata so API consumers
+// can still see that a pinned identity exists (and which generator
+// produced it) without receiving the blob itself.
+function apiProfile(profile) {
+  if (!profile || typeof profile !== 'object') return profile;
+  const result = { ...profile };
+  delete result.notes;
+  const fp = profile.fingerprint;
+  if (fp && typeof fp === 'object' &&
+      fp.identity && typeof fp.identity === 'object') {
+    result.fingerprint = { ...fp, identity: {
+      redacted: true,
+      format: fp.identity.format ?? null,
+      version: fp.identity.version ?? null,
+      generator: fp.identity.generator ?? null,
+      generatedAt: fp.identity.generatedAt ?? null,
+    } };
+  }
+  return result;
+}
+
 function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null, licensePolicy=null } = {}) {
   const service = express();
   service.disable('x-powered-by');
@@ -101,7 +130,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       created_time: p.createdAt
     })) }, msg: 'success'
   }));
-  service.get('/api/profiles', (_, res) => res.json(store.getProfiles()));
+  service.get('/api/profiles', (_, res) => res.json(store.getProfiles().map(apiProfile)));
   service.post('/api/profiles', (req, res) => {
     try {
       // The desktop IPC path already prevents changing a running profile.
@@ -120,7 +149,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
         Object.hasOwn(req.body,'engine_type'));
       const saved = store.saveProfile(req.body,{allowEngineChange:requestedChange});
       if (behaviorMonitor) behaviorMonitor.record('profile_save', saved.id, 'api');
-      res.json(saved);
+      res.json(apiProfile(saved));
     } catch (error) { fail(res, error); }
   });
   service.delete('/api/profiles/:id', (req, res) => {

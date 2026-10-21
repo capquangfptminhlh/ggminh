@@ -1,0 +1,84 @@
+{
+ "status": "RAN",
+ "scope": "Loopback mechanism proof through the app controller with a lab Camoufox binary. Proves: runtime-side fetch, source labelling, store persistence, D3 acceptance, fail-closed on a dead echo. Does NOT prove the runtime/manager addresses differ through a real proxy.",
+ "bound": {
+  "commit": "d840f37b20f99dfaa68ee987afda93a5fc81d65b",
+  "os": "linux 7.0.0-39-generic",
+  "node": "v24.20.0",
+  "playwrightCore": "1.62.0",
+  "engine": {
+   "path": "/home/hatch/tmp-big/cfx-build/camoufox-bin",
+   "sha256": "2a2cb03f6ca4cfa96cdb9d0991b52f4dc02d7f097d3253d355f6a6361ce28669",
+   "version": "Camoufox Camoufox 156.0.1-beta.36"
+  },
+  "at": "2026-10-21T15:58:25.101Z"
+ },
+ "checks": [
+  {
+   "name": "controller session live",
+   "pass": true,
+   "detail": "contextFor returned the running context"
+  },
+  {
+   "name": "manager-process observation recorded with its label",
+   "pass": true,
+   "detail": "ip=127.0.0.1"
+  },
+  {
+   "name": "runtime observation recorded",
+   "pass": true,
+   "detail": "{\"recorded\":true,\"source\":\"browser-runtime\",\"entry\":{\"profileId\":\"runtime-egress-a7\",\"ip\":\"127.0.0.1\",\"observedAt\":\"2026-10-21T15:58:22.743Z\",\"sessionId\":\"a7-real-run\",\"source\":\"browser-runtime\"}}"
+  },
+  {
+   "name": "runtime entry labelled browser-runtime",
+   "pass": true,
+   "detail": "browser-runtime"
+  },
+  {
+   "name": "echo server saw a NEW connection for the runtime probe",
+   "pass": true,
+   "detail": "hits before=1 after=2"
+  },
+  {
+   "name": "recorded IP equals the source address the echo server logged",
+   "pass": true,
+   "detail": "entry=127.0.0.1 echoLog=127.0.0.1"
+  },
+  {
+   "name": "runtime entry persisted to disk with label",
+   "pass": true,
+   "detail": "entries=2"
+  },
+  {
+   "name": "D3 normalisation accepts the mixed labelled store",
+   "pass": true,
+   "detail": "manager-process,browser-runtime"
+  },
+  {
+   "name": "dead echo records nothing (fail-closed)",
+   "pass": true,
+   "detail": "reason=fetch-failed"
+  }
+ ],
+ "observations": [
+  {
+   "profileId": "runtime-egress-a7",
+   "ip": "127.0.0.1",
+   "observedAt": "2026-10-21T15:58:21.219Z",
+   "sessionId": "a7-real-run",
+   "source": "manager-process"
+  },
+  {
+   "profileId": "runtime-egress-a7",
+   "ip": "127.0.0.1",
+   "observedAt": "2026-10-21T15:58:22.743Z",
+   "sessionId": "a7-real-run",
+   "source": "browser-runtime"
+  }
+ ],
+ "notRun": [
+  "Runtime-vs-manager address differentiation through a real proxy — needs a controlled proxy (coordinated with the proxy lab); on loopback both are 127.0.0.1 by construction.",
+  "Manually opened / native-adapter sessions — no page handle exists for this observation source (see INTEGRATION-NOTES).",
+  "Windows / packaged EXE — this run is Linux with the lab binary (gate 3 territory)."
+ ]
+}

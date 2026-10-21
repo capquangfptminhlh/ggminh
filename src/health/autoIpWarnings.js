@@ -18,6 +18,7 @@
  */
 const net=require('net');
 const {GraphDefense}=require('./GraphDefense');
+const {isObservationSource}=require('./exitIpObservations');
 
 const ID=/^[a-zA-Z0-9_-]{1,64}$/;
 const MAX_OBSERVATIONS=20000;
@@ -41,8 +42,17 @@ function normalizeObservations(observations){
   if(item.sessionId!==undefined&&
      (typeof item.sessionId!=='string'||!ID.test(item.sessionId)))
    throw Error('Invalid session ID in exit-IP observation');
+  // Optional origin label (Constitution 19.3): 'browser-runtime' or
+  // 'manager-process'. Absent on legacy records and accepted as-is;
+  // a present-but-unknown label fails closed like any malformed field.
+  // The label is carried through for reporting; warning rules below
+  // deliberately do not depend on it, so labelled, unlabelled and
+  // mixed inputs yield identical warnings.
+  if(item.source!==undefined&&item.source!==null&&
+     !isObservationSource(item.source))
+   throw Error('Invalid source in exit-IP observation');
   out.push({profileId:item.profileId,ip:item.ip,observedAt:at,
-   sessionId:item.sessionId||null});
+   sessionId:item.sessionId||null,source:item.source||null});
  }
  return out.sort((a,b)=>a.observedAt-b.observedAt);
 }

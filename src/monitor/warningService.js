@@ -364,9 +364,21 @@ function fromMonitorAlerts(alerts, evaluatedAt) {
   return { warnings, meta: { alertsAnalysed: alerts.length } };
 }
 
-function createWarningService({ now = () => Date.now() } = {}) {
+function createWarningService({ now = () => Date.now(), seed = null } = {}) {
   if (typeof now !== 'function') throw Error('now must be a function');
   const registry = new Map();
+  // Optional durable-history seed (warningHistory.seedRecords()):
+  // restores firstDetectedAt / timesObserved across app restarts.
+  // Seeded entries are replaced by fresh normalised warnings on the
+  // next evaluate(); evaluate() already carries the three bookkeeping
+  // fields over from the previous registry entry, so no other change
+  // is needed.
+  if (Array.isArray(seed)) for (const w of seed) {
+    if (isRecord(w) && typeof w.id === 'string' &&
+        Number.isFinite(w.firstDetectedAt) &&
+        Number.isInteger(w.timesObserved) && w.timesObserved > 0)
+      registry.set(w.id, w);
+  }
   let lastSources = {};
 
   function evaluate(input = {}) {

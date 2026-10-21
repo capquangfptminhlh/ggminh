@@ -178,7 +178,22 @@
         try { model = window.LHMCriteriaChecklistProvider(currentProfileName); }
         catch (error) { model = null; }
       }
-      renderInto(container, model && Array.isArray(model.entries) ? model : defaultModel(currentProfileName));
+      if (model && typeof model.then === 'function') {
+        // Provider bất đồng bộ (đường dữ liệu thật qua IPC luôn bất đồng
+        // bộ): vẽ mô hình mặc định trong lúc chờ, khi Promise settle thì
+        // vẽ lại bằng model thật. Nếu người dùng đã chuyển hồ sơ khác
+        // trước khi kết quả về, bỏ kết quả cũ — không vẽ nhầm hồ sơ.
+        // Promise bị reject thì giữ nguyên mô hình mặc định đã vẽ.
+        renderInto(container, defaultModel(currentProfileName));
+        const requestedFor = currentProfileName;
+        model.then(resolved => {
+          if (currentProfileName !== requestedFor) return;
+          renderInto(container, resolved && Array.isArray(resolved.entries)
+            ? resolved : defaultModel(currentProfileName));
+        }).catch(() => { /* giữ mô hình mặc định toàn CHƯA ĐO đã vẽ */ });
+      } else {
+        renderInto(container, model && Array.isArray(model.entries) ? model : defaultModel(currentProfileName));
+      }
     }
     const live = document.getElementById('criteria-checklist-live');
     if (live) live.hidden = true;

@@ -11,6 +11,21 @@ window.addEventListener('DOMContentLoaded',()=>{
  const installButton=el('camoufox-install-button');
  let releaseAvailable=false;
  let busy=false;
+ // The runtime gate reports raw English technical reasons; translate the
+ // known ones into an explanation plus what the user can actually do.
+ function camoufoxRuntimeGuidance(reason){
+  const raw=String(reason||'');
+  if(/Windows-only/i.test(raw))
+   return 'Chưa thể cài Camoufox: bản Camoufox gốc chỉ chạy trên Windows, nên mục này '+
+    'không khả dụng khi ứng dụng đang chạy ngoài Windows.';
+  if(/publisher-signed|signed Camoufox EXE/i.test(raw))
+   return 'Chưa thể cài Camoufox: chưa có bản Camoufox được LHM ký riêng để xác minh trên máy này. '+
+    'Việc bạn có thể làm: dùng engine Chromium hoặc Firefox hệ thống trong lúc chờ, hoặc liên hệ '+
+    'bên bán để nhận bản phát hành Camoufox đã ký. (Chi tiết kỹ thuật: '+raw+'.)';
+  return 'Chưa thể cài Camoufox: '+(raw||'điều kiện chạy chưa sẵn sàng')+
+   '. Thử bấm Làm mới; nếu vẫn vậy, hãy liên hệ bên bán kèm theo thông báo này.';
+ }
+ window.LHMEngineGuidance={camoufoxRuntimeGuidance};
  function busyState(value){
   busy=value;
   for(const id of ['engine-source-select','engine-source-save','engine-source-refresh',
@@ -28,12 +43,14 @@ window.addEventListener('DOMContentLoaded',()=>{
    releaseAvailable=availability.available&&!availability.alreadyInstalled;
    installButton.disabled=busy||!releaseAvailable;
    installInfo.textContent=!availability.runtime?.ready?
-     'Chưa thể cài Camoufox: '+availability.runtime.reason+'.':
+     camoufoxRuntimeGuidance(availability.runtime.reason):
      availability.alreadyInstalled?
-       'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng.':
+       'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng. '+
+       'Bạn có thể tạo hồ sơ Camoufox; ứng dụng sẽ thử cấp danh tính đã ghim khi tạo hồ sơ.':
      availability.available?'Có bản Camoufox được LHM ký số: '+availability.version+
-       '. Cần xác nhận riêng trước khi tải.':
-       'Chưa có bản Camoufox được LHM ký và phê duyệt; nút cài đặt chưa khả dụng.';
+       '. Bấm nút cài đặt bên dưới để bắt đầu; ứng dụng sẽ hỏi xác nhận riêng trước khi tải.':
+       'Chưa có bản Camoufox được LHM ký và phê duyệt; nút cài đặt chưa khả dụng. '+
+       'Hãy liên hệ bên bán để nhận bản phát hành đã ký. Trong lúc chờ, hồ sơ Chromium và Firefox vẫn dùng được.';
    geckoResult.textContent=camoufox.ready?
      'Camoufox EXE đã xác minh chữ ký · '+camoufox.version+
        '. Chỉ mở cửa sổ thủ công; không có Playwright hoặc proxy/GeoIP tự động.':
@@ -43,7 +60,8 @@ window.addEventListener('DOMContentLoaded',()=>{
      ' · '+bundle.fileCount+' tệp · SHA-256: '+bundle.sha256.slice(0,16)+'…':
     'Chưa có engine đóng gói được xác thực: '+bundle.reason+
      '. Chế độ System vẫn hoạt động.';
-  }catch(error){result.textContent='Không kiểm tra được Engine: '+error.message;}
+  }catch(error){result.textContent='Không kiểm tra được Engine: '+error.message+
+   '. Thử bấm Làm mới; nếu vẫn lỗi, hãy khởi động lại ứng dụng rồi thử lại.';}
   finally{busyState(false);}
  }
  function close(){
@@ -68,7 +86,8 @@ window.addEventListener('DOMContentLoaded',()=>{
    result.textContent=updated.source==='bundled'?
     'Đã chọn engine đóng gói hợp lệ. Mỗi lần mở profile sẽ xác minh lại.':
     'Đã chọn trình duyệt hệ thống. Đường dẫn ghim hiện có vẫn được ưu tiên.';
-  }catch(error){result.textContent='Không thay đổi Engine: '+error.message;}
+  }catch(error){result.textContent='Không thay đổi Engine: '+error.message+
+   '. Hãy đóng toàn bộ trình duyệt đang mở rồi thử lại.';}
   finally{busyState(false);}
  });
  installButton.addEventListener('click',async()=>{
@@ -80,11 +99,14 @@ window.addEventListener('DOMContentLoaded',()=>{
    if(result.canceled)installInfo.textContent='Đã hủy cài đặt.';
    else{
     installInfo.textContent='Đã cài và xác minh Camoufox '+result.version+
-      '. Không tự chuyển hoặc sao chép session giữa các engine.';
+      '. Khi tạo hồ sơ Camoufox mới, ứng dụng sẽ thử cấp danh tính đã ghim cho hồ sơ. '+
+      'Không tự chuyển hoặc sao chép session giữa các engine.';
     releaseAvailable=false;
    }
   }catch(error){
-   installInfo.textContent='Cài Camoufox không thành công: '+error.message;
+   installInfo.textContent='Cài Camoufox không thành công: '+error.message+
+    '. Kiểm tra kết nối mạng và dung lượng trống rồi thử lại; nếu vẫn lỗi, '+
+    'hãy ghi lại thông báo này khi liên hệ hỗ trợ.';
   }finally{busyState(false);}
  });
  el('engine-gecko-save').addEventListener('click',async()=>{
@@ -97,7 +119,8 @@ window.addEventListener('DOMContentLoaded',()=>{
    geckoResult.textContent=data.provider==='camoufox'?
     'Đã chọn Camoufox chạy trực tiếp (preview). Chỉ duyệt web thủ công với profile native/direct.':
     'Đã trở về Firefox đã cài trên máy.';
-  }catch(error){geckoResult.textContent='Không đổi được provider: '+error.message;}
+  }catch(error){geckoResult.textContent='Không đổi được provider: '+error.message+
+   '. Hãy đóng toàn bộ trình duyệt đang mở rồi thử lại.';}
   finally{busyState(false);}
  });
 });

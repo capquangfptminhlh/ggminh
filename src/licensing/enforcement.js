@@ -20,7 +20,13 @@ class LicensePolicy{
   this.file=path.join(root,'license-trial.json');
   let existing;
   try{existing=JSON.parse(fs.readFileSync(this.file,'utf8'));}
-  catch(e){if(e.code!=='ENOENT')throw e;}
+  catch(e){
+   // A corrupt trial file gets the same controlled, supportable error
+   // as a semantically invalid one, not a raw SyntaxError.
+   if(e instanceof SyntaxError)
+    throw Error('Trial state invalid: manual license support required');
+   if(e.code!=='ENOENT')throw e;
+  }
   if(existing){
    if(existing.version!==1||existing.installationId!==manager.installationId||
       !Number.isSafeInteger(existing.startedAt)||existing.startedAt<0)

@@ -1,4 +1,135 @@
-# INTEGRATION NOTES — Agent 7 (Network Safety)
+# INTEGRATION NOTES — Agent 7 (đợt thương mại hoá): quan sát IP thoát từ runtime
+
+Nhánh `agent-7/runtime-egress-observation`, nền `f4d7329`. File chung
+(package.json, main.js, preload.js, index.html) KHÔNG bị chạm — mọi điểm
+nối dưới đây là đề xuất cho điều phối thực hiện.
+
+## Cái đã có trong nhánh này
+
+- `src/health/runtimeEgressObservation.js` (mới):
+  `observeRuntimeExitIp({ context | page, profileId, sessionId, echoUrl,
+  store, timeoutMs })` → fetch endpoint echo TỪ TRONG page context của
+  phiên Camoufox do controller điều khiển, ghi quan sát qua
+  ExitIpObservationStore với nhãn `source: 'browser-runtime'`.
+  Fail-closed toàn diện: echo không tới được / timeout / HTTP lỗi /
+  redirect / thân không phải IPv4 → KHÔNG ghi gì, trả
+  `{ recorded: false, reason }`, không bao giờ throw vì lỗi đo.
+- `src/health/exitIpObservations.js` (sửa, tương thích ngược): `record()`
+  nhận thêm `source` tuỳ chọn, chỉ nhận `'browser-runtime'` |
+  `'manager-process'` (nhãn lạ → từ chối ghi); không truyền source thì
+  bản ghi giữ nguyên hình dạng cũ (không có khóa `source`). File cũ nạp
+  lại nguyên vẹn. Export thêm `OBSERVATION_SOURCES`, `isObservationSource`.
+- `src/health/autoIpWarnings.js` (sửa tối thiểu): `normalizeObservations`
+  kiểm chứng + cho `source` chảy qua (nhãn lạ → throw, fail-closed như
+  sessionId). Logic cảnh báo KHÔNG phân biệt nguồn — test chứng minh đầu
+  vào có nhãn / không nhãn / trộn cho cảnh báo giống hệt nhau, và
+  warningService xử lý được cả ba.
+- `test/runtime-egress-observation.js` (mới): parse echo + chuẩn hoá
+  IPv4 (kể cả dạng `::ffff:`), schema store, ma trận fail-closed bằng
+  page/fetch stub, tương thích D3 + warningService.
+- `stage0-measure/run-runtime-egress-observation.js` (mới): harness chạy
+  thật qua đúng CamoufoxPlaywrightController của ứng dụng (seam headless
+  như run-isolation.js) — 9/9 checks PASS trên engine thật, kết quả lưu
+  tại `stage0-measure/agent7-runtime-egress-observation-results.json`.
+
+## Điểm nối đề xuất cho điều phối (main.js)
+
+### 1. Gắn nhãn cho đường ghi hiện tại (một dòng)
+
+Chỗ ghi quan sát checkProxy hiện tại trong handler `start-browser`
+(main.js ~dòng 690):
+
+```js
+ipObservationStore.record({profileId:id, ip:result.ip, sessionId:appSessionId,
+  source:'manager-process'});
+```
+
+Store và D3 ở nhánh này đã chấp nhận nhãn — sau thay đổi này mọi bản ghi
+mới đều phân biệt được nguồn; bản ghi cũ không nhãn vẫn đọc/cảnh báo bình
+thường (không cần migration).
+
+### 2. Gọi quan sát runtime sau khi mở hồ sơ qua controller
+
+Chỉ áp dụng cho phiên do CamoufoxPlaywrightController điều khiển (đường
+launcher trả về context / `controller.contextFor(id)`). Mẫu nối, đặt
+NGAY SAU khi mở hồ sơ thành công, cùng chỗ với lời ghi manager-process
+hiện tại:
+
+```js
+const { observeRuntimeExitIp } = require('./src/health/runtimeEgressObservation');
+// fire-and-forget: KHÔNG await trong luồng mở hồ sơ
+void observeRuntimeExitIp({
+  context: camoufoxController.contextFor(id),
+  profileId: id,
+  sessionId: appSessionId,
+  echoUrl: settings.runtimeEchoUrl,        // xem mục 3
+  store: ipObservationStore,
+  timeoutMs: 8000,
+}).catch(() => {}); // module đã không throw vì lỗi đo; catch là lưới cuối
+```
+
+- Thời điểm gọi: một lần, ngay sau launch thành công. Không gọi lặp
+  định kỳ trong đợt này — phát hiện đổi IP GIỮA phiên bằng nguồn runtime
+  cần quyết định về lịch đo riêng (xem NOT_RUN).
+- Timeout: mặc định 8000 ms (chặn cứng 250–30000), gồm abort trong trang
+  + deadline phía Node; trang dò do module tự mở trong context và tự
+  đóng — không đụng tab của người dùng.
+- Không chặn luồng: lời gọi không được await; mở hồ sơ thành công/thất
+  bại không phụ thuộc kết quả đo. Đo thất bại = không có bản ghi = D3 báo
+  not_measured cho hồ sơ đó — đúng Mục 19.4 (thiếu bằng chứng báo là
+  thiếu bằng chứng), TUYỆT ĐỐI không lấp bằng kết quả checkProxy.
+
+### 3. Endpoint echo (điều kiện tiên quyết, quyết định của chủ dự án)
+
+Module cần MỘT endpoint do LHM kiểm soát, hợp đồng: GET → 200, thân là
+JSON `{"ip": "<ipv4>"}` (hoặc `{"remoteAddress": ...}` / text thuần),
+header `Access-Control-Allow-Origin: *` (fetch chạy trong page context)
+và `Cache-Control: no-store`, không redirect. URL lấy từ cấu hình
+(settings), không hardcode. Lưu ý riêng tư phải quyết cùng chính sách
+hiện tại: checkProxy đang dùng api.ipify.org — đường runtime dùng cùng
+một endpoint bên thứ ba như vậy sẽ để lộ IP thoát của hồ sơ cho bên đó
+giống hệt đường manager hiện tại; endpoint tự vận hành thì không. Đây
+là quyết định của chủ dự án, module không tự chọn.
+
+### 4. Chuỗi test (package.json — điều phối sở hữu)
+
+Đề xuất thêm vào `test`:
+
+```
+node test/runtime-egress-observation.js && node --check src/health/runtimeEgressObservation.js
+```
+
+Harness stage0 KHÔNG đưa vào chuỗi thường (cần binary engine):
+chạy tay bằng `LHM_CAMOUFOX_EXECUTABLE=<path> node stage0-measure/run-runtime-egress-observation.js`
+(exit 2 = NOT_RUN khi thiếu điều kiện).
+
+## Giới hạn trung thực + NOT_RUN
+
+- **Chỉ phiên do controller điều khiển.** Đường Camoufox controller hiện
+  vẫn là đường experimental có cổng (`enabled`) trong ứng dụng. Phiên mở
+  qua native adapter, Chromium, hay Gecko mở tay KHÔNG có page handle
+  cho ứng dụng → quan sát nguồn runtime cho các phiên đó là **NOT_RUN**:
+  chúng tiếp tục chỉ có quan sát tiến trình quản lý (đã gắn nhãn rõ),
+  và theo Mục 19.3 hai nguồn không bao giờ được thay thế cho nhau.
+  Cơ chế khác cho phiên mở tay (ví dụ trang đo do người dùng tự mở)
+  là việc thiết kế riêng, chưa làm trong đợt này.
+- **Loopback chứng minh cơ chế, chưa chứng minh phân biệt qua proxy.**
+  Lần chạy thật: cả hai nguồn đều thấy 127.0.0.1 theo cấu trúc loopback.
+  Fetch trong trang đi qua đúng cấu hình mạng của context (kế thừa proxy
+  plan của hồ sơ) — nhưng khẳng định "IP runtime khác IP manager khi qua
+  proxy thật" là **NOT_RUN** cho tới khi đo qua proxy kiểm soát được
+  (lab của Agent 6 / mạng thật). Không suy diễn ngược.
+- **Một lần đo lúc mở hồ sơ.** Module không tự đo lại giữa phiên; cảnh
+  báo `ip_changed_mid_session` phía runtime cần lịch đo — chưa nối.
+- **IPv4 only**, theo thiết kế của store/D3 hiện tại; echo trả IPv6 thì
+  coi như không đo được (fail-closed), không ép sang dạng khác.
+- **Windows/EXE đóng gói: NOT_RUN** — lần chạy thật là Linux + binary
+  lab qua controller (cổng 3 lo phần Windows).
+
+---
+---
+
+# INTEGRATION NOTES — Agent 7 (Network Safety) — ĐỢT TRƯỚC, giữ làm lịch sử
 
 Nền: `8349f38`, nhánh `agent-7/network-safety`. Đối chiếu: `agents/agent-7/MAPPING.md`.
 
