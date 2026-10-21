@@ -20,7 +20,6 @@ function start(){
  const configPath=regularFile(required('LHM_CLOUD_ACTORS_FILE'));
  const config=JSON.parse(fs.readFileSync(configPath,'utf8'));
  const stateDir=path.resolve(required('LHM_CLOUD_DATA_DIR'));
- const releaseLock=acquireServerLock(stateDir);
  const tlsCert=fs.readFileSync(regularFile(required('LHM_CLOUD_TLS_CERT')));
  const tlsKey=fs.readFileSync(regularFile(required('LHM_CLOUD_TLS_KEY')));
  const host=process.env.LHM_CLOUD_HOST||'127.0.0.1';
@@ -28,6 +27,7 @@ function start(){
  if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid HTTPS port');
  const {app}=createCloudService({storageDir:stateDir,
   actors:config.actors,initialMemberships:config.initialMemberships});
+ const releaseLock=acquireServerLock(stateDir);
  const server=https.createServer({cert:tlsCert,key:tlsKey,minVersion:'TLSv1.2'},app);
  server.once('error',error=>{
   releaseLock();
