@@ -107,6 +107,8 @@ jobs:
           # EXE comes from the upstream ZIP verified against the pinned official hash in an earlier step.
           node stage0-measure/run.js
           if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox Stage-0 isolation result was not PASS' }
+          node stage0-measure/validate-report.js
+          if ($LASTEXITCODE -ne 0) { throw 'Stage-0 JSON integrity/gate failed' }
       - name: Publish only synthetic Stage-0 measurements (never browser binaries)
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,23 @@
+{
+  "classification": "OPERATOR_NETWORK_EVIDENCE_TEMPLATE_ONLY",
+  "privacyNote": "Do not share credentials, cookies, packet contents or personal IP addresses.",
+  "checks": {
+    "proxy": {
+      "status": "NOT_RUN",
+      "reason": "Requires approved authenticated gateway and packet capture"
+    },
+    "dns": {
+      "status": "NOT_RUN",
+      "reason": "Requires independently reviewed resolver logs"
+    },
+    "webrtc": {
+      "status": "NOT_RUN",
+      "reason": "Requires controlled STUN/ICE and packet capture"
+    },
+    "externalEgress": {
+      "status": "NOT_RUN",
+      "reason": "Requires observed IPv4/IPv6 egress and broken-proxy negative test"
+    }
+  },
+  "releaseDecision": "BLOCKED"
+}

@@ -28,3 +28,7 @@ Generated files: only a redacted stage0-measure-results/stage0-local-report.json
 - Any claim that a website cannot associate profiles.
 
 CI Windows is a **different machine** from your Windows PC and cannot replace acceptance on your PC.
+
+## Further evidence
+
+Use npm run stage0:test to run the fault-injection contracts. The real Windows Stage-0 runner also records a read-only browser snapshot and loopback request headers for each profile, plus restart diffs. It writes a sealed JSON checksum (not a digital signature). Verify evidence with node stage0-measure/validate-report.js. Independent network captures and operator PC acceptance remain NOT_RUN. See REVIEW-10-STREAMS.md.

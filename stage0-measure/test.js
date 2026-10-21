@@ -13,3 +13,4 @@ assert.throws(()=>safeOptions({LHM_CAMOUFOX_EXECUTABLE:'C:\\camoufox.exe',LHM_CA
 assert.equal(safeOptions({LHM_CAMOUFOX_EXECUTABLE:'C:\\camoufox.exe',LHM_CAMOUFOX_EXE_SHA256:'A'.repeat(64)}).expectedSha256,'a'.repeat(64));
 assert.throws(()=>stageStorageResult(empty,left,right,left,right,{a:'same',b:'same'}),/Distinct/);
 console.log('Stage-0 contract: PASS; real Windows browser measurements NOT_RUN');
+require('./negative-tests');
