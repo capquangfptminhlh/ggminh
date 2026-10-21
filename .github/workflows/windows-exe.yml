@@ -54,7 +54,7 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
               throw "Electron UI capture timed out"
             }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-cloud-sync-preview.png", "workspace-synchronizer-preview.png")) {
               if (-not (Test-Path ("dist\" + $screen))) { throw "Missing actual Electron screenshot: $screen" }
             }
           } finally {
