@@ -28,6 +28,7 @@ const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
+const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
 const {NavigationSynchronizer}=require('./src/ops/navigationSynchronizer');
@@ -52,6 +53,7 @@ let store = null;
 let launcher = null;
 let runtimeRegistry = null;
 let bundledEngine = null;
+let camoufoxAdapter = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
@@ -172,7 +174,14 @@ function createWindow() {
           await new Promise(resolve=>setTimeout(resolve,350));
           const syncImage=await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.join(__dirname,'dist','workspace-synchronizer-preview.png'),syncImage.toPNG());
-          console.log('[UI smoke] Verified integrated Team, Cloud Sync and Synchronizer modals');
+          const engineCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('wm-done').click(); document.getElementById('btn-engine-source').click(); return {open:document.getElementById('modal-engine-source').classList.contains('open'),chromium:!!document.getElementById('engine-source-select'),gecko:!!document.getElementById('engine-gecko-provider'),apply:!!document.getElementById('engine-gecko-save')}; })()",true);
+          if(!Object.values(engineCheck).every(Boolean))
+            throw Error('Camoufox Gecko provider UI failed: '+JSON.stringify(engineCheck));
+          await new Promise(resolve=>setTimeout(resolve,300));
+          const engineImage=await mainWindow.webContents.capturePage();
+          fs.writeFileSync(path.join(__dirname,'dist','workspace-engine-provider-preview.png'),engineImage.toPNG());
+          console.log('[UI smoke] Verified integrated Team, Cloud Sync, Synchronizer and Gecko provider modals');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
@@ -290,8 +299,19 @@ function initIPC() {
   ipcMain.handle('engine-runtime-status', () => runtimeRegistry.status());
   ipcMain.handle('bundled-engine-status', () => ({
     source:store.getSettings().engineSource==='bundled'?'bundled':'system',
-    bundle:bundledEngine.status()
+    bundle:bundledEngine.status(),
+    geckoProvider:store.getSettings().geckoProvider==='camoufox'?'camoufox':'firefox',
+    camoufox:camoufoxAdapter.status()
   }));
+  ipcMain.handle('camoufox-provider-select', (_event,provider)=>{
+    if(!['firefox','camoufox'].includes(provider))throw Error('Invalid Firefox provider');
+    if(launcher.listActive().length||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả trình duyệt trước khi thay đổi engine Firefox');
+    if(provider==='camoufox'&&!camoufoxAdapter.status().installed)
+      throw Error('Camoufox TypeScript package not installed; no browser binary is bundled');
+    store.updateSettings({geckoProvider:provider});
+    return {provider,status:camoufoxAdapter.status()};
+  });
   ipcMain.handle('bundled-engine-select', (_event,source) => {
     if(!['system','bundled'].includes(source))throw Error('Unsupported engine source');
     if(launcher.listActive().length||launcher.pendingStarts.size)
@@ -670,6 +690,8 @@ app.whenReady().then(async () => {
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));
   launcher.bundledEngine=bundledEngine;
+  camoufoxAdapter=new CamoufoxAdapter(storageDir);
+  launcher.camoufoxAdapter=camoufoxAdapter;
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;

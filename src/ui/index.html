@@ -565,7 +565,16 @@
           </select>
         </div>
         <p id="engine-source-result" role="status" aria-live="polite">Đang kiểm tra bộ engine...</p>
-        <p class="lhm-bulk-help">Firefox vẫn dùng bản cài chính thức. Đổi nguồn chỉ thực hiện khi tất cả trình duyệt đã đóng. Chế độ Bundled không đồng nghĩa với anti-detect hoặc không bị website nhận diện.</p>
+        <div class="form-group">
+          <label for="engine-gecko-provider">Nguồn Firefox / Gecko</label>
+          <select id="engine-gecko-provider">
+            <option value="firefox">Firefox cài trên máy (mặc định)</option>
+            <option value="camoufox">Camoufox · Provider thử nghiệm, cần cài riêng</option>
+          </select>
+          <p id="engine-gecko-result" role="status" aria-live="polite">Chưa kiểm tra Camoufox.</p>
+          <button type="button" class="btn btn-secondary" id="engine-gecko-save">Áp dụng nguồn Firefox</button>
+        </div>
+        <p class="lhm-bulk-help">Camoufox chạy qua TypeScript/Playwright persistent context (không phải CDP). Preview chỉ nhận profile Gecko mặc định, không dùng proxy, chưa hỗ trợ Automation Studio; không tự tải binary. Không chuyển/xóa khóa Firefox thủ công. Đổi nguồn chỉ thực hiện khi đã đóng tất cả browser.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="engine-source-refresh">Kiểm tra lại</button>
