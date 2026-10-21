@@ -5,6 +5,7 @@ on:
     branches:
       - feat/per-profile-engine-factory-20261021
       - feat/camoufox-secure-installer-diagnostics-20261021
+      - integration/v5.8-core-selective
     paths:
       - .github/workflows/camoufox-upstream-smoke.yml
       - tools/stage-camoufox-upstream-smoke.ps1
@@ -16,6 +17,7 @@ on:
       - tools/test-camoufox-playwright-controller-windows.js
       - src/engine/CamoufoxPlaywrightController.js
       - src/engine/camoufoxAdapter.js
+      - stage0-measure/**
   workflow_dispatch:
 
 permissions:
@@ -97,6 +99,22 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
           }
+      - name: Stage-0 two-profile real Camoufox local storage and restart measurement
+        shell: pwsh
+        timeout-minutes: 12
+        run: |
+          $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
+          # EXE comes from the upstream ZIP verified against the pinned official hash in an earlier step.
+          node stage0-measure/run.js
+          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox Stage-0 isolation result was not PASS' }
+      - name: Publish only synthetic Stage-0 measurements (never browser binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Stage0-Camoufox-Synthetic-Report
+          path: stage0-measure-results/stage0-local-report.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
