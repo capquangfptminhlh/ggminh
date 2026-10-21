@@ -56,7 +56,7 @@ async function downloadPinned(url,filename,{sha256,bytes},request=https.get){
  let current=new URL(url);
  const allowRedirect=next=>{
   if(next.protocol!=='https:'||next.username||next.password||next.port||
-     next.search||next.hash||
+     next.hash||
      !['github.com','release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(next.hostname))
    throw Error('Release redirect destination not trusted');
  };
@@ -122,7 +122,7 @@ function extractArchive(zip,manifest,output,{script=path.join(__dirname,'..','..
 }
 class CamoufoxInstallService{
  constructor(appDataRoot,{publicKey=PUBLIC_KEY,platform=process.platform,
-  download=downloadPinned,extract=extractArchive,inspect}={}){
+  download=downloadPinned,extract=extractArchive,inspect,scriptPath}={}){
   if(!path.isAbsolute(appDataRoot))throw Error('Install root must be absolute');
   this.base=path.join(appDataRoot,'engines');
   this.root=path.join(this.base,'camoufox');
@@ -131,6 +131,7 @@ class CamoufoxInstallService{
   this.download=download;
   this.extract=extract;
   this.inspect=inspect;
+  this.scriptPath=scriptPath||path.join(__dirname,'..','..','tools','extract-signed-engine.ps1');
   this.running=false;
  }
  verifier(dir=this.root){
@@ -157,7 +158,7 @@ class CamoufoxInstallService{
   fs.mkdirSync(dest,{mode:0o700});
   try{
    await this.download(release.url,archive,{sha256:release.sha256,bytes:release.bytes});
-   await this.extract(archive,release.manifest,dest);
+   await this.extract(archive,release.manifest,dest,{script:this.scriptPath});
    fs.writeFileSync(path.join(dest,'manifest.json'),JSON.stringify(release.manifest),{
     flag:'wx',mode:0o600
    });
