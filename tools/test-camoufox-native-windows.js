@@ -34,7 +34,7 @@ async function main(){
   assert.strictEqual(adapter.sessions.size,2);
   const invalid=profile('C');
   invalid.proxy={type:'socks5',host:'127.0.0.1',port:9};
-  await assert.rejects(()=>adapter.start(invalid),/does not support a configured proxy/);
+  await assert.rejects(()=>adapter.start(invalid),/credential reference|vault|direct fallback/);
   assert(!fs.existsSync(path.join(root,'camoufox-profiles','C')));
   assert.strictEqual(adapter.sessions.size,2);
   function awaitClosed(id){
