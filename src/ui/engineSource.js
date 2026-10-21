@@ -35,8 +35,8 @@ window.addEventListener('DOMContentLoaded',()=>{
        '. Cần xác nhận riêng trước khi tải.':
        'Chưa có bản Camoufox được LHM ký và phê duyệt; nút cài đặt chưa khả dụng.';
    geckoResult.textContent=camoufox.ready?
-     'Thư viện và engine Camoufox đã xác minh · '+camoufox.version+
-       '. Cần kiểm thử Windows thật trước khi sử dụng production.':
+     'Camoufox EXE đã xác minh chữ ký · '+camoufox.version+
+       '. Chỉ mở cửa sổ thủ công; không có Playwright hoặc proxy/GeoIP tự động.':
      'Camoufox chưa sẵn sàng: cần bản EXE Windows được LHM ký riêng và xác minh SHA-256. Không yêu cầu Node 22; chưa hỗ trợ proxy hoặc Automation Studio.';
    result.textContent=bundle.valid?
     'Engine đóng gói hợp lệ · phiên bản '+bundle.version+
