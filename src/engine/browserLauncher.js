@@ -113,6 +113,16 @@ class BrowserLauncher {
     if (profile.requiresProxySetup === true)
       throw Error('Hồ sơ nhập từ bản sao lưu cần gán lại proxy trước khi mở.');
     const engine = profile.engine === 'gecko' ? 'gecko' : 'chromium';
+    if(engine==='gecko'&&this.store.getSettings().geckoProvider==='camoufox'){
+      if(!this.camoufoxAdapter)throw Error('Camoufox adapter is unavailable');
+      const details=await this.camoufoxAdapter.start(profile,{
+        url:customUrl||profile.startUrl,
+        onClosed:()=>{const active=this.activeProcesses.get(profile.id);
+          if(active?.provider==='camoufox')this.activeProcesses.delete(profile.id);}
+      });
+      this.activeProcesses.set(profile.id,{...details,process:null,stopping:false});
+      return details;
+    }
     const browserBin = this.findBrowserBinary(engine);
     // Manual browsing does not require a remotely controllable DevTools endpoint.
     const port = engine === 'chromium' && this.store.getSettings().apiEnabled === true ?
@@ -219,6 +229,11 @@ class BrowserLauncher {
     const active = this.activeProcesses.get(profileId);
     if (!active) return { success: false, message: 'Browser is not running' };
     if (active.stopping) return { success: false, message: 'Browser is already stopping' };
+    if(active.provider==='camoufox'){
+      const outcome=this.camoufoxAdapter.stop(profileId);
+      if(outcome.success)active.stopping=true;
+      return outcome;
+    }
     const proc = active.process;
     try {
       const sent = proc.kill('SIGTERM');
@@ -249,6 +264,7 @@ class BrowserLauncher {
       list.push({
         profileId: id,
         engine: info.engine || 'chromium',
+        provider:info.provider||(info.engine==='gecko'?'firefox':'chromium'),
         name: info.name,
         port: info.port,
         pid: info.pid,
