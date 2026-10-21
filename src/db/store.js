@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
 const { safeWebUrls } = require('../engine/launchArgs');
+const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -74,6 +75,25 @@ class Store {
     if(existingIndex<0 && this.licensePolicy && options.recovery!==true)
       this.licensePolicy.assertCapacity(this.data.profiles.length,1);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
+    const engineFamily=input.engine===undefined
+      ? (old.engine==='gecko'?'gecko':'chromium') : input.engine;
+    if(!['chromium','gecko'].includes(engineFamily))
+      throw Error('Invalid browser engine family');
+    let type=input.engine_type===undefined
+      ? input.engine!==undefined&&input.engine!==old.engine
+        ? engineFamily==='gecko'?'firefox':'chromium'
+        : old.engine_type||resolveEngineType({
+            engine:engineFamily
+          },this.data.settings||{})
+      : input.engine_type;
+    if(!SUPPORTED.includes(type))throw Error('Invalid engine_type');
+    if((type==='chromium'?'chromium':'gecko')!==engineFamily)
+      throw Error('Browser engine family and engine_type disagree');
+    if(input.engine_type!==undefined&&
+       old.engine_type&&old.engine_type!==type&&
+       existingIndex>=0&&!options.allowEngineChange)
+      throw Error('Changing browser provider needs explicit confirmation');
+
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
     if (typeof incomingProxy !== 'object' || Array.isArray(incomingProxy)) throw new Error('Invalid proxy configuration');
     const forbidden = ['user','username','pass','password','credentials','token','secret','authorization','apiKey','proxyAuthorization'];
@@ -106,8 +126,7 @@ class Store {
       ...old, id, name,
       // A partial edit must preserve the selected engine, especially
       // when clients POST only {id, name} through the Local API.
-      engine: input.engine === 'gecko' || input.engine === 'chromium'
-        ? input.engine : (old.engine === 'gecko' ? 'gecko' : 'chromium'),
+      engine:engineFamily,engine_type:type,
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: startUrls[0], startUrls, tags,
       // An explicit empty string clears notes; omitted notes preserve the old value.
