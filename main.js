@@ -33,6 +33,8 @@ const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
+const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
+const {PUBLIC_KEY:LICENSE_PUBLIC_KEY}=require('./src/licensing/manager');
 const {resolveEngineType}=require('./src/engine/EngineFactory');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
@@ -348,11 +350,14 @@ function initIPC() {
     notice:'Requires publisher-signed manifest. No antivirus exemptions or silent downloads.'
   }));
   ipcMain.handle('camoufox-install',async()=>{
-    if(!camoufoxApprovedRelease)throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
+    if(!camoufoxApprovedRelease||!camoufoxInstall)
+      throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả browser trước khi cài engine');
     if(camoufoxInstall.running)throw Error('Đang cài đặt engine');
-    const approved=validateRelease(camoufoxApprovedRelease);
+    const approved=validateRelease(camoufoxApprovedRelease,{
+      publicKey:camoufoxInstall.publicKey
+    });
     const result=await dialog.showMessageBox(mainWindow,{
       type:'question',buttons:['Hủy','Tải và cài'],defaultId:0,cancelId:0,noLink:true,
       title:'Cài đặt Camoufox được xác minh',
@@ -814,33 +819,53 @@ app.whenReady().then(async () => {
   const releaseAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-camoufox')
     :path.join(__dirname,'resources','camoufox-engine');
-  const camoufoxBundle=new BundledEngineManager(releaseAssets,{engine:'camoufox'});
-  camoufoxInstall=new CamoufoxInstallService(storageDir,{
-    scriptPath:app.isPackaged
-      ?path.join(process.resourcesPath,'app.asar.unpacked','tools','extract-signed-engine.ps1')
-      :path.join(__dirname,'tools','extract-signed-engine.ps1')
-  });
-  // Release operator must provide a publisher-signed descriptor at build time.
-  // Missing/invalid descriptor means NO download option, not an unsafe fallback.
+  // Never use the app-license signing key to trust a downloadable browser.
+  // Without a separately provisioned publisher-ed25519.pub the entire
+  // Camoufox install/launch path remains disabled and fails closed.
+  let publisherKey=null;
   try{
-    const releaseFile=path.join(releaseAssets,'release.json');
-    if(fs.existsSync(releaseFile)){
-      if(fs.statSync(releaseFile).size>1024*1024)throw Error('Release descriptor is too large');
-      const approved=JSON.parse(fs.readFileSync(releaseFile,'utf8'));
-      validateRelease(approved);
-      camoufoxApprovedRelease=approved;
+    publisherKey=loadCamoufoxPublisherKey(releaseAssets,{
+      licenseKey:LICENSE_PUBLIC_KEY
+    });
+    if(publisherKey){
+      camoufoxInstall=new CamoufoxInstallService(storageDir,{
+        publicKey:publisherKey,
+        scriptPath:app.isPackaged
+          ?path.join(process.resourcesPath,'app.asar.unpacked','tools','extract-signed-engine.ps1')
+          :path.join(__dirname,'tools','extract-signed-engine.ps1')
+      });
+      const releaseFile=path.join(releaseAssets,'release.json');
+      if(fs.existsSync(releaseFile)){
+        if(fs.lstatSync(releaseFile).isSymbolicLink()||
+           fs.statSync(releaseFile).size>1024*1024)
+          throw Error('Invalid Camoufox release descriptor file');
+        const approved=JSON.parse(fs.readFileSync(releaseFile,'utf8'));
+        validateRelease(approved,{publicKey:publisherKey});
+        camoufoxApprovedRelease=approved;
+      }
     }
   }catch(error){
     camoufoxApprovedRelease=null;
-    console.warn('[Engine] Release descriptor unavailable:',String(error.message).slice(0,200));
+    camoufoxInstall=null;
+    publisherKey=null;
+    console.warn('[Engine] Camoufox publisher trust unavailable:',
+      String(error.message).slice(0,200));
   }
+  const camoufoxBundle=publisherKey?
+    new BundledEngineManager(releaseAssets,{
+      engine:'camoufox',publicKey:publisherKey
+    }):null;
   const verifiedProviders={
     status(){
+      if(!publisherKey)
+        return {valid:false,available:false,
+          reason:'Independent Camoufox publisher trust anchor missing'};
       const bundled=camoufoxBundle.status();
       return bundled.valid?bundled:camoufoxInstall.status();
     },
     resolve(engine){
-      if(engine!=='camoufox')throw Error('Wrong browser provider');
+      if(engine!=='camoufox'||!publisherKey)
+        throw Error('Camoufox publisher signature is not trusted');
       if(camoufoxBundle.status().valid)return camoufoxBundle.resolve(engine);
       return camoufoxInstall.verifier().resolve(engine);
     }
