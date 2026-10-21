@@ -27,6 +27,7 @@ const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
+const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {arrangeWindows,openUrlForStoppedProfiles} = require('./src/ops/windowOperations');
 const {openInRunning} = require('./src/ops/liveNavigation');
 const {NavigationSynchronizer}=require('./src/ops/navigationSynchronizer');
@@ -50,6 +51,7 @@ let mainWindow = null;
 let store = null;
 let launcher = null;
 let runtimeRegistry = null;
+let bundledEngine = null;
 let behaviorMonitor = null;
 let workflowStore = null;
 let automationRunner = null;
@@ -286,6 +288,18 @@ function initIPC() {
   });
   ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
   ipcMain.handle('engine-runtime-status', () => runtimeRegistry.status());
+  ipcMain.handle('bundled-engine-status', () => ({
+    source:store.getSettings().engineSource==='bundled'?'bundled':'system',
+    bundle:bundledEngine.status()
+  }));
+  ipcMain.handle('bundled-engine-select', (_event,source) => {
+    if(!['system','bundled'].includes(source))throw Error('Unsupported engine source');
+    if(launcher.listActive().length||launcher.pendingStarts.size)
+      throw Error('Đóng tất cả trình duyệt trước khi đổi nguồn engine');
+    if(source==='bundled')bundledEngine.verify();
+    store.updateSettings({engineSource:source});
+    return {source,bundle:bundledEngine.status()};
+  });
   ipcMain.handle('engine-runtime-register', async (_,engine) => {
     if(!['chromium','gecko'].includes(engine))throw Error('Unknown browser engine');
     if(launcher.listActive().some(x=>x.engine===engine)||launcher.pendingStarts.size)
@@ -652,6 +666,10 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
+  bundledEngine=new BundledEngineManager(app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-engines')
+    :path.join(__dirname,'resources','bundled-engines'));
+  launcher.bundledEngine=bundledEngine;
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;

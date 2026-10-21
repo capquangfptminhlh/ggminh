@@ -120,6 +120,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('cloud-sync-restore-history',options,revision,confirmation),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
+  bundledEngineStatus: () => ipcRenderer.invoke('bundled-engine-status'),
+  selectBundledEngine: source => ipcRenderer.invoke('bundled-engine-select',source),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings)
 });
