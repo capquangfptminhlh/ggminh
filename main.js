@@ -32,6 +32,7 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
+const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
 const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
 const {assessRuntime}=require('./src/engine/camoufoxRuntimeGate');
@@ -888,6 +889,15 @@ app.whenReady().then(async () => {
     allowProxyLab:process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
   });
   launcher.camoufoxAdapter=camoufoxAdapter;
+  // Independent preview mode. Never enable third-party automation in the
+  // packaged app until signed distribution and network lab release gates pass.
+  launcher.camoufoxPlaywrightController=new CamoufoxPlaywrightController(storageDir,{
+    verifier:verifiedProviders,store,proxyVault,
+    enabled:!app.isPackaged&&process.env.LHM_CAMOUFOX_PLAYWRIGHT_LAB==='1',
+    labApproved:!app.isPackaged&&
+      process.env.LHM_CAMOUFOX_PLAYWRIGHT_LAB==='1'&&
+      process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+  });
   navigationSynchronizer=new NavigationSynchronizer(store,launcher);
   launcher.runtimeRegistry=runtimeRegistry;
   launcher.licensePolicy = licensePolicy;
