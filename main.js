@@ -21,6 +21,8 @@ const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const {LocalHealthDrift}=require('./src/health/localDrift');
+const {GraphDefense}=require('./src/health/GraphDefense');
+const {MaturationEngine,APPROVALS}=require('./src/health/MaturationEngine');
 const {buildReadiness}=require('./src/health/releaseReadiness');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
@@ -57,6 +59,7 @@ let bundledEngine = null;
 let camoufoxAdapter = null;
 let behaviorMonitor = null;
 let localHealthDrift = null;
+let agencyMilestones = null;
 let workflowStore = null;
 let automationRunner = null;
 let batchAutomation = null;
@@ -197,6 +200,34 @@ function createWindow() {
 
 function initIPC() {
   ipcMain.handle('get-profiles', () => store.getProfiles());
+  ipcMain.handle('agency-approval-types',()=>Object.entries(APPROVALS)
+    .map(([type,label])=>({type,label})));
+  ipcMain.handle('agency-approval-status',async(_,id)=>{
+    if(!store.getProfile(id))throw Error('Không có hồ sơ hợp lệ');
+    if(!agencyMilestones)throw Error('Bộ kiểm tra phê duyệt không khả dụng');
+    return agencyMilestones.checkUnlockStatus(id);
+  });
+  ipcMain.handle('agency-approval-record',async(_,id,type)=>{
+    if(!store.getProfile(id)||!Object.hasOwn(APPROVALS,type))
+      throw Error('Hồ sơ hoặc mục phê duyệt không hợp lệ');
+    if(!agencyMilestones)throw Error('Bộ kiểm tra phê duyệt không khả dụng');
+    const answer=await dialog.showMessageBox(mainWindow,{
+      type:'question',buttons:['Hủy','Xác nhận'],defaultId:0,cancelId:0,noLink:true,
+      title:'Phê duyệt nội bộ',
+      message:'Xác nhận đã thực sự hoàn tất: '+APPROVALS[type],
+      detail:'Ghi nhận hành động quản trị có thật, không tạo lịch sử Gmail, YouTube hay quảng cáo giả.'
+    });
+    if(answer.response!==1)return {canceled:true};
+    return agencyMilestones.logActivity(id,type,1,{
+      source:'manual',confirmation:'CONFIRM',actorId:'local_operator'
+    });
+  });
+  ipcMain.handle('agency-network-preview',(_,input)=>{
+    if(!input||!store.getProfile(input.profileId))throw Error('Hồ sơ không hợp lệ');
+    if(!Array.isArray(input.entries)||input.entries.length>100)
+      throw Error('Tối đa 100 địa chỉ khác');
+    return GraphDefense.checkSubnetRisk(input.ip,input.entries,{profileId:input.profileId});
+  });
   ipcMain.handle('get-app-info', () => ({
     name:'LHM Ads Browser',
     version:app.getVersion(),
@@ -702,6 +733,11 @@ app.whenReady().then(async () => {
   catch(error){
     console.warn('[HealthDrift] History unavailable:',error.message);
     localHealthDrift=null; // Preserve corrupted history for manual recovery.
+  }
+  try{agencyMilestones=new MaturationEngine(storageDir);}
+  catch(error){
+    console.warn('[Agency] Approval history unavailable:',error.message);
+    agencyMilestones=null;
   }
   runtimeRegistry = new RuntimeRegistry(storageDir);
   try { store.purgeExpiredTrashedProfiles(); }
