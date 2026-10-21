@@ -9,6 +9,7 @@ const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 const {prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
 const {firefoxPrefs,assertIsolatedProfileDirectory}=require('./CamoufoxProfileManager');
+const {identityEnvForProfile,assertIdentityMatchesProfile}=require('./camoufoxIdentity');
 const NetworkSafetyCheck=require('./NetworkSafetyCheck');
 
 class CamoufoxPlaywrightController{
@@ -49,11 +50,18 @@ class CamoufoxPlaywrightController{
    proxyPlan=await this.prepareProxy(profile,profileDir,{
     store:this.store,proxyVault:this.proxyVault
    });
+   // Optional pinned per-profile identity: a CAMOU_CONFIG blob produced by
+   // the official camoufox generator at provisioning time. Absent identity
+   // keeps the previous behaviour (engine draws its own defaults); a
+   // present-but-invalid or self-contradictory identity fails closed.
+   const identity=identityEnvForProfile(profile);
+   if(identity)assertIdentityMatchesProfile(profile,identity.expectations);
    const options={
     executablePath:executable,headless:false,
     firefoxUserPrefs:firefoxPrefs(profile,proxyPlan),
     timeout:30000
    };
+   if(identity)options.env={...process.env,...identity.env};
    if(proxyPlan.mode==='authenticated-connect'){
     if(!this.labApproved)throw Error('NETWORK_BLOCKED: no approved proxy lab');
     // Playwright proxy option; no Chromium CLI flags.
@@ -77,7 +85,9 @@ class CamoufoxPlaywrightController{
     engineType:'camoufox',provider:'camoufox',
     protocol:'playwright-internal',manualOnly:false,
     automationAvailable:true,port:null,wsEndpoint:null,debugPort:null,
-    proxyMode:proxyPlan.mode,startedAt:new Date().toISOString()};
+    proxyMode:proxyPlan.mode,identityApplied:!!identity,
+    identityExpectations:identity?identity.expectations:null,
+    startedAt:new Date().toISOString()};
    let gatewayClosed=false;
    const closeGateway=async()=>{
     if(gatewayClosed)return;

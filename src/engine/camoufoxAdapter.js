@@ -10,6 +10,7 @@ const {spawn,execFile}=require('child_process');
 const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
+const {identityEnvForProfile,assertIdentityMatchesProfile}=require('./camoufoxIdentity');
 
 const MIN_STARTUP_MS=1000;
 const MAX_STARTUP_MS=45000;
@@ -26,7 +27,11 @@ function validateCamoufoxProfile(profile,baseDir){
  if(profile.geoip===true||profile.geoip?.enabled===true||
     profile.geolocation?.mode==='proxy')
   throw Error('Camoufox native preview does not support automatic GeoIP flags');
- return {profileDir:path.join(baseDir,'camoufox-profiles',profile.id)};
+ // A pinned identity, when present, must be valid and consistent with the
+ // profile before any process is created.
+ const identity=identityEnvForProfile(profile);
+ if(identity)assertIdentityMatchesProfile(profile,identity.expectations);
+ return {profileDir:path.join(baseDir,'camoufox-profiles',profile.id),identity};
 }
 function nativeArgs(profileDir,url){
  if(!path.isAbsolute(profileDir))throw Error('Camoufox profile path must be absolute');
@@ -122,16 +127,16 @@ class CamoufoxAdapter{
  async start(profile,{url,onClosed}={}){
   const id=assertProfileId(profile?.id);
   if(this.isBusy(id))throw Error('Camoufox profile is already running or starting');
-  const {profileDir}=validateCamoufoxProfile(profile,this.baseDir);
+  const {profileDir,identity}=validateCamoufoxProfile(profile,this.baseDir);
   if(normalizedProxy(profile.proxy).type!=='direct'&&!this.allowProxyLab)
    throw Error('Camoufox authenticated proxy is experimental and requires an approved proxy/DNS/WebRTC lab; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
-  const task=this._startVerified({profile,id,profileDir,target,onClosed});
+  const task=this._startVerified({profile,id,profileDir,target,onClosed,identity});
   this.pending.set(id,task);
   try{return await task;}
   finally{if(this.pending.get(id)===task)this.pending.delete(id);}
  }
- async _startVerified({profile,id,profileDir,target,onClosed}){
+ async _startVerified({profile,id,profileDir,target,onClosed,identity=null}){
   if(this.platform!=='win32')
    throw Error('Native Camoufox desktop process is supported only on Windows');
   if(!this.bundleVerifier||typeof this.bundleVerifier.resolve!=='function')
@@ -175,7 +180,8 @@ class CamoufoxAdapter{
    });
    child=this.spawnProcess(executable,args,{
     cwd:path.dirname(executable),windowsHide:false,
-    detached:false,stdio:['ignore','pipe','pipe']
+    detached:false,stdio:['ignore','pipe','pipe'],
+    ...(identity?{env:{...process.env,...identity.env}}:{})
    });
    if(!child||typeof child.once!=='function'||typeof child.kill!=='function')
     throw Error('Camoufox spawn did not return a child process');
@@ -218,7 +224,7 @@ class CamoufoxAdapter{
     provider:'camoufox',engineType:'camoufox',pid:child.pid,
     windowPid,
     port:null,wsEndpoint:null,debugPort:null,
-    proxyMode:proxyPlan.mode,manualOnly:true,automationAvailable:false,
+    proxyMode:proxyPlan.mode,identityApplied:!!identity,manualOnly:true,automationAvailable:false,
     startupEvidence:'native-window',startedAt:new Date().toISOString(),stopping:false};
    entry={child,info,closing:false,forceTimer:null};
    this.sessions.set(id,entry);
