@@ -624,3 +624,50 @@ for server-side authenticated role-based access and audit-backed billing.
 - **Thu gọn bảng AI** toggles a full-width profile data grid. Ctrl+B toggles only outside text fields, and the UI preference persists locally on this computer. The right-side panel and data remain fully available after reopening.
 - Accessible command list and keyboard focus, subtle spring-like entrance animation and reduced-motion support. Original buttons/IPC handlers remain operational.
 - Package version and Electron runtime UI are now aligned at v5.7.0. Screenshots in Windows CI remain from the actual Electron app, not visual mockups.
+
+
+---
+
+### PR #15 — Camoufox Playwright internal controller (experimental)
+
+The verified upstream Windows x64 Camoufox release was successfully opened
+under **Node.js 20.20.2** using Playwright Core's
+'firefox.launchPersistentContext(userDataDir, { executablePath, headless: false })'
+API (the independent Windows CI smoke ran headless). The Camoufox npm
+TypeScript wrapper is **not required** for direct Playwright integration.
+
+The application has two *explicitly distinct* Camoufox paths:
+
+- Stable preview: native 'child_process.spawn' for manual browser windows.
+- **Lab-only:** 'CamoufoxPlaywrightController' owns a persistent Playwright
+  'BrowserContext' internally. This is enabled only in a **non-packaged
+  development run** with 'LHM_CAMOUFOX_PLAYWRIGHT_LAB=1', and still requires
+  the independently publisher-signed Camoufox engine. It does not retry via
+  native spawn if Playwright launch fails.
+
+The browser context and any optional context.browser() instance are
+JavaScript objects held within the Electron application. A persistent
+BrowserContext does **not** produce an attachable WebSocket endpoint:
+ws.playwright and debug_port are null, never the placeholder string
+NATIVE_PLAYWRIGHT. External authorized Local API clients can use the
+app-owned route POST /api/v1/browser/navigate in lab mode; they cannot
+attach directly to an arbitrary running Camoufox process. Firefox
+DevTools is not Chromium CDP.
+
+For authorized lab proxy accounts, Proxy Center and the localhost
+**HTTP CONNECT** gateway can be used with Playwright's native
+proxy option pointing to 127.0.0.1 and a dynamic port; no Chromium-style
+--proxy-server flag, inline password or untrusted config.json is forwarded
+to Camoufox. CamoufoxProfileManager.js provides supported Firefox prefs
+including network.proxy.socks_remote_dns. It does not inject the unverified
+camoufox.geoip preference or claim DNS leak prevention from a pref alone.
+
+NetworkSafetyCheck.evaluate() is a *prelaunch configuration gate*.
+NetworkSafetyCheck.inspectContext() can observe ICE candidates on a real
+Playwright page when an authorized STUN lab and expected public IP are
+configured. It is not a DNS audit; no candidates means inconclusive.
+
+**Release blockers:** LHM-signed redistribution package, clean Windows
+installed-app verification, authorized external SOCKS5/HTTP proxy and
+independent WebRTC/DNS lab evidence, and product readiness approval.
+PR #15 remains Draft; no merge to main or commercial release.
