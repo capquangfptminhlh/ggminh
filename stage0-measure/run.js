@@ -9,6 +9,11 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const crypto=require('node:crypto'),http=require('node:http');
 const {spawnSync}=require('node:child_process');
 const {safeOptions,stageStorageResult,digestFile}=require('./core');
+const {observedHeaders,browserHeaders,compareHeaders}=require('./headers');
+const {compareSnapshots,compareRestart}=require('./snapshot');
+const {networkReview}=require('./network-review');
+const {sealReport}=require('./report-integrity');
+const {validateReport}=require('./report-gate');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
 
 function readValues(page){
@@ -69,6 +74,10 @@ async function serveLoopback(){
  const server=http.createServer((req,res)=>{
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
+  if(req.method==='GET'&&req.url==='/stage0/headers'){
+   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+   res.end(JSON.stringify(observedHeaders(req)));return;
+  }
   if(req.method!=='GET'||req.url!=='/probe'){
    res.writeHead(404,{'Content-Type':'text/plain'});res.end('Not found');return;
   }
@@ -122,6 +131,10 @@ async function run(){
   temporarySyntheticProfiles:true,concurrentProfiles:2,
   checks:{status:'NOT_RUN'},
   browserExposedValues:{status:'NOT_RUN'},
+  serverRequestEvidence:{status:'NOT_RUN'},
+  snapshotComparison:{status:'NOT_RUN'},
+  restartObservations:{status:'NOT_RUN'},
+  networkReview:networkReview(),
   network:{proxy:'NOT_RUN',dns:'NOT_RUN',webrtc:'NOT_RUN',externalEgress:'NOT_RUN'},
   signedReleaseAcceptance:'NOT_RUN',installedClientAcceptance:'NOT_RUN',
   caveat:'Isolation at a local origin does not prove websites cannot associate profiles'
@@ -134,15 +147,18 @@ async function run(){
   await writeValues(ap,tokens.a);
   const beforeB=await readValues(bp);
   await writeValues(bp,tokens.b);
-  const [afterA,afterB,exposedA,exposedB]=await Promise.all([
-   readValues(ap),readValues(bp),captureEnvironment(ap),captureEnvironment(bp)
+  const [afterA,afterB,exposedA,exposedB,serverA,serverB]=await Promise.all([
+   readValues(ap),readValues(bp),captureEnvironment(ap),captureEnvironment(bp),
+   browserHeaders(ap),browserHeaders(bp)
   ]);
   await Promise.all([controller.stop('stage0_a'),controller.stop('stage0_b')]);
   const ra=await controller.launch(profile('stage0_a'));
   const rb=await controller.launch(profile('stage0_b'));
   const rap=await ra.context.newPage(),rbp=await rb.context.newPage();
   await Promise.all([rap.goto(server.url),rbp.goto(server.url)]);
-  const [restartA,restartB]=await Promise.all([readValues(rap),readValues(rbp)]);
+  const [restartA,restartB,restartExposedA,restartExposedB]=await Promise.all([
+   readValues(rap),readValues(rbp),captureEnvironment(rap),captureEnvironment(rbp)
+  ]);
   const observations=stageStorageResult(beforeB,afterA,afterB,restartA,restartB,tokens);
   report.checks={status:observations.pass?'PASS':'FAIL',...observations};
   report.browserExposedValues={
@@ -150,6 +166,12 @@ async function run(){
    profileA:exposedA,profileB:exposedB,
    equalAcrossProfiles:JSON.stringify(exposedA)===JSON.stringify(exposedB)
   };
+  report.serverRequestEvidence={status:'MEASURED_LOOPBACK_ONLY',
+   a:compareHeaders(exposedA,serverA),b:compareHeaders(exposedB,serverB)};
+  report.snapshotComparison={status:'MEASURED_READ_ONLY',
+   betweenProfiles:compareSnapshots(exposedA,exposedB)};
+  report.restartObservations={status:'MEASURED_READ_ONLY',
+   a:compareRestart(exposedA,restartExposedA),b:compareRestart(exposedB,restartExposedB)};
  }catch(error){
   report.checks={status:'FAIL',errorType:error?.code||error?.name||'Error',
    reason:String(error.message||error).slice(0,280)};
@@ -165,7 +187,11 @@ async function run(){
   }
  }
  report.cleanup=cleanupError?'NEEDS_MANUAL_REVIEW':'PASS';
- const output=writeReport(report);
+ const output=writeReport(sealReport(report));
+ if(report.checks.status==='PASS'&&!cleanupError){
+  const verdict=validateReport(JSON.parse(fs.readFileSync(output,'utf8')));
+  if(!verdict.accepted){console.error('[Stage-0] Invalid evidence report:',verdict.issues);process.exitCode=2;}
+ }
  console.log(JSON.stringify({classification:report.classification,status:report.checks.status,
   contexts:report.concurrentProfiles,exposure:report.browserExposedValues.status,
   proxy:report.network.proxy,dns:report.network.dns,webrtc:report.network.webrtc,
