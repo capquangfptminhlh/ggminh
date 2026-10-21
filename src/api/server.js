@@ -42,7 +42,9 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
         if(controller?.enabled===true){
           const instance=await launcher.start(id,req.query.open_url);
           if(instance.protocol!=='playwright-internal'||!controller.contextFor(id))
-            throw Error('Playwright BrowserContext was not established');
+            return res.status(409).json({code:-1,
+              msg:'Camoufox automation unavailable: Playwright BrowserContext was not established',
+              data:{engine:'camoufox',protocol:'unavailable',debug_port:null,ws:{playwright:null}}});
           if(behaviorMonitor)behaviorMonitor.record('profile_open',id,'api');
           // This is an in-process controller, NOT an attachable network socket.
           return res.json({code:0,msg:'success',data:{
