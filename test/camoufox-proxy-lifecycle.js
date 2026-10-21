@@ -24,7 +24,7 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
   return child;
  };
  const adapter=new CamoufoxAdapter(root,{
-  platform:'win32',spawnProcess,windowProbe:async()=>true,
+  platform:'win32',allowProxyLab:true,spawnProcess,windowProbe:async()=>true,
   closeWindow:async pid=>{
    children.find(child=>child.pid===pid).kill();return true;
   },
@@ -40,6 +40,12 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
   fingerprint:{mode:'native'},proxy:{type:'socks5',host:'proxy.example',
    port:1080,authProxyId:'px_valid'},startUrl:'https://example.com/'};
  try{
+  const disabled=new CamoufoxAdapter(root,{
+   platform:'win32',bundleVerifier:adapter.bundleVerifier,spawnProcess,
+   windowProbe:async()=>true,prepareProxy:async()=>{throw Error('Should not configure');}
+  });
+  await assert.rejects(()=>disabled.start(profile),/approved proxy\/DNS\/WebRTC lab/);
+  assert.strictEqual(spawned,0,'Unapproved proxy never reaches process creation');
   const instance=await adapter.start(profile);
   assert.strictEqual(instance.proxyMode,'authenticated-connect');
   assert.strictEqual(instance.debugPort,null);
@@ -53,7 +59,7 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
   assert.strictEqual(adapter.isBusy(profile.id),false);
   assert.strictEqual(closed,1,'Exit must close local gateway exactly once');
   const denied=new CamoufoxAdapter(root,{
-   platform:'win32',spawnProcess,windowProbe:async()=>true,
+   platform:'win32',allowProxyLab:true,spawnProcess,windowProbe:async()=>true,
    bundleVerifier:adapter.bundleVerifier,
    prepareProxy:async()=>{throw Error('Bad proxy credentials');}
   });
