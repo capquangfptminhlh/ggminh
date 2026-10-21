@@ -49,3 +49,13 @@ node .\stage0-measure\run-config.js   # same LHM_CAMOUFOX_* variables as run.js
 Report: `stage0-measure-results/stage0-config-report.json`. Matching a pinned
 identity proves the configuration reached the engine unchanged; it does not
 prove any website cannot associate profiles.
+
+Local engine proof (2026-10-21, Linux build v156.0.1-beta.36 of the same
+engine, run by the project assistant before this measurement existed on
+Windows CI): two identities generated with the official launcher
+(en-US/America/New_York and vi-VN/Asia/Ho_Chi_Minh), replayed through
+playwright-core with only the stored env, exposed exactly their own pinned
+user agent, platform, language, timezone, screen size and hardware
+concurrency (7/7 compared fields per profile) and differed in timezone,
+language and screen. The Windows run above remains the acceptance proof
+for the shipped platform.
