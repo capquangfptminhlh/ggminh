@@ -15,7 +15,8 @@ function loadCamoufoxPublisherKey(resourcesRoot,{licenseKey=null}={}){
   throw Error('Camoufox publisher trust anchor must use Ed25519');
  if(licenseKey){
   const engineSpki=key.export({format:'der',type:'spki'});
-  const licenseSpki=crypto.createPublicKey(licenseKey).export({format:'der',type:'spki'});
+  const licenseSpki=(licenseKey.type==='public'?licenseKey:crypto.createPublicKey(licenseKey))
+   .export({format:'der',type:'spki'});
   if(engineSpki.equals(licenseSpki))
    throw Error('Camoufox publisher key must be independent of license signing key');
  }
