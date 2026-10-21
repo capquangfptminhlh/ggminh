@@ -76,7 +76,10 @@ class Store {
       this.licensePolicy.assertCapacity(this.data.profiles.length,1);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
     const engineFamily=input.engine===undefined
-      ? (old.engine==='gecko'?'gecko':'chromium') : input.engine;
+      ? input.engine_type!==undefined
+        ? input.engine_type==='chromium'?'chromium':'gecko'
+        : (old.engine==='gecko'?'gecko':'chromium')
+      : input.engine;
     if(!['chromium','gecko'].includes(engineFamily))
       throw Error('Invalid browser engine family');
     let type=input.engine_type===undefined
@@ -89,9 +92,8 @@ class Store {
     if(!SUPPORTED.includes(type))throw Error('Invalid engine_type');
     if((type==='chromium'?'chromium':'gecko')!==engineFamily)
       throw Error('Browser engine family and engine_type disagree');
-    if(input.engine_type!==undefined&&
-       old.engine_type&&old.engine_type!==type&&
-       existingIndex>=0&&!options.allowEngineChange)
+    if(existingIndex>=0&&resolveEngineType(old,this.data.settings||{})!==type&&
+       !options.allowEngineChange)
       throw Error('Changing browser provider needs explicit confirmation');
 
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
