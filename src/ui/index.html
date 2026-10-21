@@ -143,6 +143,7 @@
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
             <button type="button" class="btn btn-secondary" id="btn-window-manager"><span data-lhm-icon="panels-top-left"></span> Cửa sổ</button>
+            <button type="button" class="btn btn-secondary" id="btn-engine-source"><span data-lhm-icon="hard-drive"></span> Engine</button>
             <button type="button" class="btn btn-secondary" id="btn-cloud-sync"><span data-lhm-icon="cloud"></span> Cloud Sync</button>
             <button type="button" class="btn btn-secondary" id="btn-trash-profiles"><span data-lhm-icon="archive-restore"></span> Thùng rác</button>
             <button type="button" class="btn btn-secondary" id="btn-update-csv"><span data-lhm-icon="file-pen-line"></span> Sửa CSV</button>
@@ -543,6 +544,33 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="wm-refresh">Làm mới</button>
         <button type="button" class="btn btn-primary" id="wm-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Explicit runtime choice. Bundled mode requires a release-signed engine. -->
+  <div class="modal-overlay" id="modal-engine-source">
+    <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="engine-source-title">
+      <div class="modal-header">
+        <h2 id="engine-source-title">Browser Engine · Nguồn trình duyệt</h2>
+        <button type="button" class="btn-close" id="engine-source-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help">Chế độ System mở Chrome/Edge đã cài trên máy. Bundled chỉ mở bộ Chromium do nhà phát hành cung cấp khi chữ ký manifest và toàn bộ tệp khớp SHA-256. Không tự tải hay chạy bản engine không rõ nguồn gốc.</p>
+        <div class="form-group">
+          <label for="engine-source-select">Nguồn browser Chromium</label>
+          <select id="engine-source-select">
+            <option value="system">System · Chrome / Edge của Windows</option>
+            <option value="bundled">Bundled · Bộ engine đi kèm đã xác minh</option>
+          </select>
+        </div>
+        <p id="engine-source-result" role="status" aria-live="polite">Đang kiểm tra bộ engine...</p>
+        <p class="lhm-bulk-help">Firefox vẫn dùng bản cài chính thức. Đổi nguồn chỉ thực hiện khi tất cả trình duyệt đã đóng. Chế độ Bundled không đồng nghĩa với anti-detect hoặc không bị website nhận diện.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="engine-source-refresh">Kiểm tra lại</button>
+        <button type="button" class="btn btn-primary" id="engine-source-save">Lưu và áp dụng</button>
+        <button type="button" class="btn btn-secondary" id="engine-source-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1549,6 +1577,7 @@ run();
   <script src="tablePreferences.js"></script>
   <script src="windowManager.js"></script>
   <script src="cloudSync.js"></script>
+  <script src="engineSource.js"></script>
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
