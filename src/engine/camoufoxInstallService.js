@@ -12,13 +12,16 @@ const crypto=require('crypto');
 const https=require('https');
 const {spawn}=require('child_process');
 const {BundledEngineManager,signedPayload,canonicalManifest}=require('./bundledEngineManager');
-const {PUBLIC_KEY}=require('../licensing/manager');
+// Publisher public key must be supplied from a separately approved build-time trust root.
+// The application license signing key is explicitly NOT an engine release key.
 
 const MAX_ARCHIVE=2*1024*1024*1024;
 const MIN_ARCHIVE=100;
 const HASH=/^[a-f0-9]{64}$/;
 const RELEASE_URL=/^\/[^/?#]+\/[^/?#]+\/releases\/download\/[^/?#]+\/[^/?#]+\.zip$/i;
-function validateRelease(document,{publicKey=PUBLIC_KEY}={}){
+function validateRelease(document,{publicKey}={}){
+ if(!publicKey||crypto.createPublicKey(publicKey).asymmetricKeyType!=='ed25519')
+  throw Error('An independent Ed25519 engine publisher public key is required');
  if(!document||typeof document!=='object'||Array.isArray(document)||
     Object.keys(document).sort().join(',')!=='archiveBytes,archiveSha256,manifest,schema,url'||
     document.schema!==1||!HASH.test(document.archiveSha256)||
@@ -121,9 +124,11 @@ function extractArchive(zip,manifest,output,{script=path.join(__dirname,'..','..
  });
 }
 class CamoufoxInstallService{
- constructor(appDataRoot,{publicKey=PUBLIC_KEY,platform=process.platform,
+ constructor(appDataRoot,{publicKey,platform=process.platform,
   download=downloadPinned,extract=extractArchive,inspect,scriptPath}={}){
   if(!path.isAbsolute(appDataRoot))throw Error('Install root must be absolute');
+  if(!publicKey||crypto.createPublicKey(publicKey).asymmetricKeyType!=='ed25519')
+   throw Error('Independent Camoufox engine publisher key is required');
   this.base=path.join(appDataRoot,'engines');
   this.root=path.join(this.base,'camoufox');
   this.publicKey=publicKey;
@@ -151,12 +156,16 @@ class CamoufoxInstallService{
   if(fs.existsSync(this.root))
    throw Error('Existing Camoufox directory is invalid; do not overwrite. Review and back it up manually.');
   this.running=true;
-  fs.mkdirSync(this.base,{recursive:true,mode:0o700});
-  const scratch=fs.mkdtempSync(path.join(this.base,'.staging-'));
-  const archive=path.join(scratch,'release.zip');
-  const dest=path.join(scratch,'payload');
-  fs.mkdirSync(dest,{mode:0o700});
+  let scratch=null;
   try{
+   fs.mkdirSync(this.base,{recursive:true,mode:0o700});
+   const parent=fs.lstatSync(this.base);
+   if(!parent.isDirectory()||parent.isSymbolicLink())
+    throw Error('Engine installation directory must not be a link');
+   scratch=fs.mkdtempSync(path.join(this.base,'.staging-'));
+   const archive=path.join(scratch,'release.zip');
+   const dest=path.join(scratch,'payload');
+   fs.mkdirSync(dest,{mode:0o700});
    await this.download(release.url,archive,{sha256:release.sha256,bytes:release.bytes});
    await this.extract(archive,release.manifest,dest,{script:this.scriptPath});
    fs.writeFileSync(path.join(dest,'manifest.json'),JSON.stringify(release.manifest),{
@@ -168,7 +177,7 @@ class CamoufoxInstallService{
    return {installed:true,alreadyPresent:false,version:release.manifest.version};
   }finally{
    this.running=false;
-   fs.rmSync(scratch,{recursive:true,force:true});
+   if(scratch)fs.rmSync(scratch,{recursive:true,force:true});
   }
  }
 }
