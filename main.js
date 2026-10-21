@@ -344,9 +344,11 @@ function initIPC() {
     camoufox:camoufoxAdapter.status()
   }));
   ipcMain.handle('camoufox-install-status',()=>{
-    const runtime=assessRuntime({launcherPresent:camoufoxAdapter.status().installed});
+    const runtime=assessRuntime({
+      verifiedBundle:camoufoxAdapter.status().binaryVerified
+    });
     return {
-      available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.ready,
+      available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.canInstall,
       version:camoufoxApprovedRelease?.manifest?.version||null,
       alreadyInstalled:camoufoxInstall?.status().valid===true,
       installInProgress:camoufoxInstall?.running===true,
@@ -359,8 +361,8 @@ function initIPC() {
   ipcMain.handle('camoufox-install',async()=>{
     if(!camoufoxApprovedRelease||!camoufoxInstall)
       throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
-    const runtime=assessRuntime({launcherPresent:camoufoxAdapter.status().installed});
-    if(!runtime.ready)throw Error(runtime.reason);
+    const runtime=assessRuntime();
+    if(!runtime.canInstall)throw Error(runtime.reason);
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả browser trước khi cài engine');
     if(camoufoxInstall.running)throw Error('Đang cài đặt engine');
