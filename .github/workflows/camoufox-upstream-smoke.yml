@@ -11,6 +11,7 @@ on:
       - tools/test-camoufox-real.mjs
       - tools/test-camoufox-native-windows.js
       - tools/test-camoufox-direct-playwright.mjs
+      - tools/test-camoufox-electron-main.js
       - tools/test-camoufox-playwright-controller-windows.js
       - src/engine/CamoufoxPlaywrightController.js
       - src/engine/camoufoxAdapter.js
@@ -68,6 +69,15 @@ jobs:
         run: |
           node tools/test-camoufox-playwright-controller-windows.js
           if ($LASTEXITCODE -ne 0) { throw 'In-process Playwright controller compatibility not verified' }
+      - name: Probe Camoufox Playwright inside real Electron 33 main process
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          if (-not (Test-Path ".\\node_modules\\.bin\\electron.cmd")) {
+            throw 'Electron 33 runtime is missing from the test checkout'
+          }
+          & ".\\node_modules\\.bin\\electron.cmd" ".\\tools\\test-camoufox-electron-main.js"
+          if ($LASTEXITCODE -ne 0) { throw 'Electron 33 main-process Playwright compatibility failed' }
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
