@@ -42,7 +42,7 @@ const {CamoufoxPlaywrightController}=require('../../src/engine/CamoufoxPlaywrigh
   assert.equal(gateClose,0,'Gateway must stay open while context lives');
   assert.equal(launcher.stop(p.id).success,true);
   await pause();await pause();
-  assert.equal(launcher.getActive(p.id),null);
+  assert.equal(launcher.getActive(p.id),undefined);
   assert.equal(controller.contextFor(p.id),null);
   assert.equal(gateClose,1);
   console.log('BrowserLauncher retains Camoufox active record after failed context.close; second stop closes safely');
