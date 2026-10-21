@@ -35,7 +35,7 @@ be reused as proof of the latest code. Artifact digests describe the
 - [x] **Node 22 wrapper blocker isolated for MANUAL UI:** PR #15 now
   invokes the separately signed `camoufox.exe` using
   `child_process.spawn`, without importing the Camoufox TypeScript wrapper.
-  Firefox-documented `-no-remote -profile PATH -new-window URL` arguments
+  Firefox-documented `-no-remote -wait-for-browser -profile PATH -new-window URL` arguments
   are the only launch flags. Readiness requires a detectable Windows GUI
   window (not a PID alone and not an assumed WebSocket in stdout).
   The packaged Electron 33 / Node 20 runtime therefore supports the
@@ -68,11 +68,21 @@ be reused as proof of the latest code. Artifact digests describe the
 - [x] Native adapter unit regression blocks all configured proxy and
   unsupported GeoIP requests **before** process spawn. This prevents
   silent direct fallback but is **not** proof of real proxy connectivity.
-- [ ] **Native EXE Windows smoke:** GitHub Actions workflow
-  `camoufox-upstream-smoke.yml` now stages pinned official upstream ZIP
-  and tries two direct-spawn GUI profiles with real window readiness,
-  close/reopen, and invalid proxy fail-closed. Record its actual run ID,
-  pass/fail and log evidence; it is **not** an installed LHM EXE smoke.
+- [x] **Real native Windows EXE smoke PASS:** GitHub Actions
+  [39555514032](https://github.com/capquangfptminhlh/ggminh/actions/runs/39555514032)
+  pinned an official upstream ZIP, then ran direct `child_process.spawn`
+  with real Windows window detection. Verified two concurrent profiles,
+  close/reopen of A and unsupported proxy rejected before spawn. No
+  Playwright/TypeScript package was imported by the **native test script**;
+  Node 22 happened to be available in that runner. Browser startup succeeded
+  only after using `-wait-for-browser` to keep the Windows launcher attached
+  to its child browser lifetime. This does **not** establish an installed
+  LHM EXE test, cookie verification, or proxy/WebRTC/DNS safety.
+- [ ] **Native Node 20 real Windows regression:** the CI workflow now
+  switches to Node 20 before the native smoke. Follow
+  [run 39555947478](https://github.com/capquangfptminhlh/ggminh/actions/runs/39555947478)
+  to establish an independently verified result. Node 20 CLI smoke
+  is not an installed Electron 33 process.
 - [ ] **Blocker:** LHM-controlled Camoufox distribution signed under a
   *separate engine publisher key*, with approved license/redistribution,
   vetted per-file manifest and build-time `release.json`. None was provided.
@@ -113,8 +123,11 @@ Never trust an arbitrary URL, ZIP or executable path supplied by renderer.
 to consume a path-to-JSON flag for authenticated proxy/GeoIP in direct CLI
 mode. Only the ordinary Firefox profile path and start URL are forwarded.
 The app does not invent a WebSocket endpoint or try CDP. Windows UI
-readiness is checked through `MainWindowHandle`, while stdout/stderr are
-drained only to avoid pipe stalls. Graceful window close is attempted
+readiness is checked through `MainWindowHandle` in the launcher/child
+process tree (not from PID alone). Windows Firefox's bootstrap launcher
+normally detaches and exits with code 0 while the browser keeps running;
+`-wait-for-browser` keeps the launcher alive. Stdout/stderr are drained
+only to avoid pipe stalls. Graceful window close is attempted
 before process termination; unexpected close and timeout remain fail-closed.
 
 Do **not** mark unsupported proxy/GeoIP requests as success. Users
