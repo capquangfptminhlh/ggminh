@@ -21,6 +21,11 @@ class BrowserLauncher {
   }
 
   findBrowserBinary(engine = 'chromium') {
+    // Explicit user selection; never silently fallback to a system browser.
+    if(engine==='chromium'&&this.store.getSettings().engineSource==='bundled'){
+      if(!this.bundledEngine)throw Error('Bundled browser verifier is unavailable');
+      return this.bundledEngine.resolve('chromium');
+    }
     // Explicitly pinned browser takes priority. Modified or missing binaries
     // fail closed instead of silently falling back to an unpinned version.
     const pinned=this.runtimeRegistry?.binaryFor(engine);
