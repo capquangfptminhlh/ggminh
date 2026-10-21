@@ -38,7 +38,44 @@ try {
    if(-not $name.EndsWith('/')){throw 'Unexpected ZIP directory entry'}
    $prefix=$name.TrimEnd('/')
    if($prefix -eq '' -or $prefix.Split('/') -contains '..' -or $prefix.Split('/') -contains '.' -or
-      -not $prefix.Split('/')[-1].Match('^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$').Success){
+      -not ($prefix.Split('/')[-1] -match '^[a-zA-Z0-9_][a-zA-Z0-9_.-]*){
+    throw 'Unsafe ZIP directory'
+   }
+   continue
+  }
+  if(-not $expected.ContainsKey($name)){throw 'Unlisted ZIP file: '+$name}
+  if(-not $actual.Add($name)){throw 'Duplicate ZIP file: '+$name}
+  if([long]$entry.Length -ne $expected[$name]){throw 'ZIP declared file-size mismatch: '+$name}
+  if([long]$entry.Length -gt 512MB){throw 'ZIP file exceeds maximum size'}
+  $total += [long]$entry.Length
+  if($total -gt 3GB){throw 'ZIP release exceeds total size budget'}
+  $unixType=([long]$entry.ExternalAttributes -shr 16) -band 61440
+  if($unixType -eq 40960){throw 'ZIP symbolic link is forbidden'}
+  $full=[IO.Path]::GetFullPath((Join-Path $target $name.Replace('/','\')))
+  if(-not $full.StartsWith($target,[StringComparison]::OrdinalIgnoreCase)){
+   throw 'ZIP path escapes destination'
+  }
+ }
+ if($actual.Count -ne $expected.Count){throw 'ZIP does not include every signed manifest file'}
+ foreach($entry in $zip.Entries){
+  if([string]::IsNullOrWhiteSpace($entry.Name)){continue}
+  $full=[IO.Path]::GetFullPath((Join-Path $target $entry.FullName.Replace('/','\')))
+  $folder=[IO.Path]::GetDirectoryName($full)
+  [IO.Directory]::CreateDirectory($folder)|Out-Null
+  $source=$entry.Open()
+  $destinationFile=$null
+  try{
+   $destinationFile=New-Object IO.FileStream($full,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+   $source.CopyTo($destinationFile)
+   $destinationFile.Flush($true)
+  }finally{
+   if($destinationFile){$destinationFile.Dispose()}
+   $source.Dispose()
+  }
+ }
+}finally{$zip.Dispose()}
+Write-Host ('Extracted '+$actual.Count+' signed, named engine resource files.')
+)){
     throw 'Unsafe ZIP directory'
    }
    continue
