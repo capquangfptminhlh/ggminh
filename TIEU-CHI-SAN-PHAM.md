@@ -9,6 +9,9 @@
 > mạnh tín hiệu (Mục 5), quy tắc theo engine (Mục 8), phạm vi kết luận =
 > phạm vi đã đo (Mục 3.5, Mục 6), kỷ luật phát ngôn (Mục 11), chuỗi cổng
 > nghiệm thu (Mục 12), một nguồn sự thật cho code (Mục 13).
+> Bản v1.2 (2026-10-21): Mục 4 mở rộng thành bản đăng ký chi tiết từng
+> điểm quét (cách quan sát — xử lý bắt buộc — trạng thái đo), theo yêu cầu
+> của chủ dự án: danh mục điểm quét là phần quan trọng nhất của Hiến pháp.
 
 ## 1. Mục đích sản phẩm
 
@@ -50,27 +53,109 @@ khi mất tài khoản, không phải mò mẫm.
 
 ## 4. Nền tảng quét gì — danh mục điểm quét (Google/Facebook)
 
-Mọi tính năng phải truy được về một điểm trong danh mục này:
+**Đây là phần quan trọng nhất của Hiến pháp — là "đề bài" cho mọi tính
+năng và mọi phép đo.** Mục tiêu bao phủ: *mọi* điểm quét đã biết đều có
+(a) một quyết định xử lý theo Mục 5 và (b) một phép đo xác nhận. Không
+điểm nào được bỏ trống hoặc im lặng cho qua. Đây là bao phủ 100% danh
+mục — không phải hứa hẹn vượt qua 100% kiểm tra của nền tảng (Mục 7,
+Mục 11): kết quả mỗi lần thử do nền tảng quyết định và còn phụ thuộc
+tín hiệu ngoài trình duyệt.
 
-- **Mạng:** IP thoát, WebRTC candidates (host/srflx/relay/mDNS), DNS,
-  TLS fingerprint, HTTP/2 fingerprint, thứ tự header, IPv6, ASN,
-  khớp địa lý IP ↔ múi giờ/ngôn ngữ.
-- **Navigator/thiết bị:** UA, Client Hints (kể cả độ phân giải cao),
-  platform, oscpu, số nhân CPU, RAM khai báo, màn hình/cửa sổ/DPR/
-  độ sâu màu, điểm chạm, ngôn ngữ + danh sách ngôn ngữ, múi giờ,
-  locale, webdriver và dấu hiệu tự động hóa, plugins, doNotTrack/GPC.
-- **Đồ họa/âm thanh:** canvas (mọi đường xuất phải giải mã về cùng dữ
-  liệu pixel trước khi so), WebGL vendor/renderer/extensions/tham số/
-  độ chính xác shader, AudioContext (sample rate, độ trễ, số kênh, hash).
-- **Fonts/voices/media:** danh sách font dò được + font metrics,
-  giọng đọc hệ thống, số lượng/nhãn camera-micro-loa.
-- **Lưu trữ/định danh:** cookie (bên thứ nhất/thứ ba; Google: GAIA/NID;
-  Facebook: datr/sb/fr/_fbp), localStorage, IndexedDB, Cache Storage,
-  Service Worker, ETag/cache, favicon cache, lịch sử đăng nhập trên
-  trình duyệt.
-- **Hành vi/thời gian:** nhịp gõ phím, quỹ đạo chuột, tốc độ và độ đều
-  của thao tác, chuỗi thao tác lặp lại giữa các hồ sơ/tài khoản, giờ
-  hoạt động, mở đồng bộ nhiều hồ sơ.
+Danh mục là tài liệu sống: phát hiện điểm quét mới thì bổ sung vào đây
+trước, rồi mới làm tính năng. Cột *Trạng thái* là sổ đo sống — mọi PR
+chạm vào một điểm phải cập nhật trạng thái của điểm đó (ĐẠT = đã có
+phép đo xác nhận trên đường chạy thật; CHƯA ĐO = chưa có phép đo).
+
+Quy ước xử lý viết tắt: **E** = sinh mới nhất quán ở tầng engine
+(Mục 5.1); **G** = giữ giá trị engine/máy thật (Mục 5.2); **C** = chặn
+bề mặt hoặc cảnh báo (Mục 5.3); **Đ** = đo lại sau khi chạy (Mục 5.4,
+áp dụng cho mọi điểm).
+
+### 4.1 Mạng (nền tảng quan sát ở phía kết nối/máy chủ)
+
+| Điểm quét | Cách quan sát | Xử lý | Trạng thái |
+|---|---|---|---|
+| IP thoát (địa chỉ, ASN, loại mạng) | máy chủ thấy trực tiếp | proxy theo hồ sơ; chất lượng IP ngoài phạm vi | ĐÃ CÓ đầu đo trong ứng dụng (quan sát IP thoát) |
+| Chung IP / chung /24 giữa các hồ sơ | đối chiếu nhiều tài khoản | cảnh báo qua GraphDefense + cảnh báo IP tự động | ĐÃ CÓ module, chưa nối ứng dụng |
+| WebRTC ICE candidates (host/srflx) | RTCPeerConnection phía trang | C: cấu hình không lộ IP thật; srflx phải khớp IP thoát | CHƯA ĐO |
+| DNS — máy chủ phân giải thật | tên miền kiểm soát + nhật ký phân giải | phân giải qua tuyến proxy | CHƯA ĐO |
+| TLS fingerprint (JA3/JA4) | bản tin bắt tay TLS | G | CHƯA ĐO |
+| HTTP/2 fingerprint (SETTINGS, thứ tự pseudo-header) | khung kết nối | G | CHƯA ĐO |
+| Thứ tự/giá trị HTTP header | máy chủ ghi lại | G (mặc định engine) | CHƯA ĐO trong sản phẩm (đã có công cụ đo ngoài) |
+| IPv6 lộ song song IPv4 | kết nối địa chỉ kép | C: tuyến v6 khớp tuyến v4 hoặc tắt | CHƯA ĐO |
+| Khớp địa lý IP ↔ múi giờ/ngôn ngữ | đối chiếu IP geo với giá trị hồ sơ | E cho múi giờ/ngôn ngữ + cảnh báo khi lệch | ĐÃ kiểm tra ở mức cấu hình (preflight); CHƯA ĐO trên đường chạy |
+| QUIC/UDP rò tuyến | kết nối HTTP/3 | C: ép qua proxy hoặc tắt khi có proxy | CHƯA ĐO |
+
+### 4.2 Navigator và thiết bị (đọc bằng JavaScript phía trang)
+
+| Điểm quét | Cách quan sát | Xử lý | Trạng thái |
+|---|---|---|---|
+| userAgent + appVersion | navigator | E (cả bộ danh tính) / Chromium: tham số khởi chạy khớp phiên bản engine thật | ĐÃ ĐO (snapshot Stage-0 + chứng minh D1) |
+| Client Hints: brands, mobile, platform | navigator.userAgentData | E/G theo engine; phải khớp UA | CHƯA ĐO |
+| Client Hints độ phân giải cao: platformVersion, architecture, bitness, model, fullVersionList, formFactor | getHighEntropyValues | phải khớp UA + platform đã khai | CHƯA ĐO |
+| platform / oscpu | navigator | E | ĐÃ ĐO (snapshot + D1) |
+| hardwareConcurrency, deviceMemory | navigator | E | ĐÃ ĐO (snapshot + D1) |
+| Màn hình: width/height/availWidth/availHeight/colorDepth/pixelDepth | screen | E | ĐÃ ĐO (snapshot + D1) |
+| Cửa sổ: inner/outer, devicePixelRatio | window | E/G; không được mâu thuẫn với screen | CHƯA ĐO |
+| language + languages | navigator | E (bốc cùng bộ danh tính; khớp IP geo — cảnh báo khi lệch) | ĐÃ ĐO (snapshot + D1) |
+| Múi giờ | Intl.DateTimeFormat().resolvedOptions() | E (Camoufox: qua danh tính; Chromium điều khiển: CDP) | ĐÃ ĐO (snapshot + D1) |
+| Định dạng locale (ngày/giờ/số) | Intl.DateTimeFormat/NumberFormat | E, khớp language | CHƯA ĐO |
+| webdriver + dấu hiệu tự động hóa | navigator.webdriver, thuộc tính lạ trên window/document | C/G: không để lộ dấu hiệu của tầng điều khiển khi hồ sơ chạy thường | CHƯA ĐO |
+| plugins, mimeTypes, pdfViewerEnabled | navigator | G (theo engine) | CHƯA ĐO |
+| maxTouchPoints | navigator | E/G khớp loại thiết bị đã khai | CHƯA ĐO |
+| cookieEnabled, doNotTrack, globalPrivacyControl | navigator | G | CHƯA ĐO |
+| Tín hiệu hiển thị: color scheme, reduced motion, contrast, forced colors | matchMedia | G | CHƯA ĐO |
+| networkInformation (effectiveType, downlink, rtt, saveData) | navigator.connection | G | CHƯA ĐO |
+| Ước lượng lưu trữ, trạng thái bền lưu trữ | navigator.storage | G; dung lượng không được trùng bất thường giữa hồ sơ | CHƯA ĐO |
+| Bố cục bàn phím | navigator.keyboard.getLayoutMap | G | CHƯA ĐO |
+| Pin (chỉ Chromium) | navigator.getBattery | G | CHƯA ĐO |
+
+### 4.3 Đồ họa và âm thanh (dấu vết suy ra từ kết xuất)
+
+| Điểm quét | Cách quan sát | Xử lý | Trạng thái |
+|---|---|---|---|
+| Canvas 2D (hash ảnh kết xuất) | toDataURL/getImageData sau khi vẽ chữ+hình | E; mọi đường xuất phải cho cùng dữ liệu pixel của cùng một bộ danh tính | CHƯA ĐO |
+| Số đo chữ (font metrics qua canvas/ DOM) | đo kích thước text | E/G theo bộ danh tính | CHƯA ĐO |
+| WebGL vendor + renderer (kể cả bản không che) | getParameter + WEBGL_debug_renderer_info | E | Có trong danh tính D1; CHƯA có đầu đo |
+| WebGL: danh sách extensions | getSupportedExtensions | E | CHƯA ĐO |
+| WebGL: các tham số (kích thước texture, số đơn vị texture, số thuộc tính đỉnh, dải điểm/đường...) | getParameter (hàng chục tham số) | E — phải thuộc cùng một GPU khả tín với vendor/renderer | CHƯA ĐO |
+| WebGL: độ chính xác shader | getShaderPrecisionFormat | E | CHƯA ĐO |
+| WebGL: hash ảnh kết xuất 3D | readPixels/toDataURL trên ngữ cảnh WebGL | E | CHƯA ĐO |
+| OffscreenCanvas | kết xuất ngoài luồng chính | E như canvas thường | CHƯA ĐO |
+| AudioContext: sampleRate, baseLatency, outputLatency, maxChannelCount | ngữ cảnh âm thanh | E | CHƯA ĐO |
+| AudioContext: hash tín hiệu (oscillator + analyser/compressor) | kết xuất âm thanh ngoại tuyến | E | CHƯA ĐO |
+
+### 4.4 Fonts, giọng đọc, thiết bị ngoại vi
+
+| Điểm quét | Cách quan sát | Xử lý | Trạng thái |
+|---|---|---|---|
+| Danh sách font dò được | đo độ rộng chữ với font ứng viên / Font Loading API | E (bộ font của thiết bị trong danh tính) | CHƯA ĐO |
+| Giọng đọc hệ thống | speechSynthesis.getVoices | E | CHƯA ĐO |
+| Camera/micro/loa: số lượng, nhãn, id nhóm | enumerateDevices | G/E; số lượng không mâu thuẫn loại thiết bị | CHƯA ĐO |
+| Trạng thái quyền (thông báo, vị trí, clipboard...) | Permissions API | G | CHƯA ĐO |
+
+### 4.5 Lưu trữ và định danh trên trình duyệt
+
+| Điểm quét | Cách quan sát | Xử lý | Trạng thái |
+|---|---|---|---|
+| Cookie bên thứ nhất/thứ ba — Google: GAIA/NID/SID; Facebook: datr/sb/fr/c_user/_fbp | máy chủ + document.cookie | mỗi hồ sơ một vùng chứa riêng, bắt đầu từ rỗng | ĐẠT (đo cách ly 20/20 trên runner Windows) |
+| localStorage / sessionStorage | JavaScript | tách theo hồ sơ | ĐẠT (20/20) |
+| IndexedDB | JavaScript | tách theo hồ sơ | ĐẠT (20/20) |
+| Cache Storage + Service Worker | JavaScript | tách theo hồ sơ | ĐẠT (20/20) |
+| ETag / cache HTTP dùng làm định danh | máy chủ gán + đọc lại | cache thuộc vùng chứa của hồ sơ | CHƯA ĐO |
+| Favicon cache (F-Cache) | máy chủ quan sát yêu cầu favicon | thuộc vùng chứa của hồ sơ | CHƯA ĐO |
+| HSTS / Alt-Svc cache | hành vi kết nối | thuộc vùng chứa của hồ sơ | CHƯA ĐO |
+| Lịch sử đăng nhập chéo trong cùng trình duyệt | trang đăng nhập nền tảng gợi ý tài khoản đã từng đăng nhập | vùng chứa tách bạch từ rỗng; C: cảnh báo khi đăng nhập nhiều tài khoản vào cùng một hồ sơ | CHƯA ĐO |
+
+### 4.6 Hành vi và thời gian
+
+| Điểm quét | Cách quan sát | Xử lý | Trạng thái |
+|---|---|---|---|
+| Mở/đóng đồng bộ nhiều hồ sơ | máy chủ quan sát phiên | C: cảnh báo mẫu hành vi liên hồ sơ (D2) | ĐÃ CÓ module, chưa nối ứng dụng |
+| Chuỗi thao tác giống hệt nhau giữa các hồ sơ | đối chiếu chuỗi sự kiện | C: cảnh báo D2 | ĐÃ CÓ module, chưa nối ứng dụng |
+| Nhịp thao tác đều như máy (khoảng cách sự kiện quá đều) | thống kê phía nền tảng | C: cảnh báo D2 | ĐÃ CÓ module, chưa nối ứng dụng |
+| Tốc độ tạo tài khoản/thao tác dồn dập | thống kê phía nền tảng | C: cảnh báo vận hành | CHƯA CÓ |
+| Độ phân giải đồng hồ + jitter thời gian | performance.now, timestamp sự kiện | G (theo engine; cấm can thiệp làm lệch) | CHƯA ĐO |
 
 Lưu ý kỹ thuật đã kiểm chứng: so UA phải theo Chrome UA Reduction
 (so major + Client Hints; UA rút gọn dạng x.0.0.0 có thể là đúng);
@@ -79,6 +164,7 @@ múi giờ theo hồ sơ trên Chromium làm được qua CDP
 định "chỉ fork mới làm được"; cách ly lưu trữ không đòi hỏi dấu vết
 phải khác nhau; phiên ephemeral / qua checker / `isTrusted=true`
 không chứng minh được "người mới" với nền tảng.
+
 
 ## 5. Nguyên tắc làm sạch (cho từng điểm quét một quyết định)
 
