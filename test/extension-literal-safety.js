@@ -18,7 +18,7 @@ try{
  generateExtension(data,root);
  const script=fs.readFileSync(path.join(root,'stealth.js'),'utf8');
  assert(script.includes('get: () => 8')); // invalid CPU/GPU numbers must be sanitized
- assert(script.includes('get: () => 1920')); // invalid width safely defaults
+ assert(script.includes('width: 1920')); // invalid width safely defaults
  assert(script.includes(JSON.stringify(injected)));
  assert.doesNotThrow(()=>new vm.Script(script,{filename:'stealth.js'}));
  const context=vm.createContext({navigator:{},
