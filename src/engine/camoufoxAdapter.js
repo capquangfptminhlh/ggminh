@@ -9,6 +9,7 @@ const path=require('path');
 const {spawn,execFile}=require('child_process');
 const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
+const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
 
 const MIN_STARTUP_MS=1000;
 const MAX_STARTUP_MS=45000;
@@ -19,10 +20,9 @@ function validateCamoufoxProfile(profile,baseDir){
  if(profile.engine!=='gecko')throw Error('Camoufox requires a Gecko profile');
  if(profile.fingerprint?.mode!=='native')
   throw Error('Camoufox native preview requires native profile settings');
- const proxy=profile.proxy||{type:'direct'};
- if(!['direct','none'].includes(proxy.type)||
-    proxy.authProxyId||proxy.host||proxy.username||proxy.password||proxy.port)
-  throw Error('Camoufox native preview does not support a configured proxy; refusing direct fallback');
+ // Reject inline secrets, ambiguous proxy settings and unsupported types
+ // before creating an executable process.
+ normalizedProxy(profile.proxy);
  if(profile.geoip===true||profile.geoip?.enabled===true||
     profile.geolocation?.mode==='proxy')
   throw Error('Camoufox native preview does not support automatic GeoIP flags');
@@ -89,7 +89,8 @@ class CamoufoxAdapter{
  constructor(baseDir,{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
-  startupTimeoutMs=20000
+  startupTimeoutMs=20000,store=null,proxyVault=null,
+  prepareProxy=prepareCamoufoxProxy
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
      typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
@@ -97,7 +98,9 @@ class CamoufoxAdapter{
      startupTimeoutMs>MAX_STARTUP_MS)throw Error('Invalid Camoufox startup timeout');
   this.baseDir=baseDir;this.bundleVerifier=bundleVerifier;
   this.spawnProcess=spawnProcess;this.windowProbe=windowProbe;
+  if(typeof prepareProxy!=='function')throw Error('Invalid Camoufox proxy configurator');
   this.closeWindow=closeWindow;this.platform=platform;
+  this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
   this.startupTimeoutMs=startupTimeoutMs;
   this.sessions=new Map();this.pending=new Map();
  }
@@ -110,7 +113,7 @@ class CamoufoxAdapter{
    automationAvailable:false,
    ready:signed.valid===true&&this.platform==='win32',
    note:signed.valid?
-    'Signed native EXE available. Manual window only; proxy, GeoIP and Playwright automation remain unverified.':
+    'Signed native EXE available; manual UI only. Vault-backed HTTPS CONNECT proxy is experimental, unverified on a live lab.':
     'Independent publisher-signed Camoufox EXE is not installed or verified.'};
  }
  isBusy(id){return this.sessions.has(id)||this.pending.has(id);}
@@ -137,6 +140,14 @@ class CamoufoxAdapter{
    throw Error('Camoufox verifier did not supply an approved absolute executable');
   ensureIsolatedDirectory(this.baseDir,profileDir);
   const args=nativeArgs(profileDir,target);
+  let proxyPlan=null;
+  let proxyClosed=false;
+  const closeProxy=()=>{
+   if(proxyClosed)return;
+   proxyClosed=true;
+   if(proxyPlan)Promise.resolve(proxyPlan.close()).catch(error=>
+    console.warn('[Camoufox] Proxy gateway cleanup failed:',String(error.message).slice(0,180)));
+  };
   let child;
   let exited=false;
   let exitCode=null;
@@ -147,12 +158,18 @@ class CamoufoxAdapter{
    // our read ends after process exit prevents abandoned CI/app listeners.
    child?.stdout?.destroy?.();
    child?.stderr?.destroy?.();
+   closeProxy();
    if(entry&&this.sessions.get(id)===entry){
     this.sessions.delete(id);
     try{onClosed?.(entry.info);}catch(_){}
    }
   };
   try{
+   // A new local gateway gets its own dynamic port; the Firefox profile
+   // user.js is refreshed before launch. No --proxy-server CLI is assumed.
+   proxyPlan=await this.prepareProxy(profile,profileDir,{
+    store:this.store,proxyVault:this.proxyVault
+   });
    child=this.spawnProcess(executable,args,{
     cwd:path.dirname(executable),windowsHide:false,
     detached:false,stdio:['ignore','pipe','pipe']
@@ -197,7 +214,8 @@ class CamoufoxAdapter{
    const info={profileId:id,name:profile.name,engine:'gecko',
     provider:'camoufox',engineType:'camoufox',pid:child.pid,
     windowPid,
-    port:null,wsEndpoint:null,manualOnly:true,automationAvailable:false,
+    port:null,wsEndpoint:null,debugPort:null,
+    proxyMode:proxyPlan.mode,manualOnly:true,automationAvailable:false,
     startupEvidence:'native-window',startedAt:new Date().toISOString(),stopping:false};
    entry={child,info,closing:false,forceTimer:null};
    this.sessions.set(id,entry);
@@ -208,6 +226,7 @@ class CamoufoxAdapter{
    }
    child?.stdout?.destroy?.();
    child?.stderr?.destroy?.();
+   closeProxy();
    throw error;
   }
  }
