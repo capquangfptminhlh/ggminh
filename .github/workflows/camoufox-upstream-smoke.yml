@@ -32,7 +32,7 @@ jobs:
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
-          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund camoufox@0.5.7 playwright-core@1.62.0
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund camoufox@0.5.8 playwright-core@1.62.0
           if ($LASTEXITCODE -ne 0) { throw 'Install pinned test-only Camoufox launcher failed' }
       - name: Download official pinned Windows x64 release and verify it
         shell: pwsh
