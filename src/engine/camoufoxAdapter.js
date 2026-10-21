@@ -253,6 +253,12 @@ class CamoufoxAdapter{
   entry.child.once('exit',()=>clearTimeout(entry.forceTimer));
   return {success:true,pendingExit:true};
  }
+ // A Firefox DevTools port cannot be passed to firefox.connectOverCDP().
+ // This stays unsupported until a compatible, authenticated Playwright
+ // BrowserServer/Juggler transport exists and is independently tested.
+ async connectPlaywright(){
+  throw Error('Camoufox native browser has no supported Playwright websocket; Firefox DevTools is not CDP');
+ }
  getActive(id){return this.sessions.get(id)?.info||null;}
 }
 module.exports={CamoufoxAdapter,validateCamoufoxProfile,nativeArgs,
