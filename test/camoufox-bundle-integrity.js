@@ -24,7 +24,7 @@ function peFixture(destination){
    const files=['camoufox.exe','omni.ja'].map(name=>({
     path:name,...sha256File(path.join(base,name))
    }));
-   const document={schema:1,engine,version:'134.0.2',entry:'firefox.exe',files};
+   const document={schema:1,engine,version:'134.0.2',entry:'camoufox.exe',files};
    document.signature=crypto.sign(null,signedPayload(document),keys.privateKey).toString('base64url');
    fs.writeFileSync(path.join(base,'manifest.json'),JSON.stringify(document));
   };
