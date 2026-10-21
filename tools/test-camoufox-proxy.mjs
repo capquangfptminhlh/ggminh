@@ -19,7 +19,7 @@ if(!proxyServer||!expected||!echo){
  console.log(JSON.stringify({status:'NOT_RUN',
   reason:'Operator proxy server, expected public IPv4 and authorized HTTPS IP echo endpoint are all required',
   webrtc:'not-tested'}));
- process.exit(0);
+ process.exit(2); // Explicit NOT_RUN is a blocked release gate, never CI PASS.
 }
 const proxyUrl=new URL(proxyServer);
 if(!['http:','https:','socks5:'].includes(proxyUrl.protocol)||
@@ -98,14 +98,17 @@ try{
    publicCandidateCount:publicIPs.length,
    unexpectedPublicCandidateCount:unexpected.length};
  }
- const report={status:routed&&rtc.status!=='possible-leak'?'ROUTE_VERIFIED':'FAILED',
-  proxyEgressMatch:routed,webrtc:rtc.status,
+ const report={status:!routed||rtc.status==='possible-leak'?'FAILED':'PARTIAL',
+  proxyEgressMatch:routed,webrtc:rtc.status,dns:'NOT_TESTED',
   publicIceCandidates:rtc.publicCandidateCount,
   unexpectedPublicIceCandidates:rtc.unexpectedPublicCandidateCount,
   limitations:'STUN is optional; no candidates means inconclusive, not no-leak assurance.'};
  console.log(JSON.stringify(report));
- if(!routed||rtc.status==='possible-leak')
-  process.exitCode=1;
+ // A matching HTTPS egress address is not proof of safe DNS handling, and
+ // STUN candidates alone cannot certify all browser WebRTC surfaces.
+ // The operator's DNS resolver log and independent STUN lab are mandatory.
+ if(!routed||rtc.status==='possible-leak')process.exitCode=1;
+ else process.exitCode=2;
 }finally{
  if(context)await context.close().catch(()=>{});
  fs.rmSync(root,{recursive:true,force:true});
