@@ -37,7 +37,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    geckoResult.textContent=camoufox.ready?
      'Camoufox EXE đã xác minh chữ ký · '+camoufox.version+
        '. Chỉ mở cửa sổ thủ công; không có Playwright hoặc proxy/GeoIP tự động.':
-     'Camoufox chưa sẵn sàng: cần bản EXE Windows được LHM ký riêng và xác minh SHA-256. Không yêu cầu Node 22; chưa hỗ trợ proxy hoặc Automation Studio.';
+     'Camoufox chưa sẵn sàng: cần EXE Windows được LHM ký riêng và xác minh SHA-256. Không yêu cầu Node 22; proxy chỉ thử nghiệm trong lab, chưa hỗ trợ Automation Studio.';
    result.textContent=bundle.valid?
     'Engine đóng gói hợp lệ · phiên bản '+bundle.version+
      ' · '+bundle.fileCount+' tệp · SHA-256: '+bundle.sha256.slice(0,16)+'…':
