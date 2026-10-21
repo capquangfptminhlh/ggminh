@@ -80,10 +80,85 @@
       target.replaceChildren(labeled('health-issue error','Không kiểm tra được: '+error.message));
     } finally {refresh.disabled=false;}
   }
+  async function loadAgencyControls(){
+    const profileSelect=el('agency-profile');
+    const typeSelect=el('agency-approval-type');
+    try{
+      const [profiles,types]=await Promise.all([api.getProfiles(),api.agencyApprovalTypes()]);
+      const previousId=profileSelect.value;
+      profileSelect.replaceChildren();
+      for(const profile of profiles){
+        const option=document.createElement('option');
+        option.value=profile.id;option.textContent=profile.name;
+        profileSelect.append(option);
+      }
+      if(profiles.some(p=>p.id===previousId))profileSelect.value=previousId;
+      else if(profiles.some(p=>p.id===selectedProfile))profileSelect.value=selectedProfile;
+      typeSelect.replaceChildren();
+      for(const approval of types){
+        const option=document.createElement('option');
+        option.value=approval.type;option.textContent=approval.label;
+        typeSelect.append(option);
+      }
+      await refreshAgencyChecklist();
+    }catch(error){
+      el('agency-approval-result').textContent='Không tải được: '+error.message;
+    }
+  }
+  async function refreshAgencyChecklist(){
+    const id=el('agency-profile').value;
+    if(!id){el('agency-approval-result').textContent='Chưa có profile.';return;}
+    try{
+      const status=await api.agencyApprovalStatus(id);
+      el('agency-approval-result').textContent=status.completed.length+
+        ' mục đã xác nhận · '+status.missing.length+' mục cần kiểm tra. '+
+        (status.missing.length?'Còn: '+status.missing.map(x=>x.label).join('; '):
+          'Checklist nội bộ đã hoàn thành.')+
+        ' Đây không phải quyền mở khóa tài khoản Google.';
+    }catch(error){
+      el('agency-approval-result').textContent='Lỗi: '+error.message;
+    }
+  }
+  async function recordAgencyApproval(){
+    const button=el('agency-approval-confirm');
+    if(button.disabled)return;
+    button.disabled=true;
+    try{
+      const id=el('agency-profile').value;
+      const type=el('agency-approval-type').value;
+      if(!id||!type)throw Error('Chọn profile và nội dung cần phê duyệt');
+      const reply=await api.agencyApprovalRecord(id,type);
+      if(reply?.canceled)el('agency-approval-result').textContent='Đã hủy xác nhận.';
+      else await refreshAgencyChecklist();
+    }catch(error){
+      el('agency-approval-result').textContent='Không ghi nhận được: '+error.message;
+    }finally{button.disabled=false;}
+  }
+  async function inspectAgencySubnet(){
+    const button=el('agency-network-check');button.disabled=true;
+    try{
+      const entries=el('agency-network-entries').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      if(entries.length>100)throw Error('Tối đa 100 profile khác');
+      const mapped=entries.map(line=>{
+        const pieces=line.split('|');
+        if(pieces.length!==2)throw Error('Mỗi dòng phải theo mẫu profile_id|IPv4');
+        return {profileId:pieces[0].trim(),subnet:pieces[1].trim()};
+      });
+      const result=await api.agencyNetworkPreview({
+        profileId:el('agency-profile').value,
+        ip:el('agency-egress-ip').value.trim(),entries:mapped
+      });
+      el('agency-network-result').textContent='Subnet '+result.subnet+
+        ' · '+result.otherProfiles+' profile khác được khai báo cùng /24. '+
+        result.message+' Không lưu các địa chỉ vừa nhập.';
+    }catch(error){
+      el('agency-network-result').textContent='Không kiểm tra được: '+error.message;
+    }finally{button.disabled=false;}
+  }
   async function showHealth(profileId = null) {
     selectedProfile = profileId;
     open('modal-health');
-    try { await Promise.all([updateHealth(),updateReadiness(),refreshLocalDrift()]); }
+    try { await Promise.all([updateHealth(),updateReadiness(),refreshLocalDrift(),loadAgencyControls()]); }
     catch (error) { el('health-items').replaceChildren(labeled('health-issue error', 'Không kiểm tra được: ' + error.message)); }
   }
   async function checkEngines() {
@@ -216,6 +291,10 @@
     el('health-close').addEventListener('click', () => close('modal-health'));
     el('health-done').addEventListener('click', () => close('modal-health'));
     el('health-refresh').addEventListener('click', () => updateHealth().catch(console.error));
+    el('agency-profile').addEventListener('change',refreshAgencyChecklist);
+    el('agency-approval-refresh').addEventListener('click',refreshAgencyChecklist);
+    el('agency-approval-confirm').addEventListener('click',recordAgencyApproval);
+    el('agency-network-check').addEventListener('click',inspectAgencySubnet);
     el('health-isolation-audit').addEventListener('click', auditIsolation);
     el('local-drift-refresh').addEventListener('click',refreshLocalDrift);
     el('local-drift-record').addEventListener('click',async()=>{
