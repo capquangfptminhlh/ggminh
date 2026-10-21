@@ -218,9 +218,20 @@ function signedManifest(root,signingKey,{extraFiles=[]}={}){
   const realFile=path.join(root,'real-publisher.pub');
   fs.writeFileSync(realFile,publisherPubPem);
   fs.rmSync(trustFile);
-  fs.symlinkSync(realFile,trustFile);
-  assert.throws(()=>loadCamoufoxPublisherKey(trustDir),/trust anchor file/);
-  fs.rmSync(trustFile);
+  // Symlink fixture: creating a file symlink needs a privilege some
+  // Windows hosts deny. Where the OS refuses the fixture itself, this
+  // single sub-case is not runnable on that host (logged, not passed
+  // silently); wherever the symlink exists, rejection is asserted.
+  let symlinkCreated=false;
+  try{ fs.symlinkSync(realFile,trustFile,'file'); symlinkCreated=true; }
+  catch(error){
+   if(!['EPERM','EACCES','ENOTSUP','UNKNOWN'].includes(error.code)) throw error;
+   console.log('note: symlink fixture not creatable on this host ('+error.code+'); sub-case not runnable here');
+  }
+  if(symlinkCreated){
+   assert.throws(()=>loadCamoufoxPublisherKey(trustDir),/trust anchor file/);
+   fs.rmSync(trustFile);
+  }
   fs.writeFileSync(trustFile,publisherPubPem);
   assert.strictEqual(
    loadCamoufoxPublisherKey(trustDir).asymmetricKeyType,'ed25519');

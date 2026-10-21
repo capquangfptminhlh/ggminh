@@ -20,8 +20,14 @@ const path = require('node:path');
     const reloaded = new ExitIpObservationStore(dir);
     assert.equal(reloaded.list().length, 1, 'observations persist across instances');
     assert.equal(reloaded.list()[0].sessionId, 's1');
-    const mode = fs.statSync(path.join(dir, 'exit-ip-observations.json')).mode & 0o777;
-    assert.equal(mode, 0o600, 'observation file is owner-only');
+    // POSIX permission bits are only meaningful where the OS enforces
+    // them; on Windows the store still requests 0o600 at write time but
+    // Node reports regular files as 0o666, so assert the bit pattern
+    // only on POSIX hosts (CI fix, 2026-10-21).
+    if (process.platform !== 'win32') {
+      const mode = fs.statSync(path.join(dir, 'exit-ip-observations.json')).mode & 0o777;
+      assert.equal(mode, 0o600, 'observation file is owner-only');
+    }
     console.log('PASS exit-ip-observations store');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 
