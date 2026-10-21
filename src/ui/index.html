@@ -1372,6 +1372,35 @@ run();
           <p class="health-footnote">Chỉ lưu tổng số hồ sơ lỗi/cảnh báo, số đang chạy và phiên bản LHM khi bạn bấm lưu. Không thu thập phím, chuột, vị trí trang, cookie, IP hay điểm CAPTCHA; không gửi về máy chủ.</p>
           <div id="local-drift-results" role="status" aria-live="polite">Chưa đọc lịch sử kiểm tra.</div>
         </section>
+        <section class="health-readiness" aria-labelledby="agency-controls-title">
+          <div class="isolation-audit-head">
+            <strong id="agency-controls-title">Agency Operations · Phê duyệt và xung đột mạng</strong>
+          </div>
+          <p class="health-footnote">Chỉ kiểm tra tài nguyên do agency được phép quản lý. Không phân tích cách Google liên kết tài khoản, không lưu IP người dùng, thông tin thẻ hoặc giả lập lịch sử tài khoản.</p>
+          <div class="form-group">
+            <label for="agency-profile">Hồ sơ nội bộ</label>
+            <select id="agency-profile"></select>
+          </div>
+          <div class="form-group">
+            <label for="agency-approval-type">Nội dung phê duyệt</label>
+            <select id="agency-approval-type"></select>
+          </div>
+          <div class="lhm-batch-actions">
+            <button type="button" class="btn btn-sm btn-secondary" id="agency-approval-refresh">Xem checklist</button>
+            <button type="button" class="btn btn-sm btn-primary" id="agency-approval-confirm">Xác nhận đã hoàn tất</button>
+          </div>
+          <div id="agency-approval-result" class="health-readiness-items" role="status" aria-live="polite">Chưa đọc checklist.</div>
+          <div class="form-group">
+            <label for="agency-egress-ip">IPv4 exit đã kiểm tra thủ công</label>
+            <input id="agency-egress-ip" type="text" maxlength="45" placeholder="198.51.100.25" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="form-group">
+            <label for="agency-network-entries">Các IP exit khác của profile bạn quản lý (mỗi dòng: profile_id|IPv4)</label>
+            <textarea id="agency-network-entries" rows="3" maxlength="4000" placeholder="profile_a|198.51.100.12"></textarea>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" id="agency-network-check">Kiểm tra trùng subnet /24</button>
+          <div id="agency-network-result" role="status" aria-live="polite">Đây là kiểm tra xung đột tài nguyên, không phải công cụ tránh liên kết tài khoản.</div>
+        </section>
         <div id="health-items" class="health-list"></div>
         <section class="engine-diagnostics">
           <div class="isolation-audit-head">
