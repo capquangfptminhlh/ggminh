@@ -28,7 +28,8 @@ const run=async()=>{
  assert.match(await aPage.textContent('h1'),/smoke A/);
  assert.match(await bPage.textContent('h1'),/smoke B/);
  await alice.addCookies([{name:'lhm_smoke',value:'only_profile_A',
-  url:'https://example.com/',sameSite:'Lax'}]);
+  url:'https://example.com/',sameSite:'Lax',
+  expires:Math.floor(Date.now()/1000)+3600}]);
  const storedA=await alice.cookies('https://example.com/');
  const storedB=await bob.cookies('https://example.com/');
  assert(storedA.some(c=>c.name==='lhm_smoke'&&c.value==='only_profile_A'),
