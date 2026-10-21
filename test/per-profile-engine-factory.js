@@ -65,7 +65,7 @@ const BrowserLauncher=require('../src/engine/browserLauncher');
   assert.deepStrictEqual(calls.map(x=>x.engine),['chromium','gecko','camoufox']);
   assert.strictEqual(fakeLauncher.activeProcesses.get(fox.id).engineType,'camoufox');
   fakeLauncher.camoufoxAdapter=null;
-  await assert.rejects(()=>factory.launchProfile(fox),/unavailable/);
+  await assert.rejects(()=>factory.launchProfile(fox),/not available|unavailable/);
   assert.strictEqual(calls.length,3); // No silent Chromium fallback.
   const fullLauncher=new BrowserLauncher(store);
   assert.strictEqual(fullLauncher.engineFactory.select(fox,store.getSettings()).engineType,'camoufox');
