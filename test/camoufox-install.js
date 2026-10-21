@@ -48,11 +48,13 @@ const {signedPayload,sha256File}=require('../src/engine/bundledEngineManager');
    if(includeExtra)fs.writeFileSync(path.join(source,'unlisted.dll'),'Unauthorized extra');
    else fs.rmSync(path.join(source,'unlisted.dll'),{force:true});
    fs.rmSync(zip,{force:true});
-   const powershell=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',
-    'Compress-Archive -LiteralPath $args[0],$args[1]'+
-     (includeExtra?',$args[2]':'')+' -DestinationPath $args['+(includeExtra?3:2)+'] -Force',
-    binary,path.join(source,'omni.ja'),...(includeExtra?[path.join(source,'unlisted.dll')]:[]),zip],
-    {encoding:'utf8',timeout:120000});
+   const quoted=x=>"'"+x.replace(/'/g,"''")+"'";
+   const inputs=[binary,path.join(source,'omni.ja'),
+    ...(includeExtra?[path.join(source,'unlisted.dll')]:[])];
+   const command='Compress-Archive -LiteralPath '+inputs.map(quoted).join(',')+
+    ' -DestinationPath '+quoted(zip)+' -Force';
+   const powershell=spawnSync('powershell.exe',['-NoProfile','-NonInteractive',
+    '-Command',command],{encoding:'utf8',timeout:120000});
    if(powershell.status!==0)
     throw Error('Windows ZIP fixture creation failed: '+powershell.stderr);
    const actual=sha256File(zip);
