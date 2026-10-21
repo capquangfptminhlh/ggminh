@@ -37,7 +37,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    geckoResult.textContent=camoufox.ready?
      'Thư viện và engine Camoufox đã xác minh · '+camoufox.version+
        '. Cần kiểm thử Windows thật trước khi sử dụng production.':
-     'Camoufox chưa sẵn sàng: cần thư viện TypeScript và bản Windows đã ký, xác minh SHA-256. Không tự tải browser.';
+     'Camoufox chưa sẵn sàng: cần bản EXE Windows được LHM ký riêng và xác minh SHA-256. Không yêu cầu Node 22; chưa hỗ trợ proxy hoặc Automation Studio.';
    result.textContent=bundle.valid?
     'Engine đóng gói hợp lệ · phiên bản '+bundle.version+
      ' · '+bundle.fileCount+' tệp · SHA-256: '+bundle.sha256.slice(0,16)+'…':
@@ -95,7 +95,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{
    const data=await window.api.selectCamoufoxProvider(provider);
    geckoResult.textContent=data.provider==='camoufox'?
-    'Đã chọn Camoufox (preview). Hồ sơ Gecko yêu cầu native/direct và thư viện đã cài.':
+    'Đã chọn Camoufox chạy trực tiếp (preview). Chỉ duyệt web thủ công với profile native/direct.':
     'Đã trở về Firefox đã cài trên máy.';
   }catch(error){geckoResult.textContent='Không đổi được provider: '+error.message;}
   finally{busyState(false);}
