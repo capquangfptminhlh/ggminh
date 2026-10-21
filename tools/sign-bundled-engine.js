@@ -17,7 +17,7 @@ function issueManifest({root,version,keyFile,engine='chromium'}){
  if(!dir.isDirectory()||dir.isSymbolicLink())throw Error('Release root must be a regular folder');
  const privateKey=crypto.createPrivateKey(fs.readFileSync(keyFile));
  if(!['chromium','camoufox'].includes(engine))throw Error('Unsupported engine distribution');
- const entry=engine==='camoufox'?'firefox.exe':'chrome.exe';
+ const entry=engine==='camoufox'?'camoufox.exe':'chrome.exe';
  const filenames=listFiles(root);
  if(!filenames.includes(entry))throw Error('Bundled release is missing approved browser executable: '+entry);
  const manifest={
