@@ -27,8 +27,10 @@ window.addEventListener('DOMContentLoaded',()=>{
    const availability=await window.api.camoufoxInstallStatus();
    releaseAvailable=availability.available&&!availability.alreadyInstalled;
    installButton.disabled=busy||!releaseAvailable;
-   installInfo.textContent=availability.alreadyInstalled?
-     'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng.':
+   installInfo.textContent=!availability.runtime?.ready?
+     'Chưa thể cài Camoufox: '+availability.runtime.reason+'.':
+     availability.alreadyInstalled?
+       'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng.':
      availability.available?'Có bản Camoufox được LHM ký số: '+availability.version+
        '. Cần xác nhận riêng trước khi tải.':
        'Chưa có bản Camoufox được LHM ký và phê duyệt; nút cài đặt chưa khả dụng.';
