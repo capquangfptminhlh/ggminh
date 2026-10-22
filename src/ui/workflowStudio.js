@@ -108,6 +108,13 @@
     }
     if (catalog.some(t => t.id === prior)) select.value = prior;
     el('studio-template-load').disabled = !select.value;
+    describeStarterTemplate();
+  }
+  function describeStarterTemplate() {
+    const selected = starterTemplates.find(t => t.id === el('studio-template-select').value);
+    el('studio-template-description').textContent = selected
+      ? selected.description + ' Mẫu chưa được lưu hoặc chạy; hãy sửa URL và xác nhận quyền truy cập.'
+      : 'Mẫu hoạt động cục bộ, không tự chạy. Hãy sửa URL, tên miền, kiểm tra bước và lưu trước khi sử dụng.';
   }
   function loadStarterTemplate() {
     const selected = starterTemplates.find(t => t.id === el('studio-template-select').value);
@@ -504,6 +511,7 @@
     el('studio-new').addEventListener('click', createNew);
     el('studio-template-select').addEventListener('change', () => {
       el('studio-template-load').disabled = !el('studio-template-select').value;
+      describeStarterTemplate();
     });
     el('studio-template-load').addEventListener('click', loadStarterTemplate);
     el('studio-schedule-add').addEventListener('click',createSchedule);
