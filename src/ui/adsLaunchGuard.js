@@ -3,6 +3,14 @@
   const byId = id => document.getElementById(id);
   const api = window.api;
   let busy = false;
+  let qaBusy = false;
+  let qaLoaded = false;
+  const qaChoiceLabels = [
+    ['not-checked','Chưa kiểm tra'],
+    ['confirmed','Tôi đã tự xác nhận'],
+    ['needs-work','Cần xử lý'],
+    ['not-applicable','Không áp dụng']
+  ];
   function node(tag, className, content) {
     const item = document.createElement(tag);
     if (className) item.className = className;
@@ -12,6 +20,7 @@
   function show() {
     byId('modal-ads-launch-guard').classList.add('open');
     byId('ads-guard-urls').focus();
+    if (!qaLoaded) void loadQaChecklist();
   }
   function hide() { byId('modal-ads-launch-guard').classList.remove('open'); }
   async function inspect() {
@@ -74,12 +83,100 @@
       status.textContent = 'Không tạo được link: ' + String(error.message || error);
     } finally { button.disabled = false; }
   }
+  async function loadQaChecklist() {
+    const status = byId('ads-qa-status');
+    const previewBtn = byId('ads-qa-preview');
+    const exportBtn = byId('ads-qa-export');
+    previewBtn.disabled = true;
+    exportBtn.disabled = true;
+    status.textContent = 'Đang tải mẫu checklist…';
+    try {
+      const rows = await api.adsQaChecklist();
+      if (!Array.isArray(rows) || rows.length < 4 || rows.length > 20)
+        throw Error('Mẫu checklist không hợp lệ');
+      const target = byId('ads-qa-checklist');
+      target.replaceChildren();
+      for (const entry of rows) {
+        const label = node('label','lhm-ads-qa-item');
+        const caption = node('span','',entry.label);
+        const picker = document.createElement('select');
+        picker.dataset.checkId = entry.id;
+        picker.setAttribute('aria-label','Trạng thái: ' + entry.label);
+        for (const [value,title] of qaChoiceLabels) {
+          const option = node('option','',title);
+          option.value = value;
+          picker.append(option);
+        }
+        picker.addEventListener('change', () => {
+          status.textContent = 'Checklist đã thay đổi. Chọn Xem tổng hợp để kiểm tra lại.';
+        });
+        label.append(caption,picker);
+        target.append(label);
+      }
+      qaLoaded = true;
+      status.textContent = 'Checklist đã sẵn sàng. Tất cả mục mặc định chưa kiểm tra.';
+      previewBtn.disabled = false;
+      exportBtn.disabled = false;
+    } catch (error) {
+      qaLoaded = false;
+      status.textContent = 'Không tải được checklist: ' + String(error.message || error);
+    }
+  }
+  function qaPayload() {
+    const checks = {};
+    for (const picker of byId('ads-qa-checklist').querySelectorAll('select[data-check-id]'))
+      checks[picker.dataset.checkId] = picker.value;
+    return {urls:byId('ads-guard-urls').value,checks};
+  }
+  function explainDecision(value) {
+    return value === 'NEEDS_CORRECTION' ? 'Có mục cần sửa' :
+      value === 'REQUIRES_REVIEW' ? 'Cần rà soát thêm' :
+      'Đã ghi nhận QA cục bộ và xác nhận thủ công (không bảo đảm phê duyệt)';
+  }
+  async function campaignQa(exportFile) {
+    if (qaBusy || !qaLoaded) return;
+    qaBusy = true;
+    const previewBtn = byId('ads-qa-preview');
+    const exportBtn = byId('ads-qa-export');
+    const status = byId('ads-qa-status');
+    previewBtn.disabled = true;
+    exportBtn.disabled = true;
+    status.textContent = exportFile ? 'Đang chuẩn bị file báo cáo…' : 'Đang tính tổng hợp…';
+    try {
+      const report = exportFile ?
+        await api.exportAdsQa(qaPayload()) :
+        await api.previewAdsQa(qaPayload());
+      if (report.canceled) {
+        status.textContent = 'Đã hủy lưu, không có file nào được tạo.';
+      } else {
+        const s = report.summary || null;
+        status.textContent = explainDecision(report.decision) +
+          (s ? ' · ' + s.offlineUrls + ' link, ' + s.urlBlocked +
+            ' URL cần sửa, ' + s.userConfirmed + ' mục tự xác nhận, ' +
+            s.userNotChecked + ' mục chưa kiểm tra.' : '') +
+          (exportFile ? ' · Báo cáo JSON đã lưu vào vị trí bạn chọn.' : '');
+      }
+    } catch (error) {
+      status.textContent = 'Không thể ' + (exportFile ? 'lưu' : 'tạo') +
+        ' báo cáo: ' + String(error.message || error);
+    } finally {
+      qaBusy = false;
+      previewBtn.disabled = false;
+      exportBtn.disabled = false;
+    }
+  }
   function bind() {
     byId('btn-ads-launch-guard').addEventListener('click', show);
     for (const id of ['ads-guard-close','ads-guard-done'])
       byId(id).addEventListener('click',hide);
     byId('ads-guard-inspect').addEventListener('click',inspect);
     byId('ads-guard-build').addEventListener('click',build);
+    byId('ads-qa-preview').addEventListener('click',() => campaignQa(false));
+    byId('ads-qa-export').addEventListener('click',() => campaignQa(true));
+    byId('ads-guard-urls').addEventListener('input', () => {
+      byId('ads-qa-status').textContent =
+        'Danh sách URL đã thay đổi. Hãy kiểm tra lại trước khi xuất báo cáo.';
+    });
     byId('modal-ads-launch-guard').addEventListener('keydown', event => {
       if (event.key === 'Escape') { event.preventDefault(); hide(); }
     });
