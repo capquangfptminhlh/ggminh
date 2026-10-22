@@ -5,6 +5,12 @@ cổng nghiệm thu — thứ tự bắt buộc, không bỏ qua, không đảo 
 và **Mục 23** (mọi kết quả nghiệm thu phải gắn với commit + hash
 engine + hệ điều hành/môi trường + cấu hình + số trường đo được).
 
+**Quyết định Hiến pháp v1.4 (2026-10-22):** không bắt buộc ký
+Authenticode cho EXE/installer Windows để phát hành thương mại.
+Giữ nghiệm thu Windows thật, checksum SHA-256, công bố nguy cơ cảnh báo
+SmartScreen/Defender và bảo vệ xác minh engine/manifest/cập nhật.
+Không đánh dấu sẵn sàng thương mại chỉ nhờ miễn chữ ký EXE.
+
 **Trạng thái tổng thể hiện tại: NOT_READY** — Gate 1 đạt, Gate 2
 đạt một nửa (build/hồi quy), Gate 3 và Gate 4 chưa thực hiện.
 Các ô `____` là chỗ điền bằng chứng tại thời điểm thực thi; không
@@ -201,9 +207,12 @@ Mỗi mục: ghi lựa chọn + ngày; hồ sơ chi tiết ở `docs/decisions/`
       đã kiểm chứng sau đóng gói: xong / chưa ____
 - [ ] Icon sản phẩm: cung cấp file icon / quyết định giao với icon
       mặc định: ____
-- [ ] Authenticode: **đã quyết KHÔNG mua** (2026-10-22) — bản cài
-      giao không ký; câu chữ SmartScreen đã có trong tài liệu
-      khách hàng phần 01 và trong tin nhắn giao hàng mẫu: có ____
+- [ ] Authenticode EXE/installer: **tùy chọn, KHÔNG phải cổng bắt buộc**
+      (chủ dự án quyết định 2026-10-22 không mua). Nếu giao EXE
+      không ký, kiểm tra tài liệu người dùng đã thông báo nguy cơ
+      SmartScreen/Defender/chính sách máy chặn cài đặt: có ____
+      (thiếu thông báo là lỗi truyền thông, không phải lỗi ký số).
+      Không áp miễn trừ này cho engine manifest/cập nhật.
 - [ ] Tên artifact: hiện chứa chữ `Preview`
       (`LHM-Ads-Browser-5.8.0-Preview-Setup-x64.exe`) — giữ
       nguyên cho bản thương mại / đổi tên (đổi tên = sửa
