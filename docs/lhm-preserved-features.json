@@ -304,6 +304,31 @@
           "btn-ads-launch-guard"
         ]
       ]
+    },
+    {
+      "id": "lhm-ads-qa-dossier",
+      "label": "Privacy-safe, opt-in campaign launch QA evidence for client handoff",
+      "files": [
+        "src/ads/campaignQaReport.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "ads-qa-export"
+        ],
+        [
+          "preload.js",
+          "exportAdsQa"
+        ],
+        [
+          "src/ui/index.html",
+          "ads-qa-checklist"
+        ],
+        [
+          "src/ui/adsLaunchGuard.js",
+          "api.previewAdsQa"
+        ]
+      ]
     }
   ]
 }
