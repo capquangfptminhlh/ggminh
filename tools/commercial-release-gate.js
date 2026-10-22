@@ -129,13 +129,47 @@ function evaluate(e,env={}){
     !three?.operator||!HEX64.test(three.testedExeSha256||'')||
     three.testedExeSha256!==build?.exeSha256)
     add('GATE3','INDEPENDENT_WINDOWS_ACCEPTANCE','Independent installed Windows acceptance must name EXACT installer hash');
-  if(!three?.evidenceDir || typeof three.evidenceDir!=='string'||
-     !fs.existsSync(path.resolve(ROOT,three.evidenceDir)))
-    add('GATE3','EVIDENCE_DIRECTORY_MISSING','Redacted photos/logs/report must exist for independent reviewer');
+  let evidenceRoot=null;
+  try{
+    if(!three?.evidenceDir||typeof three.evidenceDir!=='string')
+      throw Error('Evidence directory is missing');
+    const directory=path.resolve(ROOT,three.evidenceDir);
+    if(!fs.statSync(directory).isDirectory())throw Error('Evidence path is not a directory');
+    if(fs.lstatSync(directory).isSymbolicLink())
+      throw Error('Symlinked evidence directory is not accepted');
+    evidenceRoot=fs.realpathSync(directory);
+  }catch(error){
+    add('GATE3','EVIDENCE_DIRECTORY_MISSING',
+      'Redacted evidence folder missing or invalid: '+String(error.message||error).slice(0,140));
+  }
   for(const code of G3){
     const v=three?.checkpoints?.[code];
-    if(v?.status!=='PASS'||typeof v.ref!=='string'||!v.ref.trim())
-      add('GATE3','CHECKPOINT_'+code,'Acceptance checkpoint '+code+' requires PASS plus evidence reference');
+    if(v?.status!=='PASS'||typeof v.ref!=='string'||!v.ref.trim()||
+       !HEX64.test(v.sha256||'')){
+      add('GATE3','CHECKPOINT_'+code,
+        'Acceptance checkpoint '+code+' requires PASS, an existing evidence file and SHA-256');
+      continue;
+    }
+    try{
+      if(!evidenceRoot)throw Error('Evidence directory not verified');
+      const file=path.resolve(evidenceRoot,v.ref);
+      const actualPath=fs.realpathSync(file);
+      // Evidence must be a real file in the declared private acceptance
+      // directory; reject traversal, reparse points and outside references.
+      const relative=path.relative(evidenceRoot,actualPath);
+      if(!relative||relative==='..'||relative.startsWith('..'+path.sep)||
+         path.isAbsolute(relative))
+        throw Error('Evidence file escapes its acceptance directory');
+      const stat=fs.lstatSync(file);
+      if(!stat.isFile()||stat.isSymbolicLink())
+        throw Error('Evidence path is not a regular file');
+      if(sha256(file)!==v.sha256.toLowerCase())
+        throw Error('Evidence file SHA-256 does not match');
+    }catch(error){
+      add('GATE3','EVIDENCE_INTEGRITY_'+code,
+        'Evidence for '+code+' could not be independently opened/hashed: '+
+        String(error.message||error).slice(0,140));
+    }
   }
 
   const decisions=e?.decisions;

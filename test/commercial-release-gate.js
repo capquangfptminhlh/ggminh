@@ -40,7 +40,11 @@ try{
    fontsDecision:'Synthetic approval fixture only'},
   gate3:{status:'PASS',machineWindowsVersion:'Windows 11 TEST ONLY',
    operator:'Synthetic QA test',testedExeSha256:digest,evidenceDir:dir,
-   checkpoints:Object.fromEntries(G3.map(k=>[k,{status:'PASS',ref:'synthetic/'+k}]))},
+   checkpoints:Object.fromEntries(G3.map(k=>{
+    const file=path.join(dir,'evidence-'+k+'.txt');
+    fs.writeFileSync(file,'Synthetic fixture '+k+'; no production acceptance');
+    return [k,{status:'PASS',ref:file,sha256:sha256(file)}];
+   }))},
   decisions:{approvedBy:'Synthetic unit test',approvedAt:'2026-10-22T00:00:00Z',
    items:Object.fromEntries(DECISIONS.map(k=>[k,'synthetic-only']))},
   gate4:{status:'APPROVED',approvedBy:'Synthetic unit test',approvedAt:'2026-10-22T00:00:00Z',
@@ -72,5 +76,30 @@ try{
  const noRights=evaluate({...evidence,engine:{...evidence.engine,licensedForDistribution:false}},
   {head:sha,version:'5.8.0'});
  assert.ok(noRights.blockers.some(i=>i.code==='ENGINE_DISTRIBUTION_PENDING'));
+ const missingPhoto=evaluate({...evidence,gate3:{...evidence.gate3,
+   checkpoints:{...evidence.gate3.checkpoints,
+    'G3-08':{status:'PASS',ref:'missing-photo.png',sha256:exeSha}}}},
+   {head:sha,version:'5.8.0'});
+ assert.ok(missingPhoto.blockers.some(i=>i.code==='EVIDENCE_INTEGRITY_G3-08'));
+ const wrongDigest=evaluate({...evidence,gate3:{...evidence.gate3,
+   checkpoints:{...evidence.gate3.checkpoints,
+    'G3-09':{...evidence.gate3.checkpoints['G3-09'],sha256:exeSha}}}},
+   {head:sha,version:'5.8.0'});
+ assert.ok(wrongDigest.blockers.some(i=>i.code==='EVIDENCE_INTEGRITY_G3-09'));
+ const traversal=evaluate({...evidence,gate3:{...evidence.gate3,
+   checkpoints:{...evidence.gate3.checkpoints,
+    'G3-11':{status:'PASS',ref:exe,sha256:digest}}}},
+   {head:sha,version:'5.8.0'});
+ // The fixture installer resides within the fixture evidence directory; this
+ // is acceptable structurally but MUST NOT be treated as a real Gate 3 photo.
+ assert.equal(traversal.approvedToPublish,false);
+ const noDigest=evaluate({...evidence,gate3:{...evidence.gate3,
+   checkpoints:{...evidence.gate3.checkpoints,
+    'G3-12':{status:'PASS',ref:'evidence-G3-12.txt'}}}},
+   {head:sha,version:'5.8.0'});
+ assert.ok(noDigest.blockers.some(i=>i.code==='CHECKPOINT_G3-12'));
+ const badRoot=evaluate({...evidence,gate3:{...evidence.gate3,evidenceDir:path.join(dir,'missing')}},
+   {head:sha,version:'5.8.0'});
+ assert.ok(badRoot.blockers.some(i=>i.code==='EVIDENCE_DIRECTORY_MISSING'));
  console.log('commercial-release-gate: PASS (synthetic only; default NOT_READY; never auto-publish)');
 }finally{fs.rmSync(dir,{recursive:true,force:true})}
