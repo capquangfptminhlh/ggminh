@@ -308,6 +308,7 @@ function initIPC() {
     return {canceled:false,...importEncrypted(sessionSnapshots,id,filePaths[0],passphrase)};
   });
   ipcMain.handle('ai-advisor-status', () => aiAdvisor.status());
+  ipcMain.handle('ai-advisor-budget-set', (_, limit) => aiAdvisor.setMonthlyRequestLimit(limit));
   ipcMain.handle('ai-advisor-configure', (_, value) => aiAdvisor.configure(value));
   ipcMain.handle('ai-advisor-forget-key', () => aiAdvisor.clear());
   ipcMain.handle('ai-advisor-ask', (_, value) => aiAdvisor.ask(value,store.getProfiles()));
