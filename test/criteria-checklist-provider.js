@@ -74,7 +74,8 @@ async function providerEntries(env, profileId) {
 // --- factories ------------------------------------------------------
 function ipWarn(code, profiles, summary) {
   return { source: 'ip-observations', code, title: code,
-    observed: { summary: summary || code, profiles, sessionIds: [], count: null, values: {} },
+    observed: { summary: summary || code, profiles, sessionIds: [], count: null,
+      values: { measurementSource: 'browser-runtime' } },
     lastDetectedAt: '2026-10-21T14:59:00.000Z', evaluatedAt: '2026-10-21T15:00:00.000Z',
     method: 'D3', limitation: 'gioi han D3', nextSteps: ['buoc xu ly'] };
 }
@@ -84,7 +85,7 @@ function driftWarn(profiles, summary) {
     evaluatedAt: '2026-10-21T15:00:00.000Z',
     method: 'Health Drift', limitation: 'gioi han drift', nextSteps: ['buoc xu ly'] };
 }
-function warningReport({ ip = { status: 'ok' }, drift = { status: 'ok', driftStatus: 'stable' }, warnings = [] } = {}) {
+function warningReport({ ip = { status: 'ok', runtimeProfiles: ['p1'] }, drift = { status: 'ok', driftStatus: 'stable' }, warnings = [] } = {}) {
   return { evaluatedAt: '2026-10-21T15:00:00.000Z',
     sources: { ipWarnings: ip, healthDrift: drift }, warnings };
 }
@@ -138,6 +139,16 @@ function envWithData(data) {
       assert.match(e[id].evidence, /không có bản ghi/i);
     }
     console.log('PASS provider measured-but-empty branches');
+  }
+  { // 2b: manager process is useful context, but not runtime evidence
+    const env = envWithData({ warningReport: warningReport({
+      ip: { status: 'ok', runtimeProfiles: [], managerProfiles: ['p1'] },
+    }), measurementRecord: null });
+    const e = await providerEntries(env, 'p1');
+    assert.equal(e['network-route'].status, 'unmeasured');
+    assert.match(e['network-route'].evidence, /tiến trình quản lý/i);
+    assert.match(e['network-route'].limit, /không thay thế/i);
+    console.log('PASS provider manager-only remains unmeasured');
   }
   { // 3: good record -> three stage0 criteria pass with exact counts
     const env = envWithData({ warningReport: warningReport({}),

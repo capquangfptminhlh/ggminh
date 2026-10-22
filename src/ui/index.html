@@ -126,7 +126,7 @@
           <button id="btn-profile-health">Kiểm tra hồ sơ</button>
           <button id="btn-config-backup">Sao lưu</button>
           <button id="btn-open-studio">Automation Studio</button>
-          <button id="btn-behavior-alert">Cảnh báo hành vi <span id="behavior-alert-count" hidden>0</span></button>
+          <button id="btn-behavior-alert">Cảnh báo vận hành <span id="behavior-alert-count" hidden>0</span></button>
           <button id="btn-open-rpa">Code RPA</button>
 
         </div>
@@ -790,11 +790,11 @@
   <div class="modal-overlay" id="modal-behavior">
     <div class="modal-dialog modal-lg behavior-dialog" role="dialog" aria-modal="true" aria-labelledby="behavior-title">
       <div class="modal-header">
-        <h2 id="behavior-title">Cảnh báo hành vi thao tác</h2>
+        <h2 id="behavior-title">Cảnh báo vận hành và bằng chứng</h2>
         <button class="btn-close" id="btn-close-behavior" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="behavior-disclaimer">Theo dõi thao tác <strong>trong LHM Ads Browser</strong> (mở/đóng/sửa hồ sơ, gọi Local API). Không theo dõi nhấp chuột trong trang Google Ads, không biết hệ thống Google đánh giá tài khoản thế nào.</p>
+        <p class="behavior-disclaimer">Tổng hợp thao tác <strong>trong LHM Ads Browser</strong>, quan sát IP do ứng dụng ghi và Health Drift cục bộ. Không theo dõi nội dung phím gõ, mật khẩu, clipboard hoặc thao tác trong trang; không suy đoán quyết định của nền tảng.</p>
         <div class="behavior-metrics">
           <div><span>Mức cảnh báo</span><strong id="behavior-level">Chưa vượt ngưỡng</strong></div>
           <div><span>Hoạt động / 10 phút</span><strong id="behavior-activities">0</strong></div>
@@ -804,7 +804,7 @@
         <div id="behavior-alert-list" class="behavior-list" aria-live="polite">Chưa có cảnh báo.</div>
         <h3 class="behavior-heading">Nhật ký thao tác gần đây</h3>
         <div id="behavior-event-list" class="behavior-events">Chưa có hoạt động.</div>
-        <p class="behavior-footnote">Ngưỡng cảnh báo là quy tắc vận hành nội bộ, không phải ngưỡng phát hiện của Google. Dữ liệu lưu cục bộ tối đa 24 giờ; không lưu URL trang, cookies hay mật khẩu.</p>
+        <p class="behavior-footnote">Ngưỡng là quy tắc vận hành nội bộ. Thiếu dữ liệu/lỗi thu thập không phải là ĐẠT. Quan sát IP từ tiến trình quản lý không thay thế phép đo trong runtime hồ sơ. Sự kiện thao tác lưu cục bộ tối đa 24 giờ; không lưu URL trang, cookies, nội dung phím gõ hay mật khẩu.</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="btn-refresh-behavior">Làm mới</button>

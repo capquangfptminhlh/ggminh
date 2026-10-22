@@ -191,7 +191,8 @@ function iso(ms) { return Number.isFinite(ms) ? new Date(ms).toISOString() : nul
 function makeWarning(fields) {
   const w = {
     id: fields.source + ':' + fields.code + ':' +
-      (fields.profiles.length ? fields.profiles.join('+') : 'app'),
+      (fields.profiles.length ? fields.profiles.join('+') : 'app') +
+      (fields.evidenceScope ? ':' + fields.evidenceScope : ''),
     source: fields.source,
     code: fields.code,
     level: fields.level,
@@ -209,9 +210,9 @@ function makeWarning(fields) {
     windowToIso: iso(fields.windowTo),
     evaluatedAt: fields.evaluatedAt,
     evaluatedAtIso: iso(fields.evaluatedAt),
-    method: METHODS[fields.source],
+    method: fields.method || METHODS[fields.source],
     criterion: CRITERIA[fields.code] || fields.criterion || '',
-    limitation: LIMITATIONS[fields.source],
+    limitation: fields.limitation || LIMITATIONS[fields.source],
     nextSteps: NEXT_STEPS[fields.code] || DEFAULT_NEXT_STEPS,
   };
   return w;
@@ -248,44 +249,82 @@ function fromBehaviorPatterns(events, evaluatedAt) {
 // --- D3: exit-IP observations --------------------------------------------
 function fromIpObservations(observations, evaluatedAt) {
   const normalised = normalizeObservations(observations); // throws on bad input
-  const report = automaticIpWarnings(normalised);
-  const byIpProfiles = new Map();
+  const profilesBySource = {
+    'browser-runtime': new Set(),
+    'manager-process': new Set(),
+    unlabelled: new Set(),
+  };
+  const sourceCounts = { browserRuntime: 0, managerProcess: 0, unlabelled: 0 };
   for (const o of normalised) {
-    if (!byIpProfiles.has(o.ip)) byIpProfiles.set(o.ip, new Set());
-    byIpProfiles.get(o.ip).add(o.profileId);
-  }
-  const warnings = report.warnings.map(w => {
-    const involved = normalised.filter(o => w.profiles.includes(o.profileId));
-    const times = involved.map(o => o.observedAt);
-    const values = {};
-    const sessionIds = [...new Set(involved.map(o => o.sessionId).filter(Boolean))];
-    if (w.code === 'shared_exit_ip') {
-      values.ips = [...byIpProfiles.entries()]
-        .filter(([, ps]) => ps.size >= 2 &&
-          w.profiles.some(p => ps.has(p)))
-        .map(([ip]) => ip).sort();
-    } else if (w.code === 'ip_changed_mid_session' ||
-               w.code === 'egress_unstable') {
-      values.ips = [...new Set(involved.map(o => o.ip))].sort();
-    } else if (w.code === 'subnet_concentration' || w.code === 'subnet_overlap') {
-      values.subnets = [...new Set(involved.map(o =>
-        GraphDefense.getSubnet24(o.ip)))].sort();
+    if (o.source === 'browser-runtime') {
+      profilesBySource['browser-runtime'].add(o.profileId);
+      sourceCounts.browserRuntime++;
+    } else if (o.source === 'manager-process') {
+      profilesBySource['manager-process'].add(o.profileId);
+      sourceCounts.managerProcess++;
+    } else {
+      profilesBySource.unlabelled.add(o.profileId);
+      sourceCounts.unlabelled++;
     }
-    return makeWarning({
-      source: 'ip-observations', code: w.code, level: w.level,
-      summary: w.message, profiles: w.profiles.slice(), sessionIds,
-      count: w.code === 'shared_exit_ip' ? w.profiles.length : null,
-      values,
-      windowFrom: times.length ? Math.min(...times) : null,
-      windowTo: times.length ? Math.max(...times) : null,
-      evaluatedAt,
-    });
-  });
+  }
+  // Không trộn manager/runtime/legacy vào cùng một kết luận. Một địa chỉ
+  // xuất hiện ở hai nguồn khác nhau không phải là trùng lặp cùng phạm vi đo.
+  const partitions = [
+    ['browser-runtime', normalised.filter(o => o.source === 'browser-runtime')],
+    ['manager-process', normalised.filter(o => o.source === 'manager-process')],
+    ['legacy-unlabelled', normalised.filter(o => !o.source)],
+  ];
+  const warnings = [];
+  for (const [measurementSource, group] of partitions) {
+    if (!group.length) continue;
+    const report = automaticIpWarnings(group);
+    const byIpProfiles = new Map();
+    for (const o of group) {
+      if (!byIpProfiles.has(o.ip)) byIpProfiles.set(o.ip, new Set());
+      byIpProfiles.get(o.ip).add(o.profileId);
+    }
+    for (const w of report.warnings) {
+      const involved = group.filter(o => w.profiles.includes(o.profileId));
+      const times = involved.map(o => o.observedAt);
+      const values = { measurementSource };
+      const sessionIds = [...new Set(involved.map(o => o.sessionId).filter(Boolean))];
+      if (w.code === 'shared_exit_ip') {
+        values.ips = [...byIpProfiles.entries()]
+          .filter(([, ps]) => ps.size >= 2 && w.profiles.some(p => ps.has(p)))
+          .map(([ip]) => ip).sort();
+      } else if (w.code === 'ip_changed_mid_session' || w.code === 'egress_unstable') {
+        values.ips = [...new Set(involved.map(o => o.ip))].sort();
+      } else if (w.code === 'subnet_concentration' || w.code === 'subnet_overlap') {
+        values.subnets = [...new Set(involved.map(o => GraphDefense.getSubnet24(o.ip)))].sort();
+      }
+      warnings.push(makeWarning({
+        source: 'ip-observations', code: w.code, level: w.level,
+        evidenceScope: measurementSource,
+        summary: w.message, profiles: w.profiles.slice(), sessionIds,
+        count: w.code === 'shared_exit_ip' ? w.profiles.length : null,
+        values,
+        method: measurementSource === 'browser-runtime'
+          ? 'Trang thăm dò trong runtime hồ sơ quan sát IP thoát qua endpoint HTTPS đã cấu hình.'
+          : measurementSource === 'manager-process'
+            ? 'Tiến trình quản lý kiểm tra proxy quan sát IP thoát; đây không phải phép đo trong runtime hồ sơ.'
+            : 'Bản ghi IP lịch sử không có nhãn nguồn; không dùng để chứng minh đường thoát runtime.',
+        limitation: LIMITATIONS['ip-observations'] +
+          ' Quan sát từ tiến trình quản lý hoặc bản ghi không nhãn không thay thế phép đo trong runtime; phép đo IP cũng không chứng minh trạng thái DNS/WebRTC.',
+        windowFrom: times.length ? Math.min(...times) : null,
+        windowTo: times.length ? Math.max(...times) : null,
+        evaluatedAt,
+      }));
+    }
+  }
   return {
     warnings,
     meta: {
-      observations: report.observations,
-      profilesObserved: report.profilesObserved,
+      observations: normalised.length,
+      profilesObserved: new Set(normalised.map(o => o.profileId)).size,
+      runtimeProfiles: [...profilesBySource['browser-runtime']].sort(),
+      managerProfiles: [...profilesBySource['manager-process']].sort(),
+      unlabelledProfiles: [...profilesBySource.unlabelled].sort(),
+      sourceCounts,
     },
   };
 }
@@ -367,6 +406,7 @@ function fromMonitorAlerts(alerts, evaluatedAt) {
 function createWarningService({ now = () => Date.now(), seed = null } = {}) {
   if (typeof now !== 'function') throw Error('now must be a function');
   const registry = new Map();
+  let active = [];
   // Optional durable-history seed (warningHistory.seedRecords()):
   // restores firstDetectedAt / timesObserved across app restarts.
   // Seeded entries are replaced by fresh normalised warnings on the
@@ -423,25 +463,34 @@ function createWarningService({ now = () => Date.now(), seed = null } = {}) {
         () => fromMonitorAlerts(input.monitorAlerts, evaluatedAt), '');
 
     for (const w of fresh) {
+      w.evidenceId = JSON.stringify([
+        w.source, w.code, w.observed.profiles, w.observed.sessionIds,
+        w.windowFrom, w.windowTo, w.observed.values,
+      ]);
       const prev = registry.get(w.id);
       if (prev) {
         w.firstDetectedAt = prev.firstDetectedAt;
-        w.timesObserved = prev.timesObserved + 1;
+        const changed = prev.evidenceId !== w.evidenceId;
+        w.timesObserved = prev.timesObserved + (changed ? 1 : 0);
+        w.lastDetectedAt = changed ? evaluatedAt : prev.lastDetectedAt;
       } else {
         w.firstDetectedAt = evaluatedAt;
         w.timesObserved = 1;
+        w.lastDetectedAt = evaluatedAt;
       }
-      w.lastDetectedAt = evaluatedAt;
       registry.set(w.id, w);
     }
+    active = fresh;
     lastSources = sources;
     return report(sources, evaluatedAt);
   }
 
   function report(sources, evaluatedAt) {
-    const warnings = [...registry.values()].sort((a, b) =>
+    const warnings = [...active].sort((a, b) =>
       (LEVELS[b.level] || 0) - (LEVELS[a.level] || 0) ||
       (b.windowTo || 0) - (a.windowTo || 0));
+    const history = [...registry.values()].sort((a, b) =>
+      (b.lastDetectedAt || 0) - (a.lastDetectedAt || 0));
     const statuses = Object.values(sources).map(s => s.status);
     const anyError = statuses.some(s => s === 'error');
     const anyOk = statuses.some(s => s === 'ok');
@@ -462,6 +511,7 @@ function createWarningService({ now = () => Date.now(), seed = null } = {}) {
       warningCount: warnings.length,
       sources,
       warnings,
+      history,
       note: 'Cảnh báo chỉ mô tả mẫu quan sát được bởi ứng dụng, kèm ' +
         'thời điểm và giới hạn kết luận (Mục 19.2, 20.2, 22). Trạng thái ' +
         'not_measured nghĩa là chưa có bằng chứng để kết luận — không ' +
@@ -472,7 +522,7 @@ function createWarningService({ now = () => Date.now(), seed = null } = {}) {
   return {
     evaluate,
     list: () => report(lastSources, now()),
-    reset: () => { registry.clear(); lastSources = {}; },
+    reset: () => { registry.clear(); active = []; lastSources = {}; },
   };
 }
 

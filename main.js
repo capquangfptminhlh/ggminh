@@ -675,8 +675,6 @@ function initIPC() {
       profile.fingerprint.identityProvisioningReason=provisioning.reason;
     const saved = store.saveProfile(profile,{allowEngineChange,
       allowIdentity: !!provisioning && provisioning.status==='provisioned'});
-    if(provisioning&&provisioning.status==='provisioned')
-      behaviorMonitor.record('identity_provisioned', saved.id, 'manual');
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;
   });

@@ -233,6 +233,39 @@ function makeBehaviorAlert(alertItem) {
   row.append(title, detail, meta);
   return row;
 }
+function makeUnifiedWarning(item) {
+  const row = document.createElement('div');
+  row.className = 'behavior-alert-item ' + (item.level === 'high' || item.status === 'error' ? 'is-high' : 'is-medium');
+  const title = document.createElement('strong');
+  title.textContent = item.title || (item.status === 'error' ? 'Lỗi thu thập dữ liệu' : 'Nguồn chưa được đo');
+  row.appendChild(title);
+  const lines = item.observed ? [
+    ['Quan sát:', item.observed.summary || 'Không có mô tả.'],
+    ['Hồ sơ/phiên:', [
+      ...(item.observed.profiles || []), ...(item.observed.sessionIds || [])
+    ].join(', ') || 'Toàn ứng dụng'],
+    ['Thời gian và phương pháp:',
+      (item.windowFromIso || item.evaluatedAtIso || 'Chưa xác định') + ' · ' + (item.method || 'Chưa xác định')],
+    ['Tiêu chí:', item.criterion || 'Chưa xác định'],
+    ['Giới hạn:', item.limitation || 'Chưa thể kết luận ngoài phạm vi quan sát.'],
+    ['Bước kiểm tra tiếp:', (item.nextSteps || []).join(' ') || 'Đo lại sau khi kiểm tra cấu hình.'],
+  ] : [
+    ['Quan sát:', item.reason || 'Nguồn dữ liệu chưa sẵn sàng.'],
+    ['Hồ sơ/phiên:', 'Toàn ứng dụng'],
+    ['Thời gian và phương pháp:', 'Lần làm mới hiện tại · kiểm tra nguồn dữ liệu cục bộ'],
+    ['Tiêu chí:', 'Nguồn phải đo thành công trước khi kết luận.'],
+    ['Giới hạn:', 'Thiếu dữ liệu hoặc lỗi thu thập không được xem là ĐẠT.'],
+    ['Bước kiểm tra tiếp:', 'Kiểm tra cấu hình nguồn rồi làm mới báo cáo.'],
+  ];
+  for (const [label, value] of lines) {
+    const detail = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = label + ' ';
+    detail.append(strong, document.createTextNode(String(value)));
+    row.appendChild(detail);
+  }
+  return row;
+}
 function makeBehaviorEvent(event) {
   const row = document.createElement('div');
   row.className = 'behavior-event-item';
@@ -245,23 +278,40 @@ function makeBehaviorEvent(event) {
 }
 async function refreshBehaviorAlerts() {
   const report = await window.api.getBehaviorReport();
+  let unified = null;
+  try { unified = await window.api.getWarningReport(); } catch (error) {
+    unified = { warnings: [], sources: { unified: { status: 'error', reason: error.message } } };
+  }
+  const sourceRows = Object.entries(unified.sources || {})
+    .filter(([, source]) => source && source.status !== 'ok')
+    .map(([name, source]) => ({
+      title: name + (source.status === 'error' ? ' · lỗi thu thập' : ' · chưa đo'),
+      status: source.status,
+      reason: source.reason,
+    }));
+  const unifiedRows = [...(unified.warnings || []), ...sourceRows];
+  const activeCount = (unified.warnings || []).length +
+    sourceRows.filter(row => row.status === 'error').length;
   const trigger = document.getElementById('btn-behavior-alert');
   const counter = document.getElementById('behavior-alert-count');
-  counter.textContent = String(report.alertCount);
-  counter.hidden = report.alertCount === 0;
-  trigger.classList.toggle('has-warning', report.alertCount > 0);
+  counter.textContent = String(activeCount);
+  counter.hidden = activeCount === 0;
+  trigger.classList.toggle('has-warning', activeCount > 0);
   document.getElementById('behavior-level').textContent =
-    report.level === 'high' ? 'Cần kiểm tra' : report.level === 'medium' ? 'Chú ý' : 'Chưa vượt ngưỡng';
+    unified.overall === 'error' || unified.overall === 'high' ? 'Cần kiểm tra'
+      : unified.overall === 'medium' || unified.overall === 'notice' ? 'Chú ý'
+        : unified.overall === 'incomplete' ? 'Chưa đo đủ' : 'Chưa vượt ngưỡng';
   document.getElementById('behavior-activities').textContent = String(report.activities10m);
   document.getElementById('behavior-profiles').textContent = String(report.profileCount10m);
-  renderBehaviorRows('behavior-alert-list', report.alerts, makeBehaviorAlert);
+  renderBehaviorRows('behavior-alert-list', unifiedRows,
+    unifiedRows.length ? makeUnifiedWarning : makeBehaviorAlert);
   renderBehaviorRows('behavior-event-list', report.recentEvents.slice(0, 20), makeBehaviorEvent);
 
-  const current = new Set(report.alerts.map(a => a.code + ':' + a.profileId + ':' + a.latestAt));
-  if (behaviorInitialized && report.alertCount > 0 &&
-      report.alerts.some(a => !behaviorAlertsSeen.has(a.code + ':' + a.profileId + ':' + a.latestAt))) {
+  const current = new Set((unified.warnings || []).map(a => a.id + ':' + a.lastDetectedAt));
+  if (behaviorInitialized && activeCount > 0 &&
+      (unified.warnings || []).some(a => !behaviorAlertsSeen.has(a.id + ':' + a.lastDetectedAt))) {
     const notice = document.getElementById('behavior-inline-notice');
-    notice.textContent = 'Có thao tác lặp lại bất thường trong phần mềm. Mở “Cảnh báo hành vi” để kiểm tra.';
+    notice.textContent = 'Có cảnh báo vận hành mới. Mở “Cảnh báo vận hành” để xem bằng chứng và giới hạn kết luận.';
     notice.hidden = false;
   }
   behaviorInitialized = true;

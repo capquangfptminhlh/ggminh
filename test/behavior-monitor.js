@@ -5,6 +5,7 @@ const os = require('os');
 const BehaviorMonitor = require('../src/monitor/behaviorMonitor');
 const Store = require('../src/db/store');
 const { createApiServer } = require('../src/api/server');
+require('./behavior-warning-ui');
 
 (async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lhm-behavior-'));
@@ -24,6 +25,19 @@ const { createApiServer } = require('../src/api/server');
     assert.strictEqual(report.recentEvents.length, 15);
     assert.throws(() => monitor.record('profile_open', '../injection'), /Invalid profile ID/);
     assert.throws(() => monitor.record('unknown', 'p001'), /Invalid activity type/);
+
+    // Mọi sự kiện ghi từ main process phải thuộc đúng tập dữ liệu tối thiểu
+    // mà BehaviorMonitor chấp nhận. Test này ngăn một action mới làm hỏng
+    // luồng tạo/lưu hồ sơ sau khi thao tác chính đã thành công.
+    const mainSource = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+    const recordedActions = [...mainSource.matchAll(/behaviorMonitor\.record\('([^']+)'/g)]
+      .map(match => match[1]);
+    for (const action of recordedActions) {
+      assert.doesNotThrow(() => {
+        const isolated = new BehaviorMonitor(fs.mkdtempSync(path.join(directory, 'lhm-action-')), () => time);
+        isolated.record(action, 'contract-profile');
+      }, `main.js records unsupported BehaviorMonitor action: ${action}`);
+    }
     const restored = new BehaviorMonitor(directory, () => time);
     assert.strictEqual(restored.getReport().level, 'high');
     time += 11 * 60 * 1000;

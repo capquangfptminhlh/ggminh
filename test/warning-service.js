@@ -9,8 +9,8 @@ const { detectDrift } = require('../src/health/localDrift');
 const T = Date.parse('2026-10-21T00:00:00Z');
 const ev = (action, profileId, at, source = 'manual') =>
   ({ action, profileId, source, at });
-const ob = (profileId, ip, observedAt, sessionId) =>
-  ({ profileId, ip, observedAt, sessionId });
+const ob = (profileId, ip, observedAt, sessionId, source) =>
+  ({ profileId, ip, observedAt, sessionId, ...(source ? { source } : {}) });
 
 // Every normalised warning must answer the six Mục 22 questions.
 function assertEvidenceShape(w) {
@@ -146,6 +146,9 @@ function assertEvidenceShape(w) {
   assert.equal(r.overall, 'high');
   assert.equal(r.sources.ipWarnings.status, 'ok');
   assert.equal(r.sources.ipWarnings.observations, 3);
+  assert.deepEqual(r.sources.ipWarnings.runtimeProfiles, []);
+  assert.deepEqual(r.sources.ipWarnings.managerProfiles, []);
+  assert.deepEqual(r.sources.ipWarnings.unlabelledProfiles, ['a', 'b']);
   const w = r.warnings.find(x => x.code === 'shared_exit_ip');
   assert.ok(w);
   assert.equal(w.level, 'high');
@@ -155,6 +158,22 @@ function assertEvidenceShape(w) {
   assert.equal(w.windowFrom, T + 1000);
   assert.equal(w.windowTo, T + 3000);
   assertEvidenceShape(w);
+}
+
+// 8b. Nguồn quan sát phải được giữ ở metadata để UI không biến phép đo
+// của tiến trình quản lý thành bằng chứng IP thoát trong runtime hồ sơ.
+{
+  const svc = createWarningService({ now: () => T + 900000 });
+  const r = svc.evaluate({ ipObservations: [
+    ob('a', '203.0.113.8', T + 1000, 's1', 'manager-process'),
+    ob('b', '203.0.113.9', T + 2000, 's1', 'browser-runtime'),
+    ob('c', '203.0.113.10', T + 3000, 's1'),
+  ] });
+  assert.deepEqual(r.sources.ipWarnings.runtimeProfiles, ['b']);
+  assert.deepEqual(r.sources.ipWarnings.managerProfiles, ['a']);
+  assert.deepEqual(r.sources.ipWarnings.unlabelledProfiles, ['c']);
+  assert.deepEqual(r.sources.ipWarnings.sourceCounts,
+    { browserRuntime: 1, managerProcess: 1, unlabelled: 1 });
 }
 
 // 9. IP changed mid-session: both addresses are the evidence; wording
@@ -256,8 +275,8 @@ function assertEvidenceShape(w) {
   assertEvidenceShape(w);
 }
 
-// 16. Registry: re-evaluating the same evidence accumulates detection
-// metadata; reset clears it.
+// 16. Re-reading identical evidence must not inflate history. A warning
+// disappears from the active report when its condition is gone.
 {
   let clock = T;
   const svc = createWarningService({ now: () => clock });
@@ -272,10 +291,16 @@ function assertEvidenceShape(w) {
   clock = T + 60000;
   r = svc.evaluate(input);
   w = r.warnings.find(x => x.code === 'shared_exit_ip');
-  assert.equal(w.timesObserved, 2);
+  assert.equal(w.timesObserved, 1);
   assert.equal(w.firstDetectedAt, T);
-  assert.equal(w.lastDetectedAt, T + 60000);
+  assert.equal(w.lastDetectedAt, T);
   assert.equal(svc.list().warningCount, 1);
+  r = svc.evaluate({ ipObservations: [
+    ob('a', '203.0.113.8', T + 70000, 's2'),
+    ob('b', '198.51.100.9', T + 71000, 's2'),
+  ] });
+  assert.equal(r.warningCount, 0, 'resolved condition is not an active warning');
+  assert.equal(r.history.length, 1, 'resolved warning remains in service history');
   svc.reset();
   assert.equal(svc.list().warningCount, 0);
 }

@@ -106,14 +106,18 @@
     const d3 = report.sources.ipWarnings;
     const ipMeasured = d3 && d3.status === 'ok';
     if (!ipMeasured) return entries;
+    const runtimeProfiles = Array.isArray(d3.runtimeProfiles) ? d3.runtimeProfiles : [];
+    const runtimeMeasured = runtimeProfiles.includes(profileId);
     const mine = warningsForProfile(report, profileId)
       .filter(w => w.source === 'ip-observations');
-    if (mine.length) {
-      const route = mine.find(w => ROUTE_CODES.includes(w.code)) || mine[0];
+    const runtimeMine = mine.filter(w =>
+      w.observed && w.observed.values &&
+      w.observed.values.measurementSource === 'browser-runtime');
+    const runtimeRoute = runtimeMine.find(w => ROUTE_CODES.includes(w.code));
+    if (runtimeRoute) {
+      const route = runtimeRoute;
       entries.push(warningToEntry('network-route', route));
-      const shared = mine.find(w => COINCIDENCE_CODES.includes(w.code));
-      if (shared) entries.push(warningToEntry('cross-profile-coincidence', shared));
-    } else {
+    } else if (runtimeMeasured) {
       entries.push({
         id: 'network-route', status: 'pass',
         evidence: 'Khong co canh bao IP thoat nao cho ho so nay trong lan danh gia gan nhat',
@@ -122,7 +126,18 @@
         limit: 'Chi dua tren cac quan sat IP thoat ung dung da ghi lai; khong bao gom DNS/WebRTC (chua do).',
         nextStep: '',
       });
+    } else {
+      const managerProfiles = Array.isArray(d3.managerProfiles) ? d3.managerProfiles : [];
+      const managerObserved = managerProfiles.includes(profileId);
+      entries.push(unmeasured('network-route',
+        managerObserved
+          ? 'Chỉ có quan sát IP từ tiến trình quản lý cho hồ sơ này; chưa có phép đo trong runtime trình duyệt.'
+          : 'Chưa có quan sát IP thoát trong runtime trình duyệt cho hồ sơ này.',
+        'Quan sát của tiến trình quản lý không thay thế phép đo trong runtime hồ sơ; DNS và WebRTC cũng chưa được suy ra từ phép đo IP.',
+        'Cấu hình endpoint HTTPS được phép rồi chạy lại phép đo IP từ chính runtime hồ sơ.'));
     }
+    const shared = mine.find(w => COINCIDENCE_CODES.includes(w.code));
+    if (shared) entries.push(warningToEntry('cross-profile-coincidence', shared));
     return entries;
   }
 

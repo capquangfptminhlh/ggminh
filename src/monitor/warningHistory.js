@@ -120,6 +120,7 @@ function projectWarning(w) {
     firstDetectedAt,
     lastDetectedAt,
     timesObserved,
+    evidenceId: typeof w.evidenceId === 'string' ? w.evidenceId : null,
   };
 }
 

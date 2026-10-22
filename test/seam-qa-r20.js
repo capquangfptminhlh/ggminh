@@ -280,15 +280,15 @@ async function seam2() {
       assert.equal(report.historyStatus.status, 'ok',
         'historyStatus stays \'empty\' after the first record on a fresh install');
     });
-    await check('seam2', 'report #2 increments the durable count (seed+authoritative pairing)', async () => {
+    await check('seam2', 'report #2 does not inflate the durable count for identical evidence', async () => {
       const report = await api.getWarningReport();
-      assert.equal(shared(report).timesObserved, 2);
-      assert.equal(report.history[0].timesObserved, 2);
+      assert.equal(shared(report).timesObserved, 1);
+      assert.equal(report.history[0].timesObserved, 1);
       const onDisk = JSON.parse(fs.readFileSync(historyFile, 'utf8'));
-      assert.equal(onDisk.entries[0].timesObserved, 2);
+      assert.equal(onDisk.entries[0].timesObserved, 1);
     });
     let firstDetectedAt;
-    await check('seam2', 'restart: seeded service keeps firstDetectedAt and continues the count', async () => {
+    await check('seam2', 'restart: seeded service keeps firstDetectedAt without poll inflation', async () => {
       const before = JSON.parse(fs.readFileSync(historyFile, 'utf8')).entries[0];
       firstDetectedAt = before.firstDetectedAt;
       // Fresh store + fresh service, seeded exactly as whenReady does.
@@ -296,7 +296,7 @@ async function seam2() {
       assert.equal(scope.warningHistory.load().status, 'ok');
       scope.warningService = createWarningService({ seed: scope.warningHistory.seedRecords() });
       const report = await api.getWarningReport();
-      assert.equal(report.history[0].timesObserved, 3);
+      assert.equal(report.history[0].timesObserved, 1);
       assert.equal(report.history[0].firstDetectedAt, firstDetectedAt,
         'first sighting survives the restart');
     });
