@@ -27,6 +27,7 @@ on:
       - src/health/signalChain.js
       - tools/generate-camoufox-identity.mjs
       - stage0-measure/**
+      - tools/commercial-release-gate.js
   workflow_dispatch:
 
 permissions:

@@ -42,3 +42,10 @@ npm run release:gate
 **Không quảng cáo Camoufox thương mại đã đóng gói, bảo đảm Google/Meta không quét, hoặc phần trăm độ an toàn** khi chưa có phép đo và nguồn xác thực.
 
 Mọi thay đổi code sau lần test Windows PASS đều cần chạy lại Gate 1/2 và Gate 3 trên artifact đã rebuild. Khóa ký production không được tạo tự động trong dự án.
+
+## Đợt nghiệm thu sau sửa bằng chứng Gate 3
+
+- Gate 2 đã PASS ở [run 39759151441](https://github.com/capquangfptminhlh/ggminh/actions/runs/39759151441) tại `caf00ad`, báo cáo Camoufox có cấu hình 7/7 từng hồ sơ trước và sau restart, 20/20 mục cách ly lưu trữ và cleanup PASS.
+- Đã nâng kiểm tra Gate 3: **mọi** PASS cần file bằng chứng có thật thuộc thư mục nghiệm thu, SHA-256 đúng byte; không chấp nhận file ngoài thư mục, mất file, hash không đúng hoặc khai báo khống kiểu chữ.
+- Khi commit phát hành thay đổi, hai workflow phải chạy lại trên SHA mới, không kế thừa Gate 2 từ commit cũ. Chính workflow Stage-0 theo dõi `tools/commercial-release-gate.js` để kích hoạt kiểm chứng lại.
+- Gói nghiệm thu cục bộ là bản Preview, không phân phối camoufox.exe commercial hoặc khóa production.
