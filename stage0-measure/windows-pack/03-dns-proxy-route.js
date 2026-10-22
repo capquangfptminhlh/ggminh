@@ -375,9 +375,22 @@ async function runCheck() {
   /* One lab instance serving UDP and TCP on the SAME port, the
    * way port 53 works in the real run: the pack resolver's TCP
    * fallback must land on the TCP listener of the same server. */
-  const lab2 = createDnsLabServer({ zone: ZONE, upstream: null });
-  const udpAddr = await lab2.listen(0);
-  const tcpAddr = await lab2.listenTcp(udpAddr.port);
+  // Windows runners can reserve a TCP port independently of UDP, so an
+  // OS-selected ephemeral UDP port may reject the matching TCP listener.
+  // Retry with a FRESH lab instance and OS-assigned port; never skip the
+  // actual DNS round-trip assertions or turn this into a mocked PASS.
+  let lab2, udpAddr, tcpAddr;
+  for (let attempt = 0; attempt < 12; attempt++) {
+    lab2 = createDnsLabServer({ zone: ZONE, upstream: null });
+    try {
+      udpAddr = await lab2.listen(0);
+      tcpAddr = await lab2.listenTcp(udpAddr.port);
+      break;
+    } catch (error) {
+      lab2.close();
+      if (!['EACCES', 'EADDRINUSE'].includes(error.code) || attempt === 11) throw error;
+    }
+  }
   const label = 'check' + crypto.randomBytes(3).toString('hex');
   const name = 'www.' + label + '.' + ZONE;
 
