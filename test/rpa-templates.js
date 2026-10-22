@@ -30,7 +30,7 @@ const html = fs.readFileSync(path.join(__dirname, '../src/ui/index.html'), 'utf8
 const renderer = fs.readFileSync(path.join(__dirname, '../src/ui/workflowStudio.js'), 'utf8');
 const preload = fs.readFileSync(path.join(__dirname, '../preload.js'), 'utf8');
 const main = fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8');
-for (const id of ['studio-template-select', 'studio-template-load'])
+for (const id of ['studio-template-select', 'studio-template-load', 'studio-template-description'])
   assert(html.includes('id="' + id + '"'), 'Missing template UI element: ' + id);
 assert(renderer.includes('refreshStarterTemplates()') && renderer.includes('loadStarterTemplate()'));
 assert(preload.includes("ipcRenderer.invoke('studio-templates')"));
