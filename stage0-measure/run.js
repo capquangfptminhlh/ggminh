@@ -120,7 +120,8 @@ async function run(){
  const tokens={a:crypto.randomBytes(16).toString('hex'),b:crypto.randomBytes(16).toString('hex')};
  let cleanupError=null;
  let phase='preflight';
- const enter=name=>{phase=name;console.log('[Stage-0 phase] '+name)};
+ const enter=name=>{phase=name;report.phase=name;report.progressAt=new Date().toISOString();
+  writeReport(report);console.log('[Stage-0 phase] '+name)};
  const report={
   classification:'LOCAL_STAGE0_DIAGNOSTIC_ONLY',
   executedAt:new Date().toISOString(),
