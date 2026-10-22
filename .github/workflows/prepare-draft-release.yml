@@ -1,0 +1,97 @@
+name: Prepare LHM Draft Release (owner approval)
+on:
+  workflow_dispatch:
+    inputs:
+      windows_run_id:
+        description: "Successful Build Windows EXE workflow run ID from exact current main commit"
+        required: true
+        type: string
+      version:
+        description: "Version from package.json (e.g. 5.8.0); release stays DRAFT"
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: lhm-draft-release
+  cancel-in-progress: false
+jobs:
+  draft-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Validate exact version and successful build provenance
+        shell: bash
+        env:
+          GH_TOKEN: \${{ github.token }}
+          RUN_ID: \${{ inputs.windows_run_id }}
+          RELEASE_VERSION: \${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$RUN_ID" =~ ^[0-9]{6,18}$ ]] || { echo "Invalid run id"; exit 1; }
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid version"; exit 1; }
+          pkg_version=$(node -p "require('./package.json').version")
+          [[ "$RELEASE_VERSION" == "$pkg_version" ]] || { echo "package.json version mismatch"; exit 1; }
+          branch_sha=$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')
+          [[ "$branch_sha" == "$GITHUB_SHA" ]] || { echo "Workflow must start from latest main"; exit 1; }
+          run_json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")
+          run_sha=$(echo "$run_json" | jq -r .head_sha)
+          run_branch=$(echo "$run_json" | jq -r .head_branch)
+          run_status=$(echo "$run_json" | jq -r .status)
+          run_conclusion=$(echo "$run_json" | jq -r .conclusion)
+          run_workflow=$(echo "$run_json" | jq -r .path)
+          [[ "$run_sha" == "$branch_sha" && "$run_branch" == "main" ]] || { echo "Run is not current main"; exit 1; }
+          [[ "$run_status" == "completed" && "$run_conclusion" == "success" ]] || { echo "Run is not successful"; exit 1; }
+          [[ "$run_workflow" == ".github/workflows/windows-exe.yml" ]] || { echo "Unexpected workflow"; exit 1; }
+          if gh release view "v$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo "Release already exists; refusing replacement"; exit 1
+          fi
+          echo "VERIFIED_MAIN_SHA=$branch_sha" >> "$GITHUB_ENV"
+      - name: Retrieve exact successful Windows EXE artifact
+        shell: bash
+        env:
+          GH_TOKEN: \${{ github.token }}
+          RUN_ID: \${{ inputs.windows_run_id }}
+          RELEASE_VERSION: \${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name LHM-Ads-Browser-Windows-x64 --dir release-assets
+          mapfile -t files < <(find release-assets -maxdepth 1 -type f -name '*.exe' -print)
+          [[ "\${#files[@]}" == 1 ]] || { echo "Expected exactly one EXE"; exit 1; }
+          [[ "$(basename "\${files[0]}")" == "LHM-Ads-Browser-$RELEASE_VERSION-Preview-Setup-x64.exe" ]] || {
+            echo "EXE filename does not match version"; exit 1;
+          }
+          [[ -s "\${files[0]}" ]] || { echo "EXE empty"; exit 1; }
+          sha256sum "\${files[0]}" | tee release-assets/SHA256SUMS.txt
+      - name: Create draft-only release; never publish automatically
+        shell: bash
+        env:
+          GH_TOKEN: \${{ github.token }}
+          RELEASE_VERSION: \${{ inputs.version }}
+          RUN_ID: \${{ inputs.windows_run_id }}
+        run: |
+          set -euo pipefail
+          cat > release-notes.txt <<EOF
+          LHM Ads Browser v$RELEASE_VERSION — DRAFT ONLY
+
+          Exact main commit: $VERIFIED_MAIN_SHA
+          Verified Windows CI run: $RUN_ID
+          Artifact SHA-256: see SHA256SUMS.txt
+
+          This is NOT a public commercial release. The independent owner
+          Gate 3/4 acceptance, production Ed25519 public trust anchor, and
+          signed update manifest must be configured and checked separately.
+          EXE Authenticode signing is optional under LHM Constitution v1.4.
+          EOF
+          gh release create "v$RELEASE_VERSION" release-assets/*.exe \
+            release-assets/SHA256SUMS.txt --draft --title "LHM Ads Browser v$RELEASE_VERSION (DRAFT)" \
+            --target "$VERIFIED_MAIN_SHA" --notes-file release-notes.txt
+          echo "DRAFT release created. Nothing was publicly published."
