@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="workspaceInteractions.css">
   <link rel="stylesheet" href="launchReadiness.css">
   <link rel="stylesheet" href="adsLaunchGuard.css">
+  <link rel="stylesheet" href="performanceLab.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
 </head>
 <body data-view="profiles">
@@ -142,6 +143,7 @@
             <button type="button" class="btn btn-secondary" id="btn-license-center">Giấy phép & gia hạn</button>
             <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
             <button type="button" class="btn btn-secondary" id="btn-ads-launch-guard"><span data-lhm-icon="shield-check"></span> Ads Launch Guard</button>
+            <button type="button" class="btn btn-secondary" id="btn-performance-lab"><span data-lhm-icon="gauge"></span> Performance Lab</button>
             <button type="button" class="btn btn-secondary" id="btn-session-snapshots">Snapshots</button>
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
@@ -625,6 +627,32 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="cache-cancel">Đóng</button>
         <button type="button" class="btn btn-danger" id="cache-clear">Xóa cache đã chọn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Performance Lab: benchmarks metadata only, no browser launch or account data export. -->
+  <div class="modal-overlay" id="modal-performance-lab">
+    <div class="modal-dialog modal-lg lhm-perf-dialog" role="dialog" aria-modal="true" aria-labelledby="performance-lab-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="performance-lab-title">LHM Performance Lab</h2>
+          <p class="lhm-bulk-help">Đo hiệu năng quản lý hồ sơ ngay trên máy này — số liệu thực, không số liệu AdsPower giả định</p>
+        </div>
+        <button class="btn-close" type="button" id="performance-lab-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="lhm-perf-actions">
+          <button class="btn btn-primary" type="button" id="performance-lab-run">Chạy kiểm thử cục bộ</button>
+          <button class="btn btn-secondary" type="button" id="performance-lab-export" disabled>Xuất báo cáo JSON</button>
+        </div>
+        <p id="performance-lab-status" role="status" aria-live="polite">Chưa có phép đo cho phiên này.</p>
+        <div id="performance-lab-metrics" class="lhm-perf-metrics" aria-live="polite"></div>
+        <p class="lhm-bulk-help"><strong>Phạm vi:</strong> thời gian đọc danh sách hồ sơ, tra cứu hồ sơ và dựng thống kê dashboard cục bộ (p50/p95). Không mở Chrome/Camoufox, không đo FPS, RAM theo cửa sổ hoặc kết quả Google/Meta. Báo cáo không chứa tên, ID, URL, mật khẩu, cookie hay token của khách.</p>
+        <p class="lhm-bulk-help">Để so sánh với đối thủ cần chạy cùng kịch bản, số profile, thiết bị, engine và điều kiện tải; kết quả này riêng LHM không đủ để khẳng định “số 1 thế giới”.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" id="performance-lab-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1633,6 +1661,7 @@ run();
   <script src="renderer.js"></script>
   <script src="launchReadiness.js"></script>
   <script src="adsLaunchGuard.js"></script>
+  <script src="performanceLab.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>
   <script src="profileCsvUpdate.js"></script>
