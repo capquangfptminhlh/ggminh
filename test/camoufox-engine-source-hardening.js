@@ -66,7 +66,7 @@ function signedManifest(root,signingKey,{extraFiles=[]}={}){
   fs.writeFileSync(publisherPubFile,publisherPubPem);
   // Camoufox without a publisher key file: refused (license key not accepted).
   assert.throws(()=>issueManifest({root:signRoot,version:'156.0.1',
-   keyFile:publisherPrivFile,engine:'camoufox'}),/separate publisher key file/);
+   keyFile:publisherPrivFile,engine:'camoufox'}),/independent publisher public key file/);
   // Publisher key file that IS the app license key: refused.
   const licensePubFile=path.join(root,'license-public.pem');
   fs.writeFileSync(licensePubFile,APP_LICENSE_KEY);

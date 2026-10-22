@@ -196,7 +196,7 @@ function fakeTransport(zipBytes) {
     const rLic = signCli(small, { LHM_ENGINE_SIGNING_KEY_FILE: publisherPrivFile, LHM_ENGINE_PUBLISHER_KEY_FILE: licPubFile });
     assert.notStrictEqual(rLic.status, 0); assert(/independent of the application license/.test(rLic.stderr), rLic.stderr);
     const rNone = signCli(small, { LHM_ENGINE_SIGNING_KEY_FILE: publisherPrivFile });
-    assert.notStrictEqual(rNone.status, 0); assert(/separate publisher key file/.test(rNone.stderr), rNone.stderr);
+    assert.notStrictEqual(rNone.status, 0); assert(/independent publisher public key file/.test(rNone.stderr), rNone.stderr);
     fs.writeFileSync(path.join(small, 'notes.pem'), privPem(stranger));
     const rLeak = signCli(small, goodEnv);
     assert.notStrictEqual(rLeak.status, 0); assert(/contains private key material/.test(rLeak.stderr), rLeak.stderr);
