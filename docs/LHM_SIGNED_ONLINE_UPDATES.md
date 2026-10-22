@@ -131,6 +131,45 @@ xuất bản EXE từ GitHub Release và nghiệm thu cập nhật trên Windows
 khách độc lập. Không có các bước này thì Update Center vẫn
 `not-configured`; không tự tải/cài file không tin cậy.
 
+## Kiểm tra bảo toàn dữ liệu trước nâng cấp (bổ sung)
+
+Trong **Thông tin LHM Ads Browser → Cập nhật phiên bản online**, chọn
+**Kiểm tra an toàn nâng cấp** trước khi tải/cài bản mới.
+
+LHM chỉ đọc dữ liệu tại thư mục storage hiện tại để đếm số profile,
+workflow, xác nhận các tệp license/định danh cài đặt, kho proxy mã hóa,
+thư mục session và số trình duyệt đang mở. Báo cáo không trả tên
+profile, ID, URL, cookie, token, khóa, mật khẩu, đường dẫn đầy đủ hoặc
+chữ ký số của từng khách hàng. Không yêu cầu mạng, không lưu báo cáo
+và không di chuyển/xóa tệp.
+
+Nếu dữ liệu hồ sơ hoặc workflow trên đĩa sai định dạng, không khớp
+bộ nhớ, kho proxy mã hóa bị lỗi, hoặc license được kích hoạt nhưng
+mất file định danh, kết quả **blocked**. Nút tải online từ app bị
+chặn cho đến khi xử lý nguyên nhân và kiểm tra lại. Cơ chế này
+không tự sửa chữa hoặc xóa tệp bị lỗi.
+
+Nếu còn trình duyệt đang chạy, cần đóng và lưu công việc
+**trước khi chạy installer**, nhưng không nhất thiết phải đóng
+chỉ để tải file EXE. Khi phát hiện phiên/snapshot, LHM nêu rõ
+**sao lưu cấu hình mã hóa .lhmbak không gồm cookies,
+LocalStorage, IndexedDB, cache hay toàn bộ session**. Nếu cần
+di chuyển/khôi phục session, dùng tính năng Session Snapshots
+theo quy trình riêng. Định danh license và proxy vault cần giữ
+nguyên trong cùng tài khoản Windows và storage folder.
+
+Bài `test/upgrade-continuity.js` sử dụng dữ liệu **giả**,
+tạo Store/Workflow/Vault/License thật, lưu một số tệp phiên mẫu,
+kiểm chứng mọi byte và danh tính sau khi dựng lại app services.
+Test cũng thử dữ liệu hỏng và bảo đảm báo cáo không lộ bí mật.
+**Đây chỉ là bài mô phỏng khởi động lại ứng dụng, KHÔNG phải
+nghiệm thu cài đè hoặc nâng cấp EXE NSIS trên máy thật.**
+
+Cần có Gate 3 Windows độc lập: chạy installer bản cũ, dùng dữ
+liệu thử nghiệm, chạy installer bản mới, khởi động lại và đối
+chiếu đầy đủ cookies/session, profile, license, proxy vault,
+workflows và khả năng rollback. Chỉ sau đó mới ký Gate 4.
+
 ## Giới hạn, vận hành và quyền riêng tư
 
 - Không thực hiện network request khi chỉ mở phần mềm/trang
