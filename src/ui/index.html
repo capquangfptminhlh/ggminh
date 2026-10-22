@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="premiumWorkspace.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
+  <link rel="stylesheet" href="launchReadiness.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
 </head>
 <body data-view="profiles">
@@ -622,6 +623,27 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="cache-cancel">Đóng</button>
         <button type="button" class="btn btn-danger" id="cache-clear">Xóa cache đã chọn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LHM four-layer diagnostic is a local configuration check, NOT a platform anti-fraud bypass. -->
+  <div class="modal-overlay" id="modal-launch-readiness">
+    <div class="modal-dialog modal-lg lhm-launch-dialog" role="dialog" aria-modal="true" aria-labelledby="launch-readiness-title">
+      <div class="modal-header">
+        <h2 id="launch-readiness-title">LHM Launch Readiness · Kiểm tra trước khi mở</h2>
+        <button class="btn-close" type="button" id="launch-readiness-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help" id="launch-readiness-profile"></p>
+        <p class="lhm-launch-status" id="launch-readiness-status" data-state="loading" role="status" aria-live="polite">Đang kiểm tra…</p>
+        <div class="lhm-launch-layers" id="launch-readiness-layers" aria-label="Bốn lớp đánh giá"></div>
+        <div class="lhm-launch-issues" id="launch-readiness-issues" aria-live="polite"></div>
+        <p class="lhm-bulk-help"><strong>Giới hạn bắt buộc:</strong> Kết quả chỉ phản ánh cấu hình cục bộ; chưa đo DNS, WebRTC, IP thoát thật hay đánh giá phía máy chủ Google/Meta. Không có kết quả nào chứng minh “người dùng mới” hoặc bảo đảm không bị theo dõi.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="launch-readiness-cancel">Hủy mở</button>
+        <button type="button" class="btn btn-primary" id="launch-readiness-confirm" disabled>Đang kiểm tra…</button>
       </div>
     </div>
   </div>
@@ -1549,6 +1571,7 @@ run();
 
   <script src="icons.js"></script>
   <script src="renderer.js"></script>
+  <script src="launchReadiness.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>
   <script src="profileCsvUpdate.js"></script>
