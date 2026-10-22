@@ -46,7 +46,7 @@ function buildCampaignQaReport({urls,checks}, clock=()=>Date.now()) {
     userNotApplicable:entries.filter(x=>x.status==='not-applicable').length
   };
   const decision = (summary.urlBlocked||summary.userNeedsWork)?'NEEDS_CORRECTION':
-    (summary.urlNeedsReview||summary.userNotChecked)?'REQUIRES_REVIEW':'LOCAL_QA_RECORDED';
+    (summary.urlNeedsReview||summary.userNotChecked||!summary.userConfirmed)?'REQUIRES_REVIEW':'LOCAL_QA_RECORDED';
   const body={
     schema:'lhm.ads.qa.v1',
     generatedAt:iso,
