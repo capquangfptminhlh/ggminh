@@ -60,6 +60,20 @@ try {
   assert.equal(green.status, 0, 'all-pass chain must exit 0');
   console.log('PASS run-all exits 0 when every step passes');
 
+  // 5. The repository entry point must stay short on Windows. The runner
+  // reads the long canonical list from test:steps instead of recursively
+  // reading the npm "test" entry point that invokes the runner itself.
+  const repositoryList = spawnSync(node, [runner, '--list'], { encoding: 'utf8' });
+  const repositoryOut = repositoryList.stdout + repositoryList.stderr;
+  assert.equal(repositoryList.status, 0, 'repository step list must load');
+  assert.ok(repositoryOut.includes('package.json script "test:steps"'),
+    'default runner source must be the canonical test:steps script');
+  assert.ok(!/^\d+\s+node test\/run-all\.js(?:\s|$)/m.test(repositoryOut),
+    'canonical steps must not recursively invoke run-all.js');
+  assert.match(repositoryOut, /\[run-all\] \d+ of \d+ steps listed/,
+    'repository list reports a non-empty step count');
+  console.log('PASS npm test uses the short runner entry point without recursion');
+
   console.log('run-all-selftest: all assertions passed');
 } finally {
   fs.rmSync(dir, { recursive: true, force: true });

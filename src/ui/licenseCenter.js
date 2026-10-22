@@ -4,7 +4,10 @@ window.addEventListener('DOMContentLoaded',()=>{
  const msg=el('license-message'),code=el('license-token');
  const statusText={active:'Đang hiệu lực',expired:'Hết hạn',inactive:'Chưa kích hoạt',
   invalid:'License không hợp lệ',different_installation:'Sai mã cài đặt',
-  clock_error:'Đồng hồ hệ thống bất thường',not_yet_valid:'Chưa đến ngày bắt đầu'};
+  clock_error:'Đồng hồ hệ thống bất thường',not_yet_valid:'Chưa đến ngày bắt đầu',
+  owner_sweep_pending:'Đã hết kỳ thuê · chờ lần quét có chữ ký của chủ sở hữu',
+  owner_sweep_unenrolled:'Chưa đăng ký license thuê với máy chủ chủ sở hữu',
+  owner_sweep_authority_unconfigured:'Chưa cấu hình máy chủ xác minh license thuê'};
  async function refresh(){
   const state=await window.api.getLicenseStatus();
   el('license-installation-id').value=state.installationId;

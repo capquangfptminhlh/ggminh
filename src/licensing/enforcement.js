@@ -3,7 +3,7 @@
 // never from renderer-provided plan, limits or feature flags.
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const DAY=86400000;
-const TRIAL_DAYS=30;
+const TRIAL_DAYS=10;
 const TRIAL_MAX_PROFILES=10;
 const TRIAL_FEATURES=Object.freeze(['profiles','automation','api']);
 function saveAtomic(filename,data){
@@ -53,7 +53,7 @@ class LicensePolicy{
      base.status==='clock_error')
    return {...base,access:'blocked',trial:false,allowed:false,reason:'clock_error'};
   // Expired, invalid or mismatched paid tokens must NOT silently regain trial
-  // privileges just because fewer than 30 days elapsed since installation.
+  // privileges just because the local evaluation window has not elapsed.
   if(['expired','invalid','different_installation','not_yet_valid'].includes(base.status))
    return {...base,access:'blocked',trial:false,allowed:false,reason:base.status};
   // A deactivated or expired license cannot restart the free trial. The first

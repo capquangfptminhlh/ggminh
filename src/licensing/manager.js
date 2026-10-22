@@ -10,12 +10,15 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UTC=/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
 const DAY=86400000;
 function canonicalClaims(p){
+ const version=p?.version;
+ const enforcementMode=version===1?'strict':p?.enforcementMode;
  if(!p||typeof p!=='object'||Array.isArray(p)||
-    p.version!==1||!TOKEN_ID.test(p.licenseId||'')||!UUID.test(p.installationId||'')||
+    ![1,2].includes(version)||!TOKEN_ID.test(p.licenseId||'')||!UUID.test(p.installationId||'')||
     typeof p.customer!=='string'||!p.customer.trim()||p.customer.length>120||
     !PLANS.has(p.plan)||!Number.isInteger(p.maxProfiles)||p.maxProfiles<1||p.maxProfiles>10000||
     !Array.isArray(p.features)||p.features.length>4||
     p.features.some(x=>!FEATURES.has(x))||
+    !['strict','owner_sweep'].includes(enforcementMode)||
     !UTC.test(p.issuedAt||'')||!UTC.test(p.expiresAt||''))
    throw Error('Invalid license fields');
  const first=Date.parse(p.issuedAt),last=Date.parse(p.expiresAt);
@@ -23,15 +26,18 @@ function canonicalClaims(p){
     new Date(first).toISOString()!==p.issuedAt||new Date(last).toISOString()!==p.expiresAt)
   throw Error('Invalid license period');
  const fields=['version','licenseId','customer','installationId','plan','maxProfiles','features','issuedAt','expiresAt'];
+ if(version===2)fields.push('enforcementMode');
  if(Object.keys(p).sort().join('|')!==[...fields].sort().join('|'))
   throw Error('Unexpected license claims');
  const features=[...new Set(p.features)].sort();
  if(features.length!==p.features.length||JSON.stringify(p.features)!==JSON.stringify(features))
   throw Error('Invalid license entitlements');
- return JSON.stringify({
-  version:1,licenseId:p.licenseId,customer:p.customer,installationId:p.installationId,
+ const normalized={
+  version,licenseId:p.licenseId,customer:p.customer,installationId:p.installationId,
   plan:p.plan,maxProfiles:p.maxProfiles,features,issuedAt:p.issuedAt,expiresAt:p.expiresAt
- });
+ };
+ if(version===2)normalized.enforcementMode=enforcementMode;
+ return JSON.stringify(normalized);
 }
 function b64read(v){
  if(typeof v!=='string'||!v||v.length>8192||!/^[A-Za-z0-9_-]+$/.test(v))
@@ -121,10 +127,13 @@ class LicenseManager{
    if(c.installationId!==this.installationId)return {...base,status:'different_installation'};
    const issued=Date.parse(c.issuedAt),expiry=Date.parse(c.expiresAt);
    if(issued>measured.now+5*60000)return {...base,status:'not_yet_valid'};
-   return {...base,active:expiry>measured.now,status:expiry>measured.now?'active':'expired',
+   const enforcementMode=c.version===2?c.enforcementMode:'strict';
+   const pendingSweep=enforcementMode==='owner_sweep'&&expiry<=measured.now;
+   return {...base,active:expiry>measured.now||pendingSweep,
+    status:pendingSweep?'owner_sweep_pending':expiry>measured.now?'active':'expired',
     plan:c.plan,customer:c.customer,licenseId:c.licenseId,
     expiresAt:c.expiresAt,remainingDays:Math.max(0,Math.ceil((expiry-measured.now)/DAY)),
-    maxProfiles:c.maxProfiles,features:[...c.features]};
+    maxProfiles:c.maxProfiles,features:[...c.features],enforcementMode};
   }catch(_){return {...base,status:'invalid'};}
  }
  activate(token){

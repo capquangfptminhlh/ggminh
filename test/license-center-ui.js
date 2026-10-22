@@ -19,4 +19,6 @@ assert(js.includes('window.api.deactivateLicense('));
 assert(js.includes('textContent='),'License text must render as text');
 assert(!js.includes('.innerHTML='));
 assert(html.includes('<script src="licenseCenter.js"></script>'));
+assert(html.includes('dùng thử 10 ngày'), 'customer UI must show the commercial 10-day trial');
+assert(js.includes('owner_sweep_pending'), 'license UI must explain owner-sweep pending state');
 console.log('v5.0 license center UI, main/preload wiring and plain-text rendering passed');

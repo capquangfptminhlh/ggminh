@@ -11,7 +11,7 @@ trạng thái thật của bản này, không phải lỗi giao hàng.)
 | File cài đặt | `LHM-Ads-Browser-5.8.0-Preview-Setup-x64.exe` (NSIS, Windows x64) |
 | Kích thước / hash bản Wave 2 | 89.473.785 byte / SHA-256 `54aec523bfc6436d3b0a702407fbdf1333a64b9faaf9dd448152f7c4e383b497` (bản phát hành cuối phải ghi lại hash của đúng file giao) |
 | Chữ ký Authenticode | **Không có** (quyết định của chủ dự án) → khi cài, SmartScreen hiện "nhà phát hành không xác định"; khách bấm **More info → Run anyway**. Đã có hướng dẫn trong tài liệu phần 01 |
-| Icon | Icon mặc định của Electron (chưa có icon sản phẩm) |
+| Icon | Icon LHM riêng (`build/icon.ico`, sinh từ nguồn SVG của dự án) |
 
 ## 2. Bên trong gói cài
 
@@ -44,7 +44,7 @@ trạng thái thật của bản này, không phải lỗi giao hàng.)
   đặt & kích hoạt · tạo hồ sơ & proxy · hiểu các cảnh báo · bảng
   kiểm tiêu chí · sao lưu/khôi phục/xoá dữ liệu · FAQ sự cố ·
   "Những gì sản phẩm không hứa".
-- **License:** dùng thử 30 ngày / tối đa 10 hồ sơ khi chưa kích
+- **License:** dùng thử 10 ngày / tối đa 10 hồ sơ khi chưa kích
   hoạt; token license do người bán cấp thủ công sau khi xác nhận
   thanh toán (starter = tính năng hồ sơ; pro/business thêm API +
   tự động hoá — hai gói này hiện cùng tập tính năng trong code,

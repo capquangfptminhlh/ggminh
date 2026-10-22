@@ -30,6 +30,12 @@ function tmpDir(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'lhm-r13-' + tag + '-'));
 }
 function modeOf(file) { return fs.statSync(file).mode & 0o777; }
+function assertPrivatePosixMode(file) {
+  // Windows protects files with ACLs; Node's POSIX mode bits are synthetic
+  // there and commonly report 0666 even after chmodSync(0600).
+  if (process.platform === 'win32') return;
+  assert.equal(modeOf(file), 0o600);
+}
 function plantLoose(file, content) {
   fs.writeFileSync(file, content);
   fs.chmodSync(file, 0o644);
@@ -46,30 +52,30 @@ const BLOB = {
 async function sectionA() {
   console.log('A. File-permission claims (0o600 stores, write AND rewrite paths)');
   const Store = require('../src/db/store');
-  await check('A1 db.json lands 0600 even when db.json.tmp pre-exists at 0644', () => {
+  await check('A1 db.json replaces a loose temp and enforces 0600 on POSIX', () => {
     const dir = tmpDir('store');
     plantLoose(path.join(dir, 'db.json.tmp'), '{}');
     const store = new Store(dir); // constructor performs the first saveData
-    assert.equal(modeOf(store.dbFile), 0o600);
+    assertPrivatePosixMode(store.dbFile);
     plantLoose(path.join(dir, 'db.json.tmp'), '{}');
     store.saveData(); // rewrite path
-    assert.equal(modeOf(store.dbFile), 0o600);
+    assertPrivatePosixMode(store.dbFile);
   });
   const { ExitIpObservationStore } = require('../src/health/exitIpObservations');
-  await check('A2 exit-ip-observations.json lands 0600 with a pre-loose .tmp', () => {
+  await check('A2 exit-ip-observations replaces a loose temp and enforces 0600 on POSIX', () => {
     const dir = tmpDir('exitip');
     const store = new ExitIpObservationStore(dir);
     plantLoose(store.file + '.tmp', '[]');
     store.record({ profileId: 'pb_r13', ip: '203.0.113.7', source: 'manager-process' });
-    assert.equal(modeOf(store.file), 0o600);
+    assertPrivatePosixMode(store.file);
   });
   const BehaviorMonitor = require('../src/monitor/behaviorMonitor');
-  await check('A3 behavior-events.json lands 0600 with a pre-loose .tmp', () => {
+  await check('A3 behavior-events replaces a loose temp and enforces 0600 on POSIX', () => {
     const dir = tmpDir('behavior');
     const monitor = new BehaviorMonitor(dir);
     plantLoose(monitor.file + '.tmp', '[]');
     monitor.record('profile_open', 'pb_r13', 'manual');
-    assert.equal(modeOf(monitor.file), 0o600);
+    assertPrivatePosixMode(monitor.file);
   });
 }
 
@@ -201,14 +207,14 @@ async function sectionF() {
     encryptString: (s) => Buffer.from('enc:' + s, 'utf8'),
     decryptString: (b) => b.toString('utf8').replace(/^enc:/, ''),
   };
-  await check('F1 vault round-trips, stores no plaintext, file is 0600', () => {
+  await check('F1 vault round-trips, stores no plaintext and enforces 0600 on POSIX', () => {
     const dir = tmpDir('vault');
     const vault = new ProxyCredentialVault(dir, codec);
     vault.set('px_0123456789abcdef', 'user-r13', 'pass-r13-marker');
     const raw = fs.readFileSync(vault.file, 'utf8');
     assert.ok(!raw.includes('pass-r13-marker'), 'plaintext password must not reach disk');
     assert.equal(vault.get('px_0123456789abcdef').pass, 'pass-r13-marker');
-    assert.equal(modeOf(vault.file), 0o600);
+    assertPrivatePosixMode(vault.file);
   });
 }
 
@@ -284,7 +290,9 @@ async function sectionC() {
       assert.ok(!text.includes('SECRET_NOTE_R13'));
       launcher.isBusy = () => false;
     });
-  } finally { server.close(); }
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 }
 
 (async () => {
@@ -295,5 +303,5 @@ async function sectionC() {
   await sectionF();
   await sectionC();
   console.log(`SECURITY-AUDIT-R13: ${passed} PASS / ${failed} FAIL`);
-  process.exit(failed ? 1 : 0);
-})().catch((error) => { console.error('AUDIT HARNESS ERROR', error); process.exit(2); });
+  process.exitCode = failed ? 1 : 0;
+})().catch((error) => { console.error('AUDIT HARNESS ERROR', error); process.exitCode = 2; });

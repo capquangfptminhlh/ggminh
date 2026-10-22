@@ -107,7 +107,7 @@
     "id": "commercial",
     "name": "Billing, plans and integrated providers",
     "state": "partial",
-    "evidence": "Ed25519 public-key offline license validation, installation ID, monthly issuer, expiry and activation UI; private issuer key not shipped; v5.1 main-process license gate for profile creation, RPA, Local API and browser startup plus bounded 30-day trial; signed online verification receipts, vendor-hosted revocation list and limited 72-hour offline grace (optional HTTPS authority); v5.4 local customer/license ledger, one-time issue/renew, expiring-soon reporting, admin-only revocation and audit history; private static HTML dashboard for customers, license statuses and renewals (local-only, no operator web server)",
+    "evidence": "Ed25519 public-key offline license validation, installation ID, monthly issuer, expiry and activation UI; private issuer key not shipped; main-process license gate for profile creation, RPA, Local API and browser startup plus bounded 10-day trial; signed online verification receipts, owner-sweep rental enforcement and strict legacy compatibility through an optional HTTPS authority; local customer/license ledger, one-time issue/renew, expiring-soon reporting, admin-only revocation and audit history; private static HTML dashboard for customers, license statuses and renewals (local-only, no operator web server)",
     "gaps": "No hosted multi-user admin portal, online payment/checkout and refunds, issuer key rotation or actual deployed license authority; local ledger is not a production SaaS database",
     "acceptance": "Payment compliance, entitlement, chargeback and accounting verification"
   },

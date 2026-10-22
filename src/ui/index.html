@@ -725,7 +725,7 @@
         <button type="button" class="btn-close" id="license-center-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="lhm-bulk-help">Kích hoạt offline bằng license do đơn vị phát hành ký bằng Ed25519. Không cần gửi cookie, mật khẩu, proxy hoặc thông tin trình duyệt để kích hoạt. Đây là hệ thống xác minh license cục bộ, không phải cổng thanh toán tự động.</p>
+        <p class="lhm-bulk-help">Kích hoạt bằng license do đơn vị phát hành ký bằng Ed25519. Không cần gửi cookie, mật khẩu, proxy hoặc dữ liệu phiên duyệt web. Khi cấu hình máy chủ xác minh, ứng dụng chỉ gửi mã license và mã cài đặt cần thiết để nhận biên nhận trạng thái có chữ ký.</p>
         <div class="lhm-license-status">
           <div><span>Trạng thái</span><strong id="license-state">Đang kiểm tra…</strong></div>
           <div><span>Gói sử dụng</span><strong id="license-plan">—</strong></div>
@@ -753,7 +753,7 @@
         <p id="license-features" class="lhm-bulk-help" role="status"></p>
         <p id="license-online-state" class="lhm-bulk-help" role="status"></p>
         <p id="license-message" role="status" aria-live="polite"></p>
-        <p class="lhm-bulk-help">Bản này áp dụng dùng thử 30 ngày (tối đa 10 hồ sơ); sau đó cần license để tạo/mở phiên và chạy tự động hóa. Starter hỗ trợ hồ sơ; Pro/Business hỗ trợ thêm API và RPA. Dữ liệu, bản sao lưu và khôi phục vẫn truy cập được khi hết hạn. Chưa có thanh toán trực tuyến hay thu hồi từ xa.</p>
+        <p class="lhm-bulk-help">Bản này áp dụng dùng thử 10 ngày (tối đa 10 hồ sơ); sau đó cần license để tạo/mở phiên và chạy tự động hóa. Starter hỗ trợ hồ sơ; Pro/Business hỗ trợ thêm API và RPA. Với gói thuê theo chế độ owner-sweep, khách vẫn dùng khi máy chủ chủ sở hữu đang ngoại tuyến; sau lần quét hết hạn và khi ứng dụng nhận biên nhận thu hồi có chữ ký, các lần mở hoặc tác vụ mới sẽ bị chặn. Phiên browser đang chạy không bị tự động đóng. Dữ liệu, bản sao lưu và khôi phục vẫn truy cập được khi hết hạn.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="license-done">Đóng</button>

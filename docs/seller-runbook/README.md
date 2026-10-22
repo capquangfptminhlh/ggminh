@@ -53,7 +53,7 @@ Tài liệu vận hành nội bộ cho bên bán/cấp license. Mọi lệnh dư
 3. Cấp license:
 
    ```bat
-   node tools\license-admin.js issue <LEDGER> <CUSTOMER_ID> <starter|pro|business> <MONTHS> <MAX_PROFILES> <PRIVATE_PEM>
+   node tools\license-admin.js issue <LEDGER> <CUSTOMER_ID> <starter|pro|business> <MONTHS> <MAX_PROFILES> <PRIVATE_PEM> [owner-sweep|strict]
    ```
 
    - `MONTHS`: số tháng hiệu lực (công cụ cấp trực tiếp giới hạn
@@ -61,6 +61,10 @@ Tài liệu vận hành nội bộ cho bên bán/cấp license. Mọi lệnh dư
    - `MAX_PROFILES`: giới hạn số hồ sơ của khách.
    - Gói và tính năng: **starter** = chỉ tính năng hồ sơ;
      **pro** và **business** = hồ sơ + API cục bộ + Automation.
+   - Mặc định là `owner-sweep`: hết kỳ thuê vẫn dùng được khi máy chủ
+     chủ sở hữu ngoại tuyến; lần quét khởi động/định kỳ sẽ ghi thu hồi,
+     và máy khách khóa thao tác mới sau khi nhận biên nhận có chữ ký.
+     Chọn `strict` nếu muốn máy khách tự khóa đúng ngày hết hạn.
 4. Gửi `token` trong kết quả cho khách qua kênh liên lạc đã thỏa
    thuận, kèm ngày hết hạn (`expiresAt`) để khách đối chiếu. Khách
    dán token vào mục License — trạng thái đúng là "Đã kích hoạt
@@ -71,7 +75,9 @@ Tài liệu vận hành nội bộ cho bên bán/cấp license. Mọi lệnh dư
 Đường cấp trực tiếp không qua sổ (chỉ dùng khi thật cần, ví dụ cấp
 thử nội bộ): `tools/issue-license.js --key <PEM> --installation
 <UUID> --customer <Tên> --plan <gói> --months <1–12>
-[--max-profiles <1–10000, mặc định 100>]`. License cấp đường này
+[--max-profiles <1–10000, mặc định 100>]`. License cấp đường này luôn
+dùng chế độ `strict`; công cụ từ chối `owner-sweep` vì không có bản ghi
+ledger để quét. License cấp đường này
 không có trong ledger nên không tra cứu/gia hạn theo quy trình
 chuẩn được.
 
@@ -94,13 +100,52 @@ chuẩn được.
 3. Gửi token mới cho khách; khách dán thay token cũ trong mục
    License.
 
-Điều cần nói trước với khách (đúng hành vi phần mềm): khi license
-hết hạn, ứng dụng khóa thao tác vận hành nhưng **dữ liệu vẫn xem
-được, sao lưu được và khôi phục được**; license hết hạn **không**
-tự quay lại 30 ngày dùng thử. Khách mới chưa mua có dùng thử 30
+Điều cần nói trước với khách (đúng hành vi phần mềm): gói `strict`
+khóa thao tác vận hành khi hết hạn. Gói `owner-sweep` chỉ khóa thao
+tác mới sau khi chủ sở hữu quét và máy khách nhận biên nhận thu hồi
+có chữ ký; không tự đóng browser đang chạy. Ở cả hai chế độ, **dữ
+liệu vẫn xem được, sao lưu được và khôi phục được**; license hết hạn
+**không** tự quay lại dùng thử. Khách mới chưa mua có dùng thử 10
 ngày, tối đa 10 hồ sơ, đủ ba nhóm tính năng.
 
 ## 4. Thu hồi (khi bắt buộc)
+
+### Vận hành máy chủ owner-sweep
+
+Máy chủ xác minh phải chạy trên máy của bên bán và không được đóng
+gói cho khách. Cấu hình tối thiểu trước khi khởi động:
+
+```bat
+set LHM_LICENSE_LEDGER_PATH=C:\secure\lhm\ledger.json
+set LHM_LICENSE_REGISTRY_PATH=C:\secure\lhm\registry.json
+set LHM_ISSUER_KEY_PATH=C:\secure\lhm\issuer-private.pem
+set LHM_ISSUER_PASSPHRASE=<mật khẩu khóa, tối thiểu 12 ký tự>
+set LHM_OWNER_SWEEP_INTERVAL_MINUTES=1440
+node tools\license-authority.js
+```
+
+`LHM_LICENSE_LEDGER_PATH` bật lần quét ngay khi máy chủ khởi động và
+lặp theo chu kỳ (mặc định 1.440 phút). Máy khách ở ngoài mạng nội bộ
+chỉ nhận được biên nhận khi endpoint này được xuất bản qua HTTPS an
+toàn và cấu hình bằng `LHM_LICENSE_VERIFY_URL`; chỉ bật máy tính chủ
+sở hữu mà không có đường mạng tới endpoint là chưa đủ. Khóa riêng,
+ledger và registry phải được phân quyền hệ điều hành cho đúng tài
+khoản vận hành và sao lưu tách biệt.
+
+Nếu máy chủ ngoại tuyến, license `owner-sweep` đã hết kỳ thuê tiếp tục
+được dùng đúng theo chính sách đã chốt. Khi máy chủ hoạt động lại,
+lần quét ghi trạng thái thu hồi; lần xác minh kế tiếp của máy khách
+nhận biên nhận có chữ ký và chặn các thao tác mới. Cơ chế này không
+tự đóng browser đang chạy và không thể được mô tả là chống bẻ khóa
+tuyệt đối: quản trị viên có đặc quyền trên máy khách vẫn có thể can
+thiệp dữ liệu cục bộ, vì vậy mọi quyết định thương mại phải dựa thêm
+vào log và đối soát phía bán.
+
+License `owner-sweep` mới phải liên hệ thành công với endpoint ít nhất
+một lần để nhận biên nhận đăng ký có chữ ký. Thiếu URL xác minh hoặc
+chưa từng nhận biên nhận thì ứng dụng chặn thao tác mới với trạng thái
+cấu hình/đăng ký chưa hoàn tất; không được hướng dẫn khách bỏ biến môi
+trường để tiếp tục sử dụng.
 
 ```bat
 node tools\license-admin.js revoke <LEDGER> <REGISTRY> <LICENSE_ID>

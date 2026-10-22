@@ -156,8 +156,9 @@
   dụng giữ fail-closed cho tới khi có khóa publisher production
   và cây Camoufox Windows chính thức đã ký — bản Preview **không**
   kèm tài sản Camoufox thương mại.
-- **Chưa có icon sản phẩm:** ứng dụng dùng icon mặc định của
-  Electron.
+- **Đã có icon sản phẩm:** bản Windows dùng `build/icon.ico` được
+  sinh từ nguồn `build/icon.svg`; CI và QA bản đóng gói kiểm tra
+  icon cùng giao diện thay vì dựa vào icon mặc định của Electron.
 - **Chưa đo được** (theo sổ đăng ký Mục 4 của Hiến pháp): DNS qua
   tuyến proxy và hành vi DoH; egress qua proxy công cộng thật;
   IPv6/QUIC/TLS echo; STUN/srflx trên mạng có UDP (phòng lab dùng

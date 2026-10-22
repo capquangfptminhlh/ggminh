@@ -18,9 +18,9 @@ try{
  gate.assertCapacity(9,1);
  assert.throws(()=>gate.assertCapacity(9,2),/Giới hạn/);
  assert.strictEqual(make().startedAt,start);
- now=start+29*86400000;
+ now=start+9*86400000;
  assert.strictEqual(gate.status().trialDaysLeft,1);
- now=start+31*86400000;
+ now=start+11*86400000;
  assert.strictEqual(gate.status().access,'blocked');
  assert.throws(()=>gate.require('automation'),/hết hạn/);
  assert.throws(()=>gate.assertCapacity(1),/hết hạn/);
@@ -41,11 +41,11 @@ try{
  assert.strictEqual(gate.status().access,'blocked');
  assert.strictEqual(gate.status().reason,'expired');
  assert.throws(()=>gate.require('profiles'),/hết hạn/);
- now=start+31*86400000;
+ now=start+11*86400000;
  assert.strictEqual(gate.status().access,'blocked');
  now=start-3*86400000;
  assert.strictEqual(gate.status().reason,'clock_error');
  const record=JSON.parse(fs.readFileSync(gate.file,'utf8'));
  assert.strictEqual(record.installationId,manager.installationId);
- console.log('v5.1 entitlement gate: 30-day trial, signed license overrides, capacity, expired and feature rights passed');
+ console.log('v5.1 entitlement gate: 10-day trial, signed license overrides, capacity, expired and feature rights passed');
 }finally{fs.rmSync(root,{recursive:true,force:true});}

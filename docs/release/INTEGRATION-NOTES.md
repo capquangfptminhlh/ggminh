@@ -58,5 +58,5 @@ CHANGELOG và WHATS-IN-THE-BOX (hai file có thể tới tay khách) đã
 tự rà theo Mục 11: không phần trăm hiệu quả, không khẳng định về
 đối thủ, không "an toàn để chạy Ads", không tuyệt đối hoá; các
 giới hạn (không ký Authenticode theo quyết định 2026-10-22, chưa
-Gate 3, engine không kèm gói, icon mặc định, các điểm CHƯA ĐO)
-ghi thẳng trong thân tài liệu.
+Gate 3, engine không kèm gói, icon sản phẩm đã được đóng gói, các
+điểm CHƯA ĐO) ghi thẳng trong thân tài liệu.

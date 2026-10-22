@@ -63,7 +63,7 @@ phần kiểm tra nội bộ đó vẫn hoạt động bình thường.
 
 ## 1.2 Dùng thử và license
 
-- Lần cài đặt đầu tiên tự bắt đầu **thời gian dùng thử 30 ngày**, tối
+- Lần cài đặt đầu tiên tự bắt đầu **thời gian dùng thử 10 ngày**, tối
   đa **10 hồ sơ**, gồm các tính năng hồ sơ, Automation và API cục bộ.
 - Hết dùng thử hoặc hết hạn license, ứng dụng **khóa các thao tác vận
   hành** (tạo hồ sơ mới, mở trình duyệt, dùng API) nhưng **dữ liệu vẫn
@@ -73,6 +73,10 @@ phần kiểm tra nội bộ đó vẫn hoạt động bình thường.
 - License đã hết hạn hoặc không hợp lệ **không tự quay lại dùng thử**.
   License của bản cài này cũng không dùng được cho bản cài khác (mỗi
   license gắn với một mã cài đặt — xem bước 2).
+- Với license thuê `owner-sweep`, đến ngày hết hạn khách có thể tiếp
+  tục dùng khi máy chủ chủ sở hữu đang ngoại tuyến. Sau khi chủ sở hữu
+  chạy quét và ứng dụng nhận biên nhận thu hồi có chữ ký, thao tác mở
+  hoặc chạy mới bị khóa; phiên browser đang mở không bị tự đóng.
 
 ### Kích hoạt license
 
@@ -92,8 +96,13 @@ phần kiểm tra nội bộ đó vẫn hoạt động bình thường.
 
 Mục License có nút kiểm tra máy chủ xác minh. Nếu bên bán chưa cấu
 hình máy chủ, ứng dụng báo "Máy chủ xác minh chưa được cấu hình" —
-đây là trạng thái cấu hình, không phải lỗi của máy bạn, và license
-offline vẫn có hiệu lực theo chữ ký của nó.
+đây là trạng thái cấu hình, không phải lỗi của máy bạn. License
+`strict`/offline vẫn được đánh giá theo chữ ký và ngày hết hạn ghi
+trong mã license. Riêng license thuê `owner-sweep` bắt buộc có URL
+xác minh và phải nhận ít nhất một biên nhận đăng ký có chữ ký trước
+khi mở thao tác vận hành. Nếu chưa hoàn tất bước này, ứng dụng chặn
+theo cơ chế fail-closed; hãy liên hệ bên bán, không xóa cấu hình máy
+chủ để tìm cách tiếp tục sử dụng.
 
 ## 1.4 Chọn nguồn engine (nút **Engine** trên thanh công cụ)
 

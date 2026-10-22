@@ -66,7 +66,8 @@ const {makeAuthority,readRegistry}=require('../src/licensing/authority');
   assert.strictEqual(addMonths(new Date('2026-01-31T00:00:00Z'),1).toISOString(),
    '2026-02-28T00:00:00.000Z');
   // Issued tokens can be verified by the optional online authority.
-  server=makeAuthority({privateKey:keys.privateKey,publicKey,registryFile:registry,clock});
+  server=makeAuthority({privateKey:keys.privateKey,publicKey,registryFile:registry,clock,
+   sweepHealth:{healthy:true,lastRunAt:now}});
   await new Promise((resolve,reject)=>{server.once('error',reject);
    server.listen(0,'127.0.0.1',resolve);});
   const url='http://127.0.0.1:'+server.address().port+'/v1/verify';

@@ -39,11 +39,17 @@ class OnlineLicenseVerifier{
   }catch(_){return null;}
  }
  apply(base){
-  if(!this.endpoint||!base.active)return base;
+  if(!base.active)return base;
+  const ownerSweep=base.enforcementMode==='owner_sweep';
+  if(!this.endpoint)return ownerSweep
+   ?{...base,active:false,allowed:false,access:'blocked',
+     reason:'owner_sweep_authority_unconfigured',
+     online:{configured:false,state:'owner_sweep_authority_unconfigured',checkedAt:null}}
+   :base;
   const proof=this._verified(base);
   const now=this.clock();
   let online;
-  if(!proof)online={configured:true,state:'unverified',checkedAt:null};
+  if(!proof)online={configured:true,state:ownerSweep?'owner_sweep_unenrolled':'unverified',checkedAt:null};
   else if(proof.state!=='valid')
    online={configured:true,state:proof.state,checkedAt:new Date(proof.checkedAt).toISOString()};
   else if(now-proof.checkedAt>MAX_GRACE_MS)
@@ -54,7 +60,9 @@ class OnlineLicenseVerifier{
    checkedAt:new Date(proof.checkedAt).toISOString(),
    graceExpiresAt:new Date(proof.checkedAt+MAX_GRACE_MS).toISOString()
   };
-  return online.state==='verified'||online.state==='offline_grace'
+  const ownerSweepAllowed=ownerSweep&&proof&&
+   !['revoked','expired'].includes(online.state);
+  return online.state==='verified'||online.state==='offline_grace'||ownerSweepAllowed
    ?{...base,online}
    :{...base,active:false,allowed:false,access:'blocked',
      reason:online.state,online};

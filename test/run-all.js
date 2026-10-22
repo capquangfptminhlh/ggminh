@@ -2,7 +2,7 @@
 /*
  * Full-report test runner (QA-005).
  *
- * The `test` script in package.json is one long `&&` chain: the first
+ * The `test:steps` script in package.json is one long `&&` chain: the first
  * failing step aborts the run and hides every later result. This runner
  * reads THE SAME chain from package.json (single source of truth — the
  * step list is never duplicated here), executes EVERY step in the
@@ -13,12 +13,12 @@
  * so a misconfigured invocation can never look green).
  *
  * Usage:
- *   node test/run-all.js                 run the full `test` chain
+ *   node test/run-all.js                 run the full `test:steps` chain
  *   node test/run-all.js --filter <re>   run only steps whose command
  *                                        matches the regex (debugging)
  *   node test/run-all.js <re>            same as --filter
  *   node test/run-all.js --script <name> read another package.json
- *                                        script instead of `test`
+ *                                        script instead of `test:steps`
  *   node test/run-all.js --list          print the steps, run nothing
  *   node test/run-all.js --chain "<a> && <b>"
  *                                        run an explicit chain instead
@@ -46,7 +46,7 @@ const { spawn } = require('child_process');
 const repoRoot = path.join(__dirname, '..');
 
 function parseArgs(argv) {
-  const opts = { script: 'test', filter: null, chain: null, list: false };
+  const opts = { script: 'test:steps', filter: null, chain: null, list: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--script') opts.script = argv[++i];
@@ -104,6 +104,8 @@ async function main() {
     .filter((s) => !regex || regex.test(s.command));
 
   if (opts.list) {
+    console.log('[run-all] source: ' +
+      (opts.chain != null ? 'explicit --chain' : 'package.json script "' + opts.script + '"'));
     for (const s of selected) console.log(s.index + '\t' + s.command);
     console.log('[run-all] ' + selected.length + ' of ' + all.length + ' steps listed');
     return;

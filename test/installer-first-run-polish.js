@@ -62,9 +62,11 @@ console.log('PASS installer polish wiring (static)');
 // --- Behavioural: the extracted hint function against stubbed DOM/API ---
 const fnStart = renderer.indexOf('async function updateCamoufoxFormHint()');
 assert.ok(fnStart > -1, 'updateCamoufoxFormHint must exist');
-const fnEnd = renderer.indexOf('\n}\n', fnStart);
-assert.ok(fnEnd > fnStart, 'hint function body must be extractable');
-const fnSource = renderer.slice(fnStart, fnEnd + 3);
+const fnMatch = renderer.slice(fnStart).match(
+  /^async function updateCamoufoxFormHint\(\) \{[\s\S]*?^\}\r?$/m,
+);
+assert.ok(fnMatch, 'hint function body must be extractable across LF and CRLF checkouts');
+const fnSource = fnMatch[0];
 
 async function runHint({ engine, status, elementPresent = true }) {
   const hintEl = { hidden: true, textContent: '' };

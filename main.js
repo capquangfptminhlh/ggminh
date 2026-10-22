@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
+const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
 const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
@@ -92,6 +93,7 @@ let licenseManager = null;
 let licensePolicy = null;
 let onlineLicenseVerifier = null;
 let licenseTimer = null;
+const LICENSE_REFRESH_MS=15*60*1000;
 let proxyVault = null;
 let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
@@ -135,18 +137,26 @@ async function setApiEnabled(enabled) {
 }
 
 function createWindow() {
+  const qaCapture = process.env.LHM_CI_UI_CAPTURE === '1';
   mainWindow = new BrowserWindow({
     width: 1240, height: 800, minWidth: 900, minHeight: 600,
     backgroundColor: '#0b0f19', autoHideMenuBar: true,
     title: 'LHM Ads Browser',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, nodeIntegration: false, sandbox: true
+      contextIsolation: true, nodeIntegration: false, sandbox: true,
+      offscreen: qaCapture
     }
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', event => event.preventDefault());
-  if (process.env.LHM_CI_UI_CAPTURE === '1') {
+  if (qaCapture) {
+    const captureDir = resolveQaCaptureDir({
+      packaged: app.isPackaged,
+      appRoot: __dirname,
+      userData: app.getPath('userData'),
+      override: process.env.LHM_CI_UI_CAPTURE_DIR,
+    });
     mainWindow.setSize(1440, 900);
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
@@ -161,10 +171,15 @@ function createWindow() {
           if(shown.ready!=='true'||shown.header!=='v'+release||
              shown.nav!=='v'+release||!shown.title.includes('v'+release))
             throw Error('UI screenshot version mismatch: '+JSON.stringify(shown));
+          const writeCapture = (name, png) => {
+            if (png.isEmpty()) throw Error('Electron returned an empty UI capture: ' + name);
+            const bytes = png.toPNG();
+            if (!bytes.length) throw Error('Electron encoded an empty UI capture: ' + name);
+            fs.writeFileSync(path.join(captureDir, name), bytes);
+          };
           const png = await mainWindow.webContents.capturePage();
-          const output = path.join(__dirname, 'dist', 'workspace-preview.png');
-          fs.mkdirSync(path.dirname(output), { recursive: true });
-          fs.writeFileSync(output, png.toPNG());
+          fs.mkdirSync(captureDir, { recursive: true });
+          writeCapture('workspace-preview.png', png);
           console.log('[UI smoke] Saved workspace preview');
           const railCheck=await mainWindow.webContents.executeJavaScript(
             "(() => { document.getElementById('lhm-v7-show-rail').click(); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded')}; })()",true);
@@ -172,14 +187,14 @@ function createWindow() {
             throw Error('AI rail collapse failed: '+JSON.stringify(railCheck));
           await new Promise(resolve=>setTimeout(resolve,450));
           const fullTable=await mainWindow.webContents.capturePage();
-          fs.writeFileSync(path.join(__dirname,'dist','workspace-expanded-preview.png'),fullTable.toPNG());
+          writeCapture('workspace-expanded-preview.png', fullTable);
           const paletteCheck=await mainWindow.webContents.executeJavaScript(
             "(() => { document.getElementById('lhm-v7-command-open').click(); return {opened:document.getElementById('lhm-v7-command-palette').classList.contains('open'),focus:document.activeElement?.id,count:document.querySelectorAll('.lhm-v7-command-item').length}; })()",true);
           if(!paletteCheck.opened||paletteCheck.focus!=='lhm-v7-command-search'||paletteCheck.count<6)
             throw Error('Command palette failed: '+JSON.stringify(paletteCheck));
           await new Promise(resolve=>setTimeout(resolve,280));
           const paletteImage=await mainWindow.webContents.capturePage();
-          fs.writeFileSync(path.join(__dirname,'dist','workspace-command-preview.png'),paletteImage.toPNG());
+          writeCapture('workspace-command-preview.png', paletteImage);
           console.log('[UI smoke] Verified expanded profile workspace and keyboard palette');
           await mainWindow.webContents.executeJavaScript("document.getElementById('lhm-v7-command-close').click()",true);
           const engineCheck=await mainWindow.webContents.executeJavaScript(
@@ -188,12 +203,12 @@ function createWindow() {
             throw Error('Camoufox Gecko provider UI failed: '+JSON.stringify(engineCheck));
           await new Promise(resolve=>setTimeout(resolve,300));
           const engineImage=await mainWindow.webContents.capturePage();
-          fs.writeFileSync(path.join(__dirname,'dist','workspace-engine-provider-preview.png'),engineImage.toPNG());
+          writeCapture('workspace-engine-provider-preview.png', engineImage);
           console.log('[UI smoke] Verified selected Camoufox and browser-engine provider modal');
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
-        } finally { app.quit(); }
+        } finally { app.exit(process.exitCode || 0); }
       }, 1800);
     });
   }
@@ -1046,7 +1061,7 @@ app.whenReady().then(async () => {
     onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
     licenseTimer=setInterval(()=>{
       onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
-    },12*60*60*1000);
+    },LICENSE_REFRESH_MS);
     licenseTimer.unref?.();
   }
   recorderManager = new RecorderManager(store, createRecorderWindow);

@@ -3,7 +3,7 @@
 Phần mềm quản lý đa hồ sơ trình duyệt (multi-profile) vận hành cục bộ
 trên máy Windows của người dùng (local-first): dữ liệu hồ sơ, cấu hình
 và nhật ký quan sát lưu trên máy người dùng; LHM không vận hành máy chủ
-đồng bộ dữ liệu hồ sơ. Bản dùng thử kéo dài 30 ngày với tối đa 10 hồ
+đồng bộ dữ liệu hồ sơ. Bản dùng thử kéo dài 10 ngày với tối đa 10 hồ
 sơ; các gói license trả phí thay đổi giới hạn số hồ sơ và tính năng
 được mở (xem `docs/seller-runbook/` và mục License trong ứng dụng).
 
@@ -519,23 +519,23 @@ Profiles whose OS-encrypted proxy credentials cannot be migrated are marked `req
 
 ## v5.0 — Signed offline licenses and monthly renewal foundation
 - **Công cụ → Giấy phép & gia hạn** displays a locally generated installation ID. The issuer can produce monthly Ed25519-signed license codes tied to this ID, with plan, expiry and profile allowance. The app checks signatures and expiry locally without Internet, never accepting unsigned or tampered tokens.
-- For vendor issuance, securely retain the separately generated encrypted PKCS#8 Ed25519 **PRIVATE** key OFFLINE. The app only embeds its matching PUBLIC key. To issue: set `LHM_ISSUER_PASSPHRASE` in a private terminal and run `npm run license:issue -- --key /secure/offline/private.pem --installation <UUID> --customer "Client" --plan pro --months 1 --max-profiles 100`. Never put the private key or passphrase in git, CI logs or the customer installer.
+- For vendor issuance, securely retain the separately generated encrypted PKCS#8 Ed25519 **PRIVATE** key OFFLINE. The app only embeds its matching PUBLIC key. Owner-sweep rentals must be issued through the ledger-backed `license-admin issue` command so they can actually be swept. The standalone `npm run license:issue -- --key /secure/offline/private.pem --installation <UUID> --customer "Client" --plan pro --months 1 --max-profiles 100` command intentionally creates only a strict license. Never put the private key or passphrase in git, CI logs or the customer installer.
 - License expiration and rollback indications rely on local clock metadata; this is not tamperproof against privileged device users. Reinstalling without carrying over `installation-id.json` creates a new ID and requires license reissue.
-- **Current release does NOT block features by subscription tier.** Billing checkout, centralized revocation, self-service payment, authoritative clock and tenant licensing are not built. The activation UI is a verifiable foundation, **not a production-ready SaaS billing system**.
+- The original v5.0 foundation did not block features by tier. The current enforcement path is documented in v5.1–v5.4 below. Billing checkout, self-service payment and trusted-device attestation are still outside this repository; the included authority is self-hosted infrastructure, not a managed SaaS billing system.
 
 
 ## v5.1 — Enforced local subscription entitlements
-- New installations have a **30-day local trial capped at 10 profiles**; the original installation ID, trial start and highest-seen local clock persist independently of the profile database. Restart does not reset the trial.
+- New installations have a **10-day local trial capped at 10 profiles**; the original installation ID, trial start and highest-seen local clock persist independently of the profile database. Restart does not reset the trial.
 - When a trial/license expires, users **can still view, edit, stop, delete, export backup and restore existing data**; they cannot create or launch new browser sessions, run automation, or enable/use Local API until activated. Already-running browsers are not forcibly closed.
 - New-profile limits are checked for single creation, duplicate, Quick Create, CSV and configuration backup imports; restoring from trash and an explicit offline-disaster restore remains possible without deleting valuable user data. Existing profile count can exceed the signed cap following recovery, but no additional new profile can be created.
 - Starter entitles browser profiles only, Pro/Business include Automation Studio and authenticated Local API. The signed license supplies the per-customer maximum profile count.
-- License logic is in the main Electron process and verified on each action. Offline trials and local clock data are **not tamper-proof** for privileged users. No network billing, real server revocation or trusted device enforcement has been implemented.
+- License logic is in the main Electron process and verified on each action. Offline trials and local clock data are **not tamper-proof** for privileged users. No network billing, payment collection or trusted-device attestation is included.
 
 ## v5.2 — Signed online license verification and revocation (self-hosted foundation)
 
 The desktop program now accepts a vendor-provided HTTPS verification URL through \`LHM_LICENSE_VERIFY_URL\`, ending precisely in \`/v1/verify\`. This value must be configured by the vendor in the installed application environment; browser websites, profile metadata and untrusted renderers cannot choose a verification endpoint. Without a configured URL, legacy offline behavior remains.
 
-When online verification is configured, paid subscriptions require a signed online receipt before starting new activity. A valid receipt grants an offline grace period of at most 72 hours; a signed revocation or expiry response blocks licensed actions immediately. Expired/revoked/never-verified receipts do not delete browser profiles, session backups or customer data. Receipts are tied to the exact license ID, installation ID and fresh request nonce, signed by the issuer's Ed25519 key and validated inside the Electron main process.
+When online verification is configured, legacy/strict subscriptions require a signed online receipt before starting new activity and retain the bounded 72-hour offline grace policy. Owner-sweep rentals require a configured authority and one successful signed enrollment receipt before use. Afterwards, reaching the rental date does not block locally while the owner service is offline. The owner authority adds expired rentals to its private revocation registry at startup and then daily; after the client receives that signed revocation, future launches and licensed actions are blocked. Existing browser processes are not closed. Receipts are tied to the exact license ID, installation ID and fresh request nonce, signed by the issuer's Ed25519 key and validated inside the Electron main process.
 
 A self-hosted licensing authority is provided for deployment behind an HTTPS reverse proxy. It defaults to binding only to \`127.0.0.1:8787\`; direct Internet HTTP hosting is unsupported. This is a foundation, **not a deployed cloud service**. The authority uses the **same encrypted PKCS#8 issuer private key kept off customer machines** and a local JSON revocation registry. It deliberately exposes no HTTP endpoint for administrators to revoke licenses.
 
@@ -543,9 +543,11 @@ Authority configuration (private, outside git and customer installers):
 - \`LHM_ISSUER_KEY_PATH\`: absolute path to encrypted Ed25519 PKCS#8 PEM private key.
 - \`LHM_ISSUER_PASSPHRASE\`: secret used to decrypt the PEM (prefer a secret manager or protected environment).
 - \`LHM_LICENSE_REGISTRY_PATH\`: private JSON registry path for revoked license IDs.
+- \`LHM_LICENSE_LEDGER_PATH\`: optional absolute path to the private seller ledger. When set, starting the authority enables the owner-sweep startup/daily scan.
+- \`LHM_OWNER_SWEEP_INTERVAL_MINUTES\`: optional scan interval, default 1440 (24 hours).
 - \`LHM_LICENSE_AUTHORITY_PORT\`: optional loopback-only port, default 8787.
 
-Start through \`npm run license:server\`. Admin actions are on the authority host only: \`node tools/license-registry.js revoke /secure/registry.json lic_...\`; use \`allow\` to revoke the revocation. Use the existing \`npm run license:issue\` to issue new signed renewal tokens. Back up the registry securely and protect access to the issuer key. No customer data or browsing history is stored in the registry.
+Start through \`npm run license:server\`. The service binds to loopback, so remote customers still need a correctly secured HTTPS reverse proxy or tunnel to reach it; merely turning on the owner PC without a reachable HTTPS route cannot deliver a sweep result. Admin actions are on the authority host only: \`node tools/license-registry.js revoke /secure/registry.json lic_...\`; use \`allow\` to reverse the revocation. Use \`npm run license:issue\` or the ledger-backed admin command to issue new signed tokens. Back up the registry and ledger securely and protect access to the issuer key. No cookie, password, proxy or browsing history is stored in the registry.
 
 **Important limitations:** No central service is actually hosted yet; no billing/checkout, subscription payment, refund handling, identity verification, device transfer approvals, audited key rotation or live operator dashboard is included. The server must be configured with TLS, reverse proxy protection, monitoring, rate limits and operational procedures before production use. Offline licensing is not tamper-resistant on an administrator-controlled endpoint, and the optional online verifier does not change that fundamental limit.
 
@@ -571,7 +573,7 @@ node tools/license-admin.js add /secure/lhm-customers.json "Customer A" 11111111
 The printed \`cust_...\` ID is used for issuing a 1-month Pro license (issuer's encrypted Ed25519 private key must match the public key in the desktop app):
 
 \`\`\`bash
-node tools/license-admin.js issue /secure/lhm-customers.json cust_... pro 1 100 /secure/issuer-private.pem
+node tools/license-admin.js issue /secure/lhm-customers.json cust_... pro 1 100 /secure/issuer-private.pem owner-sweep
 \`\`\`
 
 Set \`LHM_ISSUER_PASSPHRASE\` only in a trusted private terminal; do not paste it in chat, logs, commands or commit it to GitHub. The command prints a signed activation token **once**. Deliver it through a secure channel and do not lose it; the ledger only retains redacted metadata.
@@ -582,7 +584,7 @@ To extend a license by two calendar months from its existing expiry (or today's 
 node tools/license-admin.js renew /secure/lhm-customers.json lic_... 2 /secure/issuer-private.pem
 \`\`\`
 
-Old licenses remain valid until their original expiry unless separately revoked. A renewal creates a new signed license ID; the customer must activate the newly issued token. Confirm delivery before revoking the old license.
+Existing v1 licenses remain strict and compatible. New ledger-issued licenses default to owner-sweep; append `strict` to the issue command for local-expiry enforcement. A renewal preserves the old license's enforcement mode, creates a new signed license ID and requires the customer to activate the newly issued token. Confirm delivery before revoking the old license.
 
 Reporting and operations:
 

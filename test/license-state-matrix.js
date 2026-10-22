@@ -48,7 +48,7 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
 
 (async () => {
   // ---------- A. Trial: exact policy numbers ----------
-  assert.equal(TRIAL_DAYS, 30, 'trial length constant is 30 days');
+  assert.equal(TRIAL_DAYS, 10, 'trial length constant is 10 days');
   assert.equal(TRIAL_MAX_PROFILES, 10, 'trial profile cap constant is 10');
   {
     const dir = tmp(); let now = T0; const clock = () => now;
@@ -56,15 +56,15 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
     assert.equal(manager.status().status, 'inactive');
     const s = policy.status();
     assert.equal(s.access, 'trial'); assert.equal(s.allowed, true);
-    assert.equal(s.trialDaysLeft, 30); assert.equal(s.maxProfiles, 10);
+    assert.equal(s.trialDaysLeft, 10); assert.equal(s.maxProfiles, 10);
     assert.deepEqual(s.features, ['profiles', 'automation', 'api']);
     policy.require('profiles'); policy.require('automation'); policy.require('api');
     policy.assertCapacity(9, 1);
     assert.throws(() => policy.assertCapacity(10, 1), /Giới hạn 10 profile của gói dùng thử/);
-    now = T0 + 29 * DAY;
+    now = T0 + 9 * DAY;
     assert.equal(policy.status().trialDaysLeft, 1);
     assert.equal(policy.status().access, 'trial');
-    now = T0 + 30 * DAY;
+    now = T0 + 10 * DAY;
     const expired = policy.status();
     assert.equal(expired.access, 'blocked'); assert.equal(expired.reason, 'trial_expired');
     assert.throws(() => policy.require('profiles'), e => e.message === BLOCKED_MSG);
@@ -74,7 +74,7 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
       expiresAt: new Date(now + 30 * DAY).toISOString(),
     })));
     assert.equal(policy.status().access, 'licensed');
-    console.log('PASS A trial: 30 days / 10 profiles / all 3 features, expiry blocks, license overrides');
+    console.log('PASS A trial: 10 days / 10 profiles / all 3 features, expiry blocks, license overrides');
   }
 
   // ---------- B. Plans: starter vs pro vs business (real tokens) ----------
@@ -234,7 +234,7 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
     const dir = tmp(); let now = T0; const clock = () => now;
     const { manager, policy } = client(dir, clock);
     policy.status(); // trial anchored at install time T0
-    now = T0 + 10 * DAY;
+    now = T0 + 4 * DAY;
     manager.activate(sign(claims(manager.installationId, {
       issuedAt: new Date(now - DAY).toISOString(),
       expiresAt: new Date(now + 30 * DAY).toISOString(),
@@ -244,10 +244,10 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
     assert.equal(manager.status().status, 'inactive');
     const s = policy.status();
     assert.equal(s.access, 'trial');
-    assert.equal(s.trialDaysLeft, 20, 'trial clock ran from installation, not from deactivation');
-    now = T0 + 31 * DAY;
+    assert.equal(s.trialDaysLeft, 6, 'trial clock ran from installation, not from deactivation');
+    now = T0 + 11 * DAY;
     assert.equal(policy.status().reason, 'trial_expired');
-    console.log('PASS I deactivate: returns the REMAINING trial window (20/30), never a fresh 30 days');
+    console.log('PASS I deactivate: returns the REMAINING trial window (6/10), never a fresh 10 days');
   }
 
   // ---------- K. Seller end-to-end with the real tools ----------
@@ -296,15 +296,17 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
       'observed: revocation alone has NO effect on a client that never verifies online');
 
     // With an authority endpoint configured, the revoked receipt blocks.
-    const server = makeAuthority({ privateKey: keys.privateKey, publicKey: PUB, registryFile: registry, clock });
+    const server = makeAuthority({ privateKey: keys.privateKey, publicKey: PUB, registryFile: registry, clock,
+      sweepHealth: { healthy: true, lastRunAt: now } });
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     try {
       const endpoint = 'http://127.0.0.1:' + server.address().port + '/v1/verify';
       const verifier = new OnlineLicenseVerifier(clientDir, manager, { endpoint, allowLocalhost: true, clock });
       policy.onlineVerifier = verifier;
-      // Fail-closed first contact: endpoint configured, no receipt yet.
+      // First contact is fail-closed. After one signed enrollment receipt,
+      // an owner-sweep rental may continue through an owner outage.
       assert.equal(policy.status().access, 'blocked');
-      assert.equal(policy.status().reason, 'unverified');
+      assert.equal(policy.status().reason, 'owner_sweep_unenrolled');
       const outcome = await verifier.verifyNow();
       assert.equal(outcome.state, 'revoked');
       const blocked = policy.status();
