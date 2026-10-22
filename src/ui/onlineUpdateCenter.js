@@ -6,14 +6,20 @@
  let busy=false;
  let canDownload=false;
  let downloaded=false;
+ let localSafetyBlocked=false;
+ let safetyBusy=false;
  const label=get('lhm-update-status');
  const checkButton=get('lhm-update-check');
  const downloadButton=get('lhm-update-download');
  const folderButton=get('lhm-update-folder');
  const offerBox=get('lhm-update-offer');
+ const safetyButton=get('lhm-upgrade-safety-check');
+ const safetyStatus=get('lhm-upgrade-safety-status');
+ const safetyReport=get('lhm-upgrade-safety-report');
  function controls() {
   checkButton.disabled=busy;
-  downloadButton.disabled=busy||!canDownload;
+  downloadButton.disabled=busy||!canDownload||localSafetyBlocked;
+  safetyButton.disabled=busy||safetyBusy;
   folderButton.disabled=busy||!downloaded;
  }
  function message(value) { label.textContent=String(value); }
@@ -35,6 +41,40 @@
    line.append(strong,document.createTextNode(String(value??'—')));
    offerBox.append(line);
   }
+ }
+ function addSafetyLine(label,value,cssClass=''){
+  const line=document.createElement('p');
+  line.className=cssClass;
+  const heading=document.createElement('strong');
+  heading.textContent=label+': ';
+  line.append(heading,document.createTextNode(String(value)));
+  safetyReport.append(line);
+ }
+ async function checkUpgradeSafety(){
+  if(busy||safetyBusy)return;
+  safetyBusy=true;controls();
+  safetyStatus.textContent='Đang đối chiếu dữ liệu lưu trữ cục bộ…';
+  safetyReport.replaceChildren();
+  try {
+   const report=await api.checkUpgradeSafety();
+   if(report.schema!=='lhm.upgrade.safety.v1')throw Error('Báo cáo không đúng định dạng');
+   localSafetyBlocked=report.status==='blocked';
+   safetyStatus.textContent=localSafetyBlocked?
+     'CẦN SỬA: dữ liệu cục bộ không đủ điều kiện kiểm tra. Tải cập nhật bị khóa đến khi xử lý.' :
+     'ĐÃ RÀ SOÁT CỤC BỘ: còn các lưu ý cần xem trước khi cài bản mới.';
+   addSafetyLine('Hồ sơ',report.profiles);
+   addSafetyLine('Quy trình',report.workflows);
+   addSafetyLine('Trình duyệt đang chạy',report.activeBrowsers);
+   addSafetyLine('Kho mật khẩu proxy mã hóa',report.hasEncryptedProxyVault?'Có':'Chưa thấy');
+   addSafetyLine('Định danh license cục bộ',report.installationIdentityPresent?'Có':'Chưa thấy');
+   for(const issue of report.findings)
+    addSafetyLine(issue.severity==='error'?'CẦN SỬA':
+      issue.severity==='warning'?'LƯU Ý':'THÔNG TIN',issue.message,
+      issue.severity==='error'?'is-error':issue.severity==='warning'?'is-warning':'');
+  } catch(error) {
+   localSafetyBlocked=true;
+   safetyStatus.textContent='KHÔNG THỂ KIỂM TRA: '+String(error.message||error);
+  } finally {safetyBusy=false;controls();}
  }
  async function refreshStatus() {
   try{
@@ -92,6 +132,7 @@
   checkButton.addEventListener('click',checkOnline);
   downloadButton.addEventListener('click',downloadOnline);
   folderButton.addEventListener('click',openFolder);
+  safetyButton.addEventListener('click',checkUpgradeSafety);
   get('btn-app-about').addEventListener('click',refreshStatus);
   controls();
   void refreshStatus(); // status reads LOCAL config; makes no network request
