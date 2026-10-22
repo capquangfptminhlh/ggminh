@@ -1056,6 +1056,23 @@
               <div><small>Danh tính</small><strong id="fp-preview-identity">Chưa cấp</strong></div>
             </div>
           </section>
+          <section class="fp-consistency-panel" aria-labelledby="fp-consistency-title">
+            <div class="fp-section-heading">
+              <div><strong id="fp-consistency-title">Rà soát tính nhất quán &amp; tuân thủ</strong>
+                <p>Bốn nhóm kiểm tra độc lập. Không sử dụng điểm % giả định hoặc suy đoán hệ thống đánh giá của Google/Meta.</p>
+              </div><span class="fp-setup-tag">Không chấm điểm</span>
+            </div>
+            <div id="fp-consistency-cards" class="fp-consistency-grid" aria-live="polite" aria-atomic="false">
+              <p>Chọn engine và cấu hình hồ sơ để xem những vấn đề có thể kiểm tra.</p>
+            </div>
+            <details class="fp-consistency-details">
+              <summary>Điểm chưa đo: WebRTC / DNS / TLS / trang đích / thao tác</summary>
+              <div id="fp-unmeasured-cards" class="fp-consistency-grid">
+                <p>Cần bằng chứng runtime hoặc quy trình kiểm tra thủ công.</p>
+              </div>
+            </details>
+            <p class="fp-consistency-footer">Hệ thống chỉ phát hiện điểm mâu thuẫn đã khai báo; không khẳng định tài khoản sẽ được duyệt hoặc tránh liên kết. Quản lý nhiều tài khoản khách hàng hợp lệ có thể sử dụng công cụ quản lý chính thức và quyền truy cập được ủy quyền.</p>
+          </section>
           <section class="fp-diagnostics">
             <div class="fp-audit-heading"><strong>Fingerprint Inspector</strong><button class="btn btn-sm btn-secondary" id="btn-fp-inspect" type="button">Kiểm tra cấu hình</button></div>
             <div id="fp-audit-results" role="status">Chưa kiểm tra. Báo cáo chỉ đánh giá cấu hình LHM, không đo tín hiệu Google.</div>
@@ -1598,6 +1615,7 @@ run();
   </div>
 
   <script src="icons.js"></script>
+  <script src="profileConsistency.js"></script>
   <script src="renderer.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>

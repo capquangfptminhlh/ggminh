@@ -319,6 +319,7 @@ function setupEventListeners() {
       }
     } catch (error) { fpAuditResults.textContent = 'Kiểm tra thất bại: ' + error.message; }
   });
+  fieldProxyType.addEventListener('change', refreshFingerprintSetup);
   fieldBrowserEngine.addEventListener('change', () => {
     const gecko = fieldBrowserEngine.value !== 'chromium';
     geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
@@ -563,6 +564,11 @@ function refreshFingerprintSetup() {
   const legacy = isChromium && fieldFpMode.value === 'experimental';
   const pinned = isCamoufox && !!fieldId.value && !!currentGeneratedFP?.identity;
 
+  window.LHMProfileConsistency?.render({
+    engine, proxyType: fieldProxyType.value,
+    fingerprintMode: fieldFpMode.value,
+    pinned, language: fieldFpLocale.value, timezone: fieldFpTimezone.value
+  });
   fpCamoufoxSettings.hidden = !isCamoufox;
   fpCustomFields.hidden = !legacy;
   fieldFpLocale.disabled = pinned;
