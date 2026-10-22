@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('api', {
   runPerformanceLab: () => ipcRenderer.invoke('performance-lab-run'),
   exportPerformanceLab: () => ipcRenderer.invoke('performance-lab-export'),
   onlineUpdateStatus: () => ipcRenderer.invoke('app-online-update-status'),
+  checkUpgradeSafety: () => ipcRenderer.invoke('app-upgrade-safety-check'),
   onlineUpdateCheck: () => ipcRenderer.invoke('app-online-update-check'),
   onlineUpdateDownload: () => ipcRenderer.invoke('app-online-update-download'),
   onlineUpdateOpenFolder: () => ipcRenderer.invoke('app-online-update-open-folder'),

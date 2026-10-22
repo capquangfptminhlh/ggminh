@@ -412,6 +412,35 @@
           "downloadVerifiedArtifact"
         ]
       ]
+    },
+    {
+      "id": "lhm-upgrade-continuity-safety",
+      "label": "Read-only upgrade safety inspection and simulated restart continuity across profiles, workflows, license, proxy vault and sessions",
+      "files": [
+        "src/update/upgradeSafety.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "app-upgrade-safety-check"
+        ],
+        [
+          "preload.js",
+          "checkUpgradeSafety"
+        ],
+        [
+          "src/ui/index.html",
+          "lhm-upgrade-safety-check"
+        ],
+        [
+          "src/ui/onlineUpdateCenter.js",
+          "api.checkUpgradeSafety()"
+        ],
+        [
+          "package.json",
+          "node test/upgrade-continuity.js"
+        ]
+      ]
     }
   ]
 }

@@ -37,6 +37,7 @@ const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
 const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {UpdateCenter}=require('./src/update/updateCenter');
+const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
@@ -239,9 +240,17 @@ function initIPC() {
     licenseKey:LICENSE_PUBLIC_KEY
   });
   let lastVerifiedInstallerPath=null;
+  const inspectCurrentUpgrade=()=>inspectUpgradeSafety({
+    storageDir:store.baseDir,store,workflowStore,proxyVault,launcher
+  });
+  ipcMain.handle('app-upgrade-safety-check',()=>inspectCurrentUpgrade());
   ipcMain.handle('app-online-update-status',()=>onlineUpdates.status());
   ipcMain.handle('app-online-update-check',()=>onlineUpdates.check());
   ipcMain.handle('app-online-update-download',async()=>{
+    // A corrupt/unreadable local data store must be reviewed before updating.
+    const readiness=inspectCurrentUpgrade();
+    if(readiness.status==='blocked')
+      throw Error('Kiểm tra dữ liệu trước nâng cấp chưa đạt; hãy kiểm tra hồ sơ và sao lưu trước.');
     // No renderer-supplied URL, filename, hash or destination.
     const offer=onlineUpdates.lastOffer;
     if(!offer||onlineUpdates.busy)throw Error('Chưa có bản cập nhật được xác minh');

@@ -905,6 +905,14 @@
           <h3><span data-lhm-icon="refresh-cw" aria-hidden="true"></span> Cập nhật phiên bản online</h3>
           <p class="lhm-bulk-help">Chỉ kiểm tra khi bạn bấm; ứng dụng không tải ngầm và không tự chạy EXE. Bộ cài không cần ký Authenticode nhưng manifest cập nhật phải có chữ ký Ed25519 hợp lệ, và file tải về phải đúng SHA-256.</p>
           <p id="lhm-update-status" role="status" aria-live="polite">Đang kiểm tra cấu hình cập nhật…</p>
+          <section class="lhm-upgrade-readiness" aria-label="Kiểm tra bảo toàn dữ liệu khi nâng cấp">
+            <h4>Kiểm tra dữ liệu trước nâng cấp</h4>
+            <p class="lhm-bulk-help">Kiểm tra cục bộ, chỉ đọc: hồ sơ, workflow, tình trạng license/proxy vault và các phiên đang chạy. Không truy cập website, không đổi hay sao lưu cookie.</p>
+            <button type="button" class="btn btn-secondary" id="lhm-upgrade-safety-check">Kiểm tra an toàn nâng cấp</button>
+            <p id="lhm-upgrade-safety-status" role="status" aria-live="polite">Chưa thực hiện kiểm tra.</p>
+            <div id="lhm-upgrade-safety-report" class="lhm-upgrade-safety-report"></div>
+            <p class="lhm-bulk-help">Sao lưu cấu hình .lhmbak <strong>không</strong> chứa cookie hay toàn bộ dữ liệu phiên; khi cần hãy sử dụng Session Snapshots trước khi cài bản mới. Chạy lại bài kiểm tra sau khi nâng cấp để đối chiếu.</p>
+          </section>
           <div id="lhm-update-offer" class="lhm-update-offer" hidden></div>
           <div class="lhm-update-actions">
             <button type="button" class="btn btn-secondary" id="lhm-update-check">Kiểm tra phiên bản online</button>
