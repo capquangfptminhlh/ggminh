@@ -10,7 +10,7 @@ trạng thái thật của bản này, không phải lỗi giao hàng.)
 |---|---|
 | File cài đặt | `LHM-Ads-Browser-5.8.0-Preview-Setup-x64.exe` (NSIS, Windows x64) |
 | Kích thước / hash bản Wave R (v5.8.0) | 89.530.158 byte / SHA-256 CB809C80FFE0797F3BE966B674E8DCF3DFF7E455C485EC981E3FB33505DC191D |
-| Chữ ký Authenticode | **Không có** (quyết định của chủ dự án) → khi cài, SmartScreen hiện "nhà phát hành không xác định"; khách bấm **More info → Run anyway**. Đã có hướng dẫn trong tài liệu phần 01 |
+| Chữ ký Authenticode | **Không có** trong bản Preview theo quyết định chủ dự án. Windows có thể cảnh báo nhà phát hành chưa được xác minh. Không hướng dẫn vô hiệu hóa hoặc né Defender/SmartScreen; nếu hệ thống chặn, ghi nhận cảnh báo, kiểm tra nguồn + hash, ngừng triển khai và chuyển hỗ trợ. |
 | Icon | Icon LHM riêng (`build/icon.ico`, sinh từ nguồn SVG của dự án) |
 
 ## 2. Bên trong gói cài

@@ -354,7 +354,7 @@ async function seam4() {
           await jitter();
           const out = await observeRuntimeExitIp({
             page: stubPage, profileId: 'rt-' + (i % 3), sessionId: 'sess-rt',
-            echoUrl: 'http://echo.lab.test/ip', store, timeoutMs: 2000,
+            echoUrl: 'https://echo.lab.test/ip', store, timeoutMs: 2000,
           });
           assert.ok(out.recorded, 'runtime observation recorded');
           runtimeIps.push(out.entry.ip);

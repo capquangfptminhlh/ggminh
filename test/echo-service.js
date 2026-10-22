@@ -17,7 +17,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const {
-  createEchoServer, loadConfig, resolveMode, callerIpv4,
+  createEchoServer, loadConfig, resolveMode, callerIpv4, callerAddress,
 } = require('../tools/echo-service/echo-service');
 const { ExitIpObservationStore } = require('../src/health/exitIpObservations');
 const {
@@ -65,6 +65,14 @@ const baseConfig = overrides => ({
     /Refusing to start/, 'no TLS and no explicit HTTP opt-in refuses to start');
   assert.throws(() => resolveMode(baseConfig({ tlsCertFile: 'c' })),
     /must be set together/, 'half-configured TLS refuses to start');
+  assert.throws(() => resolveMode(baseConfig({ host: '0.0.0.0' })),
+    /loopback bind/, 'public HTTP bind refuses to start');
+  assert.throws(() => resolveMode(baseConfig({ host: '0.0.0.0', trustProxy: true,
+    tlsCertFile: 'cert.pem', tlsKeyFile: 'key.pem' })),
+    /loopback bind/, 'trusted forwarding on public bind refuses');
+  assert.equal(callerAddress({ socket: { remoteAddress: '198.51.100.7' },
+    headers: { 'x-forwarded-for': '203.0.113.9' } }, true), '',
+    'forwarded header from non-loopback peer is not evidence');
   const envCfg = loadConfig({ ECHO_PORT: '9443', ECHO_TRUST_PROXY: '1', ECHO_LOG: 'off' });
   assert.equal(envCfg.port, 9443);
   assert.equal(envCfg.trustProxy, true);
@@ -117,14 +125,16 @@ const baseConfig = overrides => ({
     const { server } = createEchoServer(baseConfig({ trustProxy: true }));
     const port = await listen(server);
     try {
-      const proxied = await request({ port, headers: { 'X-Forwarded-For': '203.0.113.9, 10.0.0.1' } });
-      assert.equal(JSON.parse(proxied.body).ip, '203.0.113.9', 'first XFF entry wins behind the proxy');
+      const proxied = await request({ port, headers: { 'X-Forwarded-For': '203.0.113.9' } });
+      assert.equal(JSON.parse(proxied.body).ip, '203.0.113.9', 'single forwarded IPv4 is accepted');
+      const appended = await request({ port, headers: { 'X-Forwarded-For': '198.51.100.8, 203.0.113.9' } });
+      assert.equal(JSON.parse(appended.body).ip, null, 'multi-hop XFF is unmeasured');
       const garbage = await request({ port, headers: { 'X-Forwarded-For': 'not-an-ip' } });
-      assert.equal(JSON.parse(garbage.body).ip, '127.0.0.1', 'garbage XFF falls back to the socket address');
+      assert.equal(JSON.parse(garbage.body).ip, null, 'garbage XFF is unmeasured');
       const none = await request({ port });
-      assert.equal(JSON.parse(none.body).ip, '127.0.0.1', 'no header -> socket address');
+      assert.equal(JSON.parse(none.body).ip, null, 'missing XFF is unmeasured');
     } finally { await close(server); }
-    console.log('PASS trust-proxy mode (XFF honoured, garbage falls back)');
+    console.log('PASS trust-proxy mode (valid single IPv4 accepted; ambiguous evidence refused)');
   }
 
   // --- rate limiting ---

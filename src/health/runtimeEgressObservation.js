@@ -153,6 +153,13 @@ async function observeRuntimeExitIp(options = {}) {
   try { url = new URL(String(echoUrl)); } catch (_) { return fail('echo-url-invalid'); }
   if (url.protocol !== 'http:' && url.protocol !== 'https:')
     return fail('echo-url-invalid');
+  // External IP measurements must be transported over authenticated HTTPS.
+  // Only an explicit loopback address may use HTTP for local synthetic tests.
+  if (url.protocol === 'http:' &&
+      !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))
+    return fail('echo-url-unsafe-transport');
+  if (url.username || url.password || url.search || url.hash)
+    return fail('echo-url-disallowed-components');
 
   let page = options.page || null;
   let ownPage = false;

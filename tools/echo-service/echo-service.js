@@ -53,11 +53,11 @@
  *   ECHO_TLS_KEY       PEM private key file       -> HTTPS mode
  *   ECHO_ALLOW_HTTP    '1' permits plain HTTP (lab / loopback-proxy
  *                      topologies only; startup prints a warning)
- *   ECHO_TRUST_PROXY   '1' honours X-Forwarded-For (first entry) —
- *                      ONLY when a same-host reverse proxy that sets
- *                      the header is actually in front; enabling it
- *                      on a directly exposed service lets any caller
- *                      spoof their observed address
+ *   ECHO_TRUST_PROXY   '1' honours one X-Forwarded-For IPv4 value
+ *                      from a loopback peer; the reverse proxy MUST
+ *                      overwrite (not append) any inbound header.
+ *                      Missing/multiple/invalid values stay unmeasured.
+ *                      Trusting forwarding on a public bind is refused.
  *   ECHO_RATE_MAX      requests per window per address (default 60)
  *   ECHO_RATE_WINDOW_MS  window length (default 60000)
  *   ECHO_LOG           'off' disables request logging (default on)
@@ -91,11 +91,20 @@ function loadConfig(env = process.env) {
 
 /** Transport mode for a config: 'https' | 'http' | throws. Exported so
  *  tests can pin the fail-closed refusal without spawning a process. */
+function isLoopbackHost(host) {
+  return host === '127.0.0.1' || host === '::1' || host === 'localhost';
+}
 function resolveMode(config) {
+  if (config.trustProxy && !isLoopbackHost(config.host))
+    throw new Error('ECHO_TRUST_PROXY requires a loopback bind address');
   if (config.tlsCertFile && config.tlsKeyFile) return 'https';
   if (config.tlsCertFile || config.tlsKeyFile)
     throw new Error('ECHO_TLS_CERT and ECHO_TLS_KEY must be set together');
-  if (config.allowHttp) return 'http';
+  if (config.allowHttp) {
+    if (!isLoopbackHost(config.host))
+      throw new Error('ECHO_ALLOW_HTTP requires a loopback bind address');
+    return 'http';
+  }
   throw new Error(
     'Refusing to start: no TLS configured. Set ECHO_TLS_CERT/ECHO_TLS_KEY ' +
     '(HTTPS), put a TLS-terminating proxy in front (see DEPLOY.md), or set ' +
@@ -114,17 +123,17 @@ function callerIpv4(address) {
   return net.isIP(text) === 4 ? text : null;
 }
 
-/** The address an observation is about, and the rate-limit key. With
- *  trustProxy on, the first X-Forwarded-For entry wins (the socket
- *  peer is the proxy itself); an unparseable header falls back to the
- *  socket address rather than trusting garbage. */
+/** Reverse-proxy mode only accepts a SINGLE IPv4 forwarding value from
+ * a loopback socket peer. Missing, malformed or appended values must not
+ * turn into an IP claim for the proxy's own loopback address. */
 function callerAddress(req, trustProxy) {
-  if (trustProxy) {
-    const xff = req.headers && req.headers['x-forwarded-for'];
-    const first = typeof xff === 'string' ? xff.split(',')[0].trim() : '';
-    if (first && net.isIP(first)) return first;
-  }
-  return req.socket && req.socket.remoteAddress || '';
+  const peer = req.socket && req.socket.remoteAddress || '';
+  if (!trustProxy) return peer;
+  if (callerIpv4(peer) !== '127.0.0.1' && peer !== '::1') return '';
+  const xff = req.headers && req.headers['x-forwarded-for'];
+  if (typeof xff !== 'string' || xff.includes(',')) return '';
+  const forwarded = xff.trim();
+  return net.isIP(forwarded) === 4 ? forwarded : '';
 }
 
 function createEchoServer(config, { logger = console.log, onRequest = null } = {}) {
@@ -254,4 +263,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { createEchoServer, loadConfig, resolveMode, callerIpv4, callerAddress, ECHO_PATHS };
+module.exports = { createEchoServer, loadConfig, resolveMode, callerIpv4, callerAddress, isLoopbackHost, ECHO_PATHS };

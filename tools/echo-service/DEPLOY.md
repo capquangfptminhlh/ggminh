@@ -54,15 +54,19 @@ itself binds loopback only and never faces the internet directly.
    plain-HTTP hop is loopback inside one host, between Caddy and the
    service. Never combine it with a public bind.
    `ECHO_TRUST_PROXY=1` is required here because the socket peer the
-   service sees is Caddy itself; Caddy sets `X-Forwarded-For` with the
-   real caller. It is safe only because nothing else can reach the
-   service port (loopback bind + firewall below).
+   service sees is Caddy itself. The proxy MUST replace inbound
+   `X-Forwarded-For` with exactly one client IPv4 (not append). The
+   Caddyfile above does so. Missing/invalid/multi-hop headers mean
+   CHƯA ĐO, never a loopback address claimed as client egress. The echo
+   service refuses trusted-proxy mode bound to a public interface.
 
 4. Caddyfile:
 
    ```
    echo.example.com {
-       reverse_proxy 127.0.0.1:8443
+       reverse_proxy 127.0.0.1:8443 {
+           header_up X-Forwarded-For {remote_host}
+       }
    }
    ```
 
@@ -104,14 +108,15 @@ the cert files only at startup.
 
 An nginx variant of Topology A is equivalent: `listen 443 ssl` with
 certbot-managed certs, `proxy_pass http://127.0.0.1:8443;` and
-`proxy_set_header X-Forwarded-For $remote_addr;` — keep the service
+`proxy_set_header X-Forwarded-For $remote_addr;` (overwrite, NOT
+`$proxy_add_x_forwarded_for`) — keep the service
 environment identical to Topology A.
 
 ## Firewall
 
 - Topology A: only 80 + 443 public (Caddy). The service port (8443)
-  must NOT be reachable from the internet — loopback bind already
-  ensures this; do not add a rule opening it.
+  must NOT be reachable from the internet — loopback bind is enforced
+  by the service when using trust-proxy or plain HTTP; do not expose it.
 - Topology B: only 443 (plus 80 during certbot runs).
 
 ## Point the app at it
@@ -122,9 +127,10 @@ Set the app's setting `runtimeEchoUrl` (Settings store) to:
 https://echo.example.com/ip
 ```
 
-That is the only app-side step. No rebuild, no code change, and
-removing the value disables runtime observation again (the
-manager-process observations are unaffected).
+That is the only app-side step. An external endpoint MUST use HTTPS;
+only loopback synthetic tests may use HTTP. URL credentials, query and
+fragment are refused. Removing the value disables runtime observation
+again (manager-process observations are unaffected).
 
 ## Logging and retention
 
