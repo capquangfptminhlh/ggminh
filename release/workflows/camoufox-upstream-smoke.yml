@@ -8,6 +8,8 @@ on:
       - integration/v5.8-core-selective
       - feature/d1-camoufox-per-profile-identity
       - integration/v5.8-phase-c
+      - integration/v5.8-wave-r
+      - main
     paths:
       - .github/workflows/camoufox-upstream-smoke.yml
       - tools/stage-camoufox-upstream-smoke.ps1
@@ -124,6 +126,14 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $runtime=Join-Path $env:RUNNER_TEMP 'lhm-camoufox-runtime'
+          New-Item -ItemType Directory -Force $runtime | Out-Null
+          if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
+            # Isolated, pinned runtime: the repository-level npm install
+            # does NOT create this prefix (root cause of D1 CI failure).
+            npm install --prefix "$runtime" --no-save --no-package-lock `
+              --ignore-scripts --no-audit --no-fund camoufox@0.5.8 playwright-core@1.62.0
+            if($LASTEXITCODE -ne 0){throw 'Install pinned launcher runtime failed'}
+          }
           if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
            throw 'Pinned camoufox launcher runtime missing'
           }
