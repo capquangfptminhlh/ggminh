@@ -124,7 +124,10 @@ function prepareImport(store,csv){
     count:created.length,
     groups:[...groups].map(([name,count])=>({name,count})),
     engines,configuredProxies:proxies,
-    note:'Metadata only. Imported AdsPower JSON requires manual proxy setup before launch; no cookies, sessions, fingerprints, proxy credentials, passwords or 2FA are imported.'
+    proxySetupRequired:created.filter(p=>p.requiresProxySetup===true).length,
+    note:isJson
+      ? 'Dữ liệu AdsPower JSON chỉ nhập tên/nhóm/URL/tag. Cần cấu hình proxy trước khi mở; không nhập cookie, mật khẩu, ghi chú, fingerprint hoặc phiên đăng nhập.'
+      : 'Đã kiểm tra CSV. Không nhập cookie, phiên đăng nhập, fingerprint, mật khẩu hoặc 2FA.'
   }};
 }
 function inspectProfilesCsv(store,csv){
