@@ -121,6 +121,10 @@ jobs:
           name: LHM-Stage0-Camoufox-Synthetic-Report
           path: stage0-measure-results/stage0-local-report.json
           if-no-files-found: ignore
+      - name: Restore Node.js 22 for official identity generator
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Generate two pinned identities with the official launcher
         shell: pwsh
         run: |
