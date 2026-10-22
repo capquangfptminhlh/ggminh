@@ -90,6 +90,8 @@ try {
  assert(work.includes('--draft'),'Draft release must never auto-publish');
  assert(work.includes('run_conclusion')&&work.includes('run_sha')&&work.includes('run_workflow'));
  assert(work.includes('SHA256SUMS.txt'));
+ assert(work.includes('${{ github.token }}'));
+ assert(!work.includes('\\${{'),'GitHub expressions must not be escaped');
  assert(!work.includes('LHM_UPDATE_SIGNING_KEY_FILE'),'CI must never load offline private key');
  assert(pkg.scripts['test:steps'].includes('node test/online-release-operator.js'));
  assert(fs.readFileSync(path.join(rootDir,'docs/LHM_SIGNED_ONLINE_UPDATES.md'),'utf8')
