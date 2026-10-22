@@ -80,7 +80,7 @@
     const state = cell('td', 'pc-state-cell');
     const badge = cell('span', 'pc-check-badge ' +
        (!verify ? 'pending' : verify.verified ? 'verified' : 'failed'));
-    badge.textContent= !verify ? 'Chưa kiểm tra' : verify.verified ? 'Đã xác minh' : 'Không xác minh';
+    badge.textContent= !verify ? 'Chưa kiểm tra' : verify.verified ? 'Đã xác minh' : 'Kiểm tra không đạt';
     state.append(badge);
     if (verify) state.append(cell('small','',
       verify.verified ? ('IP thoát: ' + (verify.ip || '—')) : (verify.message || 'Lỗi kết nối')));

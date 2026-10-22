@@ -105,9 +105,14 @@ class ConfigBackup {
     const mapped=new Map();
     for(const p of decoded.profiles){
       const safe=portableProfile(p);
+      // allowIdentity: restoring the user's OWN passphrase-encrypted
+      // backup is an explicit trust action on a file they selected;
+      // identities inside it were provisioned before the backup was
+      // taken and must survive the restore (the R13 provenance gate in
+      // Store.saveProfile otherwise strips caller-supplied blobs).
       const item=previewStore.saveProfile({
         ...safe,id:undefined,name:p.name.slice(0,149)+' (nhập)'
-      });
+      },{allowIdentity:true});
       mapped.set(p.id,item.id);
     }
     for(const w of decoded.workflows){

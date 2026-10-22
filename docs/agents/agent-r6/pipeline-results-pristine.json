@@ -1,0 +1,36 @@
+{
+  "tree": "/home/hatch/tmp-big/r6/upstream",
+  "version": "156.0.1",
+  "results": [
+    {
+      "id": "P1",
+      "name": "Throwaway publisher key ceremony (tmpdir, mode 0600)",
+      "status": "PASS",
+      "detail": "publisher SPKI sha256 63700734d1f5219028983789b6e457ccea004ba142001300123065b07127ca3c; distinct from license key: true"
+    },
+    {
+      "id": "P2a",
+      "name": "Manual PE byte check of real camoufox.exe (payload evidence only)",
+      "status": "PASS",
+      "detail": "MZ=MZ PE-signature=\"PE\\u0000\\u0000\" machine=0x8664 size=1209344"
+    },
+    {
+      "id": "P2b",
+      "name": "Production inspectBinary over the real tree",
+      "status": "NOT_RUN",
+      "detail": "refused before parsing, as designed on a non-Windows host: Only local Windows drive paths are permitted (Gate 3, Windows)"
+    },
+    {
+      "id": "P3",
+      "name": "Sign real tree via tools/sign-bundled-engine.js",
+      "status": "FAIL",
+      "detail": "exit 1: Cannot sign engine manifest: Unsafe bundled engine relative file path"
+    },
+    {
+      "id": "P8",
+      "name": "Throwaway key material destroyed",
+      "status": "PASS",
+      "detail": "key dir removed: true"
+    }
+  ]
+}

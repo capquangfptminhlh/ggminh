@@ -45,7 +45,9 @@ function checkLedger(data){
      x.maxProfiles<1||x.maxProfiles>10000||licenses.has(x.licenseId)||
      (x.renewalOf!==null&&!ID.test(x.renewalOf||''))||
      typeof x.revoked!=='boolean'||typeof x.issuedAt!=='string'||
-     typeof x.expiresAt!=='string')throw Error('Invalid license ledger entry');
+     typeof x.expiresAt!=='string'||
+     !['strict','owner_sweep'].includes(x.enforcementMode||'strict'))
+    throw Error('Invalid license ledger entry');
   iso(x.issuedAt);iso(x.expiresAt);licenses.add(x.licenseId);
  }
  for(const e of data.events){
@@ -112,11 +114,12 @@ function addCustomer(file,name,installationId,{now=()=>Date.now()}={}){
 }
 function issue(file,{
  customerId,plan,months,maxProfiles,privateKey,publicKey=PUBLIC_KEY,
- renewFrom=null,now=()=>Date.now()
+ renewFrom=null,enforcementMode='owner_sweep',now=()=>Date.now()
 }={}){
  if(!CUSTOMER.test(customerId||'')||!Object.hasOwn(PLAN_FEATURES,plan)||
     !Number.isInteger(months)||months<1||months>12||
-    !Number.isInteger(maxProfiles)||maxProfiles<1||maxProfiles>10000)
+    !Number.isInteger(maxProfiles)||maxProfiles<1||maxProfiles>10000||
+    !['strict','owner_sweep'].includes(enforcementMode))
   throw Error('Invalid license issuance parameters');
  if(!privateKey)throw Error('Issuer signing key required');
  return mutate(file,data=>{
@@ -135,14 +138,14 @@ function issue(file,{
   if(expiresAt.getTime()-issuedAt.getTime()>370*86400000)
    throw Error('License renewal extends beyond 370-day signed-token maximum');
   const claims={
-   version:1,licenseId:'lic_'+crypto.randomBytes(12).toString('hex'),
+   version:2,licenseId:'lic_'+crypto.randomBytes(12).toString('hex'),
    customer:customer.name,installationId:customer.installationId,
    plan,maxProfiles,features:PLAN_FEATURES[plan],
-   issuedAt:issuedAt.toISOString(),expiresAt:expiresAt.toISOString()
+   issuedAt:issuedAt.toISOString(),expiresAt:expiresAt.toISOString(),enforcementMode
   };
   const token=signLicense(claims,privateKey);
   verifyLicense(token,publicKey); // refuse a signing key mismatching shipped app
-  const row={licenseId:claims.licenseId,customerId,plan,maxProfiles,
+  const row={licenseId:claims.licenseId,customerId,plan,maxProfiles,enforcementMode,
    issuedAt:claims.issuedAt,expiresAt:claims.expiresAt,
    renewalOf:old?old.licenseId:null,revoked:false};
   data.licenses.push(row);

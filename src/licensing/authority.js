@@ -44,7 +44,7 @@ function changeRevocation(filename,licenseId,revoked){
  saveRegistry(filename,data);
  return {licenseId,revoked:revoked===true,totalRevoked:data.revoked.length};
 }
-function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>Date.now()}={}){
+function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>Date.now(),sweepHealth=null}={}){
  if(!privateKey||!registryFile)throw Error('Authority private key and registry path are required');
  const key=privateKey instanceof crypto.KeyObject&&privateKey.type==='private'
   ?privateKey:crypto.createPrivateKey(privateKey);
@@ -56,7 +56,11 @@ function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>D
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
   const reply=(status,value)=>{res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify(value));};
-  if(req.method==='GET'&&req.url==='/health')return reply(200,{status:'ok',service:'LHM License Authority'});
+  if(req.method==='GET'&&req.url==='/health'){
+   const healthy=!sweepHealth||sweepHealth.healthy===true;
+   return reply(healthy?200:503,{status:healthy?'ok':'degraded',service:'LHM License Authority',
+    ownerSweep:sweepHealth?{healthy,lastRunAt:sweepHealth.lastRunAt||null}:null});
+  }
   if(req.method!=='POST'||req.url!=='/v1/verify')return reply(404,{error:'not_found'});
   if(!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type']||''))
    return reply(415,{error:'json_required'});
@@ -81,8 +85,11 @@ function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>D
     throw Error('invalid_request');
    const license=verifyLicense(input.token,publicKey);
    const registry=readRegistry(registryFile);
+   const ownerSweep=license.version===2&&license.enforcementMode==='owner_sweep';
+   if(ownerSweep&&(!sweepHealth||sweepHealth.healthy!==true))
+    return reply(503,{error:'owner_sweep_unavailable'});
    const state=registry.revoked.includes(license.licenseId)?'revoked':
-    Date.parse(license.expiresAt)<=now?'expired':'valid';
+    Date.parse(license.expiresAt)<=now&&!ownerSweep?'expired':'valid';
    const receipt=signReceipt({
     version:1,licenseId:license.licenseId,
     installationId:license.installationId,nonce:input.nonce,

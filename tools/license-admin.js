@@ -26,12 +26,14 @@ function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now()
   return ledger.addCustomer(filename,argv[2],argv[3],{now});
  }
  if(cmd==='issue'){
-  if(argv.length!==7)
-   throw Error('Usage: issue LEDGER CUSTOMER_ID starter|pro|business MONTHS MAX_PROFILES PRIVATE_PEM');
+  if(![7,8].includes(argv.length))
+   throw Error('Usage: issue LEDGER CUSTOMER_ID starter|pro|business MONTHS MAX_PROFILES PRIVATE_PEM [owner-sweep|strict]');
+  const enforcementMode=argv[7]===undefined?'owner_sweep':
+   argv[7]==='owner-sweep'?'owner_sweep':argv[7];
   const signed=ledger.issue(filename,{
    customerId:argv[2],plan:argv[3],months:Number(argv[4]),
    maxProfiles:Number(argv[5]),privateKey:issuerKey(argv[6],env),
-   ...(publicKey?{publicKey}:{}),now
+   enforcementMode,...(publicKey?{publicKey}:{}),now
   });
   return {token:signed.token,record:signed.record};
  }
@@ -42,6 +44,7 @@ function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now()
   const signed=ledger.issue(filename,{
    customerId:record.customerId,plan:record.plan,months:Number(argv[3]),
    maxProfiles:record.maxProfiles,renewFrom:record.licenseId,
+   enforcementMode:record.enforcementMode||'strict',
    privateKey:issuerKey(argv[4],env),...(publicKey?{publicKey}:{}),now
   });
   return {token:signed.token,record:signed.record};

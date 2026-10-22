@@ -1,0 +1,178 @@
+name: Camoufox Windows upstream smoke (no redistribution)
+
+on:
+  push:
+    branches:
+      - feat/per-profile-engine-factory-20261021
+      - feat/camoufox-secure-installer-diagnostics-20261021
+      - integration/v5.8-core-selective
+      - feature/d1-camoufox-per-profile-identity
+      - integration/v5.8-phase-c
+    paths:
+      - .github/workflows/camoufox-upstream-smoke.yml
+      - tools/stage-camoufox-upstream-smoke.ps1
+      - tools/test-camoufox-real.mjs
+      - tools/test-camoufox-native-windows.js
+      - tools/test-camoufox-direct-playwright.mjs
+      - tools/test-camoufox-electron-main.js
+      - tools/test-camoufox-synthetic-auth-proxy.js
+      - tools/test-camoufox-playwright-controller-windows.js
+      - src/engine/CamoufoxPlaywrightController.js
+      - src/engine/camoufoxAdapter.js
+      - src/engine/camoufoxIdentity.js
+      - src/health/signalChain.js
+      - tools/generate-camoufox-identity.mjs
+      - stage0-measure/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-camoufox-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-windows-camoufox:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up compatible Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned TypeScript launcher (test runner only)
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund camoufox@0.5.8 playwright-core@1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Install pinned test-only Camoufox launcher failed' }
+      - name: Download official pinned Windows x64 release and verify it
+        shell: pwsh
+        run: |
+          ./tools/stage-camoufox-upstream-smoke.ps1
+      - name: Launch real Camoufox and test two isolated persistent profiles
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-real.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox smoke failed' }
+      - name: Switch to packaged Electron-compatible Node.js 20 for native smoke
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Launch real Camoufox as a native Windows GUI without TypeScript wrapper
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-native-windows.js
+          if ($LASTEXITCODE -ne 0) { throw 'Native Win32 Camoufox launch smoke failed' }
+      - name: Probe direct playwright-core Firefox persistent context (Node 20, upstream only)
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-direct-playwright.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Direct Playwright/Camoufox compatibility NOT established' }
+      - name: Test LHM gated Playwright controller against the real official Windows browser
+        shell: pwsh
+        run: |
+          node tools/test-camoufox-playwright-controller-windows.js
+          if ($LASTEXITCODE -ne 0) { throw 'In-process Playwright controller compatibility not verified' }
+      - name: Install Electron 33 runtime binary for actual main-process smoke
+        shell: pwsh
+        timeout-minutes: 6
+        run: |
+          # CI initially installs npm packages with --ignore-scripts. Explicitly
+          # install the genuine Electron runtime only for this diagnostic.
+          node node_modules/electron/install.js
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Electron binary installation failed; packaged-runtime smoke not run'
+          }
+      - name: Probe Camoufox Playwright inside real Electron 33 main process
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          if (-not (Test-Path ".\\node_modules\\.bin\\electron.cmd")) {
+            throw 'Electron 33 runtime is missing from the test checkout'
+          }
+          & ".\\node_modules\\.bin\\electron.cmd" ".\\tools\\test-camoufox-electron-main.js"
+          if ($LASTEXITCODE -ne 0) { throw 'Electron 33 main-process Playwright compatibility failed' }
+      - name: Test real Camoufox to synthetic authenticated SOCKS5 proxy (CONNECT refused)
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          node tools/test-camoufox-synthetic-auth-proxy.js
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
+          }
+      - name: Stage-0 two-profile real Camoufox local storage and restart measurement
+        shell: pwsh
+        timeout-minutes: 12
+        run: |
+          $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
+          # EXE comes from the upstream ZIP verified against the pinned official hash in an earlier step.
+          node stage0-measure/run.js
+          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox Stage-0 isolation result was not PASS' }
+      - name: Publish only synthetic Stage-0 measurements (never browser binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Stage0-Camoufox-Synthetic-Report
+          path: stage0-measure-results/stage0-local-report.json
+          if-no-files-found: ignore
+      - name: Generate two pinned identities with the official launcher
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $runtime=Join-Path $env:RUNNER_TEMP 'lhm-camoufox-runtime'
+          if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
+           throw 'Pinned camoufox launcher runtime missing'
+          }
+          # The generator imports the official package and this repo's pure
+          # identity validator; stage both inside the runtime prefix so ESM
+          # resolution finds the pinned package without touching repo deps.
+          New-Item -ItemType Directory -Force `
+           (Join-Path $runtime 'tools'),(Join-Path $runtime 'src/engine'),`
+           (Join-Path $runtime 'src/health')|Out-Null
+          Copy-Item tools/generate-camoufox-identity.mjs (Join-Path $runtime 'tools/')
+          Copy-Item src/engine/camoufoxIdentity.js (Join-Path $runtime 'src/engine/')
+          Copy-Item src/health/signalChain.js,src/health/proxyValidation.js `
+           (Join-Path $runtime 'src/health/')
+          $gen=Join-Path $runtime 'tools/generate-camoufox-identity.mjs'
+          node $gen --executable-path "$env:LHM_CAMOUFOX_EXECUTABLE" `
+           --os windows --locale en-US --timezone America/New_York `
+           --out (Join-Path $env:RUNNER_TEMP 'identity-a.json')
+          if($LASTEXITCODE -ne 0){throw 'Identity A generation failed'}
+          node $gen --executable-path "$env:LHM_CAMOUFOX_EXECUTABLE" `
+           --os windows --locale vi-VN --timezone Asia/Ho_Chi_Minh `
+           --out (Join-Path $env:RUNNER_TEMP 'identity-b.json')
+          if($LASTEXITCODE -ne 0){throw 'Identity B generation failed'}
+      - name: Measure two configured Camoufox profiles through the selective controller
+        shell: pwsh
+        env:
+          LHM_STAGE0_IDENTITY_A: ${{ runner.temp }}\identity-a.json
+          LHM_STAGE0_IDENTITY_B: ${{ runner.temp }}\identity-b.json
+        run: |
+          node stage0-measure/run-config.js
+          if($LASTEXITCODE -ne 0){
+           throw "Configured Stage-0 measurement failed with exit code $LASTEXITCODE"
+          }
+      - name: Publish only the configured Stage-0 report (never browser binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Stage0-Camoufox-Configured-Report
+          path: stage0-measure-results/stage0-config-report.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Verify no upstream browser binary entered the shipping source tree
+        shell: pwsh
+        run: |
+          $source='./resources/camoufox-engine'
+          $files=@(Get-ChildItem -LiteralPath $source -Recurse -File)
+          if ($files.Count -ne 1 -or $files[0].Name -ne 'README.md') {
+            throw 'Unreviewed Camoufox browser resource entered the product staging directory'
+          }
+          if (Test-Path './dist/win-unpacked/resources/lhm-camoufox/camoufox.exe') {
+            throw 'Upstream CI browser unexpectedly included in installed application'
+          }
+          Write-Host 'Verified: no Camoufox binary was committed or packaged by the smoke test.'

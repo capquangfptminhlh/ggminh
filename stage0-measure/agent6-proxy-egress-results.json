@@ -1,0 +1,191 @@
+{
+ "status": "RAN",
+ "boundTo": {
+  "baseCommit": "07150d6 (integration/v5.8-phase-c)",
+  "engineExecutable": "/home/hatch/tmp-big/cfx-build/camoufox-bin",
+  "engineSha256": "2a2cb03f6ca4cfa96cdb9d0991b52f4dc02d7f097d3253d355f6a6361ce28669",
+  "os": "linux 7.0.0-39-generic",
+  "node": "v24.20.0",
+  "at": "2026-10-21T15:44:01.347Z"
+ },
+ "scope": "Loopback lab only. The application proxy path under test is: controller -> proxy plan -> app authenticated gateway (loopback) -> lab upstream proxy -> lab HTTPS echo. Public egress, DNS, IPv6 and Windows remain NOT_RUN.",
+ "addressing": {
+  "echoServer": "127.0.0.10",
+  "browserDirectSource": "127.0.0.1",
+  "labHttpUpstreamEgressSource": "127.0.0.20",
+  "labSocksUpstreamEgressSource": "127.0.0.30"
+ },
+ "managerProcessObservation": {
+  "source": "manager-process",
+  "remoteAddress": "127.0.0.1",
+  "note": "This Node process fetched the echo directly. Per 19.3 it describes the manager connection only and is never evidence about the profile runtime."
+ },
+ "scenarios": [
+  {
+   "scenario": "direct (no proxy)",
+   "profileId": "lab-direct",
+   "proxyMode": "direct",
+   "runtimeFetch": {
+    "remoteAddress": "127.0.0.1",
+    "remotePort": 38558,
+    "url": "/egress-echo?run=lab-direct",
+    "at": "2026-10-21T15:43:49.416Z"
+   },
+   "echoSawSource": "127.0.0.1",
+   "egressVerdict": "PASS",
+   "webrtc": {
+    "rawCandidates": [
+     "candidate:0 1 UDP 2122187007 7697fd8e-959d-4b59-b249-ae50e6e3ecca.local 39184 typ host",
+     "candidate:2 1 UDP 2122252543 0f3ca345-0bc0-4299-9163-019bfb921612.local 39072 typ host",
+     "candidate:3 1 TCP 2105458943 7697fd8e-959d-4b59-b249-ae50e6e3ecca.local 9 typ host tcptype active",
+     "candidate:4 1 TCP 2105524479 0f3ca345-0bc0-4299-9163-019bfb921612.local 9 typ host tcptype active"
+    ],
+    "classified": [
+     {
+      "type": "host",
+      "address": "7697fd8e-959d-4b59-b249-ae50e6e3ecca.local",
+      "addressKind": "mdns",
+      "protocol": "udp",
+      "valid": true
+     },
+     {
+      "type": "host",
+      "address": "0f3ca345-0bc0-4299-9163-019bfb921612.local",
+      "addressKind": "mdns",
+      "protocol": "udp",
+      "valid": true
+     },
+     {
+      "type": "host",
+      "address": "7697fd8e-959d-4b59-b249-ae50e6e3ecca.local",
+      "addressKind": "mdns",
+      "protocol": "tcp",
+      "valid": true
+     },
+     {
+      "type": "host",
+      "address": "0f3ca345-0bc0-4299-9163-019bfb921612.local",
+      "addressKind": "mdns",
+      "protocol": "tcp",
+      "valid": true
+     }
+    ],
+    "gatheringStates": [
+     {
+      "state": "gathering",
+      "atMs": 46
+     },
+     {
+      "state": "complete",
+      "atMs": 48
+     }
+    ],
+    "iceErrors": [
+     {
+      "url": "stun:127.0.0.1:47566",
+      "errorCode": 701,
+      "errorText": null,
+      "atMs": 45
+     }
+    ],
+    "unexpectedPublic": [],
+    "stunDatagramsDuringScenario": 0,
+    "stunBindingRequestsDuringScenario": 0
+   }
+  },
+  {
+   "scenario": "HTTP upstream via app gateway",
+   "profileId": "lab-http",
+   "proxyMode": "authenticated-connect",
+   "runtimeFetch": {
+    "remoteAddress": "127.0.0.20",
+    "remotePort": 38563,
+    "url": "/egress-echo?run=lab-http",
+    "at": "2026-10-21T15:43:55.432Z"
+   },
+   "echoSawSource": "127.0.0.20",
+   "egressVerdict": "PASS",
+   "webrtc": {
+    "rawCandidates": [],
+    "classified": [],
+    "gatheringStates": [
+     {
+      "state": "gathering",
+      "atMs": 35
+     },
+     {
+      "state": "complete",
+      "atMs": 155
+     }
+    ],
+    "iceErrors": [],
+    "unexpectedPublic": [],
+    "stunDatagramsDuringScenario": 0,
+    "stunBindingRequestsDuringScenario": 0
+   }
+  },
+  {
+   "scenario": "SOCKS5 upstream via app gateway",
+   "profileId": "lab-socks",
+   "proxyMode": "authenticated-connect",
+   "runtimeFetch": {
+    "remoteAddress": "127.0.0.30",
+    "remotePort": 35463,
+    "url": "/egress-echo?run=lab-socks",
+    "at": "2026-10-21T15:44:00.508Z"
+   },
+   "echoSawSource": "127.0.0.30",
+   "egressVerdict": "PASS",
+   "webrtc": {
+    "rawCandidates": [],
+    "classified": [],
+    "gatheringStates": [
+     {
+      "state": "gathering",
+      "atMs": 15
+     },
+     {
+      "state": "complete",
+      "atMs": 136
+     }
+    ],
+    "iceErrors": [],
+    "unexpectedPublic": [],
+    "stunDatagramsDuringScenario": 0,
+    "stunBindingRequestsDuringScenario": 0
+   }
+  }
+ ],
+ "upstreamConnectLogs": {
+  "http": [
+   {
+    "target": "127.0.0.10:39685",
+    "at": "2026-10-21T15:43:55.274Z"
+   }
+  ],
+  "socks5": [
+   {
+    "target": "127.0.0.10:39685",
+    "at": "2026-10-21T15:44:00.345Z"
+   }
+  ]
+ },
+ "failClosed": {
+  "scenario": "fail-closed: unknown authProxyId",
+  "error": "NETWORK_BLOCKED: Proxy reference mismatch",
+  "code": "NETWORK_BLOCKED",
+  "echoHitsDuringAttempt": 0,
+  "verdict": "PASS"
+ },
+ "stunServerTotal": {
+  "datagrams": 0,
+  "bindingRequests": 0,
+  "fromSources": {}
+ },
+ "notRun": {
+  "publicProxyEgress": "NOT_RUN — no controlled public proxy/egress endpoint is available to this lab",
+  "dns": "NOT_RUN — no controlled authoritative DNS server with a resolver log (Constitution 4.1 row remains CHUA DO)",
+  "ipv6": "NOT_RUN — loopback IPv4 lab; no IPv6 route exercised",
+  "windows": "NOT_RUN — lab binary on Linux; Windows EXE acceptance belongs to Gate 3 on the owner machine"
+ }
+}

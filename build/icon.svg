@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LHM Ads Browser — app icon source (original artwork, drawn for this project).
+  Motif: a browser window (orange title bar + URL pill, off-white body) holding a
+  profile silhouette — "one profile, one browser" — on the product's dark tile.
+  The window is deliberately large (69% of the tile) and the silhouette bold so
+  the mark still reads at 16 px: dark tile / orange band / light window / orange
+  figure. Palette: charcoal tile #26282E -> #141519; product orange
+  #FF8A1E -> #F96A00; window body #F5F6F8; silhouette #F96A00.
+  Edit this file, then regenerate every PNG/ICO with
+  docs/agents/agent-r5/generate-icons.py (needs cairosvg + Pillow).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#26282E"/>
+      <stop offset="1" stop-color="#141519"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF8A1E"/>
+      <stop offset="1" stop-color="#F96A00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- app tile -->
+  <rect x="4" y="4" width="248" height="248" rx="56" fill="url(#tile)"/>
+
+  <!-- browser window body -->
+  <rect x="40" y="50" width="176" height="156" rx="18" fill="#F5F6F8"/>
+
+  <!-- browser title bar -->
+  <path d="M40 68 A18 18 0 0 1 58 50 H198 A18 18 0 0 1 216 68 V92 H40 Z" fill="url(#bar)"/>
+
+  <!-- URL pill in the title bar -->
+  <rect x="54" y="66" width="52" height="11" rx="5.5" fill="#FFFFFF" opacity="0.9"/>
+
+  <!-- profile silhouette: shoulders first, head on top -->
+  <path d="M88 192 L88 180 C88 154 106 140 128 140 C150 140 168 154 168 180 L168 192 Z" fill="#F96A00"/>
+  <circle cx="128" cy="122" r="19" fill="#F96A00"/>
+</svg>

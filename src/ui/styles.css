@@ -983,3 +983,23 @@ body[data-view="dashboard"] .app-container{height:auto;min-height:100vh}
 @media(max-width:1050px){:root{--lhm-nav-width:74px}.lhm-side-nav{padding:18px 9px}.lhm-nav-identity{padding:5px 7px 25px}.lhm-nav-identity-text,.lhm-nav-heading,.lhm-nav-label,.lhm-nav-bottom{display:none}.lhm-nav-btn{justify-content:center;padding:12px 7px}.lhm-nav-icon{font-size:21px}}
 @media(max-width:900px){.lhm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lhm-dashboard-heading{flex-wrap:wrap}.lhm-bottom-left span{display:none}}
 @media(prefers-reduced-motion:reduce){.lhm-hero-orbit{animation:none}}
+
+/* Bảng kiểm theo tiêu chí (criteriaChecklist.js) — ba trạng thái duy nhất:
+   ĐẠT / KHÔNG ĐẠT / CHƯA ĐO, không có điểm số và không có kết luận tổng hợp. */
+.criteria-checklist-section{margin-top:16px}
+.criteria-checklist{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.criteria-head{display:flex;align-items:center;justify-content:space-between}
+.criteria-profile{font-size:12px;color:#b8c3d3;font-weight:600}
+.criteria-sample-banner{font-size:12px;line-height:1.5;color:#fcd34d;background:#4d3a20;border-radius:8px;padding:8px 10px;margin:0}
+.criteria-no-aggregate{font-size:12px;color:#89a2c3;line-height:1.5;margin:0}
+.criteria-row{border:1px solid #263145;border-radius:10px;padding:10px 12px}
+.criteria-row-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.criteria-name{font-size:13px;font-weight:600;color:#e5e7eb}
+.criteria-scope{font-size:12px;color:#89a2c3;line-height:1.5;margin-top:2px}
+.criteria-chip{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.criteria-chip.is-pass{background:#123d35;color:#6ee7b7}
+.criteria-chip.is-fail{background:#531e2d;color:#fda4af}
+.criteria-chip.is-unmeasured{background:#2b3446;color:#b8c3d3}
+.criteria-evidence{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.criteria-evidence-line{font-size:12px;color:#b8c3d3;line-height:1.5}
+.criteria-evidence-line strong{color:#e5e7eb;font-weight:600}

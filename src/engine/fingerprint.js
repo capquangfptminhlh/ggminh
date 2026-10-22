@@ -114,8 +114,8 @@ function generateFingerprint(options = {}) {
     hardwareConcurrency,
     deviceMemory,
     languages: options.languages || ['vi-VN', 'vi', 'en-US', 'en'],
-    canvasNoiseSeed: Math.random() * 10000 + 1,
-    audioNoiseSeed: Math.random() * 10000 + 1,
+    canvasNoiseSeed: getRandomInt(1, 0xffffffff),
+    audioNoiseSeed: getRandomInt(1, 0xffffffff),
     webrtc: options.webrtc || 'spoof', // spoof, disable, real
     timezone: options.timezone || 'Asia/Ho_Chi_Minh',
     fontsNoise: true

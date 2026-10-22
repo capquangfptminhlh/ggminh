@@ -1,0 +1,1580 @@
+path	bytes	verdict	reason
+AccessibleMarshal.dll	20480	PASS	
+CoreMessagingXP.dll	1042232	PASS	
+InstallationDirLayout.dll	9728	PASS	
+Microsoft.InputStateManager.dll	456504	PASS	
+Microsoft.Internal.FrameworkUdk.dll	931208	PASS	
+Microsoft.UI.Composition.OSSupport.dll	67384	PASS	
+Microsoft.UI.Input.dll	1570616	PASS	
+Microsoft.UI.Windowing.Core.dll	542520	PASS	
+Microsoft.UI.Windowing.dll	550712	PASS	
+Microsoft.WindowsAppRuntime.Insights.Resource.dll	34104	PASS	
+Microsoft.WindowsAppRuntime.dll	2600248	PASS	
+application.ini	504	PASS	
+browser/VisualElements/PrivateBrowsing_150.png	28194	PASS	
+browser/VisualElements/PrivateBrowsing_70.png	17407	PASS	
+browser/VisualElements/VisualElements_150.png	20761	PASS	
+browser/VisualElements/VisualElements_70.png	9466	PASS	
+browser/blank.pdf	8959	PASS	
+browser/components/shell/assets/kit.gif	814995	PASS	
+browser/confused_fox.pdf	53103	PASS	
+browser/omni.ja	79957574	PASS	
+camoufox.cfg	42482	PASS	
+camoufox.exe	1209344	PASS	
+chrome.css	522	PASS	
+concrt140.dll	374200	PASS	
+defaults/pref/channel-prefs.js	429	PASS	
+dependentlibs.list	55	PASS	
+desktop-launcher/desktop-launcher.exe	442368	PASS	
+distribution/policies.json	2244	PASS	
+dxcompiler.dll	24212480	PASS	
+firefox.VisualElementsManifest.xml	344	PASS	
+fonts/0__NotoSansOriya.ttc	318288	PASS	
+fonts/0__arial.ttf	369780	PASS	
+fonts/1001__Baskerville.ttc	1373016	PASS	
+fonts/1003__Bangla MN.ttc	317364	FAIL	[1003__Bangla MN.ttc] illegal characters: " "
+fonts/1005__Sinhala MN.ttc	780240	FAIL	[1005__Sinhala MN.ttc] illegal characters: " "
+fonts/1008__NotoSansLycian-Regular.ttf	4556	PASS	
+fonts/1009__SuperClarendon.ttc	2715020	PASS	
+fonts/100__FrankRuehlCLM-Medium.ttf	43904	PASS	
+fonts/100__Mshtakan.ttc	176224	PASS	
+fonts/1010__Rockwell.ttc	488992	PASS	
+fonts/1011__NotoSansBrahmi-Regular.ttf	39428	PASS	
+fonts/1012__Courier New Italic.ttf	589900	FAIL	[1012__Courier New Italic.ttf] illegal characters: " "
+fonts/1016__Arial Rounded Bold.ttf	49296	FAIL	[1016__Arial Rounded Bold.ttf] illegal characters: " "
+fonts/101__Iosevka-ExtraLight.ttf	9636204	PASS	
+fonts/1020__KufiStandardGK.ttc	57728	PASS	
+fonts/1024__STIXIntSmReg.otf	17416	PASS	
+fonts/1027__DecoTypeNaskh.ttc	97544	PASS	
+fonts/102__Inconsolata-ExtraExpandedExtraBold.ttf	110752	PASS	
+fonts/1030__Georgia.ttf	379588	PASS	
+fonts/1032__Tahoma.ttf	681120	PASS	
+fonts/1035__Chalkboard.ttc	177616	PASS	
+fonts/1036__STIXIntUpBol.otf	16576	PASS	
+fonts/1039__SignPainter.ttc	401228	PASS	
+fonts/103__Kailasa.ttc	1178132	PASS	
+fonts/103__LinLibertine_RBI.otf	331128	PASS	
+fonts/1042__Shree714.ttc	533400	PASS	
+fonts/1043__GujaratiMT.ttc	384232	PASS	
+fonts/104__AlBayan.ttc	186408	PASS	
+fonts/104__BOD_R.TTF	77884	PASS	
+fonts/104__GenBasR.ttf	264216	PASS	
+fonts/1054__ANTQUABI.TTF	150416	PASS	
+fonts/1055__ANTQUAB.TTF	151000	PASS	
+fonts/1056__ANTQUAI.TTF	149092	PASS	
+fonts/1057__BKANT.TTF	155528	PASS	
+fonts/1058__BOOKOSBI.TTF	162460	PASS	
+fonts/1059__BOOKOSB.TTF	154576	PASS	
+fonts/105__ArialNova-Italic.ttf	184140	PASS	
+fonts/105__Iosevka-Light.ttf	9829232	PASS	
+fonts/1060__BOOKOSI.TTF	161020	PASS	
+fonts/1061__BOOKOS.TTF	160940	PASS	
+fonts/1062__CENSCBK.TTF	162380	PASS	
+fonts/1063__CENTURY.TTF	165248	PASS	
+fonts/1064__DUBAI-BOLD.TTF	179268	PASS	
+fonts/1067__DUBAI-REGULAR.TTF	181484	PASS	
+fonts/1068__FRABKIT.TTF	169620	PASS	
+fonts/1069__FRABK.TTF	152700	PASS	
+fonts/106__GeorgiaPro-CondLightItalic.ttf	153640	PASS	
+fonts/106__Raleway-Italic[wght].ttf	318476	FAIL	[106__Raleway-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/1070__FRADMCN.TTF	116940	PASS	
+fonts/1071__FRADMIT.TTF	135904	PASS	
+fonts/1072__FRADM.TTF	142932	PASS	
+fonts/1073__FRAHVIT.TTF	152700	PASS	
+fonts/1074__FRAHV.TTF	139400	PASS	
+fonts/1075__GARABD.TTF	199772	PASS	
+fonts/1076__GARAIT.TTF	189464	PASS	
+fonts/1077__GARA.TTF	198072	PASS	
+fonts/1078__GOTHICBI.TTF	139084	PASS	
+fonts/1079__GOTHICB.TTF	129676	PASS	
+fonts/107__JOKERMAN.TTF	69752	PASS	
+fonts/107__Lato-ExtraLightItalic.ttf	653640	PASS	
+fonts/1080__GOTHICI.TTF	148520	PASS	
+fonts/1081__GOTHIC.TTF	137568	PASS	
+fonts/1082__LBRITEDI.TTF	71456	PASS	
+fonts/1083__LBRITED.TTF	66724	PASS	
+fonts/1084__LBRITEI.TTF	71000	PASS	
+fonts/1085__LBRITE.TTF	70748	PASS	
+fonts/1086__LCALLIG.TTF	55464	PASS	
+fonts/1087__LFAXDI.TTF	71472	PASS	
+fonts/1088__LFAXD.TTF	62100	PASS	
+fonts/1089__LFAXI.TTF	67420	PASS	
+fonts/108__NotoSansImperialAramaic-Regular.ttf	6500	PASS	
+fonts/108__Rubik[wght].ttf	359804	FAIL	[108__Rubik[wght].ttf] illegal characters: "[" "]"
+fonts/108__constanz.ttf	455564	PASS	
+fonts/1090__LFAX.TTF	61912	PASS	
+fonts/1091__LHANDW.TTF	62484	PASS	
+fonts/1092__LTYPEBO.TTF	54620	PASS	
+fonts/1093__LTYPEB.TTF	52868	PASS	
+fonts/1094__LTYPEO.TTF	65412	PASS	
+fonts/1095__LTYPE.TTF	55984	PASS	
+fonts/1096__MTCORSVA.TTF	157360	PASS	
+fonts/1097__OUTLOOK.TTF	17672	PASS	
+fonts/1098__REFSAN.TTF	220172	PASS	
+fonts/1099__SansSerifCollection.ttf	3775516	PASS	
+fonts/109__Apple Chancery.ttf	336652	FAIL	[109__Apple Chancery.ttf] illegal characters: " "
+fonts/109__Iosevka-Italic.ttf	10223100	PASS	
+fonts/10__NotoSansPauCinHau-Regular.ttf	9816	PASS	
+fonts/10__Wingdings 2.ttf	65264	FAIL	[10__Wingdings 2.ttf] illegal characters: " "
+fonts/1100__SCHLBKBI.TTF	160964	PASS	
+fonts/1101__SCHLBKB.TTF	168756	PASS	
+fonts/1102__SCHLBKI.TTF	163164	PASS	
+fonts/1103__Mingliub.ttc	37112128	PASS	
+fonts/1104__msgothic.ttc	8990160	PASS	
+fonts/1105__MSJHBD.ttc	14441188	PASS	
+fonts/1106__Msjhl.ttc	12877764	PASS	
+fonts/1107__msjh.ttc	21404172	PASS	
+fonts/1108__Msyhbd.ttc	16883552	PASS	
+fonts/1109__Msyhl.ttc	12189612	PASS	
+fonts/110__Cochin.ttc	1242524	PASS	
+fonts/110__Inter-Italic[opsz,wght].ttf	906596	FAIL	[110__Inter-Italic[opsz,wght].ttf] illegal characters: "[" "," "]"
+fonts/110__calibriz.ttf	1163904	PASS	
+fonts/1110__msyh.ttc	19704352	PASS	
+fonts/1111__simsun.ttc	18316748	PASS	
+fonts/1112__YuGothB.ttc	14729372	PASS	
+fonts/1113__YuGothL.ttc	13969876	PASS	
+fonts/1114__Yugothm.ttc	13908392	PASS	
+fonts/1115__YuGothR.ttc	13835976	PASS	
+fonts/1116__Malgunbd.ttf	12600392	PASS	
+fonts/1117__Malgunsl.ttf	5085196	PASS	
+fonts/1118__Malgun.ttf	13459196	PASS	
+fonts/1119__Simsunb.ttf	21894056	PASS	
+fonts/111__Iosevka-ThinItalic.ttf	10011232	PASS	
+fonts/111__NIAGENG.TTF	95904	PASS	
+fonts/112__Arial Unicode.ttf	23278008	FAIL	[112__Arial Unicode.ttf] illegal characters: " "
+fonts/112__LinLibertine_RB.otf	406904	PASS	
+fonts/112__constan.ttf	448376	PASS	
+fonts/113__Inconsolata-SemiCondensedSemiBold.ttf	106732	PASS	
+fonts/113__ROCCB___.TTF	59444	PASS	
+fonts/114__NotoSerifGeorgian[wdth,wght].ttf	381592	FAIL	[114__NotoSerifGeorgian[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/114__segoescb.ttf	593028	PASS	
+fonts/115__IMPRISHA.TTF	60488	PASS	
+fonts/115__NotoNaskhArabic-Bold.ttf	181192	PASS	
+fonts/116__GillSansNova.ttf	76048	PASS	
+fonts/116__Raleway[wght].ttf	312352	FAIL	[116__Raleway[wght].ttf] illegal characters: "[" "]"
+fonts/117__GenBkBasBI.ttf	245096	PASS	
+fonts/117__STIXNonUniIta.otf	46268	PASS	
+fonts/117__VerdanaPro-CondRegular.ttf	246200	PASS	
+fonts/118__Carlito-Bold.ttf	682468	PASS	
+fonts/118__MAIAN.TTF	61384	PASS	
+fonts/118__NotoSansLinearB-Regular.ttf	64828	PASS	
+fonts/119__Inconsolata-ExpandedLight.ttf	107696	PASS	
+fonts/119__PALSCRI.TTF	51404	PASS	
+fonts/11__NotoSerifYezidi-Regular.otf	8664	PASS	
+fonts/11__Wingdings.ttf	83496	PASS	
+fonts/120__Inconsolata-UltraExpandedExtraLight.ttf	110040	PASS	
+fonts/120__RockwellNovaCond-Light.ttf	202888	PASS	
+fonts/121__DejaVuMathTeXGyre.ttf	577708	PASS	
+fonts/121__FORTE.TTF	61776	PASS	
+fonts/121__Herculanum.ttf	111468	PASS	
+fonts/122__Nunito-Italic[wght].ttf	281832	FAIL	[122__Nunito-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/122__taile.ttf	67568	PASS	
+fonts/123__AnonymousPro-Bold.ttf	153616	PASS	
+fonts/124__FiraMono-Medium.ttf	173428	PASS	
+fonts/124__RockwellNova.ttf	175832	PASS	
+fonts/125__Amiri-Bold.ttf	413480	PASS	
+fonts/125__VerdanaPro-SemiBold.ttf	243208	PASS	
+fonts/126__Iosevka-ExtendedExtraLightOblique.ttf	9787932	PASS	
+fonts/126__calibrii.ttf	1202512	PASS	
+fonts/127__LinLibertine_RZI.otf	390408	PASS	
+fonts/127__Tahoma Bold.ttf	626928	FAIL	[127__Tahoma Bold.ttf] illegal characters: " "
+fonts/127__calibrib.ttf	1615616	PASS	
+fonts/128__ArialNovaCond-Light.ttf	190964	PASS	
+fonts/128__Poppins-Light.ttf	161936	PASS	
+fonts/129__MesloLGS-Bold.ttf	642348	PASS	
+fonts/129__VerdanaPro-Bold.ttf	247696	PASS	
+fonts/12__NotoSansNKo-Regular.ttf	24608	PASS	
+fonts/12__ariali.ttf	282392	PASS	
+fonts/130__Amiri-Regular.ttf	431116	PASS	
+fonts/130__VerdanaPro-Regular.ttf	242976	PASS	
+fonts/131__Iosevka-ExtendedExtraBoldOblique.ttf	10102076	PASS	
+fonts/132__DejaVuSansMono.ttf	340712	PASS	
+fonts/132__Gujarati Sangam MN.ttc	546372	FAIL	[132__Gujarati Sangam MN.ttc] illegal characters: " "
+fonts/132__RockwellNova-LightItalic.ttf	169936	PASS	
+fonts/133__BOD_BLAR.TTF	73616	PASS	
+fonts/133__Inconsolata-CondensedBlack.ttf	107368	PASS	
+fonts/134__PARCHM.TTF	151256	PASS	
+fonts/134__Poppins-Thin.ttf	163672	PASS	
+fonts/135__Barlow-Bold.ttf	108220	PASS	
+fonts/135__ERASDEMI.TTF	59996	PASS	
+fonts/135__Verdana.ttf	186188	PASS	
+fonts/136__GillSansCondBoItNova.ttf	77296	PASS	
+fonts/136__MesloLGL-Bold.ttf	642348	PASS	
+fonts/137__Iosevka-ExtraLightOblique.ttf	9907472	PASS	
+fonts/137__framd.ttf	133632	PASS	
+fonts/138__Carlito-Italic.ttf	615236	PASS	
+fonts/138__ntailub.ttf	67168	PASS	
+fonts/139__LATINWD.TTF	44824	PASS	
+fonts/139__TitilliumWeb-ExtraLightItalic.ttf	67860	PASS	
+fonts/13__NotoSansBuhid-Regular.ttf	5612	PASS	
+fonts/13__arialbi.ttf	279164	PASS	
+fonts/140__Arial Narrow Bold.ttf	184420	FAIL	[140__Arial Narrow Bold.ttf] illegal characters: " "
+fonts/140__Nirmala.ttc	5304988	PASS	
+fonts/140__Nunito[wght].ttf	276932	FAIL	[140__Nunito[wght].ttf] illegal characters: "[" "]"
+fonts/141__Alef-Regular.ttf	90996	PASS	
+fonts/141__GeorgiaPro-CondLight.ttf	147872	PASS	
+fonts/141__NotoSansOldSouthArabian-Regular.ttf	5232	PASS	
+fonts/142__AGENCYB.TTF	60656	PASS	
+fonts/142__Bodoni 72 OS.ttc	239752	FAIL	[142__Bodoni 72 OS.ttc] illegal characters: " "
+fonts/142__LinBiolinum_RI.otf	617656	PASS	
+fonts/143__GillSansCondLightItNova.ttf	76120	PASS	
+fonts/143__Iosevka-HeavyOblique.ttf	10200088	PASS	
+fonts/144__Inconsolata-UltraCondensedLight.ttf	105136	PASS	
+fonts/144__Kannada MN.ttc	343548	FAIL	[144__Kannada MN.ttc] illegal characters: " "
+fonts/144__marlett.ttf	27724	PASS	
+fonts/145__FiraSans-ExtraLightItalic.ttf	463000	PASS	
+fonts/145__segoeui.ttf	959752	PASS	
+fonts/146__GenBasBI.ttf	245852	PASS	
+fonts/146__GeorgiaPro-Regular.ttf	148140	PASS	
+fonts/147__AnonymousPro-BoldItalic.ttf	141924	PASS	
+fonts/147__BASKVILL.TTF	54976	PASS	
+fonts/148__BOD_CR.TTF	80580	PASS	
+fonts/148__Inconsolata-UltraExpandedBlack.ttf	111876	PASS	
+fonts/149__CURLZ___.TTF	69480	PASS	
+fonts/149__DejaVuSerifCondensed-Italic.ttf	345324	PASS	
+fonts/14__NotoSansSamaritan-Regular.ttf	11164	PASS	
+fonts/14__tahoma.ttf	894092	PASS	
+fonts/150__DejaVuSerif-Italic.ttf	345996	PASS	
+fonts/151__HATTEN.TTF	108664	PASS	
+fonts/151__NotoMono-Regular.ttf	107848	PASS	
+fonts/152__BOD_BI.TTF	85308	PASS	
+fonts/152__NotoSans[wdth,wght].ttf	2049096	FAIL	[152__NotoSans[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/153__FiraSans-LightItalic.ttf	463212	PASS	
+fonts/153__taileb.ttf	58532	PASS	
+fonts/154__Poppins-ThinItalic.ttf	189552	PASS	
+fonts/154__VINERITC.TTF	104372	PASS	
+fonts/155__MesloLGM-BoldItalic.ttf	593032	PASS	
+fonts/155__segoepr.ttf	168404	PASS	
+fonts/156__FiraSans-SemiBoldItalic.ttf	506544	PASS	
+fonts/156__NotoSansPhoenician-Regular.ttf	6252	PASS	
+fonts/156__OLDENGL.TTF	93068	PASS	
+fonts/157__EuphemiaCAS.ttc	490384	PASS	
+fonts/157__Poppins-SemiBoldItalic.ttf	181108	PASS	
+fonts/157__RockwellNova-Light.ttf	176648	PASS	
+fonts/158__DejaVuSansMono-Bold.ttf	331992	PASS	
+fonts/159__Iosevka-ExtendedLightOblique.ttf	9854956	PASS	
+fonts/159__framdit.ttf	148728	PASS	
+fonts/15__timesbd.ttf	1168472	PASS	
+fonts/160__Barlow-ExtraLight.ttf	102504	PASS	
+fonts/160__GOUDOSB.TTF	82796	PASS	
+fonts/161__CALIFR.TTF	105300	PASS	
+fonts/161__Heebo[wght].ttf	122012	FAIL	[161__Heebo[wght].ttf] illegal characters: "[" "]"
+fonts/161__Trattatello.ttf	932624	PASS	
+fonts/162__Inconsolata-CondensedBold.ttf	106948	PASS	
+fonts/162__Verdana Italic.ttf	174612	FAIL	[162__Verdana Italic.ttf] illegal characters: " "
+fonts/162__segoesc.ttf	597476	PASS	
+fonts/163__GILC____.TTF	60320	PASS	
+fonts/163__Oswald[wght].ttf	172088	FAIL	[163__Oswald[wght].ttf] illegal characters: "[" "]"
+fonts/164__NotoSansOldNorthArabian-Regular.ttf	7284	PASS	
+fonts/164__PlayfairDisplay-Italic[wght].ttf	278688	FAIL	[164__PlayfairDisplay-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/164__phagspab.ttf	97476	PASS	
+fonts/165__VictorMono-Italic[wght].ttf	242872	FAIL	[165__VictorMono-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/166__TitilliumWeb-SemiBold.ttf	63008	PASS	
+fonts/166__cambriai.ttf	892620	PASS	
+fonts/167__Scheherazade-Bold.ttf	547772	PASS	
+fonts/167__calibril.ttf	1441448	PASS	
+fonts/168__Barlow-MediumItalic.ttf	109184	PASS	
+fonts/168__Malayalam MN.ttc	174756	FAIL	[168__Malayalam MN.ttc] illegal characters: " "
+fonts/168__segoeuisl.ttf	848220	PASS	
+fonts/169__Ayuthaya.ttf	307268	PASS	
+fonts/169__TitilliumWeb-Bold.ttf	59884	PASS	
+fonts/169__VerdanaPro-Italic.ttf	250080	PASS	
+fonts/16__NotoSansMandaic-Regular.ttf	18908	PASS	
+fonts/170__Karla[wght].ttf	94016	FAIL	[170__Karla[wght].ttf] illegal characters: "[" "]"
+fonts/170__VerdanaPro-CondItalic.ttf	248844	PASS	
+fonts/171__Inconsolata-UltraCondensedSemiBold.ttf	106260	PASS	
+fonts/171__NotoSansLinearA-Regular.ttf	58140	PASS	
+fonts/171__calibrili.ttf	1065868	PASS	
+fonts/172__Iosevka-Thin.ttf	9658312	PASS	
+fonts/172__seguisli.ttf	465660	PASS	
+fonts/173__Cantarell-Italic.ttf	45728	PASS	
+fonts/174__MesloLGM-Italic.ttf	587116	PASS	
+fonts/174__RAGE.TTF	132600	PASS	
+fonts/175__BOD_CBI.TTF	81072	PASS	
+fonts/175__Lato-ExtraLight.ttf	626624	PASS	
+fonts/176__Cantarell-Regular.ttf	43156	PASS	
+fonts/177__BOD_CI.TTF	80536	PASS	
+fonts/177__Mukta-Bold.ttf	418416	PASS	
+fonts/178__ArialNova-Bold.ttf	191144	PASS	
+fonts/178__Inconsolata-SemiCondensedLight.ttf	106452	PASS	
+fonts/179__FiraSans-ExtraBoldItalic.ttf	536744	PASS	
+fonts/179__NotoSansCypriot-Regular.ttf	8332	PASS	
+fonts/180__Hoefler Text.ttc	1647144	FAIL	[180__Hoefler Text.ttc] illegal characters: " "
+fonts/180__Inconsolata-Expanded.ttf	106552	PASS	
+fonts/181__Barlow-SemiBold.ttf	108348	PASS	
+fonts/181__Gabriola.ttf	1806004	PASS	
+fonts/181__PartyLET-plain.ttf	213112	PASS	
+fonts/182__Inconsolata-ExpandedSemiBold.ttf	108204	PASS	
+fonts/182__Iowan Old Style.ttc	3421944	FAIL	[182__Iowan Old Style.ttc] illegal characters: " "
+fonts/183__Barlow-Italic.ttf	109624	PASS	
+fonts/183__seguiemj.ttf	12450664	PASS	
+fonts/184__Barlow-ExtraLightItalic.ttf	107988	PASS	
+fonts/184__Nadeem.ttc	62228	PASS	
+fonts/184__TCB_____.TTF	74656	PASS	
+fonts/185__LiberationMono-Italic.ttf	281608	PASS	
+fonts/186__Iosevka-ExtraBoldOblique.ttf	10229476	PASS	
+fonts/186__NotoSansDuployan-Regular.ttf	18724	PASS	
+fonts/186__VerdanaPro-BlackItalic.ttf	244860	PASS	
+fonts/187__INFROMAN.TTF	74968	PASS	
+fonts/187__TitilliumWeb-ExtraLight.ttf	63172	PASS	
+fonts/188__MesloLGL-Italic.ttf	587116	PASS	
+fonts/189__Georgia Bold.ttf	363800	FAIL	[189__Georgia Bold.ttf] illegal characters: " "
+fonts/189__Poppins-Bold.ttf	155996	PASS	
+fonts/189__constani.ttf	448748	PASS	
+fonts/18__NotoSansTirhuta-Regular.ttf	69944	PASS	
+fonts/18__ヒラギノ角ゴシック W9.ttc	3471616	FAIL	[18__ヒラギノ角ゴシック W9.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/190__Al Nile.ttc	131264	FAIL	[190__Al Nile.ttc] illegal characters: " "
+fonts/190__Inconsolata-ExtraBold.ttf	107272	PASS	
+fonts/190__TCM_____.TTF	76252	PASS	
+fonts/191__Iosevka-ExtendedBoldOblique.ttf	10012680	PASS	
+fonts/192__Inconsolata-Light.ttf	105612	PASS	
+fonts/193__ArialNovaCond-BoldItalic.ttf	184252	PASS	
+fonts/193__Inconsolata-SemiExpandedBold.ttf	108012	PASS	
+fonts/194__DejaVuSerif-BoldItalic.ttf	347460	PASS	
+fonts/194__PERI____.TTF	76080	PASS	
+fonts/195__GLECB.TTF	72676	PASS	
+fonts/195__Iosevka-ExtendedThinOblique.ttf	9768940	PASS	
+fonts/196__HTOWERTI.TTF	74712	PASS	
+fonts/196__Inconsolata-SemiExpandedLight.ttf	106344	PASS	
+fonts/197__Mukta-Light.ttf	405188	PASS	
+fonts/198__SHOWG.TTF	52316	PASS	
+fonts/198__WorkSans[wght].ttf	361072	FAIL	[198__WorkSans[wght].ttf] illegal characters: "[" "]"
+fonts/199__GeorgiaPro-Italic.ttf	151716	PASS	
+fonts/199__OpenSans-Italic[wdth,wght].ttf	583992	FAIL	[199__OpenSans-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/19__NotoSansSaurashtra-Regular.ttf	19792	PASS	
+fonts/19__Palatino.ttc	1788068	PASS	
+fonts/1__NotoSansKannada.ttc	1048500	PASS	
+fonts/1__timesi.ttf	932820	PASS	
+fonts/200__BRLNSDB.TTF	96852	PASS	
+fonts/200__Cabin-Italic[wdth,wght].ttf	155412	FAIL	[200__Cabin-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/201__DavidCLM-Bold.otf	58224	PASS	
+fonts/202__Iosevka-ExtendedMediumOblique.ttf	9958584	PASS	
+fonts/202__consolab.ttf	391756	PASS	
+fonts/203__CALIST.TTF	80148	PASS	
+fonts/203__NotoSansLao[wdth,wght].ttf	176620	FAIL	[203__NotoSansLao[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/204__CascadiaMono-Italic[wght].ttf	513984	FAIL	[204__CascadiaMono-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/204__TCCM____.TTF	66804	PASS	
+fonts/205__CENTAUR.TTF	82760	PASS	
+fonts/205__Mukta-SemiBold.ttf	411160	PASS	
+fonts/206__GILBI___.TTF	71496	PASS	
+fonts/206__GenBasI.ttf	258680	PASS	
+fonts/207__NotoSansInscriptionalPahlavi-Regular.ttf	6032	PASS	
+fonts/207__RobotoCondensed[wght].ttf	371616	FAIL	[207__RobotoCondensed[wght].ttf] illegal characters: "[" "]"
+fonts/208__Inconsolata-SemiCondensed.ttf	105792	PASS	
+fonts/208__MAGNETOB.TTF	65284	PASS	
+fonts/209__Inconsolata-CondensedSemiBold.ttf	106884	PASS	
+fonts/209__Raanana.ttc	43728	PASS	
+fonts/20__GeezaPro.ttc	979396	PASS	
+fonts/210__Barlow-BoldItalic.ttf	111996	PASS	
+fonts/210__COPRGTB.TTF	61552	PASS	
+fonts/211__JUICE___.TTF	62884	PASS	
+fonts/211__UbuntuMono-BoldItalic.ttf	216208	PASS	
+fonts/212__Inconsolata-UltraCondensedExtraBold.ttf	106632	PASS	
+fonts/212__palabi.ttf	335292	PASS	
+fonts/213__ITCEDSCR.TTF	64056	PASS	
+fonts/213__NotoKufiArabic-Bold.ttf	180552	PASS	
+fonts/213__STIXIntUpSmBol.otf	16916	PASS	
+fonts/214__UbuntuSansMono-Italic[wght].ttf	186356	FAIL	[214__UbuntuSansMono-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/215__CALIFI.TTF	98748	PASS	
+fonts/215__FiraSans-Bold.ttf	489720	PASS	
+fonts/215__STIXGeneralBol.otf	186612	PASS	
+fonts/216__CALISTI.TTF	59372	PASS	
+fonts/216__NotoSansPalmyrene-Regular.ttf	15684	PASS	
+fonts/216__PT_Sans-Web-Bold.ttf	470240	PASS	
+fonts/217__BELLB.TTF	82580	PASS	
+fonts/217__IBMPlexMono-Thin.ttf	137900	PASS	
+fonts/218__IBMPlexMono-SemiBold.ttf	140216	PASS	
+fonts/218__palab.ttf	419932	PASS	
+fonts/219__Mishafi.ttf	1426864	PASS	
+fonts/219__TitilliumWeb-LightItalic.ttf	71708	PASS	
+fonts/21__NotoSansSylotiNagri-Regular.ttf	16576	PASS	
+fonts/21__ヒラギノ角ゴシック W1.ttc	7277904	FAIL	[21__ヒラギノ角ゴシック W1.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/220__GenBkBasR.ttf	267604	PASS	
+fonts/221__FiraSans-Black.ttf	507204	PASS	
+fonts/222__Charter.ttc	2121076	PASS	
+fonts/222__Inconsolata-SemiCondensedBold.ttf	107176	PASS	
+fonts/222__NIAGSOL.TTF	74012	PASS	
+fonts/223__GeorgiaPro-BoldItalic.ttf	152924	PASS	
+fonts/223__IBMPlexMono-MediumItalic.ttf	144004	PASS	
+fonts/223__NotoSansMarchen-Regular.ttf	125956	PASS	
+fonts/224__PT_Serif-Web-BoldItalic.ttf	337580	PASS	
+fonts/224__constanb.ttf	451824	PASS	
+fonts/225__GillSansCondExtraNova.ttf	76108	PASS	
+fonts/225__Inconsolata-ExtraCondensedExtraLight.ttf	104956	PASS	
+fonts/226__GillSansLightNova.ttf	82776	PASS	
+fonts/226__Quicksand[wght].ttf	124824	FAIL	[226__Quicksand[wght].ttf] illegal characters: "[" "]"
+fonts/227__ArialNovaCond-LightItalic.ttf	185444	PASS	
+fonts/227__NotoSerifHebrew-Regular.ttf	31172	PASS	
+fonts/228__HARNGTON.TTF	70440	PASS	
+fonts/228__NotoSans-Regular.ttf	512672	PASS	
+fonts/229__BELL.TTF	84840	PASS	
+fonts/229__SourceSans3-Italic[wght].ttf	395372	FAIL	[229__SourceSans3-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/22__NotoSerifBalinese-Regular.ttf	51264	PASS	
+fonts/22__STHeiti Light.ttc	55783456	FAIL	[22__STHeiti Light.ttc] illegal characters: " "
+fonts/230__Montserrat[wght].ttf	744936	FAIL	[230__Montserrat[wght].ttf] illegal characters: "[" "]"
+fonts/230__NotoSansCuneiform-Regular.ttf	820316	PASS	
+fonts/231__Amiri-Italic.ttf	428532	PASS	
+fonts/231__Krungthep.ttf	190152	PASS	
+fonts/231__cambria.ttc	1792664	PASS	
+fonts/232__GeorgiaPro-CondBlackItalic.ttf	151848	PASS	
+fonts/232__Lato-ThinItalic.ttf	608716	PASS	
+fonts/233__ENGR.TTF	49768	PASS	
+fonts/233__Oriya MN.ttc	214512	FAIL	[233__Oriya MN.ttc] illegal characters: " "
+fonts/233__RobotoMono[wght].ttf	183700	FAIL	[233__RobotoMono[wght].ttf] illegal characters: "[" "]"
+fonts/234__ERASLGHT.TTF	68656	PASS	
+fonts/234__Inconsolata-Medium.ttf	106752	PASS	
+fonts/235__Bradley Hand Bold.ttf	596736	FAIL	[235__Bradley Hand Bold.ttf] illegal characters: " "
+fonts/235__NotoSansHebrew-Bold.ttf	27156	PASS	
+fonts/235__SCRIPTBL.TTF	55500	PASS	
+fonts/236__FTLTLT.TTF	83580	PASS	
+fonts/236__Poppins-ExtraLightItalic.ttf	188748	PASS	
+fonts/237__Inconsolata-SemiExpanded.ttf	106228	PASS	
+fonts/238__Manrope[wght].ttf	165420	FAIL	[238__Manrope[wght].ttf] illegal characters: "[" "]"
+fonts/238__seguili.ttf	458412	PASS	
+fonts/239__CALIFB.TTF	80620	PASS	
+fonts/239__DejaVuSansCondensed-BoldOblique.ttf	611836	PASS	
+fonts/239__Trebuchet MS Bold.ttf	129360	FAIL	[239__Trebuchet MS Bold.ttf] illegal characters: " "
+fonts/23__LastResort.otf	2532	PASS	
+fonts/240__Ubuntu-Bold.ttf	331612	PASS	
+fonts/241__SpaceMono-BoldItalic.ttf	111904	PASS	
+fonts/241__corbelli.ttf	169228	PASS	
+fonts/242__Cabin[wdth,wght].ttf	165468	FAIL	[242__Cabin[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/242__Didot.ttc	724008	PASS	
+fonts/242__HARLOWSI.TTF	56596	PASS	
+fonts/243__Inconsolata-Condensed.ttf	105520	PASS	
+fonts/243__SegUIVar.ttf	1851000	PASS	
+fonts/244__RobotoSlab[wght].ttf	251880	FAIL	[244__RobotoSlab[wght].ttf] illegal characters: "[" "]"
+fonts/244__corbeli.ttf	284690	PASS	
+fonts/245__NotoSerifHebrew[wdth,wght].ttf	183600	FAIL	[245__NotoSerifHebrew[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/246__Iosevka-LightOblique.ttf	10101808	PASS	
+fonts/246__TEMPSITC.TTF	76100	PASS	
+fonts/247__MATURASC.TTF	51296	PASS	
+fonts/247__Poppins-ExtraBold.ttf	154836	PASS	
+fonts/247__Webdings.ttf	124308	PASS	
+fonts/248__ReemKufi[wght].ttf	127152	FAIL	[248__ReemKufi[wght].ttf] illegal characters: "[" "]"
+fonts/248__gadugi.ttf	242684	PASS	
+fonts/249__COOPBL.TTF	80388	PASS	
+fonts/249__Iosevka-ExtendedMediumItalic.ttf	10040188	PASS	
+fonts/249__NotoSansOldTurkic-Regular.ttf	8372	PASS	
+fonts/24__NotoSansTaiViet-Regular.ttf	18220	PASS	
+fonts/250__GeorgiaPro-CondSemiBold.ttf	145296	PASS	
+fonts/250__Lato-BlackItalic.ttf	698264	PASS	
+fonts/250__Sinhala Sangam MN.ttc	757768	FAIL	[250__Sinhala Sangam MN.ttc] illegal characters: " "
+fonts/251__GenBkBasB.ttf	267024	PASS	
+fonts/251__STIXIntUpReg.otf	16856	PASS	
+fonts/252__NotoSansHebrew[wdth,wght].ttf	112640	FAIL	[252__NotoSansHebrew[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/253__DejaVuSansCondensed-Bold.ttf	665028	PASS	
+fonts/253__LeelawUI.ttf	390004	PASS	
+fonts/254__Candarai.ttf	251156	PASS	
+fonts/254__PT_Sans-Web-Regular.ttf	442960	PASS	
+fonts/255__Impact.ttf	138488	PASS	
+fonts/255__UbuntuMono-Italic.ttf	210216	PASS	
+fonts/255__corbelb.ttf	290908	PASS	
+fonts/256__Inconsolata-SemiExpandedRegular.ttf	106288	PASS	
+fonts/257__DavidLibre-Regular.ttf	127740	PASS	
+fonts/257__VerdanaPro-CondSemiBold.ttf	243744	PASS	
+fonts/258__FrankRuehlCLM-MediumOblique.ttf	46740	PASS	
+fonts/258__ROCC____.TTF	55824	PASS	
+fonts/259__ArialNovaCond-Italic.ttf	182496	PASS	
+fonts/259__Caladea-BoldItalic.ttf	83356	PASS	
+fonts/259__Muna.ttc	207352	PASS	
+fonts/25__Monaco.ttf	534216	PASS	
+fonts/260__Iosevka-SemiBoldItalic.ttf	10218744	PASS	
+fonts/261__BebasNeue-Regular.ttf	61400	PASS	
+fonts/261__GeorgiaPro-SemiBold.ttf	150380	PASS	
+fonts/261__NotoSansEgyptianHieroglyphs-Regular.ttf	585444	PASS	
+fonts/262__IBMPlexMono-ExtraLight.ttf	135980	PASS	
+fonts/262__segoeprb.ttf	167800	PASS	
+fonts/263__Inconsolata-SemiCondensedExtraLight.ttf	106216	PASS	
+fonts/264__ArialNova-Light.ttf	191308	PASS	
+fonts/264__GillSans.ttc	1254028	PASS	
+fonts/264__LiberationSerif-Regular.ttf	393692	PASS	
+fonts/265__BRITANIC.TTF	40728	PASS	
+fonts/265__Iosevka-Medium.ttf	9902072	PASS	
+fonts/265__Times New Roman Bold.ttf	832472	FAIL	[265__Times New Roman Bold.ttf] illegal characters: " "
+fonts/266__Iosevka-ExtendedThinItalic.ttf	9839912	PASS	
+fonts/266__POORICH.TTF	76588	PASS	
+fonts/267__IBMPlexMono-Medium.ttf	136704	PASS	
+fonts/267__STIXGeneralItalic.otf	141844	PASS	
+fonts/267__sylfaen.ttf	260108	PASS	
+fonts/268__LeelUIsl.ttf	382988	PASS	
+fonts/268__SourceCodePro[wght].ttf	212340	FAIL	[268__SourceCodePro[wght].ttf] illegal characters: "[" "]"
+fonts/269__Lato-MediumItalic.ttf	694924	PASS	
+fonts/269__Wingdings 3.ttf	38308	FAIL	[269__Wingdings 3.ttf] illegal characters: " "
+fonts/270__Candaraz.ttf	254676	PASS	
+fonts/270__Iosevka-Bold.ttf	9814700	PASS	
+fonts/271__GIGI.TTF	142072	PASS	
+fonts/271__NotoSerif-Italic[wdth,wght].ttf	2448496	FAIL	[271__NotoSerif-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/272__FrankRuehlCLM-Bold.ttf	45056	PASS	
+fonts/272__PER_____.TTF	60216	PASS	
+fonts/273__Diwan Thuluth.ttf	1319880	FAIL	[273__Diwan Thuluth.ttf] illegal characters: " "
+fonts/273__Inconsolata-UltraExpanded.ttf	109516	PASS	
+fonts/273__RockwellNova-BoldItalic.ttf	192180	PASS	
+fonts/274__NotoSansGeorgian-Bold.ttf	54956	PASS	
+fonts/274__RockwellNova-ExtraBoldItalic.ttf	196504	PASS	
+fonts/275__OpenSans[wdth,wght].ttf	532636	FAIL	[275__OpenSans[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/275__VerdanaPro-CondBlack.ttf	241872	PASS	
+fonts/276__GOUDYSTO.TTF	55956	PASS	
+fonts/276__Lato-Italic.ttf	722900	PASS	
+fonts/277__LiberationSans-Bold.ttf	414568	PASS	
+fonts/277__seguibli.ttf	350484	PASS	
+fonts/278__COLONNA.TTF	54952	PASS	
+fonts/278__Inconsolata[wdth,wght].ttf	347180	FAIL	[278__Inconsolata[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/278__STIXIntDReg.otf	17500	PASS	
+fonts/279__NHaasGroteskTXPro-It.ttf	186372	PASS	
+fonts/279__Poppins-BlackItalic.ttf	174116	PASS	
+fonts/27__Helvetica.ttc	2369592	PASS	
+fonts/280__GillSansCondItNova.ttf	75776	PASS	
+fonts/280__NotoSansArabic[wdth,wght].ttf	844676	FAIL	[280__NotoSansArabic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/281__Inconsolata-SemiExpandedExtraBold.ttf	108584	PASS	
+fonts/282__Inconsolata-UltraExpandedBold.ttf	111816	PASS	
+fonts/282__MOD20.TTF	62612	PASS	
+fonts/283__Hack-Regular.ttf	309408	PASS	
+fonts/283__consolai.ttf	461496	PASS	
+fonts/284__RAVIE.TTF	74416	PASS	
+fonts/284__Ubuntu-MediumItalic.ttf	365080	PASS	
+fonts/285__Inconsolata-SemiCondensedExtraBold.ttf	107660	PASS	
+fonts/285__mmrtext.ttf	337800	PASS	
+fonts/286__FiraMono-Bold.ttf	206488	PASS	
+fonts/286__GeorgiaPro-CondBlack.ttf	147180	PASS	
+fonts/287__GeorgiaPro-BlackItalic.ttf	151412	PASS	
+fonts/287__Iosevka-ExtendedExtraBoldItalic.ttf	10177612	PASS	
+fonts/287__Trebuchet MS Bold Italic.ttf	137008	FAIL	[287__Trebuchet MS Bold Italic.ttf] illegal characters: " "
+fonts/288__MiriamMonoCLM-Bold.ttf	34000	PASS	
+fonts/289__NotoSansCJK-Bold.ttc	20050760	PASS	
+fonts/289__STIXSizFourSymReg.otf	15656	PASS	
+fonts/289__consolaz.ttf	401732	PASS	
+fonts/28__MuktaMahee.ttc	873820	PASS	
+fonts/290__FiraSans-BoldItalic.ttf	506864	PASS	
+fonts/291__BELLI.TTF	82192	PASS	
+fonts/291__NotoSansLao-Bold.ttf	32396	PASS	
+fonts/292__Candara.ttf	242012	PASS	
+fonts/292__Gurmukhi.ttf	65480	PASS	
+fonts/292__Lato-Medium.ttf	636396	PASS	
+fonts/293__GillSansUltraBoNova.ttf	70916	PASS	
+fonts/293__Iosevka-ExtendedExtraLightItalic.ttf	9855264	PASS	
+fonts/294__GeorgiaPro-CondItalic.ttf	155712	PASS	
+fonts/294__NotoKufiArabic[wght].ttf	434204	FAIL	[294__NotoKufiArabic[wght].ttf] illegal characters: "[" "]"
+fonts/295__JetBrainsMono[wght].ttf	187208	FAIL	[295__JetBrainsMono[wght].ttf] illegal characters: "[" "]"
+fonts/296__NunitoSans-Italic[YTLC,opsz,wdth,wght].ttf	558412	FAIL	[296__NunitoSans-Italic[YTLC,opsz,wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/297__BRADHITC.TTF	105296	PASS	
+fonts/297__NotoSansMono[wdth,wght].ttf	1708408	FAIL	[297__NotoSansMono[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/298__NotoSansLisu[wght].ttf	56240	FAIL	[298__NotoSansLisu[wght].ttf] illegal characters: "[" "]"
+fonts/298__seguibl.ttf	318708	PASS	
+fonts/299__DavidCLM-MediumItalic.otf	75416	PASS	
+fonts/299__VerdanaPro-Black.ttf	240608	PASS	
+fonts/29__NotoSansBuginese-Regular.ttf	7236	PASS	
+fonts/29__SFArabicRounded.ttf	786120	PASS	
+fonts/2__NotoSansArmenian.ttc	171832	PASS	
+fonts/2__arialbd.ttf	368096	PASS	
+fonts/300__Barlow-Light.ttf	103136	PASS	
+fonts/300__GillSansCondBoNova.ttf	76308	PASS	
+fonts/300__Oriya Sangam MN.ttc	185976	FAIL	[300__Oriya Sangam MN.ttc] illegal characters: " "
+fonts/301__JosefinSans-Italic[wght].ttf	130984	FAIL	[301__JosefinSans-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/301__RockwellNovaCond.ttf	204504	PASS	
+fonts/302__Iosevka-ExtendedBoldItalic.ttf	10096044	PASS	
+fonts/302__Tamil Sangam MN.ttc	365320	FAIL	[302__Tamil Sangam MN.ttc] illegal characters: " "
+fonts/303__DevanagariMT.ttc	409368	PASS	
+fonts/303__Poppins-Medium.ttf	158576	PASS	
+fonts/303__VIVALDII.TTF	66696	PASS	
+fonts/304__STENCIL.TTF	55596	PASS	
+fonts/304__UbuntuSansMono[wght].ttf	178092	FAIL	[304__UbuntuSansMono[wght].ttf] illegal characters: "[" "]"
+fonts/305__FREESCPT.TTF	69876	PASS	
+fonts/305__Hack-Bold.ttf	317628	PASS	
+fonts/306__PT_Sans-Web-BoldItalic.ttf	375204	PASS	
+fonts/306__REFSPCL.TTF	53288	PASS	
+fonts/307__Inter[opsz,wght].ttf	876576	FAIL	[307__Inter[opsz,wght].ttf] illegal characters: "[" "," "]"
+fonts/307__phagspa.ttf	93720	PASS	
+fonts/308__GillSansCondLightNova.ttf	74268	PASS	
+fonts/308__Inconsolata-UltraExpandedLight.ttf	110512	PASS	
+fonts/309__Candaral.ttf	252124	PASS	
+fonts/309__PT_Serif-Web-Italic.ttf	375356	PASS	
+fonts/30__NotoSansNewa-Regular.ttf	149024	PASS	
+fonts/30__Symbol.ttf	80016	PASS	
+fonts/310__LinLibertine_DR.otf	364864	PASS	
+fonts/310__seguisb.ttf	974500	PASS	
+fonts/311__Alef-Bold.ttf	92312	PASS	
+fonts/311__segoeuil.ttf	910144	PASS	
+fonts/312__IBMPlexMono-Regular.ttf	135580	PASS	
+fonts/312__RockwellNova-Bold.ttf	207196	PASS	
+fonts/313__Inconsolata-Black.ttf	108216	PASS	
+fonts/314__BAUHS93.TTF	47644	PASS	
+fonts/314__Songti.ttc	66933080	PASS	
+fonts/314__SourceCodePro-Italic[wght].ttf	174852	FAIL	[314__SourceCodePro-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/315__JetBrainsMono-Italic[wght].ttf	191556	FAIL	[315__JetBrainsMono-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/315__javatext.ttf	305448	PASS	
+fonts/316__ALGER.TTF	76588	PASS	
+fonts/316__JosefinSans[wght].ttf	118588	FAIL	[316__JosefinSans[wght].ttf] illegal characters: "[" "]"
+fonts/316__NotoSerifAhom-Regular.ttf	19512	PASS	
+fonts/317__NotoSerifLao-Regular.ttf	38528	PASS	
+fonts/318__DejaVuSerif.ttf	380132	PASS	
+fonts/318__seguihis.ttf	1622060	PASS	
+fonts/319__Lato-LightItalic.ttf	657552	PASS	
+fonts/319__NotoSansOldHungarian-Regular.ttf	54020	PASS	
+fonts/319__RockwellNova-Italic.ttf	171172	PASS	
+fonts/31__HelveticaNeue.ttc	4472716	PASS	
+fonts/31__NotoSansWarangCiti-Regular.ttf	25304	PASS	
+fonts/320__NotoSansBhaiksuki-Regular.ttf	220044	PASS	
+fonts/320__TitilliumWeb-Regular.ttf	63660	PASS	
+fonts/320__VerdanaPro-CondSemiBoldItalic.ttf	248196	PASS	
+fonts/321__Farisi.ttf	281512	PASS	
+fonts/321__TitilliumWeb-Black.ttf	49328	PASS	
+fonts/322__ERASBD.TTF	57508	PASS	
+fonts/322__UbuntuMono[wght].ttf	172232	FAIL	[322__UbuntuMono[wght].ttf] illegal characters: "[" "]"
+fonts/323__GillSansCondExtraItNova.ttf	76368	PASS	
+fonts/323__Iosevka-ExtendedBold.ttf	9746596	PASS	
+fonts/324__LinLibertine_RI.otf	421204	PASS	
+fonts/324__MTEXTRA.TTF	9024	PASS	
+fonts/325__MesloLGS-BoldItalic.ttf	593032	PASS	
+fonts/325__NotoSansCaucasianAlbanian-Regular.ttf	26828	PASS	
+fonts/325__VerdanaPro-CondLight.ttf	240372	PASS	
+fonts/326__DejaVuSansCondensed.ttf	680264	PASS	
+fonts/326__ITFDevanagari.ttc	818456	PASS	
+fonts/327__AmiriQuran-Regular.ttf	136920	PASS	
+fonts/327__Kokonor.ttf	1081532	PASS	
+fonts/327__RockwellNovaCond-LightItalic.ttf	194508	PASS	
+fonts/328__Lato-ExtraBold.ttf	613920	PASS	
+fonts/328__OCRAEXT.TTF	55400	PASS	
+fonts/328__Times New Roman.ttf	824920	FAIL	[328__Times New Roman.ttf] illegal characters: " "
+fonts/329__Lato-BoldItalic.ttf	698364	PASS	
+fonts/32__Noteworthy.ttc	562064	PASS	
+fonts/32__NotoSansHanunoo-Regular.ttf	7896	PASS	
+fonts/330__Athelas.ttc	2327804	PASS	
+fonts/330__MesloLGL-BoldItalic.ttf	593032	PASS	
+fonts/330__seguisym.ttf	2514056	PASS	
+fonts/331__Candarab.ttf	250772	PASS	
+fonts/331__NotoSerif-Italic.ttf	637472	PASS	
+fonts/332__LeelaUIb.ttf	324708	PASS	
+fonts/332__SourceSerif4[opsz,wght].ttf	1209508	FAIL	[332__SourceSerif4[opsz,wght].ttf] illegal characters: "[" "," "]"
+fonts/333__Poppins-Regular.ttf	160316	PASS	
+fonts/333__VerdanaPro-CondLightItalic.ttf	244984	PASS	
+fonts/334__Inconsolata-CondensedLight.ttf	105872	PASS	
+fonts/334__NotoSansPsalterPahlavi-Regular.ttf	21676	PASS	
+fonts/334__PERB____.TTF	58512	PASS	
+fonts/335__FiraSans-ThinItalic.ttf	457188	PASS	
+fonts/335__PERBI___.TTF	75620	PASS	
+fonts/336__TitilliumWeb-BoldItalic.ttf	69772	PASS	
+fonts/336__mvboli.ttf	79320	PASS	
+fonts/337__GillSansBoItNova.ttf	66652	PASS	
+fonts/337__Lato-Regular.ttf	656568	PASS	
+fonts/338__Carlito-BoldItalic.ttf	808508	PASS	
+fonts/338__RockwellNovaCond-Italic.ttf	197648	PASS	
+fonts/339__DejaVuSansMono-Oblique.ttf	251932	PASS	
+fonts/33__ArialHB.ttc	459376	PASS	
+fonts/33__NotoSansSharada-Regular.ttf	44108	PASS	
+fonts/340__Iosevka-Extended.ttf	9644436	PASS	
+fonts/341__NotoSansMeroitic-Regular.ttf	33644	PASS	
+fonts/341__Roboto[wdth,wght].ttf	488584	FAIL	[341__Roboto[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/342__Arial Bold Italic.ttf	558672	FAIL	[342__Arial Bold Italic.ttf] illegal characters: " "
+fonts/342__Inconsolata-SemiCondensedRegular.ttf	105852	PASS	
+fonts/342__lucon.ttf	111108	PASS	
+fonts/343__NotoSerifGeorgian-Bold.ttf	63852	PASS	
+fonts/343__segoeuiz.ttf	542140	PASS	
+fonts/344__GillSansCondNova.ttf	74508	PASS	
+fonts/344__Montserrat-Italic[wght].ttf	762376	FAIL	[344__Montserrat-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/345__Cantarell-BoldItalic.ttf	47848	PASS	
+fonts/345__STIXNonUni.otf	54556	PASS	
+fonts/345__mmrtextb.ttf	319692	PASS	
+fonts/346__Arial.ttf	773236	PASS	
+fonts/346__Inconsolata-SemiCondensedBlack.ttf	109008	PASS	
+fonts/346__RockwellNovaCond-Bold.ttf	195372	PASS	
+fonts/347__GOUDOSI.TTF	80280	PASS	
+fonts/347__Lato-Bold.ttf	656544	PASS	
+fonts/348__BOD_BLAI.TTF	83816	PASS	
+fonts/348__Mukta-ExtraLight.ttf	410644	PASS	
+fonts/349__NotoSansInscriptionalParthian-Regular.ttf	7792	PASS	
+fonts/349__NotoSerifArmenian-Regular.ttf	31184	PASS	
+fonts/34__SFNSItalic.ttf	1060364	PASS	
+fonts/350__GillSansItNova.ttf	68472	PASS	
+fonts/350__Inconsolata-ExtraExpandedMedium.ttf	109424	PASS	
+fonts/350__Times New Roman Bold Italic.ttf	620008	FAIL	[350__Times New Roman Bold Italic.ttf] illegal characters: " "
+fonts/351__ITCKRIST.TTF	59712	PASS	
+fonts/351__Iosevka-SemiBoldOblique.ttf	10138704	PASS	
+fonts/351__Lao MN.ttc	96348	FAIL	[351__Lao MN.ttc] illegal characters: " "
+fonts/352__SitkaVF.ttf	516124	PASS	
+fonts/352__Ubuntu-BoldItalic.ttf	354956	PASS	
+fonts/353__Gurmukhi Sangam MN.ttc	143724	FAIL	[353__Gurmukhi Sangam MN.ttc] illegal characters: " "
+fonts/353__IBMPlexMono-Bold.ttf	137784	PASS	
+fonts/354__Inconsolata-ExtraExpandedLight.ttf	109164	PASS	
+fonts/354__Sathu.ttf	417676	PASS	
+fonts/355__Iosevka-BoldOblique.ttf	10122544	PASS	
+fonts/356__NotoSansManichaean-Regular.ttf	31448	PASS	
+fonts/356__NotoSerifArmenian[wdth,wght].ttf	292528	FAIL	[356__NotoSerifArmenian[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/357__Iosevka-ExtendedExtraLight.ttf	9527592	PASS	
+fonts/357__VerdanaPro-CondBlackItalic.ttf	248116	PASS	
+fonts/358__Poppins-SemiBold.ttf	157312	PASS	
+fonts/358__VerdanaPro-CondBoldItalic.ttf	250448	PASS	
+fonts/359__CALISTBI.TTF	84960	PASS	
+fonts/359__Inconsolata-SemiBold.ttf	106836	PASS	
+fonts/35__Menlo.ttc	2156036	PASS	
+fonts/35__NotoSansCanadianAboriginal-Regular.otf	41468	PASS	
+fonts/360__IBMPlexMono-ThinItalic.ttf	146100	PASS	
+fonts/361__Mishafi Gold.ttf	649384	FAIL	[361__Mishafi Gold.ttf] illegal characters: " "
+fonts/361__SpaceMono-Italic.ttf	121396	PASS	
+fonts/362__LiberationSansNarrow-Italic.ttf	132068	PASS	
+fonts/363__DMSans-Italic[opsz,wght].ttf	285040	FAIL	[363__DMSans-Italic[opsz,wght].ttf] illegal characters: "[" "," "]"
+fonts/363__ROCKEB.TTF	49168	PASS	
+fonts/364__Iosevka-ExtraBold.ttf	9948180	PASS	
+fonts/364__TCMI____.TTF	78236	PASS	
+fonts/365__DMSans[opsz,wght].ttf	240164	FAIL	[365__DMSans[opsz,wght].ttf] illegal characters: "[" "," "]"
+fonts/365__MISTRAL.TTF	191716	PASS	
+fonts/366__DavidCLM-Medium.otf	55616	PASS	
+fonts/366__STIXTwoText-Italic.ttf	454368	PASS	
+fonts/366__corbelz.ttf	294692	PASS	
+fonts/367__FiraSans-Italic.ttf	472396	PASS	
+fonts/368__GeorgiaPro-CondSemiBoldItalic.ttf	148144	PASS	
+fonts/368__Inconsolata-UltraExpandedExtraBold.ttf	111860	PASS	
+fonts/369__Inconsolata-ExtraCondensedBlack.ttf	107020	PASS	
+fonts/369__NotoSerifNyiakengPuachueHmong-Regular.ttf	14888	PASS	
+fonts/369__SegoeIcons.ttf	463656	PASS	
+fonts/36__Optima.ttc	265552	PASS	
+fonts/370__Inconsolata-ExtraCondensedExtraBold.ttf	106740	PASS	
+fonts/370__segoeuii.ttf	530616	PASS	
+fonts/371__Inconsolata-UltraCondensedExtraLight.ttf	105040	PASS	
+fonts/371__corbell.ttf	172256	PASS	
+fonts/372__Iosevka-ExtendedSemiBoldItalic.ttf	10067368	PASS	
+fonts/373__MesloLGM-Regular.ttf	636152	PASS	
+fonts/373__PLAYBILL.TTF	46164	PASS	
+fonts/373__georgiaz.ttf	211780	PASS	
+fonts/374__Merriweather[opsz,wdth,wght].ttf	4628080	FAIL	[374__Merriweather[opsz,wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/374__ROCK.TTF	72272	PASS	
+fonts/374__calibri.ttf	1650632	PASS	
+fonts/375__FiraSans-MediumItalic.ttf	472624	PASS	
+fonts/375__GillSansCondUltraBoNova.ttf	69924	PASS	
+fonts/375__impact.ttf	206784	PASS	
+fonts/376__ARLRDBD.TTF	45260	PASS	
+fonts/376__FiraSans-Medium.ttf	457248	PASS	
+fonts/376__GLSNECB.TTF	84668	PASS	
+fonts/377__Inconsolata-CondensedMedium.ttf	106972	PASS	
+fonts/377__bahnschrift.ttf	361564	PASS	
+fonts/377__courbd.ttf	818292	PASS	
+fonts/378__Iosevka-MediumItalic.ttf	10261676	PASS	
+fonts/378__PAPYRUS.TTF	163476	PASS	
+fonts/379__ITCBLKAD.TTF	132372	PASS	
+fonts/379__TitilliumWeb-SemiBoldItalic.ttf	71796	PASS	
+fonts/379__trebucit.ttf	252224	PASS	
+fonts/37__Avenir.ttc	1644004	PASS	
+fonts/37__NotoSansTakri-Regular.ttf	16652	PASS	
+fonts/380__GeorgiaPro-Bold.ttf	149212	PASS	
+fonts/380__NotoNaskhArabic[wght].ttf	307592	FAIL	[380__NotoNaskhArabic[wght].ttf] illegal characters: "[" "]"
+fonts/380__courbi.ttf	593192	PASS	
+fonts/381__ARIALNB.TTF	180740	PASS	
+fonts/381__Barlow-Regular.ttf	104068	PASS	
+fonts/381__PERTIBD.TTF	48320	PASS	
+fonts/382__DejaVuSerif-Bold.ttf	356088	PASS	
+fonts/382__GillSansLightItNova.ttf	71536	PASS	
+fonts/382__arial.ttf	1045720	PASS	
+fonts/383__Iosevka-ExtraLightItalic.ttf	9975992	PASS	
+fonts/383__NHaasGroteskTXPro-Rg.ttf	167188	PASS	
+fonts/383__trebucbd.ttf	244124	PASS	
+fonts/384__Barlow-ThinItalic.ttf	107296	PASS	
+fonts/384__COPRGTL.TTF	62716	PASS	
+fonts/384__couri.ttf	682968	PASS	
+fonts/385__Inconsolata-ExpandedBlack.ttf	109872	PASS	
+fonts/385__timesi.ttf	962864	PASS	
+fonts/386__IBMPlexMono-BoldItalic.ttf	144512	PASS	
+fonts/386__VerdanaPro-Light.ttf	239516	PASS	
+fonts/386__arialbd.ttf	989780	PASS	
+fonts/387__CascadiaCode[wght].ttf	727940	FAIL	[387__CascadiaCode[wght].ttf] illegal characters: "[" "]"
+fonts/387__WINGDNG3.TTF	35328	PASS	
+fonts/387__segoeuib.ttf	947092	PASS	
+fonts/388__CHILLER.TTF	96452	PASS	
+fonts/388__Roboto-Italic[wdth,wght].ttf	530944	FAIL	[388__Roboto-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/388__trebucbi.ttf	225868	PASS	
+fonts/389__ARIALN.TTF	175956	PASS	
+fonts/389__BOD_CB.TTF	74092	PASS	
+fonts/389__MesloLGS-Regular.ttf	636152	PASS	
+fonts/38__AppleSDGothicNeo.ttc	55373848	PASS	
+fonts/390__MiriamMonoCLM-BoldOblique.ttf	36732	PASS	
+fonts/390__VerdanaPro-CondBold.ttf	247732	PASS	
+fonts/390__micross.ttf	857472	PASS	
+fonts/391__ArialNova-BoldItalic.ttf	184156	PASS	
+fonts/391__NotoSansGeorgian[wdth,wght].ttf	231988	FAIL	[391__NotoSansGeorgian[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/391__comicz.ttf	253232	PASS	
+fonts/392__HTOWERT.TTF	92736	PASS	
+fonts/392__Iosevka-ExtraBoldItalic.ttf	10303136	PASS	
+fonts/392__symbol.ttf	69036	PASS	
+fonts/393__ARIALNBI.TTF	180084	PASS	
+fonts/393__Inconsolata-UltraCondensed.ttf	105064	PASS	
+fonts/393__TCCB____.TTF	66020	PASS	
+fonts/394__BOD_PSTC.TTF	91592	PASS	
+fonts/394__Iosevka-ExtendedSemiBoldOblique.ttf	9993592	PASS	
+fonts/394__georgia.ttf	219712	PASS	
+fonts/395__DejaVuSansCondensed-Oblique.ttf	599292	PASS	
+fonts/395__timesbi.ttf	904204	PASS	
+fonts/396__Barlow-Black.ttf	111116	PASS	
+fonts/396__ERASMD.TTF	60772	PASS	
+fonts/396__trebuc.ttf	254396	PASS	
+fonts/397__Candarali.ttf	189388	PASS	
+fonts/397__Inconsolata-UltraCondensedRegular.ttf	105124	PASS	
+fonts/397__ariblk.ttf	167592	PASS	
+fonts/398__UbuntuSans-Italic[wdth,wght].ttf	738444	FAIL	[398__UbuntuSans-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/398__wingding.ttf	82180	PASS	
+fonts/399__DavidCLM-BoldItalic.otf	65420	PASS	
+fonts/399__GeorgiaPro-CondBold.ttf	148284	PASS	
+fonts/399__georgiai.ttf	208444	PASS	
+fonts/39__NewYorkItalic.ttf	523020	PASS	
+fonts/39__STIXTwoMath.otf	838652	PASS	
+fonts/3__NotoSansMyanmar.ttc	1727576	PASS	
+fonts/3__symbol.ttf	69876	PASS	
+fonts/400__BSSYM7.TTF	54412	PASS	
+fonts/400__FiraSans-ExtraLight.ttf	447324	PASS	
+fonts/400__tahomabd.ttf	849284	PASS	
+fonts/401__AGENCYR.TTF	58920	PASS	
+fonts/401__Iosevka-Regular.ttf	9874820	PASS	
+fonts/401__verdana.ttf	243304	PASS	
+fonts/402__MiriamCLM-Book.ttf	20868	PASS	
+fonts/402__WINGDNG2.TTF	65788	PASS	
+fonts/403__GOUDOS.TTF	81376	PASS	
+fonts/403__MesloLGL-Regular.ttf	636152	PASS	
+fonts/403__webdings.ttf	120560	PASS	
+fonts/404__ArialNovaCond-Bold.ttf	188772	PASS	
+fonts/404__NotoSansLisu-Regular.ttf	12860	PASS	
+fonts/404__times.ttf	1190736	PASS	
+fonts/405__DavidLibre-Bold.ttf	132840	PASS	
+fonts/405__ROCKBI.TTF	73700	PASS	
+fonts/405__ntailu.ttf	74464	PASS	
+fonts/406__GIL_____.TTF	67416	PASS	
+fonts/406__Mukta-ExtraBold.ttf	423168	PASS	
+fonts/406__georgiab.ttf	207476	PASS	
+fonts/407__Inconsolata-UltraExpandedMedium.ttf	110728	PASS	
+fonts/407__ROCKI.TTF	76756	PASS	
+fonts/407__VLADIMIR.TTF	54308	PASS	
+fonts/408__Inconsolata-UltraExpandedSemiBold.ttf	111508	PASS	
+fonts/408__verdanaz.ttf	229800	PASS	
+fonts/409__BOD_I.TTF	89940	PASS	
+fonts/409__SourceSerif4-Italic[opsz,wght].ttf	855432	FAIL	[409__SourceSerif4-Italic[opsz,wght].ttf] illegal characters: "[" "," "]"
+fonts/409__ariali.ttf	721584	PASS	
+fonts/40__LucidaGrande.ttc	3202372	PASS	
+fonts/40__NotoSansModi-Regular.ttf	42688	PASS	
+fonts/410__Iosevka-ExtendedThin.ttf	9541500	PASS	
+fonts/410__verdanai.ttf	223268	PASS	
+fonts/411__MesloLGS-Italic.ttf	587116	PASS	
+fonts/411__PERTILI.TTF	43800	PASS	
+fonts/411__verdanab.ttf	211260	PASS	
+fonts/412__WorkSans-Italic[wght].ttf	336756	FAIL	[412__WorkSans-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/412__arialbi.ttf	724872	PASS	
+fonts/413__AnonymousPro-Italic.ttf	144424	PASS	
+fonts/413__comic.ttf	272612	PASS	
+fonts/414__GillSansBoNova.ttf	75356	PASS	
+fonts/414__Inconsolata-SemiExpandedMedium.ttf	107516	PASS	
+fonts/414__ROCKB.TTF	68780	PASS	
+fonts/415__Poppins-MediumItalic.ttf	183012	PASS	
+fonts/415__VerdanaPro-BoldItalic.ttf	251064	PASS	
+fonts/415__comicbd.ttf	255972	PASS	
+fonts/416__Poppins-LightItalic.ttf	186976	PASS	
+fonts/416__msyi.ttf	301180	PASS	
+fonts/416__tahoma.ttf	919260	PASS	
+fonts/417__Inconsolata-ExtraCondensedLight.ttf	105436	PASS	
+fonts/417__KUNSTLER.TTF	63392	PASS	
+fonts/417__timesbd.ttf	1170096	PASS	
+fonts/418__Iosevka-HeavyItalic.ttf	10274736	PASS	
+fonts/418__cour.ttf	817164	PASS	
+fonts/419__ArialNova.ttf	190996	PASS	
+fonts/419__UbuntuCondensed-Regular.ttf	350444	PASS	
+fonts/419__comici.ttf	255796	PASS	
+fonts/41__SFNSMono.ttf	223892	PASS	
+fonts/420__ARIALNI.TTF	181124	PASS	
+fonts/420__GeorgiaPro-CondBoldItalic.ttf	151184	PASS	
+fonts/420__SpaceMono-Regular.ttf	99356	PASS	
+fonts/421__BRUSHSCI.TTF	53456	PASS	
+fonts/421__KacstOffice.ttf	73680	PASS	
+fonts/421__VerdanaPro-LightItalic.ttf	242868	PASS	
+fonts/422__Barlow-Thin.ttf	101704	PASS	
+fonts/422__GILB____.TTF	68304	PASS	
+fonts/423__Inconsolata-UltraCondensedBold.ttf	106308	PASS	
+fonts/423__himalaya.ttf	572776	PASS	
+fonts/424__Inconsolata-ExpandedBold.ttf	108168	PASS	
+fonts/425__Inconsolata-CondensedExtraBold.ttf	106896	PASS	
+fonts/426__GeorgiaPro-Light.ttf	172068	PASS	
+fonts/426__Inconsolata-ExtraExpanded.ttf	107836	PASS	
+fonts/427__AnonymousPro-Regular.ttf	158100	PASS	
+fonts/427__RockwellNova-ExtraBold.ttf	207220	PASS	
+fonts/428__BRLNSB.TTF	96880	PASS	
+fonts/428__FiraSans-BlackItalic.ttf	527560	PASS	
+fonts/429__Inconsolata-ExpandedExtraLight.ttf	107880	PASS	
+fonts/42__SFNS.ttf	7909644	PASS	
+fonts/430__Iosevka-ExtendedSemiBold.ttf	9720032	PASS	
+fonts/431__ELEPHNT.TTF	51652	PASS	
+fonts/431__Inconsolata-UltraExpandedRegular.ttf	109576	PASS	
+fonts/432__BRLNSR.TTF	97284	PASS	
+fonts/432__PT_Serif-Web-Bold.ttf	339996	PASS	
+fonts/433__Inkfree.ttf	198972	PASS	
+fonts/433__NunitoSans[YTLC,opsz,wdth,wght].ttf	571240	FAIL	[433__NunitoSans[YTLC,opsz,wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/434__GILLUBCD.TTF	72408	PASS	
+fonts/434__Iosevka-Heavy.ttf	9887012	PASS	
+fonts/435__IBMPlexMono-ExtraLightItalic.ttf	144672	PASS	
+fonts/436__Inconsolata-Regular.ttf	105628	PASS	
+fonts/436__cambriab.ttf	841440	PASS	
+fonts/437__NotoSansArmenian-Bold.ttf	30924	PASS	
+fonts/438__ELEPHNTI.TTF	54324	PASS	
+fonts/438__Iosevka-ExtendedLightItalic.ttf	9929396	PASS	
+fonts/439__Cantarell-Bold.ttf	44936	PASS	
+fonts/439__GeorgiaPro-CondRegular.ttf	153388	PASS	
+fonts/43__Kohinoor.ttc	1400200	PASS	
+fonts/440__Inconsolata-ExtraCondensed.ttf	105408	PASS	
+fonts/440__ebrima.ttf	949408	PASS	
+fonts/441__Ubuntu-Italic.ttf	384408	PASS	
+fonts/442__Iosevka-ExtendedHeavyItalic.ttf	10203292	PASS	
+fonts/442__segmdl2.ttf	283820	PASS	
+fonts/443__Iosevka-SemiBold.ttf	9838908	PASS	
+fonts/443__cambriaz.ttf	856672	PASS	
+fonts/444__FRSCRIPT.TTF	58580	PASS	
+fonts/444__Inconsolata-SemiExpandedSemiBold.ttf	108116	PASS	
+fonts/445__DejaVuSansMono-BoldOblique.ttf	253580	PASS	
+fonts/446__Barlow-SemiBoldItalic.ttf	111820	PASS	
+fonts/447__BOD_B.TTF	74440	PASS	
+fonts/447__IBMPlexMono-LightItalic.ttf	143432	PASS	
+fonts/448__GeorgiaPro-Black.ttf	152772	PASS	
+fonts/448__Iosevka-BoldItalic.ttf	10200672	PASS	
+fonts/449__Inconsolata-SemiExpandedBlack.ttf	109792	PASS	
+fonts/449__TCCEB.TTF	74708	PASS	
+fonts/44__AquaKana.ttc	18494124	PASS	
+fonts/44__NotoSansOsage-Regular.ttf	12512	PASS	
+fonts/450__Inconsolata-ExpandedMedium.ttf	108292	PASS	
+fonts/451__Inconsolata-ExtraExpandedExtraLight.ttf	108764	PASS	
+fonts/451__VerdanaPro-SemiBoldItalic.ttf	247080	PASS	
+fonts/452__CALISTB.TTF	85080	PASS	
+fonts/452__FiraCode[wght].ttf	260364	FAIL	[452__FiraCode[wght].ttf] illegal characters: "[" "]"
+fonts/453__MiriamMonoCLM-BookOblique.ttf	34052	PASS	
+fonts/453__gadugib.ttf	249236	PASS	
+fonts/454__BERNHC.TTF	70656	PASS	
+fonts/454__DavidLibre-Medium.ttf	129040	PASS	
+fonts/455__SNAP____.TTF	63196	PASS	
+fonts/455__opens___.ttf	208872	PASS	
+fonts/456__Inconsolata-ExpandedExtraBold.ttf	109956	PASS	
+fonts/457__PRISTINA.TTF	82680	PASS	
+fonts/457__UbuntuSans[wdth,wght].ttf	1080900	FAIL	[457__UbuntuSans[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/458__LinBiolinum_RB.otf	485452	PASS	
+fonts/458__consola.ttf	453088	PASS	
+fonts/459__FiraSans-SemiBold.ttf	489028	PASS	
+fonts/45__KohinoorGujarati.ttc	538456	PASS	
+fonts/460__Mukta-Regular.ttf	432248	PASS	
+fonts/460__TCBI____.TTF	73856	PASS	
+fonts/461__Lato-Thin.ttf	584056	PASS	
+fonts/461__ebrimabd.ttf	1026388	PASS	
+fonts/462__GILSANUB.TTF	73136	PASS	
+fonts/462__PlayfairDisplay[wght].ttf	300724	FAIL	[462__PlayfairDisplay[wght].ttf] illegal characters: "[" "]"
+fonts/463__Barlow-Medium.ttf	103536	PASS	
+fonts/463__GeorgiaPro-SemiBoldItalic.ttf	151516	PASS	
+fonts/464__Lato-SemiBoldItalic.ttf	697364	PASS	
+fonts/464__palai.ttf	413708	PASS	
+fonts/465__UbuntuMono-Bold.ttf	191400	PASS	
+fonts/465__monbaiti.ttf	289052	PASS	
+fonts/466__Lato-Light.ttf	643884	PASS	
+fonts/466__ONYX.TTF	81044	PASS	
+fonts/467__BROADW.TTF	60372	PASS	
+fonts/467__Inconsolata-ExtraCondensedMedium.ttf	106180	PASS	
+fonts/468__UbuntuMono-Regular.ttf	205748	PASS	
+fonts/468__l_10646.ttf	309516	PASS	
+fonts/469__Iosevka-ExtendedItalic.ttf	9986796	PASS	
+fonts/469__corbel.ttf	277168	PASS	
+fonts/46__ヒラギノ丸ゴ ProN W4.ttc	9718696	FAIL	[46__ヒラギノ丸ゴ ProN W4.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "丸" "コ" " "
+fonts/470__GeorgiaPro-LightItalic.ttf	152560	PASS	
+fonts/470__RobotoCondensed-Italic[wght].ttf	388124	FAIL	[470__RobotoCondensed-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/471__Poppins-ExtraBoldItalic.ttf	176468	PASS	
+fonts/472__IBMPlexMono-Light.ttf	135216	PASS	
+fonts/472__RockwellNovaCond-BoldItalic.ttf	189312	PASS	
+fonts/473__CascadiaCode-Italic[wght].ttf	530444	FAIL	[473__CascadiaCode-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/473__seguisbi.ttf	456140	PASS	
+fonts/474__Merriweather-Italic[opsz,wdth,wght].ttf	4591168	FAIL	[474__Merriweather-Italic[opsz,wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/474__pala.ttf	472284	PASS	
+fonts/475__Inconsolata-ExtraExpandedSemiBold.ttf	109516	PASS	
+fonts/475__SitkaVF-Italic.ttf	558188	PASS	
+fonts/476__ArialNova-LightItalic.ttf	185296	PASS	
+fonts/476__Inconsolata-UltraCondensedMedium.ttf	106236	PASS	
+fonts/477__Ubuntu-Italic[wdth,wght].ttf	679224	FAIL	[477__Ubuntu-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/478__DejaVuSans-Oblique.ttf	635416	PASS	
+fonts/478__FELIXTI.TTF	45952	PASS	
+fonts/479__Iosevka-ThinOblique.ttf	9939492	PASS	
+fonts/47__NotoSansChakma-Regular.ttf	41592	PASS	
+fonts/47__STHeiti Medium.ttc	55754164	FAIL	[47__STHeiti Medium.ttc] illegal characters: " "
+fonts/480__CASTELAR.TTF	48252	PASS	
+fonts/480__DejaVuSans.ttf	757076	PASS	
+fonts/481__ArialNovaCond.ttf	186064	PASS	
+fonts/481__DejaVuSerifCondensed-Bold.ttf	331244	PASS	
+fonts/482__GILI____.TTF	69436	PASS	
+fonts/482__Karla-Italic[wght].ttf	96248	FAIL	[482__Karla-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/483__DejaVuSans-BoldOblique.ttf	643292	PASS	
+fonts/484__Inconsolata-ExpandedRegular.ttf	106612	PASS	
+fonts/485__Carlito-Regular.ttf	628032	PASS	
+fonts/486__Inconsolata-ExtraExpandedRegular.ttf	107896	PASS	
+fonts/487__CascadiaMono[wght].ttf	704344	FAIL	[487__CascadiaMono[wght].ttf] illegal characters: "[" "]"
+fonts/488__Inconsolata-Bold.ttf	107220	PASS	
+fonts/489__TitilliumWeb-Light.ttf	64004	PASS	
+fonts/48__NewYork.ttf	737036	PASS	
+fonts/48__NotoSansBamum-Regular.ttf	148664	PASS	
+fonts/490__SourceSans3[wght].ttf	646340	FAIL	[490__SourceSans3[wght].ttf] illegal characters: "[" "]"
+fonts/491__SpaceMono-Bold.ttf	98232	PASS	
+fonts/492__FiraSans-ExtraBold.ttf	497028	PASS	
+fonts/493__Lato-Black.ttf	664748	PASS	
+fonts/494__Inconsolata-SemiCondensedMedium.ttf	107324	PASS	
+fonts/495__MesloLGM-Bold.ttf	642348	PASS	
+fonts/496__Poppins-Italic.ttf	184544	PASS	
+fonts/497__RobotoMono-Italic[wght].ttf	196792	FAIL	[497__RobotoMono-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/498__NotoSans-Italic[wdth,wght].ttf	2322640	FAIL	[498__NotoSans-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/499__Iosevka-MediumOblique.ttf	10187836	PASS	
+fonts/49__Avenir Next Condensed.ttc	3288644	FAIL	[49__Avenir Next Condensed.ttc] illegal characters: " "
+fonts/49__NotoSansThaana-Regular.ttf	18792	PASS	
+fonts/4__NotoSerifMyanmar.ttc	1150952	PASS	
+fonts/4__timesbi.ttf	874408	PASS	
+fonts/500__Hack-Italic.ttf	316156	PASS	
+fonts/501__Caladea-Regular.ttf	81600	PASS	
+fonts/502__NotoSerifLao[wdth,wght].ttf	217332	FAIL	[502__NotoSerifLao[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/503__Scheherazade-Regular.ttf	500396	PASS	
+fonts/504__Inconsolata-ExtraCondensedSemiBold.ttf	107228	PASS	
+fonts/505__Barlow-ExtraBold.ttf	110228	PASS	
+fonts/506__OverpassMono[wght].ttf	258800	FAIL	[506__OverpassMono[wght].ttf] illegal characters: "[" "]"
+fonts/507__KacstBook.ttf	63100	PASS	
+fonts/508__Hack-BoldItalic.ttf	322288	PASS	
+fonts/509__Lato-ExtraBoldItalic.ttf	671876	PASS	
+fonts/50__NotoSansLisu-Regular.ttf	6516	PASS	
+fonts/50__ヒラギノ角ゴシック W0.ttc	3573828	FAIL	[50__ヒラギノ角ゴシック W0.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/510__MiriamCLM-Bold.ttf	20844	PASS	
+fonts/511__Inconsolata-ExtraCondensedRegular.ttf	105468	PASS	
+fonts/512__DejaVuSerifCondensed.ttf	346664	PASS	
+fonts/513__NotoSerifCJK-Regular.ttc	26411360	PASS	
+fonts/514__FiraMono-Regular.ttf	174596	PASS	
+fonts/515__FiraSans-Light.ttf	449660	PASS	
+fonts/516__Ubuntu-Regular.ttf	351884	PASS	
+fonts/517__Iosevka-ExtendedHeavyOblique.ttf	10128072	PASS	
+fonts/518__GenBkBasI.ttf	261328	PASS	
+fonts/519__FiraSans-Regular.ttf	456996	PASS	
+fonts/51__NotoSansSyriac-Regular.ttf	115268	PASS	
+fonts/51__ヒラギノ明朝 ProN.ttc	19409608	FAIL	[51__ヒラギノ明朝 ProN.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "明" "朝" " "
+fonts/520__DejaVuSans-Bold.ttf	705684	PASS	
+fonts/521__Poppins-Black.ttf	153440	PASS	
+fonts/522__VictorMono[wght].ttf	194312	FAIL	[522__VictorMono[wght].ttf] illegal characters: "[" "]"
+fonts/523__IBMPlexMono-Italic.ttf	143920	PASS	
+fonts/524__NotoSerif[wdth,wght].ttf	1887192	FAIL	[524__NotoSerif[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/525__Barlow-BlackItalic.ttf	114596	PASS	
+fonts/526__NotoSansArabic-Bold.ttf	252940	PASS	
+fonts/527__Iosevka-Oblique.ttf	10151376	PASS	
+fonts/528__Iosevka-LightItalic.ttf	10175720	PASS	
+fonts/529__Inconsolata-ExtraExpandedBlack.ttf	111232	PASS	
+fonts/52__NotoSansKhudawadi-Regular.ttf	19032	PASS	
+fonts/52__ZapfDingbats.ttf	156088	PASS	
+fonts/530__Inconsolata-SemiExpandedExtraLight.ttf	107636	PASS	
+fonts/531__PT_Serif-Web-Regular.ttf	359048	PASS	
+fonts/532__Inconsolata-UltraCondensedBlack.ttf	107048	PASS	
+fonts/533__MiriamMonoCLM-Book.ttf	31172	PASS	
+fonts/534__Caladea-Bold.ttf	84492	PASS	
+fonts/535__Iosevka-ExtendedMedium.ttf	9687720	PASS	
+fonts/536__Iosevka-ExtendedLight.ttf	9642852	PASS	
+fonts/537__IBMPlexMono-SemiBoldItalic.ttf	147368	PASS	
+fonts/538__LinLibertine_RZ.otf	342672	PASS	
+fonts/539__Iosevka-ExtendedOblique.ttf	9912748	PASS	
+fonts/53__NotoSansOsmanya-Regular.ttf	8604	PASS	
+fonts/53__SFCompact.ttf	1890660	PASS	
+fonts/540__Inconsolata-CondensedExtraLight.ttf	105484	PASS	
+fonts/541__Caladea-Italic.ttf	83780	PASS	
+fonts/542__DejaVuSans-ExtraLight.ttf	355380	PASS	
+fonts/543__Mukta-Medium.ttf	419736	PASS	
+fonts/544__Amiri-BoldItalic.ttf	409692	PASS	
+fonts/545__Ubuntu-Medium.ttf	339360	PASS	
+fonts/549__NotoSansCham-Regular.ttf	30208	PASS	
+fonts/54__ヒラギノ角ゴシック W7.ttc	3610100	FAIL	[54__ヒラギノ角ゴシック W7.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/550__NotoSansMultani-Regular.ttf	9856	PASS	
+fonts/556__NotoSansMiao-Regular.ttf	36236	PASS	
+fonts/558__NotoSansTifinagh-Regular.otf	24956	PASS	
+fonts/55__NotoSansGunjalaGondi-Regular.otf	32372	PASS	
+fonts/55__SFNSMonoItalic.ttf	200956	PASS	
+fonts/561__NotoSansCoptic-Regular.ttf	28084	PASS	
+fonts/564__NotoSansMro-Regular.ttf	6904	PASS	
+fonts/566__PTMono.ttc	315876	PASS	
+fonts/567__NotoSansKayahLi-Regular.ttf	9464	PASS	
+fonts/568__NotoSansMendeKikakui-Regular.ttf	35360	PASS	
+fonts/569__NotoSansBatak-Regular.ttf	22084	PASS	
+fonts/56__Keyboard.ttf	58088	PASS	
+fonts/56__NotoSansSundanese-Regular.ttf	11512	PASS	
+fonts/575__NotoSansKhojki-Regular.ttf	42632	PASS	
+fonts/577__NotoSansYi-Regular.ttf	134064	PASS	
+fonts/579__NotoSansMahajani-Regular.ttf	14144	PASS	
+fonts/57__Avenir Next.ttc	4994280	FAIL	[57__Avenir Next.ttc] illegal characters: " "
+fonts/582__NotoSansNewTaiLue-Regular.ttf	17000	PASS	
+fonts/583__NotoSansRejang-Regular.ttf	7620	PASS	
+fonts/584__NotoSansPahawhHmong-Regular.ttf	18272	PASS	
+fonts/586__NotoSansJavanese-Regular.otf	86944	PASS	
+fonts/587__NotoSansElbasan-Regular.ttf	11172	PASS	
+fonts/58__Apple Braille Outline 8 Dot.ttf	283076	FAIL	[58__Apple Braille Outline 8 Dot.ttf] illegal characters: " "
+fonts/58__NotoSansLepcha-Regular.ttf	24500	PASS	
+fonts/595__NotoSansLimbu-Regular.ttf	12912	PASS	
+fonts/598__NotoSansHanifiRohingya-Regular.ttf	19400	PASS	
+fonts/59__KohinoorTelugu.ttc	675700	PASS	
+fonts/59__NotoSansMeeteiMayek-Regular.ttf	16044	PASS	
+fonts/5__NotoSansMasaramGondi-Regular.otf	23052	PASS	
+fonts/5__ariblk.ttf	115188	PASS	
+fonts/601__NotoSansTagbanwa-Regular.ttf	6648	PASS	
+fonts/604__NotoSansAdlam-Regular.ttf	61236	PASS	
+fonts/608__NotoSansWancho-Regular.ttf	17992	PASS	
+fonts/60__SFCompactItalic.ttf	1022580	PASS	
+fonts/611__NotoSansMongolian-Regular.ttf	253932	PASS	
+fonts/61__Apple Braille.ttf	138012	FAIL	[61__Apple Braille.ttf] illegal characters: " "
+fonts/61__NotoSansBassaVah-Regular.ttf	7740	PASS	
+fonts/62__Geneva.ttf	736764	PASS	
+fonts/62__NotoSansOlChiki-Regular.ttf	8860	PASS	
+fonts/63__SFNSRounded.ttf	1787592	PASS	
+fonts/64__Hiragino Sans GB.ttc	23522052	FAIL	[64__Hiragino Sans GB.ttc] illegal characters: " "
+fonts/64__NotoSansTaiLe-Regular.ttf	12072	PASS	
+fonts/65__NotoNastaliq.ttc	920420	PASS	
+fonts/65__NotoSansVai-Regular.ttf	57764	PASS	
+fonts/66__NotoSansTagalog-Regular.ttf	7012	PASS	
+fonts/66__ヒラギノ角ゴシック W4.ttc	7249820	FAIL	[66__ヒラギノ角ゴシック W4.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/671__KozMinPr6N-Regular.otf	6657356	PASS	
+fonts/675__KozGoPr6N-Medium.otf	5646012	PASS	
+fonts/678__MyriadPro-Bold.otf	103280	PASS	
+fonts/679__SourceSans3-Bold.otf	343596	PASS	
+fonts/67__ヒラギノ角ゴシック W2.ttc	7261144	FAIL	[67__ヒラギノ角ゴシック W2.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/680__SourceSans3-It.otf	239048	PASS	
+fonts/681__SourceSerif4-Regular.otf	241392	PASS	
+fonts/682__MyriadPro-It.otf	101556	PASS	
+fonts/683__SourceSerif4-Bold.otf	251844	PASS	
+fonts/684__SourceSans3-BoldIt.otf	243664	PASS	
+fonts/685__SourceSerif4-BoldIt.otf	175576	PASS	
+fonts/686__MyriadPro-BoldIt.otf	104216	PASS	
+fonts/687__SourceSans3-Regular.otf	334924	PASS	
+fonts/688__SourceSerif4-It.otf	169132	PASS	
+fonts/689__MyriadPro-Regular.otf	101624	PASS	
+fonts/68__PTSerif.ttc	1164836	PASS	
+fonts/68__ヒラギノ角ゴシック W6.ttc	7965696	FAIL	[68__ヒラギノ角ゴシック W6.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/69__NotoSansSoraSompeng-Regular.ttf	8108	PASS	
+fonts/69__Times.ttc	919104	PASS	
+fonts/6__NotoSansTaiTham-Regular.ttf	51040	PASS	
+fonts/6__tahomabd.ttf	824052	PASS	
+fonts/70__KohinoorBangla.ttc	706144	PASS	
+fonts/71__Apple Braille Pinpoint 8 Dot.ttf	191768	FAIL	[71__Apple Braille Pinpoint 8 Dot.ttf] illegal characters: " "
+fonts/71__NotoSansTC-VF.ttf	11942912	PASS	
+fonts/72__NotoSansJP-VF.ttf	9590844	PASS	
+fonts/72__SFArabic.ttf	722504	PASS	
+fonts/73__Apple Braille Outline 6 Dot.ttf	266008	FAIL	[73__Apple Braille Outline 6 Dot.ttf] illegal characters: " "
+fonts/73__NotoSansKR-VF.ttf	10415532	PASS	
+fonts/74__MarkerFelt.ttc	628392	PASS	
+fonts/74__NotoSansSC-VF.ttf	17773244	PASS	
+fonts/757__Arial Narrow.ttf	179492	FAIL	[757__Arial Narrow.ttf] illegal characters: " "
+fonts/75__PTM55FT.ttf	185912	PASS	
+fonts/75__ヒラギノ角ゴシック W3.ttc	7863660	FAIL	[75__ヒラギノ角ゴシック W3.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/760__STIXVar.otf	21776	PASS	
+fonts/762__Comic Sans MS Bold.ttf	120120	FAIL	[762__Comic Sans MS Bold.ttf] illegal characters: " "
+fonts/763__Futura.ttc	487620	PASS	
+fonts/764__PTSerifCaption.ttc	706700	PASS	
+fonts/76__PT_Sans-Web-Italic.ttf	436452	PASS	
+fonts/76__ヒラギノ角ゴシック W5.ttc	7250364	FAIL	[76__ヒラギノ角ゴシック W5.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/773__Courier New Bold.ttf	691796	FAIL	[773__Courier New Bold.ttf] illegal characters: " "
+fonts/774__Trebuchet MS Italic.ttf	144820	FAIL	[774__Trebuchet MS Italic.ttf] illegal characters: " "
+fonts/777__Bangla Sangam MN.ttc	440816	FAIL	[777__Bangla Sangam MN.ttc] illegal characters: " "
+fonts/778__Bodoni 72 Smallcaps Book.ttf	83128	FAIL	[778__Bodoni 72 Smallcaps Book.ttf] illegal characters: " "
+fonts/779__STIXTwoText.ttf	418956	PASS	
+fonts/77__FrankRuehlCLM-BoldOblique.ttf	48820	PASS	
+fonts/77__SFCompactRounded.ttf	1086336	PASS	
+fonts/785__Arial Black.ttf	122556	FAIL	[785__Arial Black.ttf] illegal characters: " "
+fonts/786__Seravek.ttc	6257648	PASS	
+fonts/787__Hoefler Text Ornaments.ttf	43380	FAIL	[787__Hoefler Text Ornaments.ttf] illegal characters: " "
+fonts/788__Skia.ttf	489984	PASS	
+fonts/78__Courier.ttc	1153400	PASS	
+fonts/78__NotoSansArmenian[wdth,wght].ttf	221936	FAIL	[78__NotoSansArmenian[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/794__Myanmar MN.ttc	242060	FAIL	[794__Myanmar MN.ttc] illegal characters: " "
+fonts/795__STIXNonUniBolIta.otf	41188	PASS	
+fonts/796__Arial Italic.ttf	553284	FAIL	[796__Arial Italic.ttf] illegal characters: " "
+fonts/797__Kannada Sangam MN.ttc	297528	FAIL	[797__Kannada Sangam MN.ttc] illegal characters: " "
+fonts/79__Barlow-ExtraBoldItalic.ttf	113112	PASS	
+fonts/7__PTSans.ttc	2794628	PASS	
+fonts/7__webdings.ttf	122092	PASS	
+fonts/800__Verdana Bold.ttf	153260	FAIL	[800__Verdana Bold.ttf] illegal characters: " "
+fonts/801__Marion.ttc	928940	PASS	
+fonts/803__Sana.ttc	77604	PASS	
+fonts/805__STIXSizThreeSymReg.otf	15648	PASS	
+fonts/806__Bodoni 72.ttc	428976	FAIL	[806__Bodoni 72.ttc] illegal characters: " "
+fonts/808__Damascus.ttc	3025936	PASS	
+fonts/809__Georgia Italic.ttf	400624	FAIL	[809__Georgia Italic.ttf] illegal characters: " "
+fonts/80__Apple Symbols.ttf	897936	FAIL	[80__Apple Symbols.ttf] illegal characters: " "
+fonts/80__NotoSansMono-Regular.ttf	510612	PASS	
+fonts/810__NotoSansOldItalic-Regular.ttf	7524	PASS	
+fonts/811__NotoSansPhagsPa-Regular.ttf	34176	PASS	
+fonts/817__BigCaslon.ttf	223700	PASS	
+fonts/818__Arial Narrow Bold Italic.ttf	183932	FAIL	[818__Arial Narrow Bold Italic.ttf] illegal characters: " "
+fonts/81__GenBasB.ttf	266840	PASS	
+fonts/81__ThonburiUI.ttc	80900	PASS	
+fonts/820__Georgia Bold Italic.ttf	385768	FAIL	[820__Georgia Bold Italic.ttf] illegal characters: " "
+fonts/822__Khmer Sangam MN.ttf	188048	FAIL	[822__Khmer Sangam MN.ttf] illegal characters: " "
+fonts/823__Arial Bold.ttf	750984	FAIL	[823__Arial Bold.ttf] illegal characters: " "
+fonts/825__Diwan Kufi.ttc	93724	FAIL	[825__Diwan Kufi.ttc] illegal characters: " "
+fonts/82__Apple Color Emoji.ttc	192123488	FAIL	[82__Apple Color Emoji.ttc] illegal characters: " "
+fonts/82__Poppins-BoldItalic.ttf	179108	PASS	
+fonts/830__NotoSansUgaritic-Regular.ttf	7656	PASS	
+fonts/831__Telugu MN.ttc	335380	FAIL	[831__Telugu MN.ttc] illegal characters: " "
+fonts/835__Lao Sangam MN.ttf	58092	FAIL	[835__Lao Sangam MN.ttf] illegal characters: " "
+fonts/839__Myanmar Sangam MN.ttc	193720	FAIL	[839__Myanmar Sangam MN.ttc] illegal characters: " "
+fonts/83__Apple Braille Pinpoint 6 Dot.ttf	185180	FAIL	[83__Apple Braille Pinpoint 6 Dot.ttf] illegal characters: " "
+fonts/83__Poppins-ExtraLight.ttf	163568	PASS	
+fonts/842__Beirut.ttc	81672	PASS	
+fonts/84__Ubuntu-LightItalic.ttf	407728	PASS	
+fonts/84__ヒラギノ角ゴシック W8.ttc	3753728	FAIL	[84__ヒラギノ角ゴシック W8.ttc] illegal characters: "ヒ" "ラ" "キ" "゙" "ノ" "角" "コ" "シ" "ッ" "ク" " "
+fonts/850__Malayalam Sangam MN.ttc	184960	FAIL	[850__Malayalam Sangam MN.ttc] illegal characters: " "
+fonts/855__DIN Alternate Bold.ttf	152012	FAIL	[855__DIN Alternate Bold.ttf] illegal characters: " "
+fonts/857__NotoSansKaithi-Regular.ttf	62716	PASS	
+fonts/859__Chalkduster.ttf	486880	PASS	
+fonts/85__FiraSans-Thin.ttf	442852	PASS	
+fonts/863__STIXIntDBol.otf	16992	PASS	
+fonts/864__AmericanTypewriter.ttc	2440576	PASS	
+fonts/865__Waseem.ttc	370732	PASS	
+fonts/867__NotoSansNabataean-Regular.ttf	8400	PASS	
+fonts/869__ChalkboardSE.ttc	538448	PASS	
+fonts/86__Rubik-Italic[wght].ttf	354984	FAIL	[86__Rubik-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/86__STIXIntSmBol.otf	16608	PASS	
+fonts/870__STIXIntUpDBol.otf	16932	PASS	
+fonts/872__Corsiva.ttc	75584	PASS	
+fonts/873__STIXSizFiveSymReg.otf	13464	PASS	
+fonts/875__NotoSansCarian-Regular.ttf	6688	PASS	
+fonts/876__Academy Engraved LET Fonts.ttf	109152	FAIL	[876__Academy Engraved LET Fonts.ttf] illegal characters: " "
+fonts/878__STIXNonUniBol.otf	25508	PASS	
+fonts/87__Iosevka-ExtendedHeavy.ttf	9803144	PASS	
+fonts/883__AppleMyungjo.ttf	18760352	PASS	
+fonts/884__NotoSansGlagolitic-Regular.ttf	23264	PASS	
+fonts/889__Zapfino.ttf	403308	PASS	
+fonts/88__Iosevka-ExtendedExtraBold.ttf	9808012	PASS	
+fonts/893__Galvji.ttc	430932	PASS	
+fonts/896__Devanagari Sangam MN.ttc	1029884	FAIL	[896__Devanagari Sangam MN.ttc] illegal characters: " "
+fonts/897__Savoye LET.ttc	110272	FAIL	[897__Savoye LET.ttc] illegal characters: " "
+fonts/898__SukhumvitSet.ttc	356420	PASS	
+fonts/899__Farah.ttc	91112	PASS	
+fonts/89__NotoSansHatran-Regular.ttf	5020	PASS	
+fonts/89__TitilliumWeb-Italic.ttf	72392	PASS	
+fonts/8__times.ttf	1188156	PASS	
+fonts/900__Bodoni Ornaments.ttf	73972	FAIL	[900__Bodoni Ornaments.ttf] illegal characters: " "
+fonts/901__AppleGothic.ttf	15255648	PASS	
+fonts/906__NotoSansGothic-Regular.ttf	6152	PASS	
+fonts/908__PlantagenetCherokee.ttf	75012	PASS	
+fonts/909__STIXSizThreeSymBol.otf	12636	PASS	
+fonts/90__Inconsolata-ExtraLight.ttf	105732	PASS	
+fonts/910__Courier New.ttf	684624	FAIL	[910__Courier New.ttf] illegal characters: " "
+fonts/912__STIXIntUpDReg.otf	16964	PASS	
+fonts/915__Baghdad.ttc	109492	PASS	
+fonts/916__STIXGeneralBolIta.otf	143764	PASS	
+fonts/918__Silom.ttf	291508	PASS	
+fonts/91__Barlow-LightItalic.ttf	108924	PASS	
+fonts/924__NotoSansOldPersian-Regular.ttf	13180	PASS	
+fonts/926__NotoSansOldPermic-Regular.ttf	9984	PASS	
+fonts/928__NotoSansAvestan-Regular.ttf	12888	PASS	
+fonts/929__Verdana Bold Italic.ttf	173132	FAIL	[929__Verdana Bold Italic.ttf] illegal characters: " "
+fonts/92__Lato-SemiBold.ttf	668548	PASS	
+fonts/930__Comic Sans MS.ttf	135484	FAIL	[930__Comic Sans MS.ttf] illegal characters: " "
+fonts/934__Trebuchet MS.ttf	138848	FAIL	[934__Trebuchet MS.ttf] illegal characters: " "
+fonts/93__Copperplate.ttc	1268432	PASS	
+fonts/93__LinLibertine_R.otf	505884	PASS	
+fonts/940__STIXSizTwoSymReg.otf	15620	PASS	
+fonts/944__Arial Narrow Italic.ttf	184944	FAIL	[944__Arial Narrow Italic.ttf] illegal characters: " "
+fonts/946__Brush Script.ttf	222640	FAIL	[946__Brush Script.ttf] illegal characters: " "
+fonts/949__STIXSizFourSymBol.otf	12628	PASS	
+fonts/94__Inconsolata-ExtraCondensedBold.ttf	106964	PASS	
+fonts/94__STIXGeneral.otf	369156	PASS	
+fonts/951__STIXVarBol.otf	14808	PASS	
+fonts/952__Tamil MN.ttc	189232	FAIL	[952__Tamil MN.ttc] illegal characters: " "
+fonts/953__STIXIntUpSmReg.otf	17184	PASS	
+fonts/955__Wingdings 2.ttf	68768	FAIL	[955__Wingdings 2.ttf] illegal characters: " "
+fonts/957__Thonburi.ttc	1515388	PASS	
+fonts/95__Inconsolata-CondensedRegular.ttf	105580	PASS	
+fonts/960__Andale Mono.ttf	109700	FAIL	[960__Andale Mono.ttf] illegal characters: " "
+fonts/963__Gurmukhi MN.ttc	230292	FAIL	[963__Gurmukhi MN.ttc] illegal characters: " "
+fonts/965__NewPeninimMT.ttc	157392	PASS	
+fonts/967__InaiMathi-MN.ttc	457792	PASS	
+fonts/968__Courier New Bold Italic.ttf	506640	FAIL	[968__Courier New Bold Italic.ttf] illegal characters: " "
+fonts/96__Inconsolata-ExtraExpandedBold.ttf	110348	PASS	
+fonts/970__NotoSansLydian-Regular.ttf	4592	PASS	
+fonts/971__DIN Condensed Bold.ttf	212040	FAIL	[971__DIN Condensed Bold.ttf] illegal characters: " "
+fonts/976__STIXSizOneSymReg.otf	19004	PASS	
+fonts/977__Khmer MN.ttc	495056	FAIL	[977__Khmer MN.ttc] illegal characters: " "
+fonts/978__Papyrus.ttc	1111320	PASS	
+fonts/979__Wingdings.ttf	86384	PASS	
+fonts/97__LinBiolinum_R.otf	387392	PASS	
+fonts/97__Phosphate.ttc	232068	PASS	
+fonts/980__NISC18030.ttf	7110352	PASS	
+fonts/981__Microsoft Sans Serif.ttf	652248	FAIL	[981__Microsoft Sans Serif.ttf] illegal characters: " "
+fonts/982__Times New Roman Italic.ttf	660268	FAIL	[982__Times New Roman Italic.ttf] illegal characters: " "
+fonts/983__NotoSansSiddham-Regular.otf	94408	PASS	
+fonts/984__STIXSizOneSymBol.otf	12924	PASS	
+fonts/985__STIXSizTwoSymBol.otf	12576	PASS	
+fonts/987__Luminari.ttf	558352	PASS	
+fonts/989__NotoSansKharoshthi-Regular.ttf	25388	PASS	
+fonts/98__Al Tarikh.ttc	79748	FAIL	[98__Al Tarikh.ttc] illegal characters: " "
+fonts/98__DejaVuSerifCondensed-BoldItalic.ttf	346508	PASS	
+fonts/996__Telugu Sangam MN.ttc	307932	FAIL	[996__Telugu Sangam MN.ttc] illegal characters: " "
+fonts/99__SnellRoundhand.ttc	3590372	PASS	
+fonts/99__Ubuntu-Light.ttf	413600	PASS	
+fonts/9__Wingdings 3.ttf	34804	FAIL	[9__Wingdings 3.ttf] illegal characters: " "
+fonts/ChakraPetch-Bold.ttf	71436	PASS	
+fonts/ChakraPetch-Italic.ttf	73808	PASS	
+fonts/ChakraPetch-Light.ttf	71912	PASS	
+fonts/ChakraPetch-Medium.ttf	71608	PASS	
+fonts/ChakraPetch-Regular.ttf	71556	PASS	
+fonts/ChakraPetch-SemiBold.ttf	71600	PASS	
+fonts/Kefa.ttc	361144	PASS	
+fonts/PingFang.ttc	77871956	PASS	
+fonts/TwemojiMozilla.ttf	1474284	PASS	
+fonts/holomdl2.ttf	40264	PASS	
+fonts/openadd-C059-BdIta.otf	103444	PASS	
+fonts/openadd-C059-Bold.otf	100692	PASS	
+fonts/openadd-C059-Italic.otf	101324	PASS	
+fonts/openadd-C059-Italic.t1	148928	PASS	
+fonts/openadd-C059-Roman.otf	97476	PASS	
+fonts/openadd-D050000L.otf	29832	PASS	
+fonts/openadd-DroidSansFallbackFull.ttf	4033420	PASS	
+fonts/openadd-FreeMono.ttf	1126964	PASS	
+fonts/openadd-FreeSansBoldOblique.ttf	579576	PASS	
+fonts/openadd-FreeSerifBoldItalic.ttf	846556	PASS	
+fonts/openadd-NimbusMonoPS-Bold.otf	87520	PASS	
+fonts/openadd-NimbusMonoPS-BoldItalic.otf	89580	PASS	
+fonts/openadd-NimbusMonoPS-Italic.otf	82648	PASS	
+fonts/openadd-NimbusMonoPS-Regular.otf	77936	PASS	
+fonts/openadd-NimbusRoman-Bold.otf	100984	PASS	
+fonts/openadd-NimbusRoman-Bold.t1	133004	PASS	
+fonts/openadd-NimbusRoman-BoldItalic.otf	104772	PASS	
+fonts/openadd-NimbusRoman-Italic.otf	105684	PASS	
+fonts/openadd-NimbusRoman-Regular.otf	98200	PASS	
+fonts/openadd-NimbusSans-Bold.otf	83264	PASS	
+fonts/openadd-NimbusSans-BoldItalic.otf	95396	PASS	
+fonts/openadd-NimbusSans-Italic.otf	95244	PASS	
+fonts/openadd-NimbusSans-Regular.otf	82264	PASS	
+fonts/openadd-NimbusSansNarrow-Bold.otf	81340	PASS	
+fonts/openadd-NimbusSansNarrow-BoldOblique.otf	87956	PASS	
+fonts/openadd-NimbusSansNarrow-Oblique.otf	87068	PASS	
+fonts/openadd-NimbusSansNarrow-Oblique.t1	107359	PASS	
+fonts/openadd-NimbusSansNarrow-Regular.otf	80864	PASS	
+fonts/openadd-NotoLoopedLao-Regular.ttf	54852	PASS	
+fonts/openadd-NotoLoopedThai-Bold.ttf	70556	PASS	
+fonts/openadd-NotoMusic-Regular.ttf	80984	PASS	
+fonts/openadd-NotoNastaliqUrdu-Bold.ttf	590824	PASS	
+fonts/openadd-NotoRashiHebrew-Regular.ttf	24388	PASS	
+fonts/openadd-NotoSansAdlamUnjoined-Regular.ttf	36820	PASS	
+fonts/openadd-NotoSansAnatolianHieroglyphs-Regular.ttf	228424	PASS	
+fonts/openadd-NotoSansAvestan-Regular.ttf	23008	PASS	
+fonts/openadd-NotoSansBhaiksuki-Regular.ttf	247792	PASS	
+fonts/openadd-NotoSansBrahmi-Regular.ttf	41916	PASS	
+fonts/openadd-NotoSansCarian-Regular.ttf	12848	PASS	
+fonts/openadd-NotoSansCaucasianAlbanian-Regular.ttf	26852	PASS	
+fonts/openadd-NotoSansCuneiform-Regular.ttf	820248	PASS	
+fonts/openadd-NotoSansCypriot-Regular.ttf	15080	PASS	
+fonts/openadd-NotoSansDisplay-Italic.ttf	531240	PASS	
+fonts/openadd-NotoSansDuployan-Regular.ttf	18728	PASS	
+fonts/openadd-NotoSansEgyptianHieroglyphs-Regular.ttf	585400	PASS	
+fonts/openadd-NotoSansElymaic-Regular.ttf	9024	PASS	
+fonts/openadd-NotoSansGlagolitic-Regular.ttf	39832	PASS	
+fonts/openadd-NotoSansGothic-Regular.ttf	11660	PASS	
+fonts/openadd-NotoSansHatran-Regular.ttf	5044	PASS	
+fonts/openadd-NotoSansImperialAramaic-Regular.ttf	6432	PASS	
+fonts/openadd-NotoSansIndicSiyaqNumbers-Regular.ttf	32660	PASS	
+fonts/openadd-NotoSansInscriptionalPahlavi-Regular.ttf	5988	PASS	
+fonts/openadd-NotoSansInscriptionalParthian-Regular.ttf	7748	PASS	
+fonts/openadd-NotoSansKaithi-Regular.ttf	91276	PASS	
+fonts/openadd-NotoSansKharoshthi-Regular.ttf	34240	PASS	
+fonts/openadd-NotoSansLinearA-Regular.ttf	58168	PASS	
+fonts/openadd-NotoSansLinearB-Regular.ttf	62892	PASS	
+fonts/openadd-NotoSansLycian-Regular.ttf	4488	PASS	
+fonts/openadd-NotoSansLydian-Regular.ttf	4524	PASS	
+fonts/openadd-NotoSansManichaean-Regular.ttf	50256	PASS	
+fonts/openadd-NotoSansMarchen-Regular.ttf	131248	PASS	
+fonts/openadd-NotoSansMath-Regular.ttf	590896	PASS	
+fonts/openadd-NotoSansMayanNumerals-Regular.ttf	4716	PASS	
+fonts/openadd-NotoSansMeroitic-Regular.ttf	33668	PASS	
+fonts/openadd-NotoSansNabataean-Regular.ttf	8328	PASS	
+fonts/openadd-NotoSansNushu-Regular.ttf	115064	PASS	
+fonts/openadd-NotoSansOgham-Regular.ttf	4684	PASS	
+fonts/openadd-NotoSansOldHungarian-Regular.ttf	54112	PASS	
+fonts/openadd-NotoSansOldItalic-Regular.ttf	7596	PASS	
+fonts/openadd-NotoSansOldNorthArabian-Regular.ttf	7228	PASS	
+fonts/openadd-NotoSansOldPermic-Regular.ttf	10008	PASS	
+fonts/openadd-NotoSansOldPersian-Regular.ttf	12764	PASS	
+fonts/openadd-NotoSansOldSouthArabian-Regular.ttf	5276	PASS	
+fonts/openadd-NotoSansOldTurkic-Regular.ttf	15160	PASS	
+fonts/openadd-NotoSansPalmyrene-Regular.ttf	15708	PASS	
+fonts/openadd-NotoSansPhagsPa-Regular.ttf	39292	PASS	
+fonts/openadd-NotoSansPhoenician-Regular.ttf	6192	PASS	
+fonts/openadd-NotoSansPsalterPahlavi-Regular.ttf	33300	PASS	
+fonts/openadd-NotoSansSiddham-Regular.ttf	142364	PASS	
+fonts/openadd-NotoSansSignWriting-Regular.ttf	5211268	PASS	
+fonts/openadd-NotoSansSogdian-Regular.ttf	101648	PASS	
+fonts/openadd-NotoSansSymbols2-Regular.ttf	656852	PASS	
+fonts/openadd-NotoSansTamilSupplement-Regular.ttf	15804	PASS	
+fonts/openadd-NotoSansTifinaghAPT-Regular.ttf	39532	PASS	
+fonts/openadd-NotoSansTifinaghAdrar-Regular.ttf	38920	PASS	
+fonts/openadd-NotoSansTifinaghAgrawImazighen-Regular.ttf	40048	PASS	
+fonts/openadd-NotoSansTifinaghAhaggar-Regular.ttf	39508	PASS	
+fonts/openadd-NotoSansTifinaghAir-Regular.ttf	39476	PASS	
+fonts/openadd-NotoSansTifinaghAzawagh-Regular.ttf	39508	PASS	
+fonts/openadd-NotoSansTifinaghGhat-Regular.ttf	39312	PASS	
+fonts/openadd-NotoSansTifinaghHawad-Regular.ttf	39316	PASS	
+fonts/openadd-NotoSansTifinaghRhissaIxa-Regular.ttf	39760	PASS	
+fonts/openadd-NotoSansTifinaghSIL-Regular.ttf	39756	PASS	
+fonts/openadd-NotoSansTifinaghTawellemmet-Regular.ttf	39744	PASS	
+fonts/openadd-NotoSansUgaritic-Regular.ttf	7300	PASS	
+fonts/openadd-NotoSerifAhom-Regular.ttf	19536	PASS	
+fonts/openadd-NotoSerifDisplay-Italic.ttf	591052	PASS	
+fonts/openadd-NotoSerifNyiakengPuachueHmong-Regular.ttf	14912	PASS	
+fonts/openadd-NotoSerifTangut-Regular.ttf	3419020	PASS	
+fonts/openadd-NotoTraditionalNushu-Regular.ttf	264568	PASS	
+fonts/openadd-P052-Bold.otf	110980	PASS	
+fonts/openadd-P052-BoldItalic.otf	110928	PASS	
+fonts/openadd-P052-Italic.otf	109824	PASS	
+fonts/openadd-P052-Roman.otf	110236	PASS	
+fonts/openadd-StandardSymbolsPS.otf	21176	PASS	
+fonts/openadd-URWBookman-Demi.otf	97208	PASS	
+fonts/openadd-URWBookman-DemiItalic.otf	101584	PASS	
+fonts/openadd-URWBookman-DemiItalic.t1	142686	PASS	
+fonts/openadd-URWBookman-Light.otf	98396	PASS	
+fonts/openadd-URWBookman-LightItalic.otf	102764	PASS	
+fonts/openadd-URWGothic-Book.otf	82968	PASS	
+fonts/openadd-URWGothic-BookOblique.otf	85336	PASS	
+fonts/openadd-URWGothic-Demi.otf	83580	PASS	
+fonts/openadd-URWGothic-DemiOblique.otf	86232	PASS	
+fonts/openadd-URWGothic-DemiOblique.pfb	105130	PASS	
+fonts/openadd-Z003-MediumItalic.otf	114052	PASS	
+fonts/u__FontAwesome.otf	134808	PASS	
+fonts/u__FreeMonoBold.ttf	462256	PASS	
+fonts/u__FreeMonoBoldOblique.ttf	353368	PASS	
+fonts/u__FreeMonoOblique.ttf	577920	PASS	
+fonts/u__FreeSans.ttf	1844796	PASS	
+fonts/u__FreeSansBold.ttf	996436	PASS	
+fonts/u__FreeSansOblique.ttf	885180	PASS	
+fonts/u__FreeSerif.ttf	3686360	PASS	
+fonts/u__FreeSerifBold.ttf	2076128	PASS	
+fonts/u__FreeSerifItalic.ttf	1158472	PASS	
+fonts/u__Lato-Hairline.ttf	584784	PASS	
+fonts/u__Lato-Heavy.ttf	665420	PASS	
+fonts/u__Lato-Semibold.ttf	669228	PASS	
+fonts/u__LiberationMono-Bold.ttf	308068	PASS	
+fonts/u__LiberationMono-BoldItalic.ttf	284184	PASS	
+fonts/u__LiberationMono-Regular.ttf	319624	PASS	
+fonts/u__LiberationSans-BoldItalic.ttf	409108	PASS	
+fonts/u__LiberationSans-Italic.ttf	415920	PASS	
+fonts/u__LiberationSans-Regular.ttf	410820	PASS	
+fonts/u__LiberationSansNarrow-Bold.ttf	109868	PASS	
+fonts/u__LiberationSansNarrow-BoldItalic.ttf	128084	PASS	
+fonts/u__LiberationSansNarrow-Regular.ttf	112644	PASS	
+fonts/u__LiberationSerif-Bold.ttf	370196	PASS	
+fonts/u__LiberationSerif-BoldItalic.ttf	376892	PASS	
+fonts/u__LiberationSerif-Italic.ttf	375760	PASS	
+fonts/u__NotoLoopedLao-Bold.ttf	54748	PASS	
+fonts/u__NotoLoopedThai-Regular.ttf	65536	PASS	
+fonts/u__NotoNastaliqUrdu-Regular.ttf	570552	PASS	
+fonts/u__NotoRashiHebrew-Bold.ttf	25012	PASS	
+fonts/u__NotoSansAdlam-Bold.ttf	94372	PASS	
+fonts/u__NotoSansAdlamUnjoined-Bold.ttf	36908	PASS	
+fonts/u__NotoSansBamum-Bold.ttf	229340	PASS	
+fonts/u__NotoSansCanadianAboriginal-Bold.ttf	87356	PASS	
+fonts/u__NotoSansCham-Bold.ttf	31228	PASS	
+fonts/u__NotoSansDisplay-Bold.ttf	513000	PASS	
+fonts/u__NotoSansDisplay-BoldItalic.ttf	537268	PASS	
+fonts/u__NotoSansDisplay-Regular.ttf	508388	PASS	
+fonts/u__NotoSansHanifiRohingya-Bold.ttf	27924	PASS	
+fonts/u__NotoSansJavanese-Bold.ttf	120160	PASS	
+fonts/u__NotoSansKayahLi-Bold.ttf	17716	PASS	
+fonts/u__NotoSansMeeteiMayek-Bold.ttf	16908	PASS	
+fonts/u__NotoSansMeeteiMayek-Regular.ttf	17152	PASS	
+fonts/u__NotoSansNewTaiLue-Regular.ttf	17024	PASS	
+fonts/u__NotoSansOlChiki-Bold.ttf	14500	PASS	
+fonts/u__NotoSansOldSogdian-Regular.ttf	15540	PASS	
+fonts/u__NotoSansPauCinHau-Regular.ttf	9840	PASS	
+fonts/u__NotoSansSoraSompeng-Bold.ttf	8324	PASS	
+fonts/u__NotoSansSundanese-Bold.ttf	22960	PASS	
+fonts/u__NotoSansTaiTham-Bold.ttf	94892	PASS	
+fonts/u__NotoSansThaana-Bold.ttf	18536	PASS	
+fonts/u__NotoSansWarangCiti-Regular.ttf	25328	PASS	
+fonts/u__NotoSansZanabazarSquare-Regular.ttf	19440	PASS	
+fonts/u__NotoSerifDisplay-Bold.ttf	568796	PASS	
+fonts/u__NotoSerifDisplay-BoldItalic.ttf	590804	PASS	
+fonts/u__NotoSerifDisplay-Regular.ttf	559120	PASS	
+fonts/u__NotoSerifNyiakengPuachueHmong-Bold.ttf	15152	PASS	
+fonts/u__NotoSerifTamilSlanted-Bold.ttf	80296	PASS	
+fonts/u__NotoSerifTamilSlanted-Regular.ttf	79484	PASS	
+fonts/u__NotoSerifYezidi-Bold.ttf	10028	PASS	
+fonts/u__Ubuntu-B.ttf	1072960	PASS	
+fonts/u__UbuntuMono-BI.ttf	172196	PASS	
+fonts/u__UbuntuSansMono[wght].ttf	230324	FAIL	[u__UbuntuSansMono[wght].ttf] illegal characters: "[" "]"
+fonts/u__ukai.ttc	17151049	PASS	
+fonts/u__uming.ttc	21053592	PASS	
+fonts/z__Arimo-Italic[wght].ttf	543196	FAIL	[z__Arimo-Italic[wght].ttf] illegal characters: "[" "]"
+fonts/z__Arimo[wght].ttf	496268	FAIL	[z__Arimo[wght].ttf] illegal characters: "[" "]"
+fonts/z__Cousine-Bold.ttf	298048	PASS	
+fonts/z__Cousine-BoldItalic.ttf	308292	PASS	
+fonts/z__Cousine-Italic.ttf	306880	PASS	
+fonts/z__Cousine-Regular.ttf	296856	PASS	
+fonts/z__NotoColorEmoji-Regular.ttf	11020136	PASS	
+fonts/z__NotoSansBalinese[wght].ttf	193412	FAIL	[z__NotoSansBalinese[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSansBengali[wdth,wght].ttf	463668	FAIL	[z__NotoSansBengali[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansCherokee[wght].ttf	224360	FAIL	[z__NotoSansCherokee[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSansDeseret-Regular.ttf	60572	PASS	
+fonts/z__NotoSansDevanagari[wdth,wght].ttf	647144	FAIL	[z__NotoSansDevanagari[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansEthiopic[wdth,wght].ttf	1143168	FAIL	[z__NotoSansEthiopic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansGrantha-Regular.ttf	382732	PASS	
+fonts/z__NotoSansGujarati[wdth,wght].ttf	672904	FAIL	[z__NotoSansGujarati[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansGurmukhi[wdth,wght].ttf	268608	FAIL	[z__NotoSansGurmukhi[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansKhmer[wdth,wght].ttf	359788	FAIL	[z__NotoSansKhmer[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansMalayalam[wdth,wght].ttf	504204	FAIL	[z__NotoSansMalayalam[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansMedefaidrin[wght].ttf	112788	FAIL	[z__NotoSansMedefaidrin[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSansRunic-Regular.ttf	55800	PASS	
+fonts/z__NotoSansShavian-Regular.ttf	54064	PASS	
+fonts/z__NotoSansSinhala[wdth,wght].ttf	1181956	FAIL	[z__NotoSansSinhala[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansSoyombo-Regular.ttf	132532	PASS	
+fonts/z__NotoSansSymbols2-Regular.ttf	1233128	PASS	
+fonts/z__NotoSansSymbols[wght].ttf	372684	FAIL	[z__NotoSansSymbols[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSansTamil[wdth,wght].ttf	340668	FAIL	[z__NotoSansTamil[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansTelugu[wdth,wght].ttf	888808	FAIL	[z__NotoSansTelugu[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansThai[wdth,wght].ttf	218652	FAIL	[z__NotoSansThai[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSansZanabazarSquare-Regular.ttf	71400	PASS	
+fonts/z__NotoSerifBengali[wdth,wght].ttf	981812	FAIL	[z__NotoSerifBengali[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifDevanagari[wdth,wght].ttf	757692	FAIL	[z__NotoSerifDevanagari[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifDogra-Regular.ttf	94812	PASS	
+fonts/z__NotoSerifEthiopic[wdth,wght].ttf	1057996	FAIL	[z__NotoSerifEthiopic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifGrantha-Regular.ttf	416716	PASS	
+fonts/z__NotoSerifGujarati[wght].ttf	378356	FAIL	[z__NotoSerifGujarati[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifGurmukhi[wght].ttf	144664	FAIL	[z__NotoSerifGurmukhi[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifKannada[wght].ttf	495384	FAIL	[z__NotoSerifKannada[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifKhmer[wdth,wght].ttf	498288	FAIL	[z__NotoSerifKhmer[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifKhojki[wght].ttf	233136	FAIL	[z__NotoSerifKhojki[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifMalayalam[wght].ttf	242048	FAIL	[z__NotoSerifMalayalam[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifNPHmong[wght].ttf	133168	FAIL	[z__NotoSerifNPHmong[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifSinhala[wdth,wght].ttf	1026928	FAIL	[z__NotoSerifSinhala[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifTamil-Italic[wdth,wght].ttf	422328	FAIL	[z__NotoSerifTamil-Italic[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifTamil[wdth,wght].ttf	420124	FAIL	[z__NotoSerifTamil[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifTelugu[wght].ttf	543100	FAIL	[z__NotoSerifTelugu[wght].ttf] illegal characters: "[" "]"
+fonts/z__NotoSerifThai[wdth,wght].ttf	292188	FAIL	[z__NotoSerifThai[wdth,wght].ttf] illegal characters: "[" "," "]"
+fonts/z__NotoSerifTibetan[wght].ttf	2063504	FAIL	[z__NotoSerifTibetan[wght].ttf] illegal characters: "[" "]"
+fonts/z__Tinos-Bold.ttf	597880	PASS	
+fonts/z__Tinos-BoldItalic.ttf	578976	PASS	
+fonts/z__Tinos-Italic.ttf	565016	PASS	
+fonts/z__Tinos-Regular.ttf	521588	PASS	
+freebl3.dll	1206784	PASS	
+gkcodecs.dll	11427328	PASS	
+gmp-clearkey/0.1/clearkey.dll	108544	PASS	
+gmp-clearkey/0.1/manifest.json	229	PASS	
+installation_dir_layout/versioned/InstallationDirLayout.dll	9728	PASS	
+lgpllibs.dll	166400	PASS	
+libEGL.dll	52224	PASS	
+libGLESv2.dll	4869632	PASS	
+marshal.dll	509752	PASS	
+mozavcodec.dll	4577792	PASS	
+mozavutil.dll	610304	PASS	
+mozglue.dll	662016	PASS	
+mozinference.dll	3153920	PASS	
+msvcp140.dll	643512	PASS	
+msvcp140_1.dll	35768	PASS	
+msvcp140_2.dll	274872	PASS	
+msvcp140_atomic_wait.dll	57792	PASS	
+msvcp140_codecvt_ids.dll	31160	PASS	
+nmhproxy.exe	647680	PASS	
+notificationserver.dll	62976	PASS	
+nss3.dll	2963456	PASS	
+omni.ja	68074109	PASS	
+onnxruntime.dll	9430016	PASS	
+platform.ini	102	PASS	
+plugin-container.exe	194560	PASS	
+precomplete	2173	PASS	
+private_browsing.VisualElementsManifest.xml	559	PASS	
+private_browsing.exe	36864	PASS	
+properties.json	9160	PASS	
+removed-files	16	PASS	
+softokn3.dll	325632	PASS	
+vccorlib140.dll	350648	PASS	
+vcruntime140.dll	178616	PASS	
+vcruntime140_1.dll	50112	PASS	
+vcruntime140_threads.dll	38840	PASS	
+xul.dll	180834816	PASS	

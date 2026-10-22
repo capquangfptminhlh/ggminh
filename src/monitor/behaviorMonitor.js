@@ -42,6 +42,10 @@ class BehaviorMonitor {
     this.prune();
     const temporary = this.file + '.tmp';
     fs.writeFileSync(temporary, JSON.stringify(this.events), { encoding: 'utf8', mode: 0o600 });
+    // mode above only applies on creation; enforce it on a reused
+    // temp file too, or the rename publishes looser permissions
+    // (R13 audit; same pattern as src/monitor/warningHistory.js).
+    try { fs.chmodSync(temporary, 0o600); } catch (_) { /* best effort */ }
     fs.renameSync(temporary, this.file);
     return this.getReport();
   }

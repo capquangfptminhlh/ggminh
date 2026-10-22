@@ -52,8 +52,34 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
               throw "Electron UI capture timed out"
             }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png")) {
-              if (-not (Test-Path ("dist\" + $screen))) { throw "Missing actual Electron screenshot: $screen" }
+            if ($proc.ExitCode -ne 0) { throw "Electron UI capture exited $($proc.ExitCode)" }
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png")) {
+              $file = Get-Item ("dist\" + $screen) -ErrorAction Stop
+              if ($file.Length -eq 0) { throw "Empty actual Electron screenshot: $screen" }
+            }
+          } finally {
+            if (-not $proc.HasExited) {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
+          }
+      - name: Capture packaged Electron UI
+        shell: pwsh
+        env:
+          LHM_CI_UI_CAPTURE: '1'
+        run: |
+          $capture = Join-Path $PWD 'dist\packaged-ui'
+          New-Item -ItemType Directory -Force -Path $capture | Out-Null
+          $env:LHM_CI_UI_CAPTURE_DIR = $capture
+          $proc = Start-Process -FilePath ".\dist\win-unpacked\LHM Ads Browser.exe" -PassThru
+          try {
+            if (-not $proc.WaitForExit(45000)) {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+              throw "Packaged Electron UI capture timed out"
+            }
+            if ($proc.ExitCode -ne 0) { throw "Packaged Electron UI capture exited $($proc.ExitCode)" }
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png")) {
+              $file = Get-Item (Join-Path $capture $screen) -ErrorAction Stop
+              if ($file.Length -eq 0) { throw "Empty packaged Electron screenshot: $screen" }
             }
           } finally {
             if (-not $proc.HasExited) {
@@ -65,7 +91,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: LHM-Workspace-UI-Preview
-          path: dist/workspace-*.png
+          path: |
+            dist/workspace-*.png
+            dist/packaged-ui/*.png
           if-no-files-found: ignore
           retention-days: 14
       - name: Upload EXE

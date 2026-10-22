@@ -1,0 +1,37 @@
+{
+  "classification": "LOCAL_STAGE0_CONFIGURED_PROFILE_REHEARSAL_ONLY",
+  "rehearsalOf": "stage0-measure/run-config.js (Windows CI configured measurement)",
+  "differencesFromCiScript": [
+    "host platform gate: linux instead of win32",
+    "executable basename: camoufox/camoufox-bin instead of camoufox.exe",
+    "report filename: stage0-config-rehearsal-report.json"
+  ],
+  "executedAt": "2026-10-21T17:49:06.424Z",
+  "branchHead": "f28029655e59aa020d8a040521747a7c43c15e36",
+  "hostPlatform": "linux",
+  "browserExecutableSha256": "2a2cb03f6ca4cfa96cdb9d0991b52f4dc02d7f097d3253d355f6a6361ce28669",
+  "driver": "CamoufoxPlaywrightController + playwright-core.firefox",
+  "temporarySyntheticProfiles": true,
+  "concurrentProfiles": 2,
+  "identity": {
+    "status": "FAIL",
+    "errorType": "Error",
+    "reason": "Verified absolute Camoufox executable required"
+  },
+  "extended": {
+    "status": "NOT_RUN"
+  },
+  "checks": {
+    "status": "FAIL"
+  },
+  "network": {
+    "proxy": "NOT_RUN",
+    "dns": "NOT_RUN",
+    "webrtc": "NOT_RUN",
+    "externalEgress": "NOT_RUN"
+  },
+  "signedReleaseAcceptance": "NOT_RUN",
+  "installedClientAcceptance": "NOT_RUN",
+  "caveat": "Matching a pinned identity at a local origin does not prove websites cannot associate profiles",
+  "cleanup": "PASS"
+}

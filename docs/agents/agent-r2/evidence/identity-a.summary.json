@@ -1,0 +1,24 @@
+{
+  "format": "camoufox-camou-config",
+  "version": 1,
+  "generator": "camoufox@0.5.8",
+  "generatedAt": "2026-10-21T18:01:01.955Z",
+  "constraints": {
+    "os": "windows",
+    "locale": "en-US",
+    "timezone": "America/New_York"
+  },
+  "expectations": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:156.0) Gecko/20100101 Firefox/156.0",
+    "platform": "Win32",
+    "language": "en-US",
+    "timezone": "America/New_York",
+    "screenWidth": 2560,
+    "screenHeight": 1440,
+    "hardwareConcurrency": 4,
+    "webglVendor": "Google Inc. (Intel)",
+    "webglRenderer": "ANGLE (Intel, Intel(R) HD Graphics 400 Direct3D11 vs_5_0 ps_5_0), or similar"
+  },
+  "envChunks": 1,
+  "note": "CAMOU_CONFIG env chunks intentionally not copied into the evidence pack"
+}
