@@ -38,6 +38,16 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-ai-budget-'));
   second.reserveAttempt();
   assert.strictEqual(new AIUsageBudget(root,{clock}).status().attempts,1);
 
+  const crossoverRoot=fs.mkdtempSync(path.join(root,'crossover-'));
+  time=new Date(2026,10,30,23,59,59).getTime();
+  const crossover=new AIUsageBudget(crossoverRoot,{clock});
+  crossover.setLimit(1);
+  crossover.reserveAttempt();
+  time=new Date(2026,11,1,0,0,1).getTime();
+  crossover.recordResponse({promptTokens:10,completionTokens:1});
+  assert.strictEqual(crossover.status().attempts,0,
+    'A late response must not create an unreserved attempt in the new month');
+  assert.strictEqual(crossover.status().successes,0);
   const advisorRoot=fs.mkdtempSync(path.join(root,'advisor-'));
   const codec={
    isEncryptionAvailable:()=>true,
