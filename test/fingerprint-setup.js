@@ -33,6 +33,8 @@ assert.deepEqual(validateCamoufoxPreferences({
  mode:'native',language:'vi-VN',languages:['vi-VN'],timezone:'Asia/Ho_Chi_Minh'
 }),{language:'vi-VN',timezone:'Asia/Ho_Chi_Minh'});
 assert.deepEqual(validateCamoufoxPreferences({mode:'native'}),{language:null,timezone:null});
+assert.deepEqual(validateCamoufoxPreferences({mode:'native',languages:['vi-VN','vi','en-US','en']}),
+ {language:'vi-VN',timezone:null},'legacy ordered BCP-47 language preferences remain supported');
 assert.throws(()=>validateCamoufoxPreferences({language:'xx-XX'}),/Unsupported/);
 assert.throws(()=>validateCamoufoxPreferences({timezone:'Mars/Olympus'}),/Unsupported/);
 assert.throws(()=>validateCamoufoxPreferences({language:'vi-VN',languages:['en-US']}),/disagree/);
