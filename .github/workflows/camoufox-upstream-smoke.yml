@@ -154,6 +154,9 @@ jobs:
           LHM_STAGE0_IDENTITY_A: ${{ runner.temp }}\identity-a.json
           LHM_STAGE0_IDENTITY_B: ${{ runner.temp }}\identity-b.json
         run: |
+          # Configured Stage-0 must use the SHA pinned to the same verified
+          # upstream binary as the baseline; missing SHA used to fail early.
+          $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
           node stage0-measure/run-config.js
           if($LASTEXITCODE -ne 0){
            throw "Configured Stage-0 measurement failed with exit code $LASTEXITCODE"
