@@ -45,7 +45,7 @@ function peFixture(destination){
   assert.strictEqual(manager.status().available,true);
   assert.throws(()=>manager.resolve('chromium'),/not available/);
   assert.throws(()=>new BundledEngineManager(base,{platform:'win32',
-    inspect:(_engine,f)=>sha256File(f)
+    publicKey:keys.publicKey,inspect:(_engine,f)=>sha256File(f)
   }).verify(),/Unexpected engine type/);
   fs.appendFileSync(dll,'unauthorized');
   assert.throws(()=>manager.verify(),/SHA-256 mismatch/);
