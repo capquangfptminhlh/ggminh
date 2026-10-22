@@ -1,0 +1,13 @@
+/* Measurable local metadata performance; no marketing safety scores. */
+.lhm-perf-dialog{max-width:840px}
+.lhm-perf-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#performance-lab-status{font-size:.85rem;color:#cbd5e1;min-height:1.6em}
+.lhm-perf-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.lhm-perf-head{grid-column:1/-1;border:1px solid rgba(148,163,184,.22);background:rgba(15,23,42,.6);
+border-radius:12px;padding:12px;font-weight:700;font-size:13px;color:#a7f3d0}
+.lhm-perf-card{padding:14px;border-radius:12px;border:1px solid rgba(148,163,184,.27);
+background:rgba(15,23,42,.58);min-width:0;display:flex;flex-direction:column;gap:8px}
+.lhm-perf-card strong{color:#f1f5f9;font-size:14px}
+.lhm-perf-time{font-size:17px;font-weight:750;color:#93c5fd;overflow-wrap:anywhere}
+.lhm-perf-card small{font-size:12px;color:#cbd5e1}
+@media(max-width:700px){.lhm-perf-metrics{grid-template-columns:minmax(0,1fr)}}
