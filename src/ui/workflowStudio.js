@@ -3,6 +3,7 @@
   const api = window.api;
   const el = id => document.getElementById(id);
   let workflows = [];
+  let starterTemplates = [];
   let current = null;
   let dragged = null;
   let recorderBusy = false;
@@ -86,6 +87,50 @@
       none.textContent='Không tìm thấy quy trình phù hợp.';
       list.append(none);
     }
+  }
+  async function refreshStarterTemplates() {
+    const catalog = await api.studioTemplates();
+    if (!Array.isArray(catalog)) throw Error('Danh sách mẫu RPA không hợp lệ');
+    starterTemplates = catalog;
+    const select = el('studio-template-select');
+    const prior = select.value;
+    select.replaceChildren();
+    const prompt = document.createElement('option');
+    prompt.value = '';
+    prompt.textContent = 'Chọn một mẫu để bắt đầu';
+    select.append(prompt);
+    for (const tpl of catalog) {
+      const option = document.createElement('option');
+      option.value = tpl.id;
+      option.textContent = tpl.name;
+      option.title = tpl.description;
+      select.append(option);
+    }
+    if (catalog.some(t => t.id === prior)) select.value = prior;
+    el('studio-template-load').disabled = !select.value;
+    describeStarterTemplate();
+  }
+  function describeStarterTemplate() {
+    const selected = starterTemplates.find(t => t.id === el('studio-template-select').value);
+    el('studio-template-description').textContent = selected
+      ? selected.description + ' Mẫu chưa được lưu hoặc chạy; hãy sửa URL và xác nhận quyền truy cập.'
+      : 'Mẫu hoạt động cục bộ, không tự chạy. Hãy sửa URL, tên miền, kiểm tra bước và lưu trước khi sử dụng.';
+  }
+  function loadStarterTemplate() {
+    const selected = starterTemplates.find(t => t.id === el('studio-template-select').value);
+    if (!selected) return;
+    if (!confirm('Tạo bản nháp mới từ mẫu "' + selected.name +
+      '"? Các thay đổi chưa lưu trong trình soạn thảo hiện tại sẽ bị mất.')) return;
+    current = {
+      name: selected.name,
+      profileId: el('studio-profile').value,
+      hosts: selected.hosts,
+      steps: structuredClone(selected.steps)
+    };
+    el('studio-name').value = current.name;
+    el('studio-hosts').value = current.hosts;
+    renderSteps();
+    alert('Đã tạo bản nháp từ mẫu. Hãy điều chỉnh URL/tên miền và chọn hồ sơ của bạn, sau đó bấm Lưu. Mẫu không tự động chạy.');
   }
   function createNew() {
     current = {
@@ -452,6 +497,7 @@
     el('modal-studio').classList.add('open');
     if(!el('studio-schedule-at').value)scheduleDateDefault();
     refreshSchedules().catch(console.error);
+    refreshStarterTemplates().catch(error => console.error('Không tải được mẫu RPA:', error));
     updateProfiles().then(refreshList).then(() => {
       if (!current) createNew();
       return Promise.all([updateStatus(), recorderStatus()]);
@@ -463,6 +509,11 @@
     el('studio-close').addEventListener('click', close);
     el('studio-done').addEventListener('click', close);
     el('studio-new').addEventListener('click', createNew);
+    el('studio-template-select').addEventListener('change', () => {
+      el('studio-template-load').disabled = !el('studio-template-select').value;
+      describeStarterTemplate();
+    });
+    el('studio-template-load').addEventListener('click', loadStarterTemplate);
     el('studio-schedule-add').addEventListener('click',createSchedule);
     el('studio-workflow-search').addEventListener('input',()=>refreshList().catch(console.error));
     el('studio-graph-refresh').addEventListener('click', () => renderGraph().catch(console.error));
