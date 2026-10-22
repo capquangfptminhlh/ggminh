@@ -88,6 +88,7 @@ contextBridge.exposeInMainWorld('api', {
   recoverProfileFromSnapshot: (passphrase,name,confirmation) =>
     ipcRenderer.invoke('session-snapshots-recover-profile',passphrase,name,confirmation),
   aiAdvisorStatus: () => ipcRenderer.invoke('ai-advisor-status'),
+  aiAdvisorSetBudget: limit => ipcRenderer.invoke('ai-advisor-budget-set',limit),
   aiAdvisorConfigure: data => ipcRenderer.invoke('ai-advisor-configure',data),
   aiAdvisorForgetKey: () => ipcRenderer.invoke('ai-advisor-forget-key'),
   aiAdvisorAsk: data => ipcRenderer.invoke('ai-advisor-ask',data),

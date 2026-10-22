@@ -650,6 +650,20 @@
           <button class="btn btn-secondary" type="button" id="ai-advisor-forget-key">Xóa API key</button>
           <span id="ai-advisor-key-status" role="status"></span>
         </div>
+        <section class="lhm-ai-budget-panel" aria-label="Hạn mức sử dụng AI">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ai-advisor-monthly-budget">Giới hạn yêu cầu AI mỗi tháng (0 = không giới hạn)</label>
+              <input id="ai-advisor-monthly-budget" type="number" min="0" max="1000" step="1" value="0">
+            </div>
+            <div class="form-group">
+              <label for="ai-advisor-save-budget">Bảo vệ hạn mức</label>
+              <button class="btn btn-secondary" type="button" id="ai-advisor-save-budget">Áp dụng hạn mức</button>
+            </div>
+          </div>
+          <p id="ai-advisor-budget-status" class="lhm-bulk-help" role="status" aria-live="polite">Đang kiểm tra lượt dùng AI tháng này…</p>
+          <p class="lhm-bulk-help">Đếm số yêu cầu AI (kể cả lần thất bại/đã dừng) trên máy này, không phải hạn mức USD hay số token bảo đảm. Dữ liệu chỉ gồm số đếm và tổng token khi nhà cung cấp trả về; không lưu câu hỏi hoặc khóa API.</p>
+        </section>
         <div class="form-group">
           <label for="ai-advisor-question">Câu hỏi (tối đa 2.000 ký tự)</label>
           <textarea id="ai-advisor-question" rows="4" maxlength="2000" placeholder="Ví dụ: Nên phân nhóm và kiểm tra cấu hình profile ra sao để dễ quản lý?"></textarea>
