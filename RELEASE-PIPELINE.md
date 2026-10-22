@@ -80,8 +80,11 @@ Workflow `.github/workflows/windows-exe.yml` (Node 22, windows-latest):
   Ed25519 bằng khóa publisher tách riêng khóa license — xem báo cáo
   Agent 2 đợt trước), không nằm trong artifact EXE ở bản preview:
   staging `resources/camoufox-engine/` hiện chỉ có README.
-- Khóa publisher, chứng thư Authenticode: tài sản của chủ dự án, không
-  nằm trong repo, không agent nào tự tạo khóa production.
+- Khóa publisher dùng để **xác minh engine/manifest** là tài sản bảo mật
+  của chủ dự án; không nằm trong repo, không agent tự tạo khóa production.
+- **Không yêu cầu chứng thư Authenticode cho EXE/installer.** Theo Hiến
+  pháp v1.4 (22/10/2026), đây là lựa chọn tự nguyện về sau, không phải
+  điều kiện phát hành. Không nhầm với chữ ký manifest/engine Ed25519.
 
 ### Bước 5 — Tiếp nhận artifact `[DEV]`
 Với mỗi artifact tải về từ CI, ghi vào hồ sơ phát hành (Mục 23):
@@ -106,10 +109,16 @@ Với mỗi artifact tải về từ CI, ghi vào hồ sơ phát hành (Mục 23
   (Mục 12.4). Agent chỉ đề xuất.
 
 ### Bước 8 — Phân phối `[OWNER]`
-- EXE hiện **chưa ký Authenticode** (chưa có chứng thư — hạng mục tài
-  khoản của chủ dự án): người dùng cuối sẽ gặp cảnh báo SmartScreen
-  "unknown publisher"; tài liệu bán hàng/hỗ trợ phải nói đúng điều này,
-  không hứa hẹn khác (Mục 11).
+- EXE/installer **được phép phát hành không ký Authenticode** theo quyết
+  định chính thức của chủ dự án (Hiến pháp Mục 12); không cần mua chứng
+  thư ký EXE để hoàn thành cổng phát hành.
+- Công bố rõ "Nhà phát hành chưa được Windows xác minh bằng chứng thư
+  ký mã"; SmartScreen/Defender có thể hiển thị cảnh báo hoặc chính sách
+  tổ chức có thể chặn cài đặt. Không hứa ứng dụng không bị cảnh báo;
+  không hướng dẫn vô hiệu hóa SmartScreen/Defender.
+- Nhà phát hành vẫn phải công bố nơi tải chính thức, commit của bản build
+  cùng SHA-256 của đúng file EXE, kết quả CI và nghiệm thu trên máy thật.
+  Xác minh publisher/manifest engine và chữ ký cập nhật không thay đổi.
 - Ứng dụng hiện dùng **icon mặc định của Electron** vì chưa cấu hình
   `build.win.icon` và repo không có file icon ứng dụng (đã quan sát
   trong cả hai log build thử, Mục 5) — cần tài sản icon từ chủ dự án
@@ -204,5 +213,9 @@ phạm vi đợt triển khai.
   hoặc chạy `npm run build:win` trên máy Windows của chủ dự án).
 - Áp dụng hai diff ở INTEGRATION-NOTES rồi chạy lại cổng 2: NOT_RUN —
   chờ điều phối áp diff và chủ dự án cho push.
-- Icon ứng dụng + ký Authenticode: NOT_RUN — chờ tài sản/quyết định
-  của chủ dự án.
+- Icon ứng dụng: quyết định riêng về nhận diện sản phẩm, không đồng
+  nghĩa miễn nghiệm thu giao diện.
+- Authenticode ký EXE/installer: **KHÔNG BẮT BUỘC / được chủ dự án miễn
+  yêu cầu (2026-10-22)**; không ghi NOT_RUN như một điều kiện chặn
+  phát hành. Chữ ký engine/manifest và cập nhật vẫn theo chính sách
+  xác minh nguồn, độc lập với chữ ký file cài.
