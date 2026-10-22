@@ -35,6 +35,7 @@ const { CHECKS: ADS_QA_CHECKS, buildCampaignQaReport } = require('./src/ads/camp
 const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
+const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
@@ -443,6 +444,25 @@ function initIPC() {
 
   ipcMain.handle('audit-profile-isolation', () =>
     auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id) }));
+  // Measurements contain aggregate numbers only. They are not browser
+  // startup timings and never leave this computer automatically.
+  let lastPerformanceEvidence=null;
+  ipcMain.handle('performance-lab-run', () => {
+    lastPerformanceEvidence=runPerformanceLab(store);
+    return lastPerformanceEvidence;
+  });
+  ipcMain.handle('performance-lab-export', async () => {
+    if(!lastPerformanceEvidence)throw Error('Hãy chạy phép đo trước khi xuất báo cáo');
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Lưu bằng chứng hiệu năng LHM (chỉ số tổng hợp)',
+      defaultPath:'LHM-Performance-'+lastPerformanceEvidence.generatedAt.slice(0,10)+'.json',
+      filters:[{name:'JSON performance evidence',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    const text=JSON.stringify(lastPerformanceEvidence,null,2)+'\n';
+    fs.writeFileSync(filePath,text,{encoding:'utf8',mode:0o600});
+    return {canceled:false,bytes:Buffer.byteLength(text,'utf8')};
+  });
   ipcMain.handle('dashboard-overview', () => {
     const profiles = store.getProfiles();
     return buildDashboardSummary({

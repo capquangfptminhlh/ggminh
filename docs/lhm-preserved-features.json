@@ -329,6 +329,34 @@
           "api.previewAdsQa"
         ]
       ]
+    },
+    {
+      "id": "lhm-performance-lab",
+      "label": "Aggregate-only, read-only profile metadata performance evidence and synthetic benchmark",
+      "files": [
+        "src/ops/performanceLab.js",
+        "src/ui/performanceLab.js",
+        "src/ui/performanceLab.css",
+        "tools/profile-scale-benchmark.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "performance-lab-run"
+        ],
+        [
+          "preload.js",
+          "runPerformanceLab"
+        ],
+        [
+          "src/ui/index.html",
+          "btn-performance-lab"
+        ],
+        [
+          "package.json",
+          "node test/performance-lab.js"
+        ]
+      ]
     }
   ]
 }

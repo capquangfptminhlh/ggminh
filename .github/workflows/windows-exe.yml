@@ -21,6 +21,15 @@ jobs:
         run: npm ci
       - name: Run verification tests
         run: npm test
+      - name: Measure synthetic local profile scale (not browser launch)
+        run: node tools/profile-scale-benchmark.js --sizes 100,500,1000 --iterations 12 --output benchmarks/synthetic-profile-scale.json
+      - name: Upload measurable performance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Metadata-Performance-Windows
+          path: benchmarks/synthetic-profile-scale.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Windows Win32 helper smoke test
         shell: pwsh
         run: |
