@@ -141,6 +141,8 @@ async function run(){
  });
  const tokens={a:crypto.randomBytes(16).toString('hex'),b:crypto.randomBytes(16).toString('hex')};
  let cleanupError=null;
+ let phase='preflight';
+ const enter=name=>{phase=name;console.log('[Stage-0 configured phase] '+name)};
  const report={
   classification:'LOCAL_STAGE0_CONFIGURED_PROFILE_DIAGNOSTIC_ONLY',
   executedAt:new Date().toISOString(),
@@ -156,20 +158,28 @@ async function run(){
   caveat:'Matching a pinned identity at a local origin does not prove websites cannot associate profiles'
  };
  try{
+  enter('launch-a');
   const a=await controller.launch(profile('stage0_cfg_a',idA.identity));
+  enter('launch-b');
   const b=await controller.launch(profile('stage0_cfg_b',idB.identity));
   assert.equal(a.info.identityApplied,true,'profile A identity was not applied');
   assert.equal(b.info.identityApplied,true,'profile B identity was not applied');
+  enter('create-pages');
   const ap=await a.context.newPage(),bp=await b.context.newPage();
+  enter('navigate');
   await Promise.all([ap.goto(server.url),bp.goto(server.url)]);
+  enter('write-a');
   await writeValues(ap,tokens.a);
   const beforeB=await readValues(bp);
   await writeValues(bp,tokens.b);
+  enter('capture-storage-identity-extended');
   const [afterA,afterB,exposedA,exposedB,extendedA,extendedB]=await Promise.all([
    readValues(ap),readValues(bp),captureEnvironment(ap),captureEnvironment(bp),
    captureExtended(ap),captureExtended(bp)
   ]);
+  enter('stop-before-restart');
   await Promise.all([controller.stop('stage0_cfg_a'),controller.stop('stage0_cfg_b')]);
+  enter('restart');
   const ra=await controller.launch(profile('stage0_cfg_a',idA.identity));
   const rb=await controller.launch(profile('stage0_cfg_b',idB.identity));
   const rap=await ra.context.newPage(),rbp=await rb.context.newPage();
@@ -177,6 +187,7 @@ async function run(){
   const [restartA,restartB,restartExposedA,restartExposedB]=await Promise.all([
    readValues(rap),readValues(rbp),captureEnvironment(rap),captureEnvironment(rbp)
   ]);
+  enter('evaluate-isolation-and-identity');
   const observations=stageStorageResult(beforeB,afterA,afterB,restartA,restartB,tokens);
   report.checks={status:observations.pass?'PASS':'FAIL',...observations};
   const matchA=identityExpectationResult(idA.expectations,exposedA);
@@ -208,7 +219,7 @@ async function run(){
   };
  }catch(error){
   report.identity={status:'FAIL',errorType:error?.code||error?.name||'Error',
-   reason:String(error.message||error).slice(0,280)};
+   phase,reason:String(error.message||error).slice(0,280)};
   if(report.checks.status==='NOT_RUN')report.checks={status:'FAIL'};
  }finally{
   for(const id of ['stage0_cfg_a','stage0_cfg_b']){
