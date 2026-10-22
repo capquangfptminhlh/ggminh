@@ -1,5 +1,6 @@
 'use strict';
 const Store = require('../db/store');
+const { parseAdsPowerProfileJson } = require('./adspowerJsonImport');
 
 const MAX_BYTES = 256 * 1024;
 const MAX_ROWS = 200;
@@ -80,7 +81,9 @@ function asArray(value,separator){
   return value ? value.split(separator).map(x=>x.trim()).filter(Boolean) : [];
 }
 function prepareImport(store,csv){
-  const rows=parseDelimited(csv);
+  const first = typeof csv === 'string' ? csv.replace(/^\uFEFF/, '').trimStart()[0] : '';
+  const isJson = first === '{' || first === '[';
+  const rows = isJson ? parseAdsPowerProfileJson(csv) : parseDelimited(csv);
   const preview=Object.create(Store.prototype);
   preview.baseDir=store.baseDir;
   preview.data=structuredClone(store.data);
@@ -106,7 +109,8 @@ function prepareImport(store,csv){
         engine:row.engine?.toLowerCase()==='firefox'?'gecko':(row.engine?.toLowerCase()||'chromium'),
         startUrls:asArray(row.starturls,'|').length ? asArray(row.starturls,'|') : ['https://ads.google.com/'],
         tags:asArray(row.tags,'|'),notes:row.notes||'',
-        proxy,fingerprint:{mode:'native'}
+        proxy,fingerprint:{mode:'native'},
+        requiresProxySetup:row.requiresproxysetup===true
       });
       created.push(saved);
       groups.set(saved.group,(groups.get(saved.group)||0)+1);
@@ -120,7 +124,10 @@ function prepareImport(store,csv){
     count:created.length,
     groups:[...groups].map(([name,count])=>({name,count})),
     engines,configuredProxies:proxies,
-    note:'All rows validated. No cookies, sessions, fingerprints, passwords or 2FA imported.'
+    proxySetupRequired:created.filter(p=>p.requiresProxySetup===true).length,
+    note:isJson
+      ? 'Dữ liệu AdsPower JSON chỉ nhập tên/nhóm/URL/tag. Cần cấu hình proxy trước khi mở; không nhập cookie, mật khẩu, ghi chú, fingerprint hoặc phiên đăng nhập.'
+      : 'Đã kiểm tra CSV. Không nhập cookie, phiên đăng nhập, fingerprint, mật khẩu hoặc 2FA.'
   }};
 }
 function inspectProfilesCsv(store,csv){

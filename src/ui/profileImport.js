@@ -47,7 +47,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       verifiedText=current;
       message.textContent='Hợp lệ: '+result.count+' hồ sơ; '+
         result.groups.length+' nhóm; '+result.configuredProxies+
-        ' proxy cấu hình (chưa được kiểm tra kết nối). Không nhập cookie/mật khẩu.';
+        ' proxy cấu hình (chưa được kiểm tra kết nối). '+result.note;
       commitButton.disabled=false;
     }catch(error){message.textContent='Không hợp lệ: '+error.message;}
     finally{previewButton.disabled=false;}
