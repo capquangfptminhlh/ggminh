@@ -1,5 +1,6 @@
 'use strict';
 const Store = require('../db/store');
+const { parseAdsPowerProfileJson } = require('./adspowerJsonImport');
 
 const MAX_BYTES = 256 * 1024;
 const MAX_ROWS = 200;
@@ -80,7 +81,8 @@ function asArray(value,separator){
   return value ? value.split(separator).map(x=>x.trim()).filter(Boolean) : [];
 }
 function prepareImport(store,csv){
-  const rows=parseDelimited(csv);
+  const isJson = typeof csv === 'string' && /^[\\s\\uFEFF]*[\\[{]/.test(csv);
+  const rows = isJson ? parseAdsPowerProfileJson(csv) : parseDelimited(csv);
   const preview=Object.create(Store.prototype);
   preview.baseDir=store.baseDir;
   preview.data=structuredClone(store.data);
@@ -106,7 +108,8 @@ function prepareImport(store,csv){
         engine:row.engine?.toLowerCase()==='firefox'?'gecko':(row.engine?.toLowerCase()||'chromium'),
         startUrls:asArray(row.starturls,'|').length ? asArray(row.starturls,'|') : ['https://ads.google.com/'],
         tags:asArray(row.tags,'|'),notes:row.notes||'',
-        proxy,fingerprint:{mode:'native'}
+        proxy,fingerprint:{mode:'native'},
+        requiresProxySetup:row.requiresproxysetup===true
       });
       created.push(saved);
       groups.set(saved.group,(groups.get(saved.group)||0)+1);
@@ -120,7 +123,7 @@ function prepareImport(store,csv){
     count:created.length,
     groups:[...groups].map(([name,count])=>({name,count})),
     engines,configuredProxies:proxies,
-    note:'All rows validated. No cookies, sessions, fingerprints, passwords or 2FA imported.'
+    note:'Metadata only. Imported AdsPower JSON requires manual proxy setup before launch; no cookies, sessions, fingerprints, proxy credentials, passwords or 2FA are imported.'
   }};
 }
 function inspectProfilesCsv(store,csv){
