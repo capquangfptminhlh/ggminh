@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const html=read('src/ui/index.html'),renderer=read('src/ui/renderer.js');
 const style=read('src/ui/styles.css');
 const consistency=require('../src/ui/profileConsistency');
-const {Store}=require('../src/db/store');
+const Store=require('../src/db/store');
 const {validateCamoufoxPreferences}=require('../src/engine/camoufoxPreferences');
 const ids=['fp-cap-ua','fp-cap-locale','fp-cap-device','fp-cap-render',
  'fp-cap-network','fp-cap-pin','fp-preview-engine','fp-preview-language',
