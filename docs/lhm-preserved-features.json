@@ -389,6 +389,29 @@
           "node test/online-update-center.js"
         ]
       ]
+    },
+    {
+      "id": "lhm-release-operator-tooling",
+      "label": "Offline encrypted update publisher bootstrap, signed installer release preflight, and owner-only draft release workflow",
+      "files": [
+        "tools/setup-update-publisher.js",
+        "tools/update-release-preflight.js",
+        ".github/workflows/prepare-draft-release.yml"
+      ],
+      "anchors": [
+        [
+          "package.json",
+          "node test/online-release-operator.js"
+        ],
+        [
+          "docs/LHM_SIGNED_ONLINE_UPDATES.md",
+          "tools/setup-update-publisher.js"
+        ],
+        [
+          "src/update/updateCenter.js",
+          "downloadVerifiedArtifact"
+        ]
+      ]
     }
   ]
 }
