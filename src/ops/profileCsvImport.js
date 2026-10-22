@@ -81,7 +81,8 @@ function asArray(value,separator){
   return value ? value.split(separator).map(x=>x.trim()).filter(Boolean) : [];
 }
 function prepareImport(store,csv){
-  const isJson = typeof csv === 'string' && /^[\\s\\uFEFF]*[\\[{]/.test(csv);
+  const first = typeof csv === 'string' ? csv.replace(/^\uFEFF/, '').trimStart()[0] : '';
+  const isJson = first === '{' || first === '[';
   const rows = isJson ? parseAdsPowerProfileJson(csv) : parseDelimited(csv);
   const preview=Object.create(Store.prototype);
   preview.baseDir=store.baseDir;
