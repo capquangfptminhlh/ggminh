@@ -19,6 +19,10 @@
 > phân biệt web/native/OS (Mục 21), bằng chứng cảnh báo (Mục 22), hồ sơ
 > nghiệm thu (Mục 23); Mục 8 phân biệt trạng thái hiện tại và ĐỊNH HƯỚNG
 > GECKO do chủ dự án duyệt — ghi định hướng không phải phép đổi code.
+> Bản v1.4 (2026-10-22, chủ dự án quyết định): **không bắt buộc ký số
+> Authenticode cho EXE/installer Windows** để phát hành thương mại.
+> Giữ nguyên cổng nghiệm thu, bảo vệ dữ liệu, xác minh nguồn engine và
+> chữ ký tính toàn vẹn cho manifest/cập nhật (xem Mục 8, 11, 12).
 
 ## 1. Mục đích sản phẩm
 
@@ -249,6 +253,10 @@ dụng); kiểm chứng bằng phép đo.
   phải độc lập). Không SQLite migration trong phạm vi hiện tại.
 - Không tự viết nhân trình duyệt; không né antivirus/SmartScreen;
   không tải/chạy engine chưa kiểm chứng (digest + chữ ký publisher).
+- Chữ ký Authenticode trên **file EXE/installer ứng dụng** là tùy chọn;
+  không bắt buộc mua chứng thư trước khi giao bản thương mại. Quyết định
+  này KHÔNG áp dụng cho xác minh engine/bundled manifest hay quy tắc
+  xác thực bản cập nhật, và KHÔNG cho phép né cơ chế bảo vệ Windows.
 
 ## 8. Kiến trúc đã chốt
 
@@ -340,6 +348,11 @@ bài giới thiệu, câu chữ trong ứng dụng) và mọi báo cáo nội b�
    có thời điểm và phạm vi đo.
 5. Báo cáo của agent ngoài (kể cả văn phong tích cực, khen sản phẩm)
    vẫn phải qua kiểm chứng độc lập như mọi báo cáo khác (Mục 9.2).
+6. Khi phân phối EXE/installer **chưa ký Authenticode**, ghi rõ
+   "Nhà phát hành chưa được Windows xác minh bằng chứng thư ký mã".
+   Người dùng có thể thấy cảnh báo SmartScreen/Defender hoặc bị chính sách
+   tổ chức chặn cài đặt. Không hứa hết cảnh báo, không giả mạo nhà phát
+   hành, không hướng dẫn tắt/bỏ qua phần mềm bảo vệ để cài đặt.
 
 ## 12. Chuỗi cổng nghiệm thu (thứ tự bắt buộc trước phát hành)
 
@@ -352,6 +365,23 @@ Không bước nào được bỏ qua hay đảo thứ tự:
    cài đặt, có gói bằng chứng (báo cáo đo, ảnh chụp, nhật ký).
 4. Chỉ sau cổng 3, chủ dự án mới quyết định gắn tag và gộp vào
    `main`. Agent đề xuất, chủ dự án quyết.
+
+**Quyết định chủ dự án 2026-10-22 — bản cài không ký số:**
+- **KHÔNG yêu cầu** chữ ký Authenticode, chứng thư EV/OV, hoặc chứng
+  thư ký EXE/installer như điều kiện bắt buộc của bốn cổng trên.
+- CI Windows phải tạo ra installer EXE thật và lưu commit, SHA-256 của
+  file, kết quả kiểm thử. Gate 3 vẫn phải cài, chạy thử và ghi bằng chứng
+  trên máy Windows độc lập; Gate 4 vẫn cần quyết định của chủ dự án.
+- Kênh phân phối phải công bố rõ bản cài **không ký Authenticode**,
+  không bảo đảm không xuất hiện cảnh báo hoặc việc cài đặt sẽ được Windows
+  chấp nhận trên mọi máy. Không yêu cầu tắt Defender/SmartScreen.
+- **Không bãi bỏ** SHA-256/digest, xác minh publisher/manifest Ed25519
+  của engine đóng gói/tải về, khóa license, chữ ký cập nhật và các
+  cơ chế fail-closed của LHM. Không đổi/mất tính năng độc quyền LHM.
+- Nếu chủ dự án chọn ký Authenticode trong tương lai, đó là cải tiến
+  tùy chọn và cần được thử riêng, **không phải blocker thương mại**.
+- Quyết định này chỉ bỏ ràng buộc **ký số EXE/installer**; các điều kiện
+  nghiệm thu còn lại tại Mục 12 và 23 vẫn giữ nguyên.
 
 ## 13. Một nguồn sự thật cho code + quản trị file này
 
