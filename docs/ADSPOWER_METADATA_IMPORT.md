@@ -6,12 +6,12 @@ Hỗ trợ chuyển **mô tả hồ sơ** do người dùng sở hữu từ danh
 (AdsPower profile-list export/API response) sang hồ sơ LHM hoàn toàn mới,
 không sao chép mã nguồn, browser engine, extension hay dữ liệu phiên của AdsPower.
 
-Định dạng đầu vào: mảng JSON các hồ sơ hoặc \`{"data":{"list":[...]}}\`.
+Định dạng đầu vào: mảng JSON các hồ sơ hoặc `{"data":{"list":[...]}}`.
 Tên trường hỗ trợ là tập con tên trường do AdsPower công bố tại tài liệu Local API.
 
 Ví dụ **dữ liệu giả lập, không có thông tin đăng nhập**:
 
-\`\`\`json
+```json
 {
   "data": {
     "list": [
@@ -24,22 +24,22 @@ Ví dụ **dữ liệu giả lập, không có thông tin đăng nhập**:
     ]
   }
 }
-\`\`\`
+```
 
 Mở **Hồ sơ trình duyệt → Nhập CSV → chọn JSON**; bấm **Kiểm tra & xem trước**,
 sau đó xác nhận nhập. Tối đa 200 hồ sơ, 256 KB. CSV hiện có không thay đổi.
 
 ## Chính sách chuyển dữ liệu
 
-Chỉ lấy: \`name\`, \`group_name\`, \`open_urls\` (hoặc \`tabs\`) và
-\`profile_tag_names\` (hoặc \`tags\` khi chứa chuỗi).
+Chỉ lấy: `name`, `group_name`, `open_urls` (hoặc `tabs`) và
+`profile_tag_names` (hoặc `tags` khi chứa chuỗi).
 
 Không chuyển: ID AdsPower, cookies, tài khoản nền tảng, mật khẩu, token,
 ghi chú, thông số fingerprint, proxy host/port, proxy credentials, browser
 session hoặc extension. Hồ sơ mới dùng Chromium và fingerprint gốc,
 không phải bản sao của môi trường AdsPower.
 
-**Mọi hồ sơ nhập từ AdsPower JSON được đặt \`requiresProxySetup=true\`:**
+**Mọi hồ sơ nhập từ AdsPower JSON được đặt `requiresProxySetup=true`:**
 không thể mở trước khi người dùng thiết lập lại proxy có chủ đích.
 Điều này tránh việc một cấu hình proxy không được chuyển khiến hồ sơ
 vô tình hoạt động với IP mạng trực tiếp. Chỉ cần gán lại proxy an toàn
@@ -51,7 +51,7 @@ thông tin đăng nhập dù trình nhập chủ động bỏ qua các trường
 
 ## Phạm vi kiểm thử
 
-\`node test/adspower-json-import.js\`
+`node test/adspower-json-import.js`
 
 Bao gồm: xem trước không ghi dữ liệu, trường bí mật không rò vào DB,
 không chuyển phiên/fingerprint, chặn mở khi chưa cấu hình proxy,
