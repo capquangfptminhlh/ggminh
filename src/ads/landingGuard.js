@@ -102,7 +102,7 @@ function inspectOne(value, index) {
   }
   if (!present.length) add('notice','utm_optional',
     'Chưa gắn UTM. Có thể dùng auto-tagging; kiểm tra cấu hình đo lường Google Ads/Meta và GA4 trước khi quyết định.');
-  result.destination = url.origin + url.pathname; // Do not copy query, fragment or secret values into reports.
+  result.destination = url.origin; // Host only: paths may contain private IDs, query/fragment may contain secrets.
   result.scheme = url.protocol.slice(0,-1);
   const errors=findings.filter(x=>x.level==='error').length;
   const warnings=findings.filter(x=>x.level==='warning').length;
