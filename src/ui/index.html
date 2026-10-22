@@ -668,6 +668,17 @@
           <label for="ads-guard-output">Link tạo mới (chọn và Ctrl+C để sao chép)</label>
           <textarea id="ads-guard-output" rows="3" readonly spellcheck="false" aria-label="Link UTM kết quả"></textarea>
         </section>
+        <section class="lhm-ads-guard-section" aria-label="Báo cáo QA chiến dịch cho khách hàng">
+          <h3>03 / Báo cáo kiểm tra chiến dịch</h3>
+          <p class="lhm-bulk-help">Chọn trạng thái do người phụ trách tự xác nhận cho từng mục. LHM chỉ xác minh cú pháp URL/UTM, không tự chứng thực Pixel, chuyển đổi hay quyền truy cập tài khoản.</p>
+          <div id="ads-qa-checklist" class="lhm-ads-qa-checklist" aria-label="Các mục kiểm tra thủ công"></div>
+          <div class="lhm-ads-guard-actions">
+            <button type="button" class="btn btn-secondary" id="ads-qa-preview">Xem tổng hợp</button>
+            <button type="button" class="btn btn-primary" id="ads-qa-export">Lưu báo cáo JSON</button>
+          </div>
+          <p id="ads-qa-status" class="lhm-bulk-help" role="status" aria-live="polite">Chưa có báo cáo. Mọi mục mặc định chưa kiểm tra.</p>
+          <p class="lhm-bulk-help">Báo cáo chỉ chứa tên miền, mã lỗi, trạng thái thủ công và checksum SHA-256, không chứa URL gốc, path, query, email, cookie hay token. File chỉ được lưu sau khi bạn bấm chọn nơi lưu. Checksum không phải chữ ký xác thực.</p>
+        </section>
         <p class="lhm-bulk-help"><strong>Giới hạn:</strong> Kiểm tra offline không xác nhận HTTP status, redirect, Meta Pixel, GA4, GTM, chuyển đổi thực tế hoặc việc Google/Meta phê duyệt quảng cáo. Thiếu UTM chưa chắc là lỗi khi đã dùng auto-tagging.</p>
       </div>
       <div class="modal-footer">
