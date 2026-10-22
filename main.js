@@ -21,6 +21,7 @@ const { createCurrentContextResolver } = require('./src/measurement/currentConte
 const { observeRuntimeExitIp } = require('./src/health/runtimeEgressObservation');
 const { provisionCamoufoxIdentity } = require('./src/engine/camoufoxProvisioning');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
+const { listWorkflowTemplates } = require('./src/automation/workflowTemplates');
 const { BatchAutomation } = require('./src/automation/batch');
 const { LocalScheduler } = require('./src/automation/localScheduler');
 const { graphForSteps } = require('./src/automation/flowGraph');
@@ -596,6 +597,7 @@ function initIPC() {
     return { canceled: false, ...report };
   });
   ipcMain.handle('studio-list', () => workflowStore.list());
+  ipcMain.handle('studio-templates', () => listWorkflowTemplates());
   ipcMain.handle('studio-batch-status', () => batchAutomation.status());
   ipcMain.handle('studio-batch-preview', (_, id,ids,onError) =>
     batchAutomation.preview(id,ids,onError));
