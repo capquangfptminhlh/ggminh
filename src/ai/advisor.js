@@ -1,5 +1,6 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const {AIUsageBudget,reportedTokens}=require('./usageBudget');
 
 const ENDPOINT='https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL='openai/gpt-4o-mini';
@@ -36,6 +37,7 @@ class AIAdvisor{
   this.file=path.join(storage,'ai-advisor.enc.json');
   this.codec=codec;this.fetcher=fetcher;this.clock=clock;
   this.lastRequest=0;this.count=0;this.running=null;
+  this.usageBudget=new AIUsageBudget(storage,{clock});
   if(fs.existsSync(this.file)){
    const value=JSON.parse(fs.readFileSync(this.file,'utf8'));
    if(value.version!==1||!value.model||!value.secret||
@@ -50,7 +52,8 @@ class AIAdvisor{
  }
  status(){
   return {configured:!!this.settings.secret,model:this.settings.model,
-   encryptionAvailable:this.ready(),requestsThisSession:this.count,busy:!!this.running};
+   encryptionAvailable:this.ready(),requestsThisSession:this.count,busy:!!this.running,
+   budget:this.usageBudget.status()};
  }
  write(next){
   fs.mkdirSync(path.dirname(this.file),{recursive:true});
@@ -79,6 +82,10 @@ class AIAdvisor{
   this.write(next);
   return this.status();
  }
+ setMonthlyRequestLimit(value){
+  this.usageBudget.setLimit(value);
+  return this.status();
+ }
  clear(){
   if(this.running)this.running.abort();
   this.write({version:1,model:this.settings.model,secret:null});
@@ -103,6 +110,7 @@ class AIAdvisor{
   const now=this.clock();
   if(this.lastRequest && now-this.lastRequest<7000)
    throw Error('Tối thiểu 7 giây giữa hai lần gọi AI');
+  this.usageBudget.reserveAttempt();
   this.lastRequest=now;
   this.count++;
   const controller=new AbortController();
@@ -134,7 +142,12 @@ class AIAdvisor{
    const declaredLength=Number(res.headers?.get?.('content-length')||0);
    if(declaredLength>128*1024)throw Error('AI response was too large');
    const data=await res.json();
-   return {model:this.settings.model,answer:parseAnswer(data),usage:{
+   const answer=parseAnswer(data);
+   this.usageBudget.recordResponse({
+    promptTokens:reportedTokens(data.usage?.prompt_tokens),
+    completionTokens:reportedTokens(data.usage?.completion_tokens)
+   });
+   return {model:this.settings.model,answer,usage:{
     promptTokens:Math.max(0,Number(data.usage?.prompt_tokens)||0),
     completionTokens:Math.max(0,Number(data.usage?.completion_tokens)||0)
    },sentStatistics:!!statistics};
