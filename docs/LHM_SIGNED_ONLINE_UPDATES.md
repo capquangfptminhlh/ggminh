@@ -70,6 +70,67 @@ khi nhà phát hành thực hiện các bước bên dưới. Việc CI PASS kh�
    ngoài băng** qua phiên bản đã xác minh. Không nhận khóa mới
    chỉ vì máy chủ trả về manifest bất kỳ.
 
+## Công cụ release operator mới (không tự phát hành)
+
+**Tạo khóa Ed25519 lần đầu trên máy chủ dự án, offline.**
+Không chuyển private key, passphrase, tài khoản GitHub hoặc mã
+kích hoạt vào chatbot, pull request, bộ cài hoặc Actions.
+
+Tại máy chủ dự án, thiết lập một passphrase dài (ít nhất 16 ký tự)
+trong môi trường terminal riêng tư, sau đó chạy:
+
+```powershell
+# Private path phải ở ngoài thư mục GitHub repo, ví dụ ổ D:
+$env:LHM_UPDATE_PASSPHRASE = Read-Host -AsSecureString | ForEach-Object {
+  $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($_)
+  try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
+  finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+}
+node tools/setup-update-publisher.js --private "D:\LHM-Keys\update-private.pem"
+Remove-Item Env:LHM_UPDATE_PASSPHRASE
+```
+
+- Thư mục chứa private key phải tồn tại trước đó và **nằm ngoài repo**.
+- Script chỉ tạo mới, từ chối overwrite và mã hóa private key bằng
+  AES-256-CBC. Public key PEM/SPKI được viết vào
+  `resources/update-publisher/update-publisher-ed25519.pub`.
+- Chủ dự án rà lại vân tay SHA-256 của public key và **chỉ commit
+  public key** (không phải private key). Rà soát trust anchor phải qua
+  review bảo mật và CI; sau đó khách cài một bản có public key.
+- Để ký manifest offline, cần thiết lập
+  `LHM_UPDATE_SIGNING_KEY_FILE` đúng private path ngoài repo và
+  `LHM_UPDATE_PASSPHRASE` trong terminal riêng tư.
+
+**Tạo GitHub Release ở trạng thái nháp từ đúng CI PASS:**
+vào GitHub → Actions → **Prepare LHM Draft Release (owner approval)**
+→ Run workflow trên `main`, nhập phiên bản và ID của run
+**Build Windows EXE** đã PASS trên **chính commit main hiện tại**.
+Workflow kiểm tra SHA commit, tên workflow, trạng thái thành công,
+phiên bản trong package.json, đúng tên EXE; xuất SHA256SUMS và
+tạo release `DRAFT` (không tự công khai, không tự ký manifest).
+Nếu tag đã tồn tại, workflow từ chối ghi đè.
+
+**Kiểm tra release cuối trước khi công bố:** sau khi tạo
+`stable.json` bằng script ký đã có, chạy công cụ độc lập:
+
+```powershell
+node tools/update-release-preflight.js --installer "C:\release\LHM-Ads-Browser-5.9.0-Preview-Setup-x64.exe" --manifest "C:\release\stable.json" --public-key "resources\update-publisher\update-publisher-ed25519.pub" --version 5.9.0 --from-version 5.8.0
+```
+
+Đối với CLI này các đường dẫn `--installer`, `--manifest` và
+`--public-key` cần là **đường dẫn tuyệt đối**; ví dụ trên phải đổi
+public key thành đường dẫn tuyệt đối trước khi chạy.
+Công cụ kiểm lại Ed25519, khác biệt khóa license, thời hạn,
+phiên bản, tag GitHub Release, tên, số byte và SHA-256 thực tế.
+Kết quả `VERIFIED_ARTIFACT_ONLY` **không đồng nghĩa** Gate 3/4
+đã đạt hoặc Google/Meta chấp nhận phần mềm.
+
+**Tình trạng activation:** vẫn còn bắt buộc cấu hình public key
+trong EXE phát hành, ký và đăng manifest đúng URL,
+xuất bản EXE từ GitHub Release và nghiệm thu cập nhật trên Windows
+khách độc lập. Không có các bước này thì Update Center vẫn
+`not-configured`; không tự tải/cài file không tin cậy.
+
 ## Giới hạn, vận hành và quyền riêng tư
 
 - Không thực hiện network request khi chỉ mở phần mềm/trang
