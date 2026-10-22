@@ -406,13 +406,13 @@
   <div class="modal-overlay" id="modal-import-profiles">
     <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="profile-import-title">
       <div class="modal-header">
-        <h2 id="profile-import-title">Nhập hồ sơ hàng loạt từ CSV / TXT</h2>
+        <h2 id="profile-import-title">Nhập hồ sơ hàng loạt từ CSV / TXT / AdsPower JSON</h2>
         <button type="button" class="btn-close" id="profile-import-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="lhm-bulk-help">Hỗ trợ CSV Excel, dấu phẩy / chấm phẩy / tab, tối đa 200 hồ sơ và 256 KB. Cột <strong>name</strong> bắt buộc. Cột còn lại: group, engine, startUrls, tags, notes, proxyType, proxyHost, proxyPort. Tách nhiều URL hoặc tag bằng ký tự |.</p>
-        <div class="form-group"><label for="profile-import-file">Chọn file CSV hoặc TXT trên máy</label><input id="profile-import-file" type="file" accept=".csv,.txt,text/csv,text/plain"></div>
-        <div class="form-group"><label for="profile-import-text">Hoặc dán nội dung CSV</label><textarea id="profile-import-text" rows="9" spellcheck="false" placeholder="name,group,engine,startUrls,tags,notes,proxyType,proxyHost,proxyPort"></textarea></div>
+        <p class="lhm-bulk-help">CSV Excel: cột <strong>name</strong> bắt buộc; các cột khác gồm group, engine, startUrls, tags, notes, proxyType, proxyHost, proxyPort. Có thể chọn JSON danh sách profile do chính bạn xuất từ AdsPower (mảng hoặc data.list). Chỉ chuyển tên, nhóm, URL và nhãn; yêu cầu gán lại proxy trước khi mở. Không nhập cookie, mật khẩu, phiên hay fingerprint. Tối đa 200 hồ sơ, 256 KB.</p>
+        <div class="form-group"><label for="profile-import-file">Chọn CSV, TXT hoặc JSON hồ sơ trên máy</label><input id="profile-import-file" type="file" accept=".csv,.txt,.json,text/csv,text/plain,application/json"></div>
+        <div class="form-group"><label for="profile-import-text">Hoặc dán nội dung CSV / JSON</label><textarea id="profile-import-text" rows="9" spellcheck="false" placeholder="name,group,engine,startUrls,tags,notes,proxyType,proxyHost,proxyPort"></textarea></div>
         <button type="button" class="btn btn-secondary" id="profile-import-sample">Điền dữ liệu mẫu</button>
         <p class="lhm-bulk-help">Không nhập mật khẩu, cookie, token, 2FA hoặc thông tin tài khoản. Proxy chỉ lưu địa chỉ; cần kiểm tra và quản lý mật khẩu riêng trong Proxy Center.</p>
         <p id="profile-import-status" role="status" aria-live="polite">Xem trước để kiểm tra dữ liệu trước khi nhập.</p>
