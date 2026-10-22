@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="launchReadiness.css">
   <link rel="stylesheet" href="adsLaunchGuard.css">
   <link rel="stylesheet" href="performanceLab.css">
+  <link rel="stylesheet" href="onlineUpdateCenter.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
 </head>
 <body data-view="profiles">
@@ -900,6 +901,18 @@
           <div><dt>Bản phát hành</dt><dd id="lhm-about-build">—</dd></div>
           <div><dt>Chế độ cấp phép</dt><dd id="lhm-about-license">—</dd></div>
         </dl>
+        <section class="lhm-update-center" aria-label="Cập nhật phần mềm online">
+          <h3><span data-lhm-icon="refresh-cw" aria-hidden="true"></span> Cập nhật phiên bản online</h3>
+          <p class="lhm-bulk-help">Chỉ kiểm tra khi bạn bấm; ứng dụng không tải ngầm và không tự chạy EXE. Bộ cài không cần ký Authenticode nhưng manifest cập nhật phải có chữ ký Ed25519 hợp lệ, và file tải về phải đúng SHA-256.</p>
+          <p id="lhm-update-status" role="status" aria-live="polite">Đang kiểm tra cấu hình cập nhật…</p>
+          <div id="lhm-update-offer" class="lhm-update-offer" hidden></div>
+          <div class="lhm-update-actions">
+            <button type="button" class="btn btn-secondary" id="lhm-update-check">Kiểm tra phiên bản online</button>
+            <button type="button" class="btn btn-primary" id="lhm-update-download" disabled>Tải bản cập nhật đã xác minh</button>
+            <button type="button" class="btn btn-secondary" id="lhm-update-folder" disabled>Mở thư mục bộ cài</button>
+          </div>
+          <p class="lhm-bulk-help">Nếu chưa có khóa nhà phát hành hoặc manifest hợp lệ, chức năng tải bị khóa an toàn. Kiểm tra online có thể tiết lộ IP tới máy chủ GitHub. Bản tải về cần được người dùng chủ động cài và có thể thấy cảnh báo SmartScreen.</p>
+        </section>
         <p class="lhm-bulk-help">Ứng dụng quản lý hồ sơ trình duyệt cục bộ, proxy và các quy trình được phê duyệt. Việc kiểm thử đóng gói không chứng minh phần mềm có khả năng vượt qua phát hiện của website hoặc đầy đủ tính năng của sản phẩm khác.</p>
         <p id="lhm-about-message" role="status" aria-live="polite"></p>
       </div>
@@ -1672,6 +1685,7 @@ run();
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
   <script src="appIdentity.js"></script>
+  <script src="onlineUpdateCenter.js"></script>
   <script src="premiumWorkspace.js"></script>
   <script src="workspaceInteractions.js"></script>
   <script src="aiAdvisor.js"></script>
