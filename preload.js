@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
   inspectFingerprint: value => ipcRenderer.invoke('inspect-fingerprint', value),
   getProfileHealth: id => ipcRenderer.invoke('get-profile-health', id),
   getLaunchReadiness: id => ipcRenderer.invoke('get-launch-readiness', id),
+  inspectAdsLandingUrls: value => ipcRenderer.invoke('ads-landing-inspect', value),
+  buildAdsUtmUrl: (url, values) => ipcRenderer.invoke('ads-utm-build', url, values),
   agencyNetworkPreview: input => ipcRenderer.invoke('agency-network-preview',input),
   healthDriftReport: () => ipcRenderer.invoke('health-drift-report'),
   healthDriftSnapshot: () => ipcRenderer.invoke('health-drift-snapshot'),
