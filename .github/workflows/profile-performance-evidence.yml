@@ -1,0 +1,43 @@
+name: LHM Synthetic Performance Evidence
+on:
+  workflow_dispatch:
+    inputs:
+      profile_sizes:
+        description: 'Synthetic profile counts, comma-separated (max 5 values, 1–5000 each)'
+        required: true
+        default: '100,500,1000'
+        type: string
+      iterations:
+        description: 'Samples per operation (5–30)'
+        required: true
+        default: '12'
+        type: string
+permissions:
+  contents: read
+jobs:
+  synthetic-performance-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Measure actual synthetic metadata operations
+        shell: pwsh
+        env:
+          PROFILE_SIZES: ${{ inputs.profile_sizes }}
+          ITERATIONS: ${{ inputs.iterations }}
+        run: |
+          node tools/profile-scale-benchmark.js --sizes "$env:PROFILE_SIZES" --iterations "$env:ITERATIONS" --output "benchmarks/synthetic-profile-scale.json"
+          if ($LASTEXITCODE -ne 0) { throw "LHM performance measurement failed" }
+      - name: Publish benchmark evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Synthetic-Performance-Windows
+          path: benchmarks/synthetic-profile-scale.json
+          if-no-files-found: error
+          retention-days: 30
