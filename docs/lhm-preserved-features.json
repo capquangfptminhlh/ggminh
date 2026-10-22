@@ -277,6 +277,33 @@
           "LHMLaunchReadiness.confirm(profile.id)"
         ]
       ]
+    },
+    {
+      "id": "lhm-ads-launch-guard",
+      "label": "Offline advertiser landing URL and UTM audit without customer data retention",
+      "files": [
+        "src/ads/landingGuard.js",
+        "src/ui/adsLaunchGuard.js",
+        "src/ui/adsLaunchGuard.css"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "ads-landing-inspect"
+        ],
+        [
+          "main.js",
+          "ads-utm-build"
+        ],
+        [
+          "preload.js",
+          "inspectAdsLandingUrls"
+        ],
+        [
+          "src/ui/index.html",
+          "btn-ads-launch-guard"
+        ]
+      ]
     }
   ]
 }

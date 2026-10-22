@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="premiumWorkspace.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
   <link rel="stylesheet" href="launchReadiness.css">
+  <link rel="stylesheet" href="adsLaunchGuard.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
 </head>
 <body data-view="profiles">
@@ -140,6 +141,7 @@
             <button type="button" class="btn btn-secondary" id="btn-app-about">Thông tin phần mềm</button>
             <button type="button" class="btn btn-secondary" id="btn-license-center">Giấy phép & gia hạn</button>
             <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
+            <button type="button" class="btn btn-secondary" id="btn-ads-launch-guard"><span data-lhm-icon="shield-check"></span> Ads Launch Guard</button>
             <button type="button" class="btn btn-secondary" id="btn-session-snapshots">Snapshots</button>
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
@@ -623,6 +625,53 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="cache-cancel">Đóng</button>
         <button type="button" class="btn btn-danger" id="cache-clear">Xóa cache đã chọn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ads Launch Guard: user-initiated, offline advertising URL QA. -->
+  <div class="modal-overlay" id="modal-ads-launch-guard">
+    <div class="modal-dialog modal-lg lhm-ads-guard-dialog" role="dialog" aria-modal="true" aria-labelledby="ads-launch-title">
+      <div class="modal-header">
+        <div><h2 id="ads-launch-title">Ads Launch Guard</h2><p class="lhm-bulk-help">Kiểm tra link đích & tạo UTM trước khi phát hành quảng cáo</p></div>
+        <button class="btn-close" type="button" id="ads-guard-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="lhm-ads-guard-head">
+          <span>LOCAL-ONLY QA</span><span>Không lưu URL · Không gọi mạng</span>
+        </div>
+        <section class="lhm-ads-guard-section" aria-label="Kiểm tra link quảng cáo">
+          <h3>01 / Kiểm tra link quảng cáo</h3>
+          <label for="ads-guard-urls">Mỗi dòng một URL (tối đa 20)</label>
+          <textarea id="ads-guard-urls" rows="4" maxlength="32000" placeholder="https://example.com/san-pham?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=demo"></textarea>
+          <div class="lhm-ads-guard-actions">
+            <button type="button" class="btn btn-primary" id="ads-guard-inspect">Kiểm tra link</button>
+            <span id="ads-guard-inspect-status" role="status" aria-live="polite">Chưa kiểm tra</span>
+          </div>
+          <div class="lhm-ads-guard-results" id="ads-guard-results" aria-live="polite"></div>
+        </section>
+        <section class="lhm-ads-guard-section" aria-label="Tạo link UTM">
+          <h3>02 / Tạo link theo dõi UTM</h3>
+          <label for="ads-guard-base">Link gốc</label>
+          <input id="ads-guard-base" type="url" maxlength="4096" placeholder="https://example.com/san-pham" autocomplete="off">
+          <div class="lhm-ads-guard-grid">
+            <label>utm_source <input id="ads-guard-source" maxlength="100" placeholder="google"></label>
+            <label>utm_medium <input id="ads-guard-medium" maxlength="100" placeholder="cpc"></label>
+            <label>utm_campaign <input id="ads-guard-campaign" maxlength="100" placeholder="thang_10"></label>
+            <label>utm_content (tùy chọn) <input id="ads-guard-content" maxlength="100" placeholder="banner_a"></label>
+            <label>utm_term (tùy chọn) <input id="ads-guard-term" maxlength="100" placeholder="tu_khoa"></label>
+          </div>
+          <div class="lhm-ads-guard-actions">
+            <button type="button" class="btn btn-secondary" id="ads-guard-build">Tạo link UTM</button>
+            <span id="ads-guard-build-status" role="status" aria-live="polite"></span>
+          </div>
+          <label for="ads-guard-output">Link tạo mới (chọn và Ctrl+C để sao chép)</label>
+          <textarea id="ads-guard-output" rows="3" readonly spellcheck="false" aria-label="Link UTM kết quả"></textarea>
+        </section>
+        <p class="lhm-bulk-help"><strong>Giới hạn:</strong> Kiểm tra offline không xác nhận HTTP status, redirect, Meta Pixel, GA4, GTM, chuyển đổi thực tế hoặc việc Google/Meta phê duyệt quảng cáo. Thiếu UTM chưa chắc là lỗi khi đã dùng auto-tagging.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="ads-guard-done">Đóng</button>
       </div>
     </div>
   </div>
@@ -1572,6 +1621,7 @@ run();
   <script src="icons.js"></script>
   <script src="renderer.js"></script>
   <script src="launchReadiness.js"></script>
+  <script src="adsLaunchGuard.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>
   <script src="profileCsvUpdate.js"></script>
