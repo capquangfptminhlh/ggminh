@@ -67,6 +67,29 @@ function makeReport(profileId, issues) {
     profileId, status: errorCount ? 'blocked' : warningCount ? 'review' : 'ready',
     canLaunch: errorCount === 0, errorCount, warningCount, issues,
     assessedScope: 'local_configuration_only',
+    layers: [
+      {
+        key: 'network',
+        status: issues.some(x => x.level === 'error' && /proxy|network/.test(x.code)) ? 'blocked' : 'review',
+        observation: 'Đã kiểm tra cấu hình proxy. IP thoát, DNS, WebRTC, TLS và chất lượng ISP chưa được đo trước khi mở trình duyệt.'
+      },
+      {
+        key: 'storage',
+        status: 'review',
+        observation: 'LHM sử dụng thư mục profile riêng. Chưa thực hiện thử nghiệm đọc chéo Cookie, IndexedDB, Service Worker hay bộ nhớ đệm trong lần kiểm tra này.'
+      },
+      {
+        key: 'fingerprint',
+        status: issues.some(x => x.level === 'error' && x.code.startsWith('signal_')) ? 'blocked' :
+          issues.some(x => x.code.startsWith('signal_')) ? 'review' : 'ready',
+        observation: 'Đã đối chiếu thông số khai báo bằng Signal Chain. Chưa đo giá trị Canvas, WebGL, Audio hoặc TLS mà website thật nhận được.'
+      },
+      {
+        key: 'behavior',
+        status: 'review',
+        observation: 'Không mô phỏng thao tác người dùng; LHM không thấy dữ liệu máy chủ của Google/Meta và không dự báo kết quả đánh giá tài khoản.'
+      }
+    ],
     measuredNetwork: false,
     detectedAsNewUser: 'NOT_MEASURED',
     note: 'Chỉ kiểm tra cấu hình trước khi khởi chạy. Không xác nhận ẩn danh, không vượt kiểm tra chống gian lận.'
