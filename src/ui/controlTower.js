@@ -131,7 +131,17 @@
   async function openSelected() {
     const ids=selected();
     if(!ids.length || ids.length>10)return alert('Chọn tối đa 10 hồ sơ.');
-    if(!confirm('Mở '+ids.length+' hồ sơ? LHM khởi động đồng thời tối đa 2 cửa sổ và không tự thao tác trên website.'))return;
+    // Batch launches also expose local errors before opening any browser.
+    // A configuration warning is not an anti-fraud or privacy certification.
+    let preflights;
+    try { preflights = await Promise.all(ids.map(id=>api.getLaunchReadiness(id))); }
+    catch(error) { return alert('Không thể kiểm tra hồ sơ trước khi mở: '+error.message); }
+    const blocked = preflights.filter(report=>!report.canLaunch);
+    if (blocked.length) return alert(blocked.length+
+      ' hồ sơ có lỗi cấu hình bắt buộc. Hãy sửa trong Proxy Center hoặc Kiểm tra hồ sơ trước khi mở.');
+    const warnings = preflights.reduce((total,report)=>total+report.warningCount,0);
+    if(!confirm('Mở '+ids.length+' hồ sơ? Kiểm tra cục bộ ghi nhận '+warnings+
+      ' cảnh báo/chưa đo. Không chứng minh ẩn danh, tuyến DNS/WebRTC hay được Google/Meta coi là người dùng mới. LHM khởi động tối đa 2 cửa sổ.'))return;
     const button=byId('selection-open');
     button.disabled=true;
     try {
