@@ -31,6 +31,7 @@ const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
 const { launchReadiness } = require('./src/health/launchReadiness');
 const { inspectLandingUrls, buildUtmUrl } = require('./src/ads/landingGuard');
+const { CHECKS: ADS_QA_CHECKS, buildCampaignQaReport } = require('./src/ads/campaignQaReport');
 const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
@@ -496,7 +497,26 @@ function initIPC() {
     fs.writeFileSync(filePath, report, 'utf8');
     return { canceled: false, count: profiles.length };
   });
-  ipcMain.handle('ads-landing-inspect', (_, input) => inspectLandingUrls(input));
+  ipcMain.handle('ads-qa-checklist', () => ADS_QA_CHECKS);
+  ipcMain.handle('ads-qa-preview', (_, input) => {
+    const {report} = buildCampaignQaReport(input);
+    return {decision:report.decision,summary:report.summary,scope:report.scope,
+      note:report.disclaimer};
+  });
+  ipcMain.handle('ads-qa-export', async (_, input) => {
+    // Explicit local export. Never automatically upload advertising/customer data.
+    const {report,text} = buildCampaignQaReport(input);
+    const {canceled,filePath} = await dialog.showSaveDialog(mainWindow,{
+      title:'Lưu báo cáo kiểm tra chiến dịch (không chứa URL gốc)',
+      defaultPath:'LHM-Ads-QA-'+report.generatedAt.slice(0,10)+'.json',
+      filters:[{name:'JSON QA report',extensions:['json']}]
+    });
+    if(canceled || !filePath)return {canceled:true};
+    fs.writeFileSync(filePath,text,{encoding:'utf8',flag:'w'});
+    return {canceled:false,decision:report.decision,
+      sha256:report.integrity.bodySha256,bytes:Buffer.byteLength(text,'utf8')};
+  });
+    ipcMain.handle('ads-landing-inspect', (_, input) => inspectLandingUrls(input));
   ipcMain.handle('ads-utm-build', (_, url, values) => buildUtmUrl(url, values));
     ipcMain.handle('get-launch-readiness', (_, id) => {
     const profile = store.getProfile(id);
