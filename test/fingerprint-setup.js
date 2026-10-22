@@ -25,7 +25,10 @@ assert.ok(html.indexOf('<script src="profileConsistency.js">') < html.indexOf('<
  'consistency analyzer loads before profile form scripts');
 assert.ok(renderer.includes('refreshFingerprintSetup();'));
 assert.ok(renderer.includes('LHMProfileConsistency?.render'));
-assert.ok(!/bảo đảm.+(?:Google|Facebook).+không/i.test(html));
+assert.ok(html.includes('Không có tùy chọn nào bảo đảm Google không liên kết các tài khoản.'),
+  'UI must explicitly disclaim guaranteed account unlinkability');
+assert.ok(html.includes('Không sử dụng điểm % giả định'),
+  'new consistency panel must explicitly reject fabricated platform risk weights');
 assert.deepEqual(validateCamoufoxPreferences({
  mode:'native',language:'vi-VN',languages:['vi-VN'],timezone:'Asia/Ho_Chi_Minh'
 }),{language:'vi-VN',timezone:'Asia/Ho_Chi_Minh'});
