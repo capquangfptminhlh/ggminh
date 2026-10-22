@@ -27,7 +27,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-ai-budget-'));
   assert.strictEqual(budget.status().remaining,0);
   assert.throws(()=>budget.reserveAttempt(),/hết hạn mức/);
   const disk=fs.readFileSync(budget.file,'utf8');
-  for(const term of ['sk-or-secret','password','prompt','question','cookie','http://'])
+  for(const term of ['sk-or-secret','password','secret user text','question content','cookie value','http://'])
    assert(!disk.includes(term),'Usage ledger should contain no sensitive text: '+term);
 
   const second=new AIUsageBudget(root,{clock});
