@@ -1,21 +1,31 @@
-> **Cập nhật 1.1:** dự án là trình quản lý nhiều hồ sơ trình duyệt dành cho những tài khoản được phép quản trị, không phải công cụ bảo đảm vượt phát hiện hay né đình chỉ Google Ads. Không thể cam kết tương thích 100% AdsPower.
-
 # LHM Ads Browser — Local-first Windows Browser Manager
 
-Phần mềm quản lý đa hồ sơ trình duyệt (Multi-profile Browser) chạy 100% cục bộ (Local-First), không giới hạn số lượng profile, miễn phí vĩnh viễn và không phụ thuộc vào bất kỳ máy chủ đám mây nào.
+Phần mềm quản lý đa hồ sơ trình duyệt (multi-profile) vận hành cục bộ
+trên máy Windows của người dùng (local-first): dữ liệu hồ sơ, cấu hình
+và nhật ký quan sát lưu trên máy người dùng; LHM không vận hành máy chủ
+đồng bộ dữ liệu hồ sơ. Bản dùng thử kéo dài 30 ngày với tối đa 10 hồ
+sơ; các gói license trả phí thay đổi giới hạn số hồ sơ và tính năng
+được mở (xem `docs/seller-runbook/` và mục License trong ứng dụng).
+
+Phần mềm này không bảo đảm vượt qua bất kỳ cơ chế phát hiện nào, không
+bảo đảm tránh liên kết tài khoản hay tránh đình chỉ tài khoản. Trạng
+thái kỹ thuật của hồ sơ chỉ được báo theo từng tiêu chí đã đo
+(ĐẠT / KHÔNG ĐẠT / CHƯA ĐO) kèm bằng chứng — không có kết luận "an
+toàn" tổng hợp.
 
 ---
 
 ## Tính năng và giới hạn
 
-| Tính năng | AdsPower truyền thống | **PowerBrowser** |
-| :--- | :--- | :--- |
-| **Giới hạn Profile** | 2-5 profile (Bản Free) / Trả phí đắt | **Không giới hạn (Vĩnh viễn)** |
-| **Lưu trữ dữ liệu** | Đẩy lên Cloud AdsPower | **100% Cục bộ trên máy bạn** |
-| **Bảo vệ vân tay** | Cloud-based | **Chế độ bản địa + chẩn đoán, mã thử nghiệm cũ chưa xác minh** |
-| **Kháng phát hiện** | Dễ bị quét qua CDP | **Không bảo đảm qua mặt bất cứ cơ chế phát hiện nào** |
-| **RPA API** | Cần Token / Rate limit | **Port 50325 chuẩn (Plug & Play)** |
-| **Chi phí** | Hàng tháng / năm | **0đ - Hoàn toàn miễn phí** |
+- Quản lý hồ sơ Chromium (Chrome/Edge đã cài trên máy) và hồ sơ
+  Gecko/Camoufox (engine cài riêng, chỉ chạy khi chữ ký nhà phát hành
+  và SHA-256 khớp manifest đã ký).
+- Proxy Center: cấu hình proxy theo hồ sơ và kiểm tra IP thoát trong
+  phiên.
+- Local API ở cổng 50325: tương thích **một tập con** cú pháp
+  AdsPower, không phải tương thích đầy đủ.
+- Automation Studio chạy có phê duyệt theo bước; sao lưu cấu hình mã
+  hóa AES-256-GCM bằng mật khẩu do người dùng đặt.
 
 ---
 
@@ -38,7 +48,7 @@ Phần mềm quản lý đa hồ sơ trình duyệt (Multi-profile Browser) ch�
 
 2. **Cách 2 (Bằng dòng lệnh):**
    ```bash
-   cd D:\power-browser
+   cd D:\lhm-ads-browser
    npm start
    ```
 
@@ -46,7 +56,9 @@ Phần mềm quản lý đa hồ sơ trình duyệt (Multi-profile Browser) ch�
 
 ## 🤖 Kết nối Tự động hóa RPA (Python Playwright)
 
-Bạn có thể dùng lại toàn bộ script viết cho AdsPower mà không cần đổi logic:
+Với các endpoint thuộc tập con đã hỗ trợ, script viết cho AdsPower có
+thể dùng lại mà không cần đổi logic gọi API. Endpoint ngoài tập con sẽ
+báo lỗi rõ ràng thay vì chạy ngầm:
 
 ```python
 import requests

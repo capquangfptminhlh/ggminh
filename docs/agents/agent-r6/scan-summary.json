@@ -1,0 +1,3155 @@
+{
+  "treeRoot": "/home/hatch/tmp-big/r6/upstream",
+  "fileCount": 1579,
+  "totalBytes": 2563096877,
+  "totalMiB": 2444.4,
+  "largestFile": {
+    "path": "fonts/82__Apple Color Emoji.ttc",
+    "bytes": 192123488
+  },
+  "passCount": 1361,
+  "failCount": 218,
+  "failures": [
+    {
+      "path": "fonts/1003__Bangla MN.ttc",
+      "bytes": 317364,
+      "analysis": [
+        {
+          "segment": "1003__Bangla MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/1005__Sinhala MN.ttc",
+      "bytes": 780240,
+      "analysis": [
+        {
+          "segment": "1005__Sinhala MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/1012__Courier New Italic.ttf",
+      "bytes": 589900,
+      "analysis": [
+        {
+          "segment": "1012__Courier New Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/1016__Arial Rounded Bold.ttf",
+      "bytes": 49296,
+      "analysis": [
+        {
+          "segment": "1016__Arial Rounded Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/106__Raleway-Italic[wght].ttf",
+      "bytes": 318476,
+      "analysis": [
+        {
+          "segment": "106__Raleway-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/108__Rubik[wght].ttf",
+      "bytes": 359804,
+      "analysis": [
+        {
+          "segment": "108__Rubik[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/109__Apple Chancery.ttf",
+      "bytes": 336652,
+      "analysis": [
+        {
+          "segment": "109__Apple Chancery.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/10__Wingdings 2.ttf",
+      "bytes": 65264,
+      "analysis": [
+        {
+          "segment": "10__Wingdings 2.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/110__Inter-Italic[opsz,wght].ttf",
+      "bytes": 906596,
+      "analysis": [
+        {
+          "segment": "110__Inter-Italic[opsz,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/112__Arial Unicode.ttf",
+      "bytes": 23278008,
+      "analysis": [
+        {
+          "segment": "112__Arial Unicode.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/114__NotoSerifGeorgian[wdth,wght].ttf",
+      "bytes": 381592,
+      "analysis": [
+        {
+          "segment": "114__NotoSerifGeorgian[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/116__Raleway[wght].ttf",
+      "bytes": 312352,
+      "analysis": [
+        {
+          "segment": "116__Raleway[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/122__Nunito-Italic[wght].ttf",
+      "bytes": 281832,
+      "analysis": [
+        {
+          "segment": "122__Nunito-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/127__Tahoma Bold.ttf",
+      "bytes": 626928,
+      "analysis": [
+        {
+          "segment": "127__Tahoma Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/132__Gujarati Sangam MN.ttc",
+      "bytes": 546372,
+      "analysis": [
+        {
+          "segment": "132__Gujarati Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/140__Arial Narrow Bold.ttf",
+      "bytes": 184420,
+      "analysis": [
+        {
+          "segment": "140__Arial Narrow Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/140__Nunito[wght].ttf",
+      "bytes": 276932,
+      "analysis": [
+        {
+          "segment": "140__Nunito[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/142__Bodoni 72 OS.ttc",
+      "bytes": 239752,
+      "analysis": [
+        {
+          "segment": "142__Bodoni 72 OS.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/144__Kannada MN.ttc",
+      "bytes": 343548,
+      "analysis": [
+        {
+          "segment": "144__Kannada MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/152__NotoSans[wdth,wght].ttf",
+      "bytes": 2049096,
+      "analysis": [
+        {
+          "segment": "152__NotoSans[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/161__Heebo[wght].ttf",
+      "bytes": 122012,
+      "analysis": [
+        {
+          "segment": "161__Heebo[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/162__Verdana Italic.ttf",
+      "bytes": 174612,
+      "analysis": [
+        {
+          "segment": "162__Verdana Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/163__Oswald[wght].ttf",
+      "bytes": 172088,
+      "analysis": [
+        {
+          "segment": "163__Oswald[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/164__PlayfairDisplay-Italic[wght].ttf",
+      "bytes": 278688,
+      "analysis": [
+        {
+          "segment": "164__PlayfairDisplay-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/165__VictorMono-Italic[wght].ttf",
+      "bytes": 242872,
+      "analysis": [
+        {
+          "segment": "165__VictorMono-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/168__Malayalam MN.ttc",
+      "bytes": 174756,
+      "analysis": [
+        {
+          "segment": "168__Malayalam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/170__Karla[wght].ttf",
+      "bytes": 94016,
+      "analysis": [
+        {
+          "segment": "170__Karla[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/180__Hoefler Text.ttc",
+      "bytes": 1647144,
+      "analysis": [
+        {
+          "segment": "180__Hoefler Text.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/182__Iowan Old Style.ttc",
+      "bytes": 3421944,
+      "analysis": [
+        {
+          "segment": "182__Iowan Old Style.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/189__Georgia Bold.ttf",
+      "bytes": 363800,
+      "analysis": [
+        {
+          "segment": "189__Georgia Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/18__ヒラギノ角ゴシック W9.ttc",
+      "bytes": 3471616,
+      "analysis": [
+        {
+          "segment": "18__ヒラギノ角ゴシック W9.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/190__Al Nile.ttc",
+      "bytes": 131264,
+      "analysis": [
+        {
+          "segment": "190__Al Nile.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/198__WorkSans[wght].ttf",
+      "bytes": 361072,
+      "analysis": [
+        {
+          "segment": "198__WorkSans[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/199__OpenSans-Italic[wdth,wght].ttf",
+      "bytes": 583992,
+      "analysis": [
+        {
+          "segment": "199__OpenSans-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/200__Cabin-Italic[wdth,wght].ttf",
+      "bytes": 155412,
+      "analysis": [
+        {
+          "segment": "200__Cabin-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/203__NotoSansLao[wdth,wght].ttf",
+      "bytes": 176620,
+      "analysis": [
+        {
+          "segment": "203__NotoSansLao[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/204__CascadiaMono-Italic[wght].ttf",
+      "bytes": 513984,
+      "analysis": [
+        {
+          "segment": "204__CascadiaMono-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/207__RobotoCondensed[wght].ttf",
+      "bytes": 371616,
+      "analysis": [
+        {
+          "segment": "207__RobotoCondensed[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/214__UbuntuSansMono-Italic[wght].ttf",
+      "bytes": 186356,
+      "analysis": [
+        {
+          "segment": "214__UbuntuSansMono-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/21__ヒラギノ角ゴシック W1.ttc",
+      "bytes": 7277904,
+      "analysis": [
+        {
+          "segment": "21__ヒラギノ角ゴシック W1.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/226__Quicksand[wght].ttf",
+      "bytes": 124824,
+      "analysis": [
+        {
+          "segment": "226__Quicksand[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/229__SourceSans3-Italic[wght].ttf",
+      "bytes": 395372,
+      "analysis": [
+        {
+          "segment": "229__SourceSans3-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/22__STHeiti Light.ttc",
+      "bytes": 55783456,
+      "analysis": [
+        {
+          "segment": "22__STHeiti Light.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/230__Montserrat[wght].ttf",
+      "bytes": 744936,
+      "analysis": [
+        {
+          "segment": "230__Montserrat[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/233__Oriya MN.ttc",
+      "bytes": 214512,
+      "analysis": [
+        {
+          "segment": "233__Oriya MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/233__RobotoMono[wght].ttf",
+      "bytes": 183700,
+      "analysis": [
+        {
+          "segment": "233__RobotoMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/235__Bradley Hand Bold.ttf",
+      "bytes": 596736,
+      "analysis": [
+        {
+          "segment": "235__Bradley Hand Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/238__Manrope[wght].ttf",
+      "bytes": 165420,
+      "analysis": [
+        {
+          "segment": "238__Manrope[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/239__Trebuchet MS Bold.ttf",
+      "bytes": 129360,
+      "analysis": [
+        {
+          "segment": "239__Trebuchet MS Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/242__Cabin[wdth,wght].ttf",
+      "bytes": 165468,
+      "analysis": [
+        {
+          "segment": "242__Cabin[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/244__RobotoSlab[wght].ttf",
+      "bytes": 251880,
+      "analysis": [
+        {
+          "segment": "244__RobotoSlab[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/245__NotoSerifHebrew[wdth,wght].ttf",
+      "bytes": 183600,
+      "analysis": [
+        {
+          "segment": "245__NotoSerifHebrew[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/248__ReemKufi[wght].ttf",
+      "bytes": 127152,
+      "analysis": [
+        {
+          "segment": "248__ReemKufi[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/250__Sinhala Sangam MN.ttc",
+      "bytes": 757768,
+      "analysis": [
+        {
+          "segment": "250__Sinhala Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/252__NotoSansHebrew[wdth,wght].ttf",
+      "bytes": 112640,
+      "analysis": [
+        {
+          "segment": "252__NotoSansHebrew[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/265__Times New Roman Bold.ttf",
+      "bytes": 832472,
+      "analysis": [
+        {
+          "segment": "265__Times New Roman Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/268__SourceCodePro[wght].ttf",
+      "bytes": 212340,
+      "analysis": [
+        {
+          "segment": "268__SourceCodePro[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/269__Wingdings 3.ttf",
+      "bytes": 38308,
+      "analysis": [
+        {
+          "segment": "269__Wingdings 3.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/271__NotoSerif-Italic[wdth,wght].ttf",
+      "bytes": 2448496,
+      "analysis": [
+        {
+          "segment": "271__NotoSerif-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/273__Diwan Thuluth.ttf",
+      "bytes": 1319880,
+      "analysis": [
+        {
+          "segment": "273__Diwan Thuluth.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/275__OpenSans[wdth,wght].ttf",
+      "bytes": 532636,
+      "analysis": [
+        {
+          "segment": "275__OpenSans[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/278__Inconsolata[wdth,wght].ttf",
+      "bytes": 347180,
+      "analysis": [
+        {
+          "segment": "278__Inconsolata[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/280__NotoSansArabic[wdth,wght].ttf",
+      "bytes": 844676,
+      "analysis": [
+        {
+          "segment": "280__NotoSansArabic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/287__Trebuchet MS Bold Italic.ttf",
+      "bytes": 137008,
+      "analysis": [
+        {
+          "segment": "287__Trebuchet MS Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/294__NotoKufiArabic[wght].ttf",
+      "bytes": 434204,
+      "analysis": [
+        {
+          "segment": "294__NotoKufiArabic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/295__JetBrainsMono[wght].ttf",
+      "bytes": 187208,
+      "analysis": [
+        {
+          "segment": "295__JetBrainsMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/296__NunitoSans-Italic[YTLC,opsz,wdth,wght].ttf",
+      "bytes": 558412,
+      "analysis": [
+        {
+          "segment": "296__NunitoSans-Italic[YTLC,opsz,wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/297__NotoSansMono[wdth,wght].ttf",
+      "bytes": 1708408,
+      "analysis": [
+        {
+          "segment": "297__NotoSansMono[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/298__NotoSansLisu[wght].ttf",
+      "bytes": 56240,
+      "analysis": [
+        {
+          "segment": "298__NotoSansLisu[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/300__Oriya Sangam MN.ttc",
+      "bytes": 185976,
+      "analysis": [
+        {
+          "segment": "300__Oriya Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/301__JosefinSans-Italic[wght].ttf",
+      "bytes": 130984,
+      "analysis": [
+        {
+          "segment": "301__JosefinSans-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/302__Tamil Sangam MN.ttc",
+      "bytes": 365320,
+      "analysis": [
+        {
+          "segment": "302__Tamil Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/304__UbuntuSansMono[wght].ttf",
+      "bytes": 178092,
+      "analysis": [
+        {
+          "segment": "304__UbuntuSansMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/307__Inter[opsz,wght].ttf",
+      "bytes": 876576,
+      "analysis": [
+        {
+          "segment": "307__Inter[opsz,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/314__SourceCodePro-Italic[wght].ttf",
+      "bytes": 174852,
+      "analysis": [
+        {
+          "segment": "314__SourceCodePro-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/315__JetBrainsMono-Italic[wght].ttf",
+      "bytes": 191556,
+      "analysis": [
+        {
+          "segment": "315__JetBrainsMono-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/316__JosefinSans[wght].ttf",
+      "bytes": 118588,
+      "analysis": [
+        {
+          "segment": "316__JosefinSans[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/322__UbuntuMono[wght].ttf",
+      "bytes": 172232,
+      "analysis": [
+        {
+          "segment": "322__UbuntuMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/328__Times New Roman.ttf",
+      "bytes": 824920,
+      "analysis": [
+        {
+          "segment": "328__Times New Roman.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/332__SourceSerif4[opsz,wght].ttf",
+      "bytes": 1209508,
+      "analysis": [
+        {
+          "segment": "332__SourceSerif4[opsz,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/341__Roboto[wdth,wght].ttf",
+      "bytes": 488584,
+      "analysis": [
+        {
+          "segment": "341__Roboto[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/342__Arial Bold Italic.ttf",
+      "bytes": 558672,
+      "analysis": [
+        {
+          "segment": "342__Arial Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/344__Montserrat-Italic[wght].ttf",
+      "bytes": 762376,
+      "analysis": [
+        {
+          "segment": "344__Montserrat-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/350__Times New Roman Bold Italic.ttf",
+      "bytes": 620008,
+      "analysis": [
+        {
+          "segment": "350__Times New Roman Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/351__Lao MN.ttc",
+      "bytes": 96348,
+      "analysis": [
+        {
+          "segment": "351__Lao MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/353__Gurmukhi Sangam MN.ttc",
+      "bytes": 143724,
+      "analysis": [
+        {
+          "segment": "353__Gurmukhi Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/356__NotoSerifArmenian[wdth,wght].ttf",
+      "bytes": 292528,
+      "analysis": [
+        {
+          "segment": "356__NotoSerifArmenian[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/361__Mishafi Gold.ttf",
+      "bytes": 649384,
+      "analysis": [
+        {
+          "segment": "361__Mishafi Gold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/363__DMSans-Italic[opsz,wght].ttf",
+      "bytes": 285040,
+      "analysis": [
+        {
+          "segment": "363__DMSans-Italic[opsz,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/365__DMSans[opsz,wght].ttf",
+      "bytes": 240164,
+      "analysis": [
+        {
+          "segment": "365__DMSans[opsz,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/374__Merriweather[opsz,wdth,wght].ttf",
+      "bytes": 4628080,
+      "analysis": [
+        {
+          "segment": "374__Merriweather[opsz,wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/380__NotoNaskhArabic[wght].ttf",
+      "bytes": 307592,
+      "analysis": [
+        {
+          "segment": "380__NotoNaskhArabic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/387__CascadiaCode[wght].ttf",
+      "bytes": 727940,
+      "analysis": [
+        {
+          "segment": "387__CascadiaCode[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/388__Roboto-Italic[wdth,wght].ttf",
+      "bytes": 530944,
+      "analysis": [
+        {
+          "segment": "388__Roboto-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/391__NotoSansGeorgian[wdth,wght].ttf",
+      "bytes": 231988,
+      "analysis": [
+        {
+          "segment": "391__NotoSansGeorgian[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/398__UbuntuSans-Italic[wdth,wght].ttf",
+      "bytes": 738444,
+      "analysis": [
+        {
+          "segment": "398__UbuntuSans-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/409__SourceSerif4-Italic[opsz,wght].ttf",
+      "bytes": 855432,
+      "analysis": [
+        {
+          "segment": "409__SourceSerif4-Italic[opsz,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/412__WorkSans-Italic[wght].ttf",
+      "bytes": 336756,
+      "analysis": [
+        {
+          "segment": "412__WorkSans-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/433__NunitoSans[YTLC,opsz,wdth,wght].ttf",
+      "bytes": 571240,
+      "analysis": [
+        {
+          "segment": "433__NunitoSans[YTLC,opsz,wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/452__FiraCode[wght].ttf",
+      "bytes": 260364,
+      "analysis": [
+        {
+          "segment": "452__FiraCode[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/457__UbuntuSans[wdth,wght].ttf",
+      "bytes": 1080900,
+      "analysis": [
+        {
+          "segment": "457__UbuntuSans[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/462__PlayfairDisplay[wght].ttf",
+      "bytes": 300724,
+      "analysis": [
+        {
+          "segment": "462__PlayfairDisplay[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/46__ヒラギノ丸ゴ ProN W4.ttc",
+      "bytes": 9718696,
+      "analysis": [
+        {
+          "segment": "46__ヒラギノ丸ゴ ProN W4.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"丸\" \"コ\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "丸",
+            "コ",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/470__RobotoCondensed-Italic[wght].ttf",
+      "bytes": 388124,
+      "analysis": [
+        {
+          "segment": "470__RobotoCondensed-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/473__CascadiaCode-Italic[wght].ttf",
+      "bytes": 530444,
+      "analysis": [
+        {
+          "segment": "473__CascadiaCode-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/474__Merriweather-Italic[opsz,wdth,wght].ttf",
+      "bytes": 4591168,
+      "analysis": [
+        {
+          "segment": "474__Merriweather-Italic[opsz,wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/477__Ubuntu-Italic[wdth,wght].ttf",
+      "bytes": 679224,
+      "analysis": [
+        {
+          "segment": "477__Ubuntu-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/47__STHeiti Medium.ttc",
+      "bytes": 55754164,
+      "analysis": [
+        {
+          "segment": "47__STHeiti Medium.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/482__Karla-Italic[wght].ttf",
+      "bytes": 96248,
+      "analysis": [
+        {
+          "segment": "482__Karla-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/487__CascadiaMono[wght].ttf",
+      "bytes": 704344,
+      "analysis": [
+        {
+          "segment": "487__CascadiaMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/490__SourceSans3[wght].ttf",
+      "bytes": 646340,
+      "analysis": [
+        {
+          "segment": "490__SourceSans3[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/497__RobotoMono-Italic[wght].ttf",
+      "bytes": 196792,
+      "analysis": [
+        {
+          "segment": "497__RobotoMono-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/498__NotoSans-Italic[wdth,wght].ttf",
+      "bytes": 2322640,
+      "analysis": [
+        {
+          "segment": "498__NotoSans-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/49__Avenir Next Condensed.ttc",
+      "bytes": 3288644,
+      "analysis": [
+        {
+          "segment": "49__Avenir Next Condensed.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/502__NotoSerifLao[wdth,wght].ttf",
+      "bytes": 217332,
+      "analysis": [
+        {
+          "segment": "502__NotoSerifLao[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/506__OverpassMono[wght].ttf",
+      "bytes": 258800,
+      "analysis": [
+        {
+          "segment": "506__OverpassMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/50__ヒラギノ角ゴシック W0.ttc",
+      "bytes": 3573828,
+      "analysis": [
+        {
+          "segment": "50__ヒラギノ角ゴシック W0.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/51__ヒラギノ明朝 ProN.ttc",
+      "bytes": 19409608,
+      "analysis": [
+        {
+          "segment": "51__ヒラギノ明朝 ProN.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"明\" \"朝\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "明",
+            "朝",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/522__VictorMono[wght].ttf",
+      "bytes": 194312,
+      "analysis": [
+        {
+          "segment": "522__VictorMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/524__NotoSerif[wdth,wght].ttf",
+      "bytes": 1887192,
+      "analysis": [
+        {
+          "segment": "524__NotoSerif[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/54__ヒラギノ角ゴシック W7.ttc",
+      "bytes": 3610100,
+      "analysis": [
+        {
+          "segment": "54__ヒラギノ角ゴシック W7.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/57__Avenir Next.ttc",
+      "bytes": 4994280,
+      "analysis": [
+        {
+          "segment": "57__Avenir Next.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/58__Apple Braille Outline 8 Dot.ttf",
+      "bytes": 283076,
+      "analysis": [
+        {
+          "segment": "58__Apple Braille Outline 8 Dot.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/61__Apple Braille.ttf",
+      "bytes": 138012,
+      "analysis": [
+        {
+          "segment": "61__Apple Braille.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/64__Hiragino Sans GB.ttc",
+      "bytes": 23522052,
+      "analysis": [
+        {
+          "segment": "64__Hiragino Sans GB.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/66__ヒラギノ角ゴシック W4.ttc",
+      "bytes": 7249820,
+      "analysis": [
+        {
+          "segment": "66__ヒラギノ角ゴシック W4.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/67__ヒラギノ角ゴシック W2.ttc",
+      "bytes": 7261144,
+      "analysis": [
+        {
+          "segment": "67__ヒラギノ角ゴシック W2.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/68__ヒラギノ角ゴシック W6.ttc",
+      "bytes": 7965696,
+      "analysis": [
+        {
+          "segment": "68__ヒラギノ角ゴシック W6.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/71__Apple Braille Pinpoint 8 Dot.ttf",
+      "bytes": 191768,
+      "analysis": [
+        {
+          "segment": "71__Apple Braille Pinpoint 8 Dot.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/73__Apple Braille Outline 6 Dot.ttf",
+      "bytes": 266008,
+      "analysis": [
+        {
+          "segment": "73__Apple Braille Outline 6 Dot.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/757__Arial Narrow.ttf",
+      "bytes": 179492,
+      "analysis": [
+        {
+          "segment": "757__Arial Narrow.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/75__ヒラギノ角ゴシック W3.ttc",
+      "bytes": 7863660,
+      "analysis": [
+        {
+          "segment": "75__ヒラギノ角ゴシック W3.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/762__Comic Sans MS Bold.ttf",
+      "bytes": 120120,
+      "analysis": [
+        {
+          "segment": "762__Comic Sans MS Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/76__ヒラギノ角ゴシック W5.ttc",
+      "bytes": 7250364,
+      "analysis": [
+        {
+          "segment": "76__ヒラギノ角ゴシック W5.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/773__Courier New Bold.ttf",
+      "bytes": 691796,
+      "analysis": [
+        {
+          "segment": "773__Courier New Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/774__Trebuchet MS Italic.ttf",
+      "bytes": 144820,
+      "analysis": [
+        {
+          "segment": "774__Trebuchet MS Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/777__Bangla Sangam MN.ttc",
+      "bytes": 440816,
+      "analysis": [
+        {
+          "segment": "777__Bangla Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/778__Bodoni 72 Smallcaps Book.ttf",
+      "bytes": 83128,
+      "analysis": [
+        {
+          "segment": "778__Bodoni 72 Smallcaps Book.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/785__Arial Black.ttf",
+      "bytes": 122556,
+      "analysis": [
+        {
+          "segment": "785__Arial Black.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/787__Hoefler Text Ornaments.ttf",
+      "bytes": 43380,
+      "analysis": [
+        {
+          "segment": "787__Hoefler Text Ornaments.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/78__NotoSansArmenian[wdth,wght].ttf",
+      "bytes": 221936,
+      "analysis": [
+        {
+          "segment": "78__NotoSansArmenian[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/794__Myanmar MN.ttc",
+      "bytes": 242060,
+      "analysis": [
+        {
+          "segment": "794__Myanmar MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/796__Arial Italic.ttf",
+      "bytes": 553284,
+      "analysis": [
+        {
+          "segment": "796__Arial Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/797__Kannada Sangam MN.ttc",
+      "bytes": 297528,
+      "analysis": [
+        {
+          "segment": "797__Kannada Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/800__Verdana Bold.ttf",
+      "bytes": 153260,
+      "analysis": [
+        {
+          "segment": "800__Verdana Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/806__Bodoni 72.ttc",
+      "bytes": 428976,
+      "analysis": [
+        {
+          "segment": "806__Bodoni 72.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/809__Georgia Italic.ttf",
+      "bytes": 400624,
+      "analysis": [
+        {
+          "segment": "809__Georgia Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/80__Apple Symbols.ttf",
+      "bytes": 897936,
+      "analysis": [
+        {
+          "segment": "80__Apple Symbols.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/818__Arial Narrow Bold Italic.ttf",
+      "bytes": 183932,
+      "analysis": [
+        {
+          "segment": "818__Arial Narrow Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/820__Georgia Bold Italic.ttf",
+      "bytes": 385768,
+      "analysis": [
+        {
+          "segment": "820__Georgia Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/822__Khmer Sangam MN.ttf",
+      "bytes": 188048,
+      "analysis": [
+        {
+          "segment": "822__Khmer Sangam MN.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/823__Arial Bold.ttf",
+      "bytes": 750984,
+      "analysis": [
+        {
+          "segment": "823__Arial Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/825__Diwan Kufi.ttc",
+      "bytes": 93724,
+      "analysis": [
+        {
+          "segment": "825__Diwan Kufi.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/82__Apple Color Emoji.ttc",
+      "bytes": 192123488,
+      "analysis": [
+        {
+          "segment": "82__Apple Color Emoji.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/831__Telugu MN.ttc",
+      "bytes": 335380,
+      "analysis": [
+        {
+          "segment": "831__Telugu MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/835__Lao Sangam MN.ttf",
+      "bytes": 58092,
+      "analysis": [
+        {
+          "segment": "835__Lao Sangam MN.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/839__Myanmar Sangam MN.ttc",
+      "bytes": 193720,
+      "analysis": [
+        {
+          "segment": "839__Myanmar Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/83__Apple Braille Pinpoint 6 Dot.ttf",
+      "bytes": 185180,
+      "analysis": [
+        {
+          "segment": "83__Apple Braille Pinpoint 6 Dot.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/84__ヒラギノ角ゴシック W8.ttc",
+      "bytes": 3753728,
+      "analysis": [
+        {
+          "segment": "84__ヒラギノ角ゴシック W8.ttc",
+          "reason": "illegal characters: \"ヒ\" \"ラ\" \"キ\" \"゙\" \"ノ\" \"角\" \"コ\" \"シ\" \"ッ\" \"ク\" \" \"",
+          "badChars": [
+            "ヒ",
+            "ラ",
+            "キ",
+            "゙",
+            "ノ",
+            "角",
+            "コ",
+            "シ",
+            "ッ",
+            "ク",
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/850__Malayalam Sangam MN.ttc",
+      "bytes": 184960,
+      "analysis": [
+        {
+          "segment": "850__Malayalam Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/855__DIN Alternate Bold.ttf",
+      "bytes": 152012,
+      "analysis": [
+        {
+          "segment": "855__DIN Alternate Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/86__Rubik-Italic[wght].ttf",
+      "bytes": 354984,
+      "analysis": [
+        {
+          "segment": "86__Rubik-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/876__Academy Engraved LET Fonts.ttf",
+      "bytes": 109152,
+      "analysis": [
+        {
+          "segment": "876__Academy Engraved LET Fonts.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/896__Devanagari Sangam MN.ttc",
+      "bytes": 1029884,
+      "analysis": [
+        {
+          "segment": "896__Devanagari Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/897__Savoye LET.ttc",
+      "bytes": 110272,
+      "analysis": [
+        {
+          "segment": "897__Savoye LET.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/900__Bodoni Ornaments.ttf",
+      "bytes": 73972,
+      "analysis": [
+        {
+          "segment": "900__Bodoni Ornaments.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/910__Courier New.ttf",
+      "bytes": 684624,
+      "analysis": [
+        {
+          "segment": "910__Courier New.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/929__Verdana Bold Italic.ttf",
+      "bytes": 173132,
+      "analysis": [
+        {
+          "segment": "929__Verdana Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/930__Comic Sans MS.ttf",
+      "bytes": 135484,
+      "analysis": [
+        {
+          "segment": "930__Comic Sans MS.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/934__Trebuchet MS.ttf",
+      "bytes": 138848,
+      "analysis": [
+        {
+          "segment": "934__Trebuchet MS.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/944__Arial Narrow Italic.ttf",
+      "bytes": 184944,
+      "analysis": [
+        {
+          "segment": "944__Arial Narrow Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/946__Brush Script.ttf",
+      "bytes": 222640,
+      "analysis": [
+        {
+          "segment": "946__Brush Script.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/952__Tamil MN.ttc",
+      "bytes": 189232,
+      "analysis": [
+        {
+          "segment": "952__Tamil MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/955__Wingdings 2.ttf",
+      "bytes": 68768,
+      "analysis": [
+        {
+          "segment": "955__Wingdings 2.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/960__Andale Mono.ttf",
+      "bytes": 109700,
+      "analysis": [
+        {
+          "segment": "960__Andale Mono.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/963__Gurmukhi MN.ttc",
+      "bytes": 230292,
+      "analysis": [
+        {
+          "segment": "963__Gurmukhi MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/968__Courier New Bold Italic.ttf",
+      "bytes": 506640,
+      "analysis": [
+        {
+          "segment": "968__Courier New Bold Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/971__DIN Condensed Bold.ttf",
+      "bytes": 212040,
+      "analysis": [
+        {
+          "segment": "971__DIN Condensed Bold.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/977__Khmer MN.ttc",
+      "bytes": 495056,
+      "analysis": [
+        {
+          "segment": "977__Khmer MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/981__Microsoft Sans Serif.ttf",
+      "bytes": 652248,
+      "analysis": [
+        {
+          "segment": "981__Microsoft Sans Serif.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/982__Times New Roman Italic.ttf",
+      "bytes": 660268,
+      "analysis": [
+        {
+          "segment": "982__Times New Roman Italic.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/98__Al Tarikh.ttc",
+      "bytes": 79748,
+      "analysis": [
+        {
+          "segment": "98__Al Tarikh.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/996__Telugu Sangam MN.ttc",
+      "bytes": 307932,
+      "analysis": [
+        {
+          "segment": "996__Telugu Sangam MN.ttc",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/9__Wingdings 3.ttf",
+      "bytes": 34804,
+      "analysis": [
+        {
+          "segment": "9__Wingdings 3.ttf",
+          "reason": "illegal characters: \" \"",
+          "badChars": [
+            " "
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/u__UbuntuSansMono[wght].ttf",
+      "bytes": 230324,
+      "analysis": [
+        {
+          "segment": "u__UbuntuSansMono[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__Arimo-Italic[wght].ttf",
+      "bytes": 543196,
+      "analysis": [
+        {
+          "segment": "z__Arimo-Italic[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__Arimo[wght].ttf",
+      "bytes": 496268,
+      "analysis": [
+        {
+          "segment": "z__Arimo[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansBalinese[wght].ttf",
+      "bytes": 193412,
+      "analysis": [
+        {
+          "segment": "z__NotoSansBalinese[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansBengali[wdth,wght].ttf",
+      "bytes": 463668,
+      "analysis": [
+        {
+          "segment": "z__NotoSansBengali[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansCherokee[wght].ttf",
+      "bytes": 224360,
+      "analysis": [
+        {
+          "segment": "z__NotoSansCherokee[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansDevanagari[wdth,wght].ttf",
+      "bytes": 647144,
+      "analysis": [
+        {
+          "segment": "z__NotoSansDevanagari[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansEthiopic[wdth,wght].ttf",
+      "bytes": 1143168,
+      "analysis": [
+        {
+          "segment": "z__NotoSansEthiopic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansGujarati[wdth,wght].ttf",
+      "bytes": 672904,
+      "analysis": [
+        {
+          "segment": "z__NotoSansGujarati[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansGurmukhi[wdth,wght].ttf",
+      "bytes": 268608,
+      "analysis": [
+        {
+          "segment": "z__NotoSansGurmukhi[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansKhmer[wdth,wght].ttf",
+      "bytes": 359788,
+      "analysis": [
+        {
+          "segment": "z__NotoSansKhmer[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansMalayalam[wdth,wght].ttf",
+      "bytes": 504204,
+      "analysis": [
+        {
+          "segment": "z__NotoSansMalayalam[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansMedefaidrin[wght].ttf",
+      "bytes": 112788,
+      "analysis": [
+        {
+          "segment": "z__NotoSansMedefaidrin[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansSinhala[wdth,wght].ttf",
+      "bytes": 1181956,
+      "analysis": [
+        {
+          "segment": "z__NotoSansSinhala[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansSymbols[wght].ttf",
+      "bytes": 372684,
+      "analysis": [
+        {
+          "segment": "z__NotoSansSymbols[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansTamil[wdth,wght].ttf",
+      "bytes": 340668,
+      "analysis": [
+        {
+          "segment": "z__NotoSansTamil[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansTelugu[wdth,wght].ttf",
+      "bytes": 888808,
+      "analysis": [
+        {
+          "segment": "z__NotoSansTelugu[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSansThai[wdth,wght].ttf",
+      "bytes": 218652,
+      "analysis": [
+        {
+          "segment": "z__NotoSansThai[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifBengali[wdth,wght].ttf",
+      "bytes": 981812,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifBengali[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifDevanagari[wdth,wght].ttf",
+      "bytes": 757692,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifDevanagari[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifEthiopic[wdth,wght].ttf",
+      "bytes": 1057996,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifEthiopic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifGujarati[wght].ttf",
+      "bytes": 378356,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifGujarati[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifGurmukhi[wght].ttf",
+      "bytes": 144664,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifGurmukhi[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifKannada[wght].ttf",
+      "bytes": 495384,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifKannada[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifKhmer[wdth,wght].ttf",
+      "bytes": 498288,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifKhmer[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifKhojki[wght].ttf",
+      "bytes": 233136,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifKhojki[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifMalayalam[wght].ttf",
+      "bytes": 242048,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifMalayalam[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifNPHmong[wght].ttf",
+      "bytes": 133168,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifNPHmong[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifSinhala[wdth,wght].ttf",
+      "bytes": 1026928,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifSinhala[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifTamil-Italic[wdth,wght].ttf",
+      "bytes": 422328,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifTamil-Italic[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifTamil[wdth,wght].ttf",
+      "bytes": 420124,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifTamil[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifTelugu[wght].ttf",
+      "bytes": 543100,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifTelugu[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifThai[wdth,wght].ttf",
+      "bytes": 292188,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifThai[wdth,wght].ttf",
+          "reason": "illegal characters: \"[\" \",\" \"]\"",
+          "badChars": [
+            "[",
+            ",",
+            "]"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fonts/z__NotoSerifTibetan[wght].ttf",
+      "bytes": 2063504,
+      "analysis": [
+        {
+          "segment": "z__NotoSerifTibetan[wght].ttf",
+          "reason": "illegal characters: \"[\" \"]\"",
+          "badChars": [
+            "[",
+            "]"
+          ]
+        }
+      ]
+    }
+  ],
+  "symlinks": [],
+  "unsupportedEntries": [],
+  "caseInsensitiveDuplicates": [],
+  "hasEntryExecutable": true,
+  "hasTopLevelManifestJson": false,
+  "limits": {
+    "maxFiles": {
+      "limit": 10000,
+      "actual": 1579,
+      "ok": true
+    },
+    "maxFileSize": {
+      "limit": 536870912,
+      "actual": 192123488,
+      "ok": true
+    },
+    "maxTotalSize": {
+      "limit": 3221225472,
+      "actual": 2563096877,
+      "ok": true
+    }
+  },
+  "productionListFiles": {
+    "ok": false,
+    "error": "Unsafe bundled engine relative file path"
+  }
+}

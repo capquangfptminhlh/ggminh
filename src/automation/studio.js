@@ -96,6 +96,38 @@ class WorkflowStore {
     catch (error) { this.items = previous; throw error; }
     return true;
   }
+  // Shared staged-removal discipline for the two purge sweeps below:
+  // swap the array first, persist, roll back in memory on failure —
+  // the same contract as save()/delete().
+  dropWhere(predicate, describe) {
+    const removed = this.items.filter(predicate);
+    if (!removed.length) return [];
+    const previous = this.items;
+    this.items = previous.filter(w => !predicate(w));
+    try { this.persist(); }
+    catch (error) { this.items = previous; throw error; }
+    return removed.map(describe);
+  }
+  // Permanent profile deletion (finding F4): drop every workflow bound
+  // to the profile, so automation-workflows.json never keeps a
+  // dangling profileId after the profile is gone for good. Workflows
+  // of live and trashed (restorable) profiles are untouched — this is
+  // called only from the purge hook, never at trash time. Returns the
+  // removed workflows as [{id, name}] for the caller's log line.
+  removeForProfile(profileId) {
+    return this.dropWhere(w => w.profileId === profileId,
+      w => ({ id: w.id, name: w.name }));
+  }
+  // Startup backstop for the same finding: remove workflows whose
+  // profileId belongs to no live and no trashed profile. Covers
+  // purges that ran while no purge hook was wired (the startup expiry
+  // purge precedes WorkflowStore creation in main.js, and purges
+  // performed by older builds). Returns [{id, name, profileId}].
+  sweepOrphaned(validIds) {
+    const valid = new Set(validIds);
+    return this.dropWhere(w => !valid.has(w.profileId),
+      w => ({ id: w.id, name: w.name, profileId: w.profileId }));
+  }
   persist() {
     const tmp = this.file + '.' + process.pid + '.' + crypto.randomBytes(6).toString('hex') + '.tmp';
     try {

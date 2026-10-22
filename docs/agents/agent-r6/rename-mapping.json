@@ -1,0 +1,874 @@
+[
+ {
+  "from": "fonts/1003__Bangla MN.ttc",
+  "to": "fonts/1003__Bangla_MN.ttc"
+ },
+ {
+  "from": "fonts/1005__Sinhala MN.ttc",
+  "to": "fonts/1005__Sinhala_MN.ttc"
+ },
+ {
+  "from": "fonts/1012__Courier New Italic.ttf",
+  "to": "fonts/1012__Courier_New_Italic.ttf"
+ },
+ {
+  "from": "fonts/1016__Arial Rounded Bold.ttf",
+  "to": "fonts/1016__Arial_Rounded_Bold.ttf"
+ },
+ {
+  "from": "fonts/106__Raleway-Italic[wght].ttf",
+  "to": "fonts/106__Raleway-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/108__Rubik[wght].ttf",
+  "to": "fonts/108__Rubik_wght_.ttf"
+ },
+ {
+  "from": "fonts/109__Apple Chancery.ttf",
+  "to": "fonts/109__Apple_Chancery.ttf"
+ },
+ {
+  "from": "fonts/10__Wingdings 2.ttf",
+  "to": "fonts/10__Wingdings_2.ttf"
+ },
+ {
+  "from": "fonts/110__Inter-Italic[opsz,wght].ttf",
+  "to": "fonts/110__Inter-Italic_opsz_wght_.ttf"
+ },
+ {
+  "from": "fonts/112__Arial Unicode.ttf",
+  "to": "fonts/112__Arial_Unicode.ttf"
+ },
+ {
+  "from": "fonts/114__NotoSerifGeorgian[wdth,wght].ttf",
+  "to": "fonts/114__NotoSerifGeorgian_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/116__Raleway[wght].ttf",
+  "to": "fonts/116__Raleway_wght_.ttf"
+ },
+ {
+  "from": "fonts/122__Nunito-Italic[wght].ttf",
+  "to": "fonts/122__Nunito-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/127__Tahoma Bold.ttf",
+  "to": "fonts/127__Tahoma_Bold.ttf"
+ },
+ {
+  "from": "fonts/132__Gujarati Sangam MN.ttc",
+  "to": "fonts/132__Gujarati_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/140__Arial Narrow Bold.ttf",
+  "to": "fonts/140__Arial_Narrow_Bold.ttf"
+ },
+ {
+  "from": "fonts/140__Nunito[wght].ttf",
+  "to": "fonts/140__Nunito_wght_.ttf"
+ },
+ {
+  "from": "fonts/142__Bodoni 72 OS.ttc",
+  "to": "fonts/142__Bodoni_72_OS.ttc"
+ },
+ {
+  "from": "fonts/144__Kannada MN.ttc",
+  "to": "fonts/144__Kannada_MN.ttc"
+ },
+ {
+  "from": "fonts/152__NotoSans[wdth,wght].ttf",
+  "to": "fonts/152__NotoSans_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/161__Heebo[wght].ttf",
+  "to": "fonts/161__Heebo_wght_.ttf"
+ },
+ {
+  "from": "fonts/162__Verdana Italic.ttf",
+  "to": "fonts/162__Verdana_Italic.ttf"
+ },
+ {
+  "from": "fonts/163__Oswald[wght].ttf",
+  "to": "fonts/163__Oswald_wght_.ttf"
+ },
+ {
+  "from": "fonts/164__PlayfairDisplay-Italic[wght].ttf",
+  "to": "fonts/164__PlayfairDisplay-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/165__VictorMono-Italic[wght].ttf",
+  "to": "fonts/165__VictorMono-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/168__Malayalam MN.ttc",
+  "to": "fonts/168__Malayalam_MN.ttc"
+ },
+ {
+  "from": "fonts/170__Karla[wght].ttf",
+  "to": "fonts/170__Karla_wght_.ttf"
+ },
+ {
+  "from": "fonts/180__Hoefler Text.ttc",
+  "to": "fonts/180__Hoefler_Text.ttc"
+ },
+ {
+  "from": "fonts/182__Iowan Old Style.ttc",
+  "to": "fonts/182__Iowan_Old_Style.ttc"
+ },
+ {
+  "from": "fonts/189__Georgia Bold.ttf",
+  "to": "fonts/189__Georgia_Bold.ttf"
+ },
+ {
+  "from": "fonts/18__ヒラギノ角ゴシック W9.ttc",
+  "to": "fonts/18______________W9.ttc"
+ },
+ {
+  "from": "fonts/190__Al Nile.ttc",
+  "to": "fonts/190__Al_Nile.ttc"
+ },
+ {
+  "from": "fonts/198__WorkSans[wght].ttf",
+  "to": "fonts/198__WorkSans_wght_.ttf"
+ },
+ {
+  "from": "fonts/199__OpenSans-Italic[wdth,wght].ttf",
+  "to": "fonts/199__OpenSans-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/200__Cabin-Italic[wdth,wght].ttf",
+  "to": "fonts/200__Cabin-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/203__NotoSansLao[wdth,wght].ttf",
+  "to": "fonts/203__NotoSansLao_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/204__CascadiaMono-Italic[wght].ttf",
+  "to": "fonts/204__CascadiaMono-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/207__RobotoCondensed[wght].ttf",
+  "to": "fonts/207__RobotoCondensed_wght_.ttf"
+ },
+ {
+  "from": "fonts/214__UbuntuSansMono-Italic[wght].ttf",
+  "to": "fonts/214__UbuntuSansMono-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/21__ヒラギノ角ゴシック W1.ttc",
+  "to": "fonts/21______________W1.ttc"
+ },
+ {
+  "from": "fonts/226__Quicksand[wght].ttf",
+  "to": "fonts/226__Quicksand_wght_.ttf"
+ },
+ {
+  "from": "fonts/229__SourceSans3-Italic[wght].ttf",
+  "to": "fonts/229__SourceSans3-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/22__STHeiti Light.ttc",
+  "to": "fonts/22__STHeiti_Light.ttc"
+ },
+ {
+  "from": "fonts/230__Montserrat[wght].ttf",
+  "to": "fonts/230__Montserrat_wght_.ttf"
+ },
+ {
+  "from": "fonts/233__Oriya MN.ttc",
+  "to": "fonts/233__Oriya_MN.ttc"
+ },
+ {
+  "from": "fonts/233__RobotoMono[wght].ttf",
+  "to": "fonts/233__RobotoMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/235__Bradley Hand Bold.ttf",
+  "to": "fonts/235__Bradley_Hand_Bold.ttf"
+ },
+ {
+  "from": "fonts/238__Manrope[wght].ttf",
+  "to": "fonts/238__Manrope_wght_.ttf"
+ },
+ {
+  "from": "fonts/239__Trebuchet MS Bold.ttf",
+  "to": "fonts/239__Trebuchet_MS_Bold.ttf"
+ },
+ {
+  "from": "fonts/242__Cabin[wdth,wght].ttf",
+  "to": "fonts/242__Cabin_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/244__RobotoSlab[wght].ttf",
+  "to": "fonts/244__RobotoSlab_wght_.ttf"
+ },
+ {
+  "from": "fonts/245__NotoSerifHebrew[wdth,wght].ttf",
+  "to": "fonts/245__NotoSerifHebrew_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/248__ReemKufi[wght].ttf",
+  "to": "fonts/248__ReemKufi_wght_.ttf"
+ },
+ {
+  "from": "fonts/250__Sinhala Sangam MN.ttc",
+  "to": "fonts/250__Sinhala_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/252__NotoSansHebrew[wdth,wght].ttf",
+  "to": "fonts/252__NotoSansHebrew_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/265__Times New Roman Bold.ttf",
+  "to": "fonts/265__Times_New_Roman_Bold.ttf"
+ },
+ {
+  "from": "fonts/268__SourceCodePro[wght].ttf",
+  "to": "fonts/268__SourceCodePro_wght_.ttf"
+ },
+ {
+  "from": "fonts/269__Wingdings 3.ttf",
+  "to": "fonts/269__Wingdings_3.ttf"
+ },
+ {
+  "from": "fonts/271__NotoSerif-Italic[wdth,wght].ttf",
+  "to": "fonts/271__NotoSerif-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/273__Diwan Thuluth.ttf",
+  "to": "fonts/273__Diwan_Thuluth.ttf"
+ },
+ {
+  "from": "fonts/275__OpenSans[wdth,wght].ttf",
+  "to": "fonts/275__OpenSans_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/278__Inconsolata[wdth,wght].ttf",
+  "to": "fonts/278__Inconsolata_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/280__NotoSansArabic[wdth,wght].ttf",
+  "to": "fonts/280__NotoSansArabic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/287__Trebuchet MS Bold Italic.ttf",
+  "to": "fonts/287__Trebuchet_MS_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/294__NotoKufiArabic[wght].ttf",
+  "to": "fonts/294__NotoKufiArabic_wght_.ttf"
+ },
+ {
+  "from": "fonts/295__JetBrainsMono[wght].ttf",
+  "to": "fonts/295__JetBrainsMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/296__NunitoSans-Italic[YTLC,opsz,wdth,wght].ttf",
+  "to": "fonts/296__NunitoSans-Italic_YTLC_opsz_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/297__NotoSansMono[wdth,wght].ttf",
+  "to": "fonts/297__NotoSansMono_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/298__NotoSansLisu[wght].ttf",
+  "to": "fonts/298__NotoSansLisu_wght_.ttf"
+ },
+ {
+  "from": "fonts/300__Oriya Sangam MN.ttc",
+  "to": "fonts/300__Oriya_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/301__JosefinSans-Italic[wght].ttf",
+  "to": "fonts/301__JosefinSans-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/302__Tamil Sangam MN.ttc",
+  "to": "fonts/302__Tamil_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/304__UbuntuSansMono[wght].ttf",
+  "to": "fonts/304__UbuntuSansMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/307__Inter[opsz,wght].ttf",
+  "to": "fonts/307__Inter_opsz_wght_.ttf"
+ },
+ {
+  "from": "fonts/314__SourceCodePro-Italic[wght].ttf",
+  "to": "fonts/314__SourceCodePro-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/315__JetBrainsMono-Italic[wght].ttf",
+  "to": "fonts/315__JetBrainsMono-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/316__JosefinSans[wght].ttf",
+  "to": "fonts/316__JosefinSans_wght_.ttf"
+ },
+ {
+  "from": "fonts/322__UbuntuMono[wght].ttf",
+  "to": "fonts/322__UbuntuMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/328__Times New Roman.ttf",
+  "to": "fonts/328__Times_New_Roman.ttf"
+ },
+ {
+  "from": "fonts/332__SourceSerif4[opsz,wght].ttf",
+  "to": "fonts/332__SourceSerif4_opsz_wght_.ttf"
+ },
+ {
+  "from": "fonts/341__Roboto[wdth,wght].ttf",
+  "to": "fonts/341__Roboto_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/342__Arial Bold Italic.ttf",
+  "to": "fonts/342__Arial_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/344__Montserrat-Italic[wght].ttf",
+  "to": "fonts/344__Montserrat-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/350__Times New Roman Bold Italic.ttf",
+  "to": "fonts/350__Times_New_Roman_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/351__Lao MN.ttc",
+  "to": "fonts/351__Lao_MN.ttc"
+ },
+ {
+  "from": "fonts/353__Gurmukhi Sangam MN.ttc",
+  "to": "fonts/353__Gurmukhi_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/356__NotoSerifArmenian[wdth,wght].ttf",
+  "to": "fonts/356__NotoSerifArmenian_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/361__Mishafi Gold.ttf",
+  "to": "fonts/361__Mishafi_Gold.ttf"
+ },
+ {
+  "from": "fonts/363__DMSans-Italic[opsz,wght].ttf",
+  "to": "fonts/363__DMSans-Italic_opsz_wght_.ttf"
+ },
+ {
+  "from": "fonts/365__DMSans[opsz,wght].ttf",
+  "to": "fonts/365__DMSans_opsz_wght_.ttf"
+ },
+ {
+  "from": "fonts/374__Merriweather[opsz,wdth,wght].ttf",
+  "to": "fonts/374__Merriweather_opsz_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/380__NotoNaskhArabic[wght].ttf",
+  "to": "fonts/380__NotoNaskhArabic_wght_.ttf"
+ },
+ {
+  "from": "fonts/387__CascadiaCode[wght].ttf",
+  "to": "fonts/387__CascadiaCode_wght_.ttf"
+ },
+ {
+  "from": "fonts/388__Roboto-Italic[wdth,wght].ttf",
+  "to": "fonts/388__Roboto-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/391__NotoSansGeorgian[wdth,wght].ttf",
+  "to": "fonts/391__NotoSansGeorgian_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/398__UbuntuSans-Italic[wdth,wght].ttf",
+  "to": "fonts/398__UbuntuSans-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/409__SourceSerif4-Italic[opsz,wght].ttf",
+  "to": "fonts/409__SourceSerif4-Italic_opsz_wght_.ttf"
+ },
+ {
+  "from": "fonts/412__WorkSans-Italic[wght].ttf",
+  "to": "fonts/412__WorkSans-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/433__NunitoSans[YTLC,opsz,wdth,wght].ttf",
+  "to": "fonts/433__NunitoSans_YTLC_opsz_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/452__FiraCode[wght].ttf",
+  "to": "fonts/452__FiraCode_wght_.ttf"
+ },
+ {
+  "from": "fonts/457__UbuntuSans[wdth,wght].ttf",
+  "to": "fonts/457__UbuntuSans_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/462__PlayfairDisplay[wght].ttf",
+  "to": "fonts/462__PlayfairDisplay_wght_.ttf"
+ },
+ {
+  "from": "fonts/46__ヒラギノ丸ゴ ProN W4.ttc",
+  "to": "fonts/46___________ProN_W4.ttc"
+ },
+ {
+  "from": "fonts/470__RobotoCondensed-Italic[wght].ttf",
+  "to": "fonts/470__RobotoCondensed-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/473__CascadiaCode-Italic[wght].ttf",
+  "to": "fonts/473__CascadiaCode-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/474__Merriweather-Italic[opsz,wdth,wght].ttf",
+  "to": "fonts/474__Merriweather-Italic_opsz_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/477__Ubuntu-Italic[wdth,wght].ttf",
+  "to": "fonts/477__Ubuntu-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/47__STHeiti Medium.ttc",
+  "to": "fonts/47__STHeiti_Medium.ttc"
+ },
+ {
+  "from": "fonts/482__Karla-Italic[wght].ttf",
+  "to": "fonts/482__Karla-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/487__CascadiaMono[wght].ttf",
+  "to": "fonts/487__CascadiaMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/490__SourceSans3[wght].ttf",
+  "to": "fonts/490__SourceSans3_wght_.ttf"
+ },
+ {
+  "from": "fonts/497__RobotoMono-Italic[wght].ttf",
+  "to": "fonts/497__RobotoMono-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/498__NotoSans-Italic[wdth,wght].ttf",
+  "to": "fonts/498__NotoSans-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/49__Avenir Next Condensed.ttc",
+  "to": "fonts/49__Avenir_Next_Condensed.ttc"
+ },
+ {
+  "from": "fonts/502__NotoSerifLao[wdth,wght].ttf",
+  "to": "fonts/502__NotoSerifLao_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/506__OverpassMono[wght].ttf",
+  "to": "fonts/506__OverpassMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/50__ヒラギノ角ゴシック W0.ttc",
+  "to": "fonts/50______________W0.ttc"
+ },
+ {
+  "from": "fonts/51__ヒラギノ明朝 ProN.ttc",
+  "to": "fonts/51__________ProN.ttc"
+ },
+ {
+  "from": "fonts/522__VictorMono[wght].ttf",
+  "to": "fonts/522__VictorMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/524__NotoSerif[wdth,wght].ttf",
+  "to": "fonts/524__NotoSerif_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/54__ヒラギノ角ゴシック W7.ttc",
+  "to": "fonts/54______________W7.ttc"
+ },
+ {
+  "from": "fonts/57__Avenir Next.ttc",
+  "to": "fonts/57__Avenir_Next.ttc"
+ },
+ {
+  "from": "fonts/58__Apple Braille Outline 8 Dot.ttf",
+  "to": "fonts/58__Apple_Braille_Outline_8_Dot.ttf"
+ },
+ {
+  "from": "fonts/61__Apple Braille.ttf",
+  "to": "fonts/61__Apple_Braille.ttf"
+ },
+ {
+  "from": "fonts/64__Hiragino Sans GB.ttc",
+  "to": "fonts/64__Hiragino_Sans_GB.ttc"
+ },
+ {
+  "from": "fonts/66__ヒラギノ角ゴシック W4.ttc",
+  "to": "fonts/66______________W4.ttc"
+ },
+ {
+  "from": "fonts/67__ヒラギノ角ゴシック W2.ttc",
+  "to": "fonts/67______________W2.ttc"
+ },
+ {
+  "from": "fonts/68__ヒラギノ角ゴシック W6.ttc",
+  "to": "fonts/68______________W6.ttc"
+ },
+ {
+  "from": "fonts/71__Apple Braille Pinpoint 8 Dot.ttf",
+  "to": "fonts/71__Apple_Braille_Pinpoint_8_Dot.ttf"
+ },
+ {
+  "from": "fonts/73__Apple Braille Outline 6 Dot.ttf",
+  "to": "fonts/73__Apple_Braille_Outline_6_Dot.ttf"
+ },
+ {
+  "from": "fonts/757__Arial Narrow.ttf",
+  "to": "fonts/757__Arial_Narrow.ttf"
+ },
+ {
+  "from": "fonts/75__ヒラギノ角ゴシック W3.ttc",
+  "to": "fonts/75______________W3.ttc"
+ },
+ {
+  "from": "fonts/762__Comic Sans MS Bold.ttf",
+  "to": "fonts/762__Comic_Sans_MS_Bold.ttf"
+ },
+ {
+  "from": "fonts/76__ヒラギノ角ゴシック W5.ttc",
+  "to": "fonts/76______________W5.ttc"
+ },
+ {
+  "from": "fonts/773__Courier New Bold.ttf",
+  "to": "fonts/773__Courier_New_Bold.ttf"
+ },
+ {
+  "from": "fonts/774__Trebuchet MS Italic.ttf",
+  "to": "fonts/774__Trebuchet_MS_Italic.ttf"
+ },
+ {
+  "from": "fonts/777__Bangla Sangam MN.ttc",
+  "to": "fonts/777__Bangla_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/778__Bodoni 72 Smallcaps Book.ttf",
+  "to": "fonts/778__Bodoni_72_Smallcaps_Book.ttf"
+ },
+ {
+  "from": "fonts/785__Arial Black.ttf",
+  "to": "fonts/785__Arial_Black.ttf"
+ },
+ {
+  "from": "fonts/787__Hoefler Text Ornaments.ttf",
+  "to": "fonts/787__Hoefler_Text_Ornaments.ttf"
+ },
+ {
+  "from": "fonts/78__NotoSansArmenian[wdth,wght].ttf",
+  "to": "fonts/78__NotoSansArmenian_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/794__Myanmar MN.ttc",
+  "to": "fonts/794__Myanmar_MN.ttc"
+ },
+ {
+  "from": "fonts/796__Arial Italic.ttf",
+  "to": "fonts/796__Arial_Italic.ttf"
+ },
+ {
+  "from": "fonts/797__Kannada Sangam MN.ttc",
+  "to": "fonts/797__Kannada_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/800__Verdana Bold.ttf",
+  "to": "fonts/800__Verdana_Bold.ttf"
+ },
+ {
+  "from": "fonts/806__Bodoni 72.ttc",
+  "to": "fonts/806__Bodoni_72.ttc"
+ },
+ {
+  "from": "fonts/809__Georgia Italic.ttf",
+  "to": "fonts/809__Georgia_Italic.ttf"
+ },
+ {
+  "from": "fonts/80__Apple Symbols.ttf",
+  "to": "fonts/80__Apple_Symbols.ttf"
+ },
+ {
+  "from": "fonts/818__Arial Narrow Bold Italic.ttf",
+  "to": "fonts/818__Arial_Narrow_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/820__Georgia Bold Italic.ttf",
+  "to": "fonts/820__Georgia_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/822__Khmer Sangam MN.ttf",
+  "to": "fonts/822__Khmer_Sangam_MN.ttf"
+ },
+ {
+  "from": "fonts/823__Arial Bold.ttf",
+  "to": "fonts/823__Arial_Bold.ttf"
+ },
+ {
+  "from": "fonts/825__Diwan Kufi.ttc",
+  "to": "fonts/825__Diwan_Kufi.ttc"
+ },
+ {
+  "from": "fonts/82__Apple Color Emoji.ttc",
+  "to": "fonts/82__Apple_Color_Emoji.ttc"
+ },
+ {
+  "from": "fonts/831__Telugu MN.ttc",
+  "to": "fonts/831__Telugu_MN.ttc"
+ },
+ {
+  "from": "fonts/835__Lao Sangam MN.ttf",
+  "to": "fonts/835__Lao_Sangam_MN.ttf"
+ },
+ {
+  "from": "fonts/839__Myanmar Sangam MN.ttc",
+  "to": "fonts/839__Myanmar_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/83__Apple Braille Pinpoint 6 Dot.ttf",
+  "to": "fonts/83__Apple_Braille_Pinpoint_6_Dot.ttf"
+ },
+ {
+  "from": "fonts/84__ヒラギノ角ゴシック W8.ttc",
+  "to": "fonts/84______________W8.ttc"
+ },
+ {
+  "from": "fonts/850__Malayalam Sangam MN.ttc",
+  "to": "fonts/850__Malayalam_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/855__DIN Alternate Bold.ttf",
+  "to": "fonts/855__DIN_Alternate_Bold.ttf"
+ },
+ {
+  "from": "fonts/86__Rubik-Italic[wght].ttf",
+  "to": "fonts/86__Rubik-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/876__Academy Engraved LET Fonts.ttf",
+  "to": "fonts/876__Academy_Engraved_LET_Fonts.ttf"
+ },
+ {
+  "from": "fonts/896__Devanagari Sangam MN.ttc",
+  "to": "fonts/896__Devanagari_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/897__Savoye LET.ttc",
+  "to": "fonts/897__Savoye_LET.ttc"
+ },
+ {
+  "from": "fonts/900__Bodoni Ornaments.ttf",
+  "to": "fonts/900__Bodoni_Ornaments.ttf"
+ },
+ {
+  "from": "fonts/910__Courier New.ttf",
+  "to": "fonts/910__Courier_New.ttf"
+ },
+ {
+  "from": "fonts/929__Verdana Bold Italic.ttf",
+  "to": "fonts/929__Verdana_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/930__Comic Sans MS.ttf",
+  "to": "fonts/930__Comic_Sans_MS.ttf"
+ },
+ {
+  "from": "fonts/934__Trebuchet MS.ttf",
+  "to": "fonts/934__Trebuchet_MS.ttf"
+ },
+ {
+  "from": "fonts/944__Arial Narrow Italic.ttf",
+  "to": "fonts/944__Arial_Narrow_Italic.ttf"
+ },
+ {
+  "from": "fonts/946__Brush Script.ttf",
+  "to": "fonts/946__Brush_Script.ttf"
+ },
+ {
+  "from": "fonts/952__Tamil MN.ttc",
+  "to": "fonts/952__Tamil_MN.ttc"
+ },
+ {
+  "from": "fonts/955__Wingdings 2.ttf",
+  "to": "fonts/955__Wingdings_2.ttf"
+ },
+ {
+  "from": "fonts/960__Andale Mono.ttf",
+  "to": "fonts/960__Andale_Mono.ttf"
+ },
+ {
+  "from": "fonts/963__Gurmukhi MN.ttc",
+  "to": "fonts/963__Gurmukhi_MN.ttc"
+ },
+ {
+  "from": "fonts/968__Courier New Bold Italic.ttf",
+  "to": "fonts/968__Courier_New_Bold_Italic.ttf"
+ },
+ {
+  "from": "fonts/971__DIN Condensed Bold.ttf",
+  "to": "fonts/971__DIN_Condensed_Bold.ttf"
+ },
+ {
+  "from": "fonts/977__Khmer MN.ttc",
+  "to": "fonts/977__Khmer_MN.ttc"
+ },
+ {
+  "from": "fonts/981__Microsoft Sans Serif.ttf",
+  "to": "fonts/981__Microsoft_Sans_Serif.ttf"
+ },
+ {
+  "from": "fonts/982__Times New Roman Italic.ttf",
+  "to": "fonts/982__Times_New_Roman_Italic.ttf"
+ },
+ {
+  "from": "fonts/98__Al Tarikh.ttc",
+  "to": "fonts/98__Al_Tarikh.ttc"
+ },
+ {
+  "from": "fonts/996__Telugu Sangam MN.ttc",
+  "to": "fonts/996__Telugu_Sangam_MN.ttc"
+ },
+ {
+  "from": "fonts/9__Wingdings 3.ttf",
+  "to": "fonts/9__Wingdings_3.ttf"
+ },
+ {
+  "from": "fonts/u__UbuntuSansMono[wght].ttf",
+  "to": "fonts/u__UbuntuSansMono_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__Arimo-Italic[wght].ttf",
+  "to": "fonts/z__Arimo-Italic_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__Arimo[wght].ttf",
+  "to": "fonts/z__Arimo_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansBalinese[wght].ttf",
+  "to": "fonts/z__NotoSansBalinese_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansBengali[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansBengali_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansCherokee[wght].ttf",
+  "to": "fonts/z__NotoSansCherokee_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansDevanagari[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansDevanagari_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansEthiopic[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansEthiopic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansGujarati[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansGujarati_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansGurmukhi[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansGurmukhi_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansKhmer[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansKhmer_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansMalayalam[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansMalayalam_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansMedefaidrin[wght].ttf",
+  "to": "fonts/z__NotoSansMedefaidrin_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansSinhala[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansSinhala_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansSymbols[wght].ttf",
+  "to": "fonts/z__NotoSansSymbols_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansTamil[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansTamil_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansTelugu[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansTelugu_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSansThai[wdth,wght].ttf",
+  "to": "fonts/z__NotoSansThai_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifBengali[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifBengali_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifDevanagari[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifDevanagari_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifEthiopic[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifEthiopic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifGujarati[wght].ttf",
+  "to": "fonts/z__NotoSerifGujarati_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifGurmukhi[wght].ttf",
+  "to": "fonts/z__NotoSerifGurmukhi_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifKannada[wght].ttf",
+  "to": "fonts/z__NotoSerifKannada_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifKhmer[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifKhmer_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifKhojki[wght].ttf",
+  "to": "fonts/z__NotoSerifKhojki_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifMalayalam[wght].ttf",
+  "to": "fonts/z__NotoSerifMalayalam_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifNPHmong[wght].ttf",
+  "to": "fonts/z__NotoSerifNPHmong_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifSinhala[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifSinhala_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifTamil-Italic[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifTamil-Italic_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifTamil[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifTamil_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifTelugu[wght].ttf",
+  "to": "fonts/z__NotoSerifTelugu_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifThai[wdth,wght].ttf",
+  "to": "fonts/z__NotoSerifThai_wdth_wght_.ttf"
+ },
+ {
+  "from": "fonts/z__NotoSerifTibetan[wght].ttf",
+  "to": "fonts/z__NotoSerifTibetan_wght_.ttf"
+ }
+]

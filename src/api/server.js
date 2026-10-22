@@ -1,6 +1,37 @@
 const express = require('express');
 const crypto = require('crypto');
 const { checkProxy } = require('../engine/proxyChecker');
+const {resolveEngineType}=require('../engine/EngineFactory');
+const {safeWebUrl}=require('../engine/launchArgs');
+
+// Data minimization for profile payloads leaving over the Local API
+// (QA-003): publicProfile already strips proxy passwords, but it still
+// carries the user's private notes and the pinned D1 identity blob
+// (CAMOU_CONFIG env chunks + measurement expectations). No verified
+// HTTP consumer needs either: the desktop renderer reads full profiles
+// over Electron IPC, automation reads the store in-process, and the
+// documented list shape is /api/v1/user/list. Project at the HTTP
+// boundary only — stored data and IPC payloads are untouched. The
+// identity is replaced by its provenance metadata so API consumers
+// can still see that a pinned identity exists (and which generator
+// produced it) without receiving the blob itself.
+function apiProfile(profile) {
+  if (!profile || typeof profile !== 'object') return profile;
+  const result = { ...profile };
+  delete result.notes;
+  const fp = profile.fingerprint;
+  if (fp && typeof fp === 'object' &&
+      fp.identity && typeof fp.identity === 'object') {
+    result.fingerprint = { ...fp, identity: {
+      redacted: true,
+      format: fp.identity.format ?? null,
+      version: fp.identity.version ?? null,
+      generator: fp.identity.generator ?? null,
+      generatedAt: fp.identity.generatedAt ?? null,
+    } };
+  }
+  return result;
+}
 
 function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null, licensePolicy=null } = {}) {
   const service = express();
@@ -35,6 +66,25 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       const id = req.query.user_id || req.query.serial_number || req.query.id;
       if (typeof id !== 'string' || !id) return res.status(400).json({ code: -1, msg: 'Missing user_id' });
       const profile = store.getProfile(id);
+      if(profile&&resolveEngineType(profile,store.getSettings())==='camoufox'){
+        const controller=launcher.camoufoxPlaywrightController;
+        if(controller?.enabled===true){
+          const instance=await launcher.start(id,req.query.open_url);
+          if(instance.protocol!=='playwright-internal'||!controller.contextFor(id))
+            throw Error('Playwright BrowserContext was not established');
+          if(behaviorMonitor)behaviorMonitor.record('profile_open',id,'api');
+          // This is an in-process controller, NOT an attachable network socket.
+          return res.json({code:0,msg:'success',data:{
+            engine:'camoufox',protocol:'playwright-internal',
+            control:'authenticated-local-api',profile_id:id,
+            debug_port:null,ws:{playwright:null}
+          }});
+        }
+        return res.status(409).json({code:-1,
+          msg:'Camoufox automation unavailable: no verified Playwright/Juggler endpoint or validated in-process context; Firefox DevTools is not CDP.',
+          data:{engine:'camoufox',protocol:'unavailable',
+            debug_port:null,ws:{playwright:null}}});
+      }
       if (profile?.engine === 'gecko') return res.status(409).json({ code: -1, msg: 'Gecko profile is manual-only; CDP API is not supported.' });
       const instance = await launcher.start(id, req.query.open_url);
       if (behaviorMonitor) behaviorMonitor.record('profile_open', id, 'api');
@@ -44,6 +94,24 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
         debug_port: instance.port, webdriver: 'chrome'
       }, msg: 'success' });
     } catch (error) { fail(res, error); }
+  });
+  // Explicit, authenticated navigation through the *internal* Playwright
+  // BrowserContext; external users cannot attach to a made-up WebSocket.
+  service.post('/api/v1/browser/navigate',async(req,res)=>{
+    try{
+      const id=req.body?.user_id||req.body?.id;
+      if(typeof id!=='string'||!id)return res.status(400).json({code:-1,msg:'Missing user_id'});
+      const controller=launcher.camoufoxPlaywrightController;
+      if(controller?.enabled!==true)return res.status(409).json({code:-1,msg:'Playwright lab unavailable'});
+      const context=controller.contextFor(id);
+      if(!context)return res.status(409).json({code:-1,msg:'No active Camoufox Playwright context'});
+      const url=safeWebUrl(req.body?.url);
+      const page=context.pages?.()[0]||await context.newPage();
+      await page.goto(url,{timeout:15000});
+      return res.json({code:0,msg:'success',data:{
+        engine:'camoufox',protocol:'playwright-internal',url:page.url()
+      }});
+    }catch(error){return fail(res,error);}
   });
   service.get('/api/v1/browser/stop', (req, res) => {
     try {
@@ -62,7 +130,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       created_time: p.createdAt
     })) }, msg: 'success'
   }));
-  service.get('/api/profiles', (_, res) => res.json(store.getProfiles()));
+  service.get('/api/profiles', (_, res) => res.json(store.getProfiles().map(apiProfile)));
   service.post('/api/profiles', (req, res) => {
     try {
       // The desktop IPC path already prevents changing a running profile.
@@ -74,9 +142,14 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
           code: -1, msg: 'Stop browser and wait for exit before editing profile'
         });
       }
-      const saved = store.saveProfile(req.body);
+      // Only an explicitly supplied engine field may change an offline
+      // profile's provider through this authenticated loopback API.
+      const requestedChange=!!req.body&&(
+        Object.hasOwn(req.body,'engine')||
+        Object.hasOwn(req.body,'engine_type'));
+      const saved = store.saveProfile(req.body,{allowEngineChange:requestedChange});
       if (behaviorMonitor) behaviorMonitor.record('profile_save', saved.id, 'api');
-      res.json(saved);
+      res.json(apiProfile(saved));
     } catch (error) { fail(res, error); }
   });
   service.delete('/api/profiles/:id', (req, res) => {

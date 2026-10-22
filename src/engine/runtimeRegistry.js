@@ -10,7 +10,8 @@ const allowedWindowsNames={
  chromium:new Set(['chrome.exe','msedge.exe']),
  gecko:new Set(['firefox.exe'])
 };
-function validatePath(engine,filename,{platform=process.platform}={}){
+function validatePath(engine,filename,opts={}){
+ const {platform=process.platform}=opts;
  if(!ENGINES.has(engine))throw Error('Unsupported browser engine');
  if(typeof filename!=='string'||!path.isAbsolute(filename)||filename.includes('\0'))
   throw Error('Choose an absolute browser executable path');
@@ -18,7 +19,9 @@ function validatePath(engine,filename,{platform=process.platform}={}){
  if(platform==='win32'){
   if(!/^[a-zA-Z]:[\\/]/.test(filename))
    throw Error('Only local Windows drive paths are permitted');
-  if(!allowedWindowsNames[engine].has(path.basename(filename).toLowerCase()))
+  const allowed=engine==='gecko'&&opts.trustedCamoufox===true
+   ?new Set(['camoufox.exe']):allowedWindowsNames[engine];
+  if(!allowed.has(path.basename(filename).toLowerCase()))
    throw Error('Only official Chrome/Edge or Firefox executable names are accepted');
  }else if(!['.exe',''].includes(ext)){
   throw Error('Executable extension not supported');

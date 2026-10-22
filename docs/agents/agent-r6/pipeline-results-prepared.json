@@ -1,0 +1,84 @@
+{
+  "tree": "/home/hatch/tmp-big/r6/tree-prepared",
+  "version": "156.0.1",
+  "results": [
+    {
+      "id": "P1",
+      "name": "Throwaway publisher key ceremony (tmpdir, mode 0600)",
+      "status": "PASS",
+      "detail": "publisher SPKI sha256 2231002977dca525b10ad3933a57ec42bac90d1012724b602aa6d3ff59715ed9; distinct from license key: true"
+    },
+    {
+      "id": "P2a",
+      "name": "Manual PE byte check of real camoufox.exe (payload evidence only)",
+      "status": "PASS",
+      "detail": "MZ=MZ PE-signature=\"PE\\u0000\\u0000\" machine=0x8664 size=1209344"
+    },
+    {
+      "id": "P2b",
+      "name": "Production inspectBinary over the real tree",
+      "status": "NOT_RUN",
+      "detail": "refused before parsing, as designed on a non-Windows host: Only local Windows drive paths are permitted (Gate 3, Windows)"
+    },
+    {
+      "id": "P3",
+      "name": "Sign real tree via tools/sign-bundled-engine.js",
+      "status": "PASS",
+      "detail": "manifest files=1579 totalBytes=2563096877 version=156.0.1"
+    },
+    {
+      "id": "P4a",
+      "name": "BundledEngineManager.verify() under publisher key (inspect = SHA-256 seam)",
+      "status": "PASS",
+      "detail": "version=156.0.1 fileCount=1579 entrySha256=a235730786ee4e27b7e5087751509b2d456b0f03ce73d04bbb1b9077458764c6"
+    },
+    {
+      "id": "P4b",
+      "name": "verify() under application license key must refuse",
+      "status": "PASS",
+      "detail": "Bundled engine manifest signature is not trusted"
+    },
+    {
+      "id": "P5a",
+      "name": "Package ZIP (stored entries = manifest files, manifest.json excluded)",
+      "status": "PASS",
+      "detail": "archiveBytes=1355084308 archiveSha256=5e76c5a319aa47796254ca24a6e070429e5633af5a50e47d53e4d0991b9cb5bd entries=1579"
+    },
+    {
+      "id": "P5b",
+      "name": "validateRelease under publisher key",
+      "status": "PASS",
+      "detail": "manifest version 156.0.1"
+    },
+    {
+      "id": "P5c",
+      "name": "Stranger-signed descriptor must refuse",
+      "status": "PASS",
+      "detail": "Browser release was not signed by the trusted publisher"
+    },
+    {
+      "id": "P6a",
+      "name": "install(): downloadPinned (302 -> asset) -> extract seam -> verify -> place",
+      "status": "PASS",
+      "detail": "version=156.0.1 status.valid=true transportCalls=2"
+    },
+    {
+      "id": "P6b",
+      "name": "Second install is alreadyPresent with no new download",
+      "status": "PASS",
+      "detail": "transportCalls=2"
+    },
+    {
+      "id": "P7",
+      "name": "Installed tree spot checks (entry + largest file) match signed manifest",
+      "status": "PASS",
+      "detail": "checked camoufox.exe and fonts/82__Apple_Color_Emoji.ttc (192123488 bytes)"
+    },
+    {
+      "id": "P8",
+      "name": "Throwaway key material destroyed",
+      "status": "PASS",
+      "detail": "key dir removed: true"
+    }
+  ]
+}

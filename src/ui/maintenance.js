@@ -80,10 +80,51 @@
       target.replaceChildren(labeled('health-issue error','Không kiểm tra được: '+error.message));
     } finally {refresh.disabled=false;}
   }
+  async function loadNetworkProfiles(){
+    const picker=el('agency-profile');
+    const previous=picker.value;
+    const profiles=await api.getProfiles();
+    picker.replaceChildren();
+    for(const profile of profiles){
+      const option=document.createElement('option');
+      option.value=profile.id;option.textContent=profile.name;
+      picker.append(option);
+    }
+    if(profiles.some(p=>p.id===previous))picker.value=previous;
+    else if(profiles.some(p=>p.id===selectedProfile))picker.value=selectedProfile;
+  }
+  async function inspectAgencySubnet(){
+    const button=el('agency-network-check');button.disabled=true;
+    try{
+      const entries=el('agency-network-entries').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      if(entries.length>100)throw Error('Tối đa 100 profile khác');
+      const mapped=entries.map(line=>{
+        const pieces=line.split('|');
+        if(pieces.length!==2)throw Error('Mỗi dòng phải theo mẫu profile_id|IPv4');
+        return {profileId:pieces[0].trim(),subnet:pieces[1].trim()};
+      });
+      const result=await api.agencyNetworkPreview({
+        profileId:el('agency-profile').value,
+        ip:el('agency-egress-ip').value.trim(),entries:mapped
+      });
+      el('agency-network-result').textContent='Subnet '+result.subnet+
+        ' · '+result.otherProfiles+' profile khác được khai báo cùng /24. '+
+        result.message+' Không lưu các địa chỉ vừa nhập.';
+    }catch(error){
+      el('agency-network-result').textContent='Không kiểm tra được: '+error.message;
+    }finally{button.disabled=false;}
+  }
   async function showHealth(profileId = null) {
     selectedProfile = profileId;
     open('modal-health');
-    try { await Promise.all([updateHealth(),updateReadiness()]); }
+    // Khung bảng kiểm theo tiêu chí: làm mới về trạng thái theo dữ liệu đo
+    // (nguồn đo theo hồ sơ đã nối — tiêu chí nào chưa có bản ghi đo hợp lệ
+    // vẫn là CHƯA ĐO kèm lý do cụ thể, không tự suy thành đạt).
+    if (window.LHMCriteriaChecklist) {
+      window.LHMCriteriaChecklist.showForProfile(
+        profileId && !Array.isArray(profileId) ? String(profileId) : null);
+    }
+    try { await Promise.all([updateHealth(),updateReadiness(),refreshLocalDrift(),loadNetworkProfiles()]); }
     catch (error) { el('health-items').replaceChildren(labeled('health-issue error', 'Không kiểm tra được: ' + error.message)); }
   }
   async function checkEngines() {
@@ -170,6 +211,20 @@
     }catch(error){el('runtime-status').prepend(labeled('health-issue error',error.message));}
     finally{button.disabled=false;}
   }
+  async function refreshLocalDrift(){
+    const target=el('local-drift-results');
+    try{
+      const report=await api.healthDriftReport();
+      const d=report.drift;
+      const text=d.status==='insufficient'?'Chưa đủ mẫu để nhận xét xu hướng':
+        d.status==='investigate'?'Tỷ lệ lỗi cấu hình tăng; kiểm tra thay đổi phần mềm/engine':
+        d.status==='review'?'Tỷ lệ cảnh báo tăng; nên xem lại cấu hình':'Chưa phát hiện tăng lỗi đáng kể';
+      target.textContent=report.stored+' lần kiểm tra đã lưu · '+text+
+        ' · mức lỗi mẫu mới: '+Math.round(d.recent.errorRate*100)+'%'+
+        ' · mức lỗi mẫu cũ: '+Math.round(d.baseline.errorRate*100)+'%'+
+        '. Chỉ là dữ liệu vận hành của LHM, không phản ánh thuật toán Google.';
+    }catch(error){target.textContent='Không đọc được dữ liệu: '+error.message;}
+  }
   function showBackup() {
     el('backup-password').value = '';
     el('backup-result').textContent = '';
@@ -202,7 +257,27 @@
     el('health-close').addEventListener('click', () => close('modal-health'));
     el('health-done').addEventListener('click', () => close('modal-health'));
     el('health-refresh').addEventListener('click', () => updateHealth().catch(console.error));
+    el('agency-network-check').addEventListener('click',inspectAgencySubnet);
     el('health-isolation-audit').addEventListener('click', auditIsolation);
+    el('local-drift-refresh').addEventListener('click',refreshLocalDrift);
+    el('local-drift-record').addEventListener('click',async()=>{
+      const button=el('local-drift-record');button.disabled=true;
+      try{await api.healthDriftSnapshot();await refreshLocalDrift();}
+      catch(error){el('local-drift-results').textContent='Không lưu được: '+error.message;}
+      finally{button.disabled=false;}
+    });
+    el('local-drift-export').addEventListener('click',async()=>{
+      try{
+        const r=await api.healthDriftExport();
+        el('local-drift-results').textContent=r.canceled?
+          'Đã hủy xuất.':'Đã xuất '+r.stored+' lượt kiểm tra cấu hình tổng hợp.';
+      }catch(error){el('local-drift-results').textContent='Không xuất được: '+error.message;}
+    });
+    el('local-drift-clear').addEventListener('click',async()=>{
+      if(!confirm('Xóa toàn bộ lịch sử kiểm tra cấu hình cục bộ? Không khôi phục được sau khi xóa.'))return;
+      try{await api.healthDriftClear('CLEAR HEALTH');await refreshLocalDrift();}
+      catch(error){el('local-drift-results').textContent='Không xóa được: '+error.message;}
+    });
     el('health-check-engines').addEventListener('click', checkEngines);
     el('runtime-check').addEventListener('click',refreshPinnedRuntimes);
     el('runtime-register-chromium').addEventListener('click',()=>registerPinned('chromium'));

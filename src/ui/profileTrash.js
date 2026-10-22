@@ -43,7 +43,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       actions.append(restore);
       actions.append(actionButton('Xóa vĩnh viễn','btn btn-sm btn-danger',async()=>{
         const input=prompt('Nhập XOA để xóa vĩnh viễn profile "'+profile.name+
-          '" và dữ liệu trình duyệt cục bộ. Không thể hoàn tác.');
+          '" cùng toàn bộ dữ liệu trình duyệt cục bộ, các bản chụp phiên (snapshot) đã lưu'+
+          ' và các quy trình tự động gắn với hồ sơ này. Không thể hoàn tác.');
         if(input!=='XOA')return;
         await window.api.purgeTrashedProfile(profile.id);
         await refresh();
@@ -58,7 +59,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
   for(const id of ['trash-dialog-close','trash-dialog-done'])
     document.getElementById(id).addEventListener('click',close);
-  document.getElementById('trash-dialog-refresh').addEventListener('click',()=>refresh().catch(error=>alert(error.message)));
+  document.getElementById('trash-dialog-refresh').addEventListener('click',()=>refresh().catch(error=>alert('Không tải lại được thùng rác: '+error.message+'\nDữ liệu đang hiển thị có thể chưa mới — hãy thử lại.')));
   btnExpired.addEventListener('click',async()=>{
     btnExpired.disabled=true;
     try{

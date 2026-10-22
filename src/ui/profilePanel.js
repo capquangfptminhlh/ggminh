@@ -27,8 +27,10 @@
     label('lhm-detail-group',profile.group||'Nhóm mặc định');
     label('lhm-detail-id',profile.id);
     label('lhm-detail-group-value',profile.group||'Mặc định');
-    label('lhm-detail-engine',profile.engine==='gecko'?'Firefox / Gecko':'Chromium (cài trên máy)');
-    label('lhm-detail-fingerprint',mode?'Thông số gốc':'Tùy chỉnh / thử nghiệm');
+    label('lhm-detail-engine',profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium (cài trên máy)');
+    const identityState=profile.engine_type==='camoufox'
+      ?(profile.fingerprint?.identity?' · Danh tính đã ghim':' · Chưa cấp danh tính đã ghim'):'';
+    label('lhm-detail-fingerprint',(mode?'Thông số gốc':'Tùy chỉnh / thử nghiệm')+identityState);
     label('lhm-detail-status',running?'Đang chạy':'Đã dừng');
     el('lhm-detail-status').classList.toggle('is-running',running);
     label('lhm-detail-proxy-type',proxied ? String(proxy.type||'').toUpperCase() : 'Trực tiếp');

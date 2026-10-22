@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
 const { safeWebUrls } = require('../engine/launchArgs');
+const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -16,6 +17,21 @@ function cleanTags(input) {
   }
   return tags;
 }
+// Every per-profile directory the app writes under the storage root:
+// Chromium sessions, Gecko sessions, Camoufox sessions, and the
+// per-profile extension copies materialised at launch. Permanent
+// deletion must remove ALL of them; a root missing here leaves a
+// profile's session data on disk forever after purge.
+const PROFILE_DATA_ROOTS = ['profiles', 'gecko-profiles', 'camoufox-profiles', 'extensions'];
+// Artifact roots removed ONLY when deletion becomes permanent (purge
+// or direct delete), never while a profile sits in trash: user-created
+// encrypted session snapshots (src/ops/sessionSnapshots.js stores them
+// under session-snapshots/<profileId>/). A snapshot is an encrypted
+// copy of the very session data being purged, so leaving it behind
+// would keep the profile's cookies/storage on disk indefinitely after
+// "permanent" deletion (finding F3). Trash keeps snapshots on purpose:
+// a trashed profile is restorable, snapshots included.
+const PROFILE_PURGE_ONLY_ROOTS = ['session-snapshots'];
 const VALID_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 function assertId(id) {
   if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
@@ -26,6 +42,14 @@ class Store {
     this.baseDir = baseDir || path.resolve(__dirname, '../../data');
     this.dbFile = path.join(this.baseDir, 'db.json');
     fs.mkdirSync(path.join(this.baseDir, 'profiles'), { recursive: true });
+    // Optional companion hook, wired by main.js (the Store itself owns
+    // no companion stores): called with a profile id AFTER that
+    // profile's folders have been permanently removed, so companions
+    // keyed by profile id (automation workflows, finding F4) can sweep
+    // their references. Contract: the hook is called synchronously; a
+    // throw inside cleanupTrashedFolders defers the id for retry,
+    // exactly like a failed folder removal.
+    this.onProfilePurged = null;
     this.data = this.load();
   }
   load() {
@@ -47,6 +71,12 @@ class Store {
   saveData(data = this.data) {
     const tempFile = this.dbFile + '.tmp';
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), { encoding: 'utf8', mode: 0o600 });
+    // writeFileSync's mode only applies when the file is CREATED: a
+    // pre-existing .tmp (crash leftover, restored copy) keeps its old
+    // permissions and rename would carry them onto db.json. Enforce
+    // 0o600 on the temp file before the rename (R13 audit; same
+    // pattern as src/monitor/warningHistory.js).
+    try { fs.chmodSync(tempFile, 0o600); } catch (_) { /* best effort */ }
     fs.renameSync(tempFile, this.dbFile);
   }
   publicProfile(profile) {
@@ -74,6 +104,29 @@ class Store {
     if(existingIndex<0 && this.licensePolicy && options.recovery!==true)
       this.licensePolicy.assertCapacity(this.data.profiles.length,1);
     const old = existingIndex >= 0 ? this.data.profiles[existingIndex] : {};
+    const engineFamily=input.engine===undefined
+      ? input.engine_type!==undefined
+        ? input.engine_type==='chromium'?'chromium':'gecko'
+        : (old.engine==='gecko'?'gecko':'chromium')
+      : input.engine;
+    if(!['chromium','gecko'].includes(engineFamily))
+      throw Error('Invalid browser engine family');
+    let type=input.engine_type===undefined
+      ? existingIndex<0
+        ? resolveEngineType({engine:engineFamily},this.data.settings||{})
+        : input.engine!==undefined&&input.engine!==old.engine
+          ? engineFamily==='gecko'?'firefox':'chromium'
+          : old.engine_type||resolveEngineType({
+              engine:engineFamily
+            },this.data.settings||{})
+      : input.engine_type;
+    if(!SUPPORTED.includes(type))throw Error('Invalid engine_type');
+    if((type==='chromium'?'chromium':'gecko')!==engineFamily)
+      throw Error('Browser engine family and engine_type disagree');
+    if(existingIndex>=0&&resolveEngineType(old,this.data.settings||{})!==type&&
+       !options.allowEngineChange)
+      throw Error('Changing browser provider needs explicit confirmation');
+
     const incomingProxy = input.proxy || old.proxy || { type: 'direct' };
     if (typeof incomingProxy !== 'object' || Array.isArray(incomingProxy)) throw new Error('Invalid proxy configuration');
     const forbidden = ['user','username','pass','password','credentials','token','secret','authorization','apiKey','proxyAuthorization'];
@@ -106,8 +159,7 @@ class Store {
       ...old, id, name,
       // A partial edit must preserve the selected engine, especially
       // when clients POST only {id, name} through the Local API.
-      engine: input.engine === 'gecko' || input.engine === 'chromium'
-        ? input.engine : (old.engine === 'gecko' ? 'gecko' : 'chromium'),
+      engine:engineFamily,engine_type:type,
       group: String(input.group || old.group || 'Default').slice(0, 100),
       startUrl: startUrls[0], startUrls, tags,
       // An explicit empty string clears notes; omitted notes preserve the old value.
@@ -121,7 +173,33 @@ class Store {
       fingerprint: (() => {
         const selected = input.fingerprint ?? old.fingerprint ?? { mode: 'native' };
         if (!selected || typeof selected !== 'object' || Array.isArray(selected)) throw new Error('Invalid fingerprint configuration');
-        return Object.keys(selected).length ? selected : { mode: 'native' };
+        const fp = Object.keys(selected).length ? { ...selected } : { mode: 'native' };
+        // Identity provenance gate (R13 security audit; Constitution
+        // s.8/D1: a pinned Camoufox identity may only ever be drawn by
+        // the official generator). A plain save can PRESERVE the blob
+        // already stored for THIS profile byte-for-byte (the normal
+        // edit round-trip), but it can never create one or swap in a
+        // different one: a hand-crafted or cross-profile-copied
+        // CAMOU_CONFIG blob arriving via the renderer payload, the
+        // Local API, CSV or any other saveProfile caller is refused
+        // here, at the single persistence choke point. Callers that
+        // legitimately attach a freshly provisioned identity pass
+        // options.allowIdentity === true (the provisioning flow in
+        // main.js; ConfigBackup import of the user's own encrypted
+        // backup — see INTEGRATION-NOTES for the required call-site
+        // changes).
+        if (fp.identity !== undefined && options.allowIdentity !== true) {
+          const storedIdentity = old.fingerprint && old.fingerprint.identity;
+          if (storedIdentity !== undefined &&
+              JSON.stringify(fp.identity) === JSON.stringify(storedIdentity)) {
+            // Unchanged round-trip: keep the stored pin as-is.
+          } else if (storedIdentity !== undefined) {
+            fp.identity = storedIdentity; // a save can never replace the pin
+          } else {
+            delete fp.identity; // a save can never create a pin
+          }
+        }
+        return fp;
       })(),
       createdAt: old.createdAt || now, updatedAt: now
     };
@@ -216,6 +294,19 @@ class Store {
     catch(error) { this.data=previous; throw error; }
     return this.publicProfile(item.profile);
   }
+  // Remove every on-disk artifact class of a permanently deleted
+  // profile: the session roots, the purge-only roots (session
+  // snapshots), then the companion hook. Used by every permanent
+  // deletion path so none of them can drift apart again.
+  removeProfileArtifacts(id) {
+    assertId(id);
+    for (const part of [...PROFILE_DATA_ROOTS, ...PROFILE_PURGE_ONLY_ROOTS]) {
+      const target=path.join(this.baseDir,part,id);
+      if (fs.existsSync(target))
+        fs.rmSync(target,{recursive:true,force:true});
+    }
+    if (typeof this.onProfilePurged === 'function') this.onProfilePurged(id);
+  }
   // Keep a cleanup queue in the database until profile files are deleted,
   // so a failed filesystem cleanup can be retried on the next startup.
   cleanupTrashedFolders() {
@@ -223,15 +314,10 @@ class Store {
     const failed=[];
     for (const id of queue) {
       try {
-        assertId(id);
         if (this.data.profiles.some(p=>p.id===id) ||
             (this.data.trash || []).some(x=>x.profile?.id===id))
           throw Error('ID is still referenced by a profile');
-        for (const part of ['profiles','gecko-profiles']) {
-          const target=path.join(this.baseDir,part,id);
-          if (fs.existsSync(target))
-            fs.rmSync(target,{recursive:true,force:true});
-        }
+        this.removeProfileArtifacts(id);
       } catch(error) {
         failed.push(id);
         console.warn('[ProfileTrash] cleanup deferred for',id,error.message);
@@ -285,10 +371,7 @@ class Store {
     if (prev === this.data.profiles.length) return false;
     try{this.saveData();}
     catch(error){this.data.profiles=original;throw error;}
-    const directory = path.join(this.baseDir, 'profiles', id);
-    if (fs.existsSync(directory)) fs.rmSync(directory, { recursive: true, force: true });
-    const geckoDirectory = path.join(this.baseDir, 'gecko-profiles', id);
-    if (fs.existsSync(geckoDirectory)) fs.rmSync(geckoDirectory, { recursive: true, force: true });
+    this.removeProfileArtifacts(id);
     return true;
   }
   getSettings() { return { ...(this.data.settings || {}) }; }

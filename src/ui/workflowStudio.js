@@ -76,7 +76,7 @@
           await api.studioDelete(flow.id);
           if (current?.id === flow.id) createNew();
           await refreshList();
-        } catch (error) { alert(error.message); }
+        } catch (error) { alert('Không xóa được quy trình: ' + error.message + '\nQuy trình chưa bị xóa — hãy thử lại.'); }
       }));
       list.append(row);
     }
@@ -94,7 +94,7 @@
     };
     el('studio-name').value = current.name;
     el('studio-hosts').value = current.hosts;
-    updateProfiles().then(renderSteps).catch(error => alert(error.message));
+    updateProfiles().then(renderSteps).catch(error => alert('Không tải được danh sách hồ sơ cho Studio: ' + error.message + '\nHãy đóng và mở lại Automation Studio.'));
   }
   function load(flow) {
     current = JSON.parse(JSON.stringify(flow));
@@ -103,7 +103,7 @@
     updateProfiles().then(() => {
       el('studio-profile').value = current.profileId;
       renderSteps();
-    }).catch(error => alert(error.message));
+    }).catch(error => alert('Không tải đủ dữ liệu để mở quy trình: ' + error.message + '\nHãy thử mở lại quy trình; nếu vẫn lỗi, đóng và mở lại Automation Studio.'));
   }
   const SVG_NS='http://www.w3.org/2000/svg';
   function svgItem(name, attributes = {}) {
@@ -455,7 +455,7 @@
     updateProfiles().then(refreshList).then(() => {
       if (!current) createNew();
       return Promise.all([updateStatus(), recorderStatus()]);
-    }).catch(error => alert(error.message));
+    }).catch(error => alert('Không mở được Automation Studio: ' + error.message + '\nHãy thử lại; nếu vẫn lỗi, khởi động lại ứng dụng.'));
   }
   function close() { el('modal-studio').classList.remove('open'); }
   function bind() {
@@ -483,10 +483,10 @@
       catch (error) { alert('Không thể chạy: ' + error.message); }
     });
     el('studio-stop').addEventListener('click', async () => {
-      try { await api.studioStop(); await updateStatus(); } catch (error) { alert(error.message); }
+      try { await api.studioStop(); await updateStatus(); } catch (error) { alert('Không dừng được quy trình: ' + error.message + '\nKiểm tra trạng thái quy trình ở bảng trạng thái rồi thử lại.'); }
     });
     el('studio-approve').addEventListener('click', async () => {
-      try { await api.studioApprove(); await updateStatus(); } catch (error) { alert(error.message); }
+      try { await api.studioApprove(); await updateStatus(); } catch (error) { alert('Không duyệt được bước hiện tại: ' + error.message + '\nKiểm tra bước đang chờ duyệt rồi thử lại.'); }
     });
     setInterval(() => {
       if (el('modal-studio').classList.contains('open')) {

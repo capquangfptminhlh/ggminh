@@ -3,3 +3,19 @@ data/
 data_test/
 *.log
 .DS_Store
+stage0-measure-results/
+
+# Private key material must never be committed (QA-002). Keys live
+# outside the repo (see docs/agents/agent-13/OWNER-RUNBOOK.md); public
+# keys (*.pub, e.g. publisher-ed25519.pub) are NOT matched on purpose.
+# Broad name patterns like *secret* / *credential* are deliberately
+# NOT used: src/security/proxyCredentialVault.js is legitimate source.
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+id_ed25519*
+*private*key*
