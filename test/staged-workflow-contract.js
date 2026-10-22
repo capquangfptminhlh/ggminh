@@ -13,4 +13,5 @@ assert.ok(generate.includes('if($LASTEXITCODE -ne 0)'), 'runtime installation mu
 assert.ok(generate.includes("throw 'Pinned camoufox launcher runtime missing'"), 'runtime guard must remain');
 assert.ok(yaml.includes('integration/v5.8-wave-r') && yaml.includes('      - main'), 'post-merge branches must be eligible');
 assert.ok(yaml.includes('LHM-Stage0-Camoufox-Configured-Report'), 'configured measurement report upload remains');
+assert.ok(yaml.includes('Restore Node.js 22 for official identity generator'), 'official generator requires a compatible Node.js');
 console.log('staged-workflow-contract: PASS (static patch check only; real configured Windows run NOT_RUN)');
