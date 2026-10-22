@@ -61,6 +61,13 @@ const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught exception in main process:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[CRITICAL] Unhandled promise rejection in main process:', reason);
+});
+
 let mainWindow = null;
 let store = null;
 let launcher = null;

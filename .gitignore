@@ -20,3 +20,5 @@ stage0-measure-results/
 id_rsa*
 id_ed25519*
 *private*key*
+
+.agents/
