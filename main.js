@@ -29,6 +29,7 @@ const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
+const { launchReadiness } = require('./src/health/launchReadiness');
 const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
@@ -493,6 +494,14 @@ function initIPC() {
     const report = exportCsv(profiles, reports, launcher.listActive());
     fs.writeFileSync(filePath, report, 'utf8');
     return { canceled: false, count: profiles.length };
+  });
+  ipcMain.handle('get-launch-readiness', (_, id) => {
+    const profile = store.getProfile(id);
+    if (!profile) throw Error('Không tìm thấy hồ sơ');
+    return launchReadiness(profile, {
+      proxies: store.data.proxies,
+      vault: proxyVault
+    });
   });
   ipcMain.handle('get-profile-health', (_, id) => {
     const profile = store.getProfile(id);

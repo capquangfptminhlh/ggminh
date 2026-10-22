@@ -8,6 +8,7 @@ const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation
 const { updateGeckoProxy } = require('./geckoProxy');
 const { optionsFor } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
+const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 
 class BrowserLauncher {
@@ -114,6 +115,18 @@ class BrowserLauncher {
     }
     if (profile.requiresProxySetup === true)
       throw Error('Hồ sơ nhập từ bản sao lưu cần gán lại proxy trước khi mở.');
+    // Mandatory local errors must block EVERY launch route, including batch,
+    // scheduled automation, Local API and direct main-process actions.
+    // Warning-only findings remain explanatory; remote platform decisions
+    // can never be certified before a browser contacts the site.
+    const readiness=launchReadiness(profile,{
+      proxies:this.store.data?.proxies||[],vault:this.proxyVault
+    });
+    if (!readiness.canLaunch) {
+      const codes=readiness.issues.filter(issue=>issue.level==='error')
+        .map(issue=>issue.code);
+      throw Error('Launch readiness blocked: '+codes.join(', '));
+    }
     // Resolve provider using the saved per-profile selection. Never fallback
     // from a missing Camoufox release into a different browser engine.
     return this.engineFactory.launchProfile(profile,{customUrl});

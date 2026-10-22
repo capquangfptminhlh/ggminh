@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   auditProfileIsolation: () => ipcRenderer.invoke('audit-profile-isolation'),
   inspectFingerprint: value => ipcRenderer.invoke('inspect-fingerprint', value),
   getProfileHealth: id => ipcRenderer.invoke('get-profile-health', id),
+  getLaunchReadiness: id => ipcRenderer.invoke('get-launch-readiness', id),
   agencyNetworkPreview: input => ipcRenderer.invoke('agency-network-preview',input),
   healthDriftReport: () => ipcRenderer.invoke('health-drift-report'),
   healthDriftSnapshot: () => ipcRenderer.invoke('health-drift-snapshot'),

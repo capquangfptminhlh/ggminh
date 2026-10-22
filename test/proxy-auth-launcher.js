@@ -28,7 +28,7 @@ async function waitUntil(fn){
    startUrl:'https://example.com/',proxy:authorized,fingerprint:{mode:'native'}});
   const calls=[],events=[];
   const vault={get:id=>id===proxyId?{user:'DO_NOT_LEAK_USERNAME',pass:'DO_NOT_LEAK_PASSWORD'}:null,
-   has:id=>id===proxyId};
+   has:id=>id===proxyId,available:()=>true};
   const spawnProcess=(binary,args,options)=>{
    calls.push({binary,args,options});
    const proc=new EventEmitter();
@@ -60,12 +60,12 @@ async function waitUntil(fn){
   assert.strictEqual(calls.length,2);
   assert(!fs.readFileSync(store.dbFile,'utf8').includes('DO_NOT_LEAK_'));
   assert.deepStrictEqual(events,['SIGTERM','SIGTERM']);
-  const denied=new BrowserLauncher(store,{spawnProcess,proxyVault:{get:()=>null}});
-  await assert.rejects(()=>denied.start(one.id),/Không tìm thấy mật khẩu proxy/);
+  const denied=new BrowserLauncher(store,{spawnProcess,proxyVault:{get:()=>null,has:()=>false,available:()=>true}});
+  await assert.rejects(()=>denied.start(one.id),/proxy_password_missing|Không tìm thấy mật khẩu proxy/);
   assert.strictEqual(calls.length,2,'Missing credentials must not spawn a browser');
   const mismatched=store.saveProfile({name:'Mismatched',engine:'chromium',
    proxy:{type:'http',host:'different.example',port:3128,authProxyId:proxyId}});
-  await assert.rejects(()=>launcher.start(mismatched.id),/đã thay đổi hoặc bị xóa/);
+  await assert.rejects(()=>launcher.start(mismatched.id),/proxy_reference_missing|đã thay đổi hoặc bị xóa/);
   assert.strictEqual(calls.length,2);
   console.log('Authenticated proxy browser lifecycle, args isolation and fail-closed tests passed');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}

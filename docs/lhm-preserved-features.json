@@ -250,6 +250,33 @@
           "ai-advisor-monthly-budget"
         ]
       ]
+    },
+    {
+      "id": "lhm-launch-readiness",
+      "label": "Four-layer local Launch Readiness inspection with fail-closed profile launch",
+      "files": [
+        "src/health/launchReadiness.js",
+        "src/ui/launchReadiness.js",
+        "src/ui/launchReadiness.css"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "get-launch-readiness"
+        ],
+        [
+          "preload.js",
+          "getLaunchReadiness"
+        ],
+        [
+          "src/engine/browserLauncher.js",
+          "launchReadiness(profile"
+        ],
+        [
+          "src/ui/renderer.js",
+          "LHMLaunchReadiness.confirm(profile.id)"
+        ]
+      ]
     }
   ]
 }
