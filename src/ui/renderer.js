@@ -708,7 +708,10 @@ function renderProfiles() {
       btnToggle.disabled = true;
       try {
         if (isRunning) await window.api.stopBrowser(profile.id);
-        else await window.api.startBrowser(profile.id);
+        else {
+          const confirmed = await window.LHMLaunchReadiness.confirm(profile.id);
+          if (confirmed) await window.api.startBrowser(profile.id);
+        }
       } catch (error) { alert('Không thể mở/đóng hồ sơ: ' + error.message); }
       await loadProfiles();
       await refreshBehaviorAlerts();
