@@ -63,7 +63,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  });
  el('ai-advisor-save-budget').addEventListener('click',async()=>{
   const limit=Number(budgetInput.value);
-  if(!Number.isInteger(limit)||limit<0||limit>1000){
+  if(budgetInput.value.trim()===''||!Number.isInteger(limit)||limit<0||limit>1000){
    budgetStatus.textContent='Hạn mức phải từ 0 đến 1000 yêu cầu/tháng.';
    return;
   }
