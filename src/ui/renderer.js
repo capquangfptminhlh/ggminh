@@ -66,6 +66,10 @@ const fieldFpUa = document.getElementById('field-fp-ua');
 const fieldFpMode = document.getElementById('field-fp-mode');
 const fpCustomFields = document.getElementById('fingerprint-custom-fields');
 const fpAuditResults = document.getElementById('fp-audit-results');
+const fpIdentityState = document.getElementById('fp-identity-state');
+const fpIdentityDesc = document.getElementById('fp-identity-desc');
+const fpDeclaredList = document.getElementById('fp-declared-list');
+const fpCriteriaList = document.getElementById('fp-criteria-list');
 const fieldFpCanvas = document.getElementById('field-fp-canvas');
 const fieldFpAudio = document.getElementById('field-fp-audio');
 const fieldFpWebrtc = document.getElementById('field-fp-webrtc');
@@ -135,6 +139,99 @@ function identityMetaText(profile) {
   return fp.mode === 'native' || profile.engine === 'gecko' ? 'Thông số trình duyệt gốc' : 'Cấu hình tùy chỉnh';
 }
 window.LHMFirstRunGuide = { provisioningSaveNotice, provisioningActionMessage, provisioningReasonText, identityMetaText };
+
+// Fingerprint-tab detail panel: shows what identity the profile will run
+// with and the configuration it declares, per engine/mode, instead of the
+// tab collapsing to a lone dropdown in native mode. Read-only summary —
+// identity values are never edited per-field here (per-value edits would
+// break the consistency of the generated set; see provisioning notes).
+let fpEditingProfile = null;
+const FP_CRITERIA_FALLBACK = [
+  'Cách ly dữ liệu giữa các hồ sơ',
+  'Tự nhất quán của các giá trị hồ sơ lộ ra',
+  'Khớp danh tính đã ghim',
+  'Không trùng tín hiệu tránh được với hồ sơ khác',
+  'Đường mạng đúng chính sách đã khai báo',
+  'Không thay đổi ngoài dự kiến trong thời gian quan sát'
+];
+function renderFpCriteriaPreview() {
+  if (!fpCriteriaList || fpCriteriaList.childElementCount) return;
+  const labels = ((window.LHMCriteriaChecklist && window.LHMCriteriaChecklist.CRITERIA) || [])
+    .map(c => c.label).filter(Boolean);
+  for (const label of (labels.length ? labels : FP_CRITERIA_FALLBACK)) {
+    const li = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = label;
+    const chip = document.createElement('span');
+    chip.className = 'fp-crit-chip';
+    chip.textContent = 'CHƯA ĐO';
+    li.append(name, chip);
+    fpCriteriaList.append(li);
+  }
+}
+function updateFpIdentityPanel() {
+  if (!fpIdentityDesc || !fpDeclaredList || !fpIdentityState) return;
+  renderFpCriteriaPreview();
+  const engine = fieldBrowserEngine.value;
+  const mode = fieldFpMode.value;
+  const rows = [];
+  const addRow = (term, value) => {
+    const dt = document.createElement('dt');
+    dt.textContent = term;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    rows.push(dt, dd);
+  };
+  addRow('Công nghệ trình duyệt',
+    engine === 'camoufox' ? 'Camoufox / Gecko' : engine === 'gecko' ? 'Firefox / Gecko (cài trên máy này)' : 'Chrome / Edge (Chromium)');
+  addRow('Chế độ thông số', mode === 'native' ? 'Thông số gốc' : 'Tùy chỉnh thử nghiệm (cũ)');
+  let chip = '';
+  let chipOk = false;
+  let desc = '';
+  if (engine === 'camoufox') {
+    const p = (fpEditingProfile && fpEditingProfile.engine_type === 'camoufox') ? fpEditingProfile : null;
+    const status = p && p.fingerprint ? p.fingerprint.identityProvisioning : null;
+    if (p && p.fingerprint && p.fingerprint.identity) { chip = 'Danh tính đã ghim'; chipOk = true; }
+    else if (p && status === 'invalid') chip = 'Danh tính sinh ra không hợp lệ — chưa gắn';
+    else if (p) chip = 'Chưa cấp danh tính đã ghim';
+    else chip = 'Sẽ cấp khi lưu hồ sơ';
+    desc = 'Khi lưu hồ sơ, ứng dụng sinh một bộ danh tính nhất quán (User-Agent, nền tảng, ngôn ngữ, ' +
+      'múi giờ, màn hình) bằng cơ chế chính thức của Camoufox và ghim đúng bộ đó cho hồ sơ ở mọi lần mở sau. ' +
+      'Các giá trị này không chỉnh tay từng mục: sửa lẻ một giá trị sẽ phá tính nhất quán của cả bộ. ' +
+      'Nếu máy chưa có engine Camoufox đã kiểm chứng, hồ sơ vẫn được tạo nhưng chạy bằng thông số gốc, ' +
+      'và trạng thái cấp danh tính được ghi lại để cấp sau bằng nút "Cấp danh tính" tại hàng của hồ sơ.';
+    addRow('Danh tính', p ? identityMetaText(p) : 'Chưa có — sẽ sinh bằng cơ chế chính thức khi lưu hồ sơ');
+    if (p && (status === 'unavailable' || status === 'invalid'))
+      addRow('Lý do chưa cấp', provisioningReasonText(p.fingerprint.identityProvisioningReason));
+  } else if (engine === 'gecko') {
+    chip = 'Thông số gốc';
+    desc = 'Hồ sơ dùng Firefox/Gecko đã cài trên máy này với thông số gốc của trình duyệt; không ghim ' +
+      'danh tính riêng và không áp dụng thông số tùy chỉnh. Chế độ này chỉ mở thủ công, không dùng cho tự động hoá.';
+    addRow('Danh tính', 'Thông số trình duyệt gốc');
+  } else if (mode === 'experimental') {
+    chip = 'Thử nghiệm — có cảnh báo';
+    desc = 'Chế độ tùy chỉnh thử nghiệm (cũ) dùng extension can thiệp một số giá trị hiển thị. Các giá trị ' +
+      'này chỉ là thử nghiệm, không chứng minh tính tương thích hoặc ẩn danh, và có thể gây sai lệch hoặc lỗi website.';
+    addRow('Danh tính', 'Cấu hình tùy chỉnh thử nghiệm');
+  } else {
+    chip = 'Thông số gốc';
+    desc = 'Hồ sơ dùng đúng User-Agent, Canvas, WebGL của trình duyệt thực trên máy này; ứng dụng không dùng ' +
+      'extension can thiệp fingerprint. Muốn hồ sơ có bộ danh tính riêng đã ghim, chọn công nghệ Camoufox ở bước 1.';
+    addRow('Danh tính', 'Thông số trình duyệt gốc');
+  }
+  const proxyType = fieldProxyType.value;
+  let proxyText = 'Trực tiếp (không proxy) — IP thoát là IP của mạng hiện tại';
+  if (proxyType !== 'direct') {
+    const host = fieldProxyHost.value.trim();
+    const port = fieldProxyPort.value.trim();
+    proxyText = String(proxyType).toUpperCase() + (host ? ' — ' + host + (port ? ':' + port : '') : ' — khai báo ở bước 2');
+  }
+  addRow('Kết nối mạng', proxyText);
+  fpIdentityState.textContent = chip;
+  fpIdentityState.classList.toggle('is-ok', chipOk);
+  fpIdentityDesc.textContent = desc;
+  fpDeclaredList.replaceChildren(...rows);
+}
 
 // Live Camoufox readiness hint inside the profile form. The static note
 // under the engine select cannot say whether THIS machine already has a
@@ -275,6 +372,7 @@ function setupEventListeners() {
     if (native) currentGeneratedFP = { mode: 'native' };
     else window.api.generateFingerprint({ os: fieldFpOs.value }).then(applyFingerprintToForm).catch(console.error);
     fpAuditResults.textContent = 'Cấu hình đã thay đổi. Nhấn Kiểm tra cấu hình để xem cảnh báo.';
+    updateFpIdentityPanel();
   });
   document.getElementById('btn-fp-inspect').addEventListener('click', async () => {
     fpAuditResults.textContent = 'Đang chẩn đoán...';
@@ -307,6 +405,7 @@ function setupEventListeners() {
     if (gecko) setFingerprintMode('native');
     fieldFpMode.disabled = gecko;
     updateCamoufoxFormHint();
+    updateFpIdentityPanel();
   });
   document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
     await refreshBehaviorAlerts();
@@ -333,7 +432,10 @@ function setupEventListeners() {
   // Proxy Type Toggle
   fieldProxyType.addEventListener('change', () => {
     proxyFields.style.display = fieldProxyType.value === 'direct' ? 'none' : 'block';
+    updateFpIdentityPanel();
   });
+  fieldProxyHost.addEventListener('input', updateFpIdentityPanel);
+  fieldProxyPort.addEventListener('input', updateFpIdentityPanel);
 
   // Modal Open / Close
   btnCreateProfile.addEventListener('click', () => openProfileModal());
@@ -473,6 +575,7 @@ function closeModal(modal) {
 }
 
 async function openProfileModal(existingProfile = null) {
+  fpEditingProfile = existingProfile;
   proxyTestResult.textContent = '';
   const settings = await window.api.getSettings();
   fieldGeckoPath.value = settings.geckoPath || '';
@@ -519,6 +622,7 @@ async function openProfileModal(existingProfile = null) {
   fieldFpMode.disabled = fieldBrowserEngine.value !== 'chromium';
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   updateCamoufoxFormHint();
+  updateFpIdentityPanel();
   openModal(modalProfile);
 }
 
