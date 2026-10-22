@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('api', {
   recorderStop: () => ipcRenderer.invoke('recorder-stop'),
   recorderTake: () => ipcRenderer.invoke('recorder-take'),
   studioList: () => ipcRenderer.invoke('studio-list'),
+  studioTemplates: () => ipcRenderer.invoke('studio-templates'),
   studioBatchStatus: () => ipcRenderer.invoke('studio-batch-status'),
   studioBatchPreview: (id,ids,onError) => ipcRenderer.invoke('studio-batch-preview',id,ids,onError),
   studioBatchRun: (id,ids,onError) => ipcRenderer.invoke('studio-batch-run',id,ids,onError),
