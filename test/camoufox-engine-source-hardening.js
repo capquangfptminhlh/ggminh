@@ -105,7 +105,7 @@ function signedManifest(root,signingKey,{extraFiles=[]}={}){
   assert.strictEqual(manager.verify().version,'156.0.1');
   const licenseTrusted=new BundledEngineManager(signRoot,{engine:'camoufox',
    platform:'win32',inspect:(_e,f)=>sha256File(f)});
-  assert.throws(()=>licenseTrusted.verify(),/signature is not trusted/);
+  assert.throws(()=>licenseTrusted.verify(),/Independent engine publisher public key is required/);
 
   // --- GAP-2a: signing tool refuses a tree containing a private key ------
   const leakRoot=path.join(root,'leak-tree');

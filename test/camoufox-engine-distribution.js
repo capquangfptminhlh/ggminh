@@ -145,7 +145,7 @@ function fakeTransport(zipBytes) {
     assert.strictEqual(mgr.verify().version, VERSION);
     assert.throws(() => new BundledEngineManager(tree,
       { engine: 'camoufox', platform: 'win32', inspect: inspectSeam }).verify(),
-      /signature is not trusted/);
+      /Independent engine publisher public key is required/);
 
     // 3) Package + descriptor + validateRelease.
     const zipBytes = zipStore(manifestDoc.files.map(f =>

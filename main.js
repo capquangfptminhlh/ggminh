@@ -896,9 +896,25 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
-  bundledEngine=new BundledEngineManager(app.isPackaged
+  const chromiumAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-engines')
-    :path.join(__dirname,'resources','bundled-engines'));
+    :path.join(__dirname,'resources','bundled-engines');
+  // Chromium and Camoufox both require an independent Ed25519 publisher
+  // trust anchor (publisher-ed25519.pub in their OWN engine resource root).
+  // Missing/invalid anchors disable only the bundled engine, not Chrome/Edge
+  // already installed on the customer's system.
+  let chromiumPublisherKey=null;
+  try{
+    chromiumPublisherKey=loadCamoufoxPublisherKey(chromiumAssets,{
+      licenseKey:LICENSE_PUBLIC_KEY
+    });
+  }catch(error){
+    console.warn('[Engine] Bundled Chromium publisher trust unavailable:',
+      String(error.message).slice(0,200));
+  }
+  bundledEngine=new BundledEngineManager(chromiumAssets,{
+    publicKey:chromiumPublisherKey,engine:'chromium'
+  });
   launcher.bundledEngine=bundledEngine;
   const releaseAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-camoufox')

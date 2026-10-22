@@ -7,7 +7,7 @@
 const crypto=require('crypto');
 const fs=require('fs');
 const path=require('path');
-const {PUBLIC_KEY}=require('../licensing/manager');
+const {PUBLIC_KEY:LICENSE_PUBLIC_KEY}=require('../licensing/manager');
 const {inspectBinary}=require('./runtimeRegistry');
 
 const DOMAIN='LHM_BROWSER_ENGINE_BUNDLE_V1\n';
@@ -136,18 +136,31 @@ function listFiles(root){
 }
 class BundledEngineManager{
  constructor(resourcesRoot,{
-  publicKey=PUBLIC_KEY,platform=process.platform,inspect=inspectBinary,
+  publicKey=null,platform=process.platform,inspect=inspectBinary,
   engine='chromium'
  }={}){
   if(!['chromium','camoufox'].includes(engine))throw Error('Unknown bundled browser engine');
   this.engine=engine;
   this.root=path.resolve(resourcesRoot);
-  this.publicKey=publicKey;
+  // An engine must never inherit trust from the license-verification key.
+  // An absent production publisher anchor makes bundled mode unavailable.
+  this.publicKey=null;
+  if(publicKey){
+   const trusted=publicKey.type==='public'?publicKey:crypto.createPublicKey(publicKey);
+   if(trusted.asymmetricKeyType!=='ed25519')
+    throw Error('Engine publisher public key must use Ed25519');
+   const engineDer=trusted.export({format:'der',type:'spki'});
+   const licenseDer=crypto.createPublicKey(LICENSE_PUBLIC_KEY).export({format:'der',type:'spki'});
+   if(engineDer.equals(licenseDer))
+    throw Error('Engine publisher key must be independent of the license signing key');
+   this.publicKey=trusted;
+  }
   this.platform=platform;
   this.inspect=inspect;
  }
  verify(){
   if(this.platform!=='win32')throw Error('Bundled engine release currently supports Windows only');
+  if(!this.publicKey)throw Error('Independent engine publisher public key is required');
   const manifestFile=checkNoLinks(this.root,path.join(this.root,'manifest.json'));
   if(!fs.lstatSync(manifestFile).isFile())throw Error('Invalid engine manifest file');
   if(fs.statSync(manifestFile).size>1024*1024)
