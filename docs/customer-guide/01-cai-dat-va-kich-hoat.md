@@ -46,15 +46,18 @@ bạn cài phiên bản tiếp theo.
 2. Nếu bên bán công bố mã SHA-256 kèm bản phát hành (trong ghi chú
    phát hành), hãy đối chiếu mã của tệp bạn có với mã đã công bố
    trước khi chạy.
-3. Trên cửa sổ SmartScreen, bấm **More info** (Thông tin khác).
-   Kiểm tra tên ứng dụng/tệp hiện ra đúng là tệp cài đặt LHM Ads
-   Browser của bản phát hành này, rồi bấm **Run anyway** (Vẫn chạy).
-4. Nếu xuất hiện hộp thoại quyền quản trị (UAC) ghi nhà phát hành
-   không xác định, bấm **Yes** để tiếp tục cài đặt.
+3. Nếu SmartScreen hoặc Defender cảnh báo hay chặn bản cài, ghi lại
+   nguyên văn thông báo, kiểm tra tên tệp và SHA-256 với nguồn phát
+   hành chính thức, rồi liên hệ bộ phận hỗ trợ LHM. Không tự bỏ qua
+   cảnh báo hoặc tắt các lớp bảo vệ để tiếp tục cài.
+4. Nếu Windows cho phép cài đặt, kiểm tra thông tin UAC và chỉ cấp
+   quyền khi anh/chị đã xác minh nguồn cung cấp, tên chương trình và
+   hiểu rõ quyền mà ứng dụng yêu cầu.
 
-**Việc không nên làm:** không tắt SmartScreen hay Windows Defender
-cho toàn máy để "cài cho nhanh". Thao tác **Run anyway** ở trên chỉ
-áp dụng cho đúng tệp cài đặt này, một lần đó.
+**Việc không nên làm:** không tắt SmartScreen/Windows Defender,
+không thêm ngoại lệ antivirus và không dùng tệp từ nguồn không rõ.
+Bản Preview chưa ký Authenticode không được diễn giải là đã được
+Windows/Microsoft chứng nhận an toàn.
 
 Lưu ý phân biệt: chữ ký Authenticode nói ở mục này là chứng chỉ do
 tổ chức bên ngoài cấp cho tệp cài đặt. Nó khác với chữ ký nội bộ mà
