@@ -824,7 +824,7 @@
         <div class="tabs">
           <button class="tab-btn active" data-tab="tab-general">1. Thông tin chung</button>
           <button class="tab-btn" data-tab="tab-proxy">2. Proxy & Mạng</button>
-          <button class="tab-btn" data-tab="tab-fingerprint">3. Vân tay phần cứng</button>
+          <button class="tab-btn" data-tab="tab-fingerprint">3. Vân tay &amp; thiết bị</button>
         </div>
 
         <!-- Tab 1: General -->
@@ -915,11 +915,69 @@
             <label for="field-fp-mode">Chế độ thông số trình duyệt</label>
             <select id="field-fp-mode">
               <option value="native">Thông số gốc (khuyên dùng) — UA, Canvas, WebGL của trình duyệt thực</option>
-              <option value="experimental">Tùy chỉnh thử nghiệm (cũ) — có thể gây sai lệch hoặc lỗi website</option>
+              <option value="experimental">Tùy chỉnh Chromium thử nghiệm — chỉ dùng khi đã hiểu rủi ro</option>
             </select>
             <p class="fp-mode-help">Thông số gốc không dùng extension can thiệp fingerprint. Không có tùy chọn nào bảo đảm Google không liên kết các tài khoản.</p>
           </div>
-          <div id="fingerprint-custom-fields">
+          <section class="fp-setup-hero" aria-labelledby="fp-setup-title">
+            <div class="fp-setup-hero-head">
+              <div><strong id="fp-setup-title">Thiết lập riêng cho hồ sơ</strong>
+                <p id="fp-setup-engine-desc" role="status" aria-live="polite">Đang xác định khả năng cấu hình của engine…</p>
+              </div>
+              <span id="fp-setup-engine-tag" class="fp-engine-tag">Native</span>
+            </div>
+            <div class="fp-capability-grid" id="fp-capability-grid" aria-label="Khả năng cấu hình hiện tại">
+              <div class="fp-capability"><span>User-Agent &amp; hệ điều hành</span><strong id="fp-cap-ua">Theo engine</strong></div>
+              <div class="fp-capability"><span>Ngôn ngữ &amp; múi giờ</span><strong id="fp-cap-locale">Theo máy</strong></div>
+              <div class="fp-capability"><span>Màn hình / CPU / RAM</span><strong id="fp-cap-device">Theo thiết bị</strong></div>
+              <div class="fp-capability"><span>Canvas / WebGL / WebAudio</span><strong id="fp-cap-render">Theo engine</strong></div>
+              <div class="fp-capability"><span>WebRTC / DNS / IP</span><strong id="fp-cap-network">Theo tuyến mạng</strong></div>
+              <div class="fp-capability"><span>Độ ổn định khi khởi động lại</span><strong id="fp-cap-pin">Chưa đo</strong></div>
+            </div>
+          </section>
+          <section class="fp-camoufox-setup" id="fp-camoufox-settings" hidden aria-labelledby="fp-camoufox-title">
+            <div class="fp-section-heading">
+              <div><strong id="fp-camoufox-title">Camoufox · Cấp danh tính theo hồ sơ</strong>
+                <p>Chọn trước khi tạo hồ sơ. Bộ sinh chính thức sẽ tạo và ghim danh tính; không sửa thủ công User-Agent, WebGL hoặc Canvas.</p>
+              </div>
+              <span class="fp-setup-tag">Thiết lập hỗ trợ</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="field-fp-locale">Ngôn ngữ trình duyệt</label>
+                <select id="field-fp-locale">
+                  <option value="">Tự động theo bộ sinh</option>
+                  <option value="vi-VN">Tiếng Việt · Việt Nam</option>
+                  <option value="en-US">English · United States</option>
+                  <option value="en-GB">English · United Kingdom</option>
+                  <option value="ja-JP">日本語 · Japan</option>
+                  <option value="ko-KR">한국어 · Korea</option>
+                  <option value="de-DE">Deutsch · Deutschland</option>
+                  <option value="fr-FR">Français · France</option>
+                  <option value="th-TH">ไทย · Thailand</option>
+                  <option value="zh-CN">中文 · China</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="field-fp-timezone">Múi giờ IANA</label>
+                <select id="field-fp-timezone">
+                  <option value="">Tự động theo bộ sinh</option>
+                  <option value="Asia/Ho_Chi_Minh">Việt Nam · Asia/Ho_Chi_Minh</option>
+                  <option value="Asia/Bangkok">Thái Lan · Asia/Bangkok</option>
+                  <option value="Asia/Singapore">Singapore</option>
+                  <option value="Asia/Tokyo">Nhật Bản · Asia/Tokyo</option>
+                  <option value="Asia/Seoul">Hàn Quốc · Asia/Seoul</option>
+                  <option value="Europe/London">Anh · Europe/London</option>
+                  <option value="Europe/Berlin">Đức · Europe/Berlin</option>
+                  <option value="America/New_York">Mỹ · America/New_York</option>
+                  <option value="America/Los_Angeles">Mỹ · America/Los_Angeles</option>
+                  <option value="UTC">UTC</option>
+                </select>
+              </div>
+            </div>
+            <p class="fp-inline-status" id="fp-identity-lock-status" role="status" aria-live="polite">Chưa tạo danh tính. Lưu hồ sơ để thử cấp danh tính được ghim.</p>
+          </section>
+          <div id="fingerprint-custom-fields" hidden>
           <div class="fp-header-action">
             <span class="fp-info">Các giá trị tùy chỉnh dưới đây chỉ là thử nghiệm, không chứng minh tính tương thích hoặc ẩn danh.</span>
             <button type="button" class="btn btn-accent" id="btn-random-fp">Tạo cấu hình thử nghiệm</button>
@@ -986,6 +1044,18 @@
             </label>
           </div>
           </div><!-- fingerprint-custom-fields -->
+          <section class="fp-config-preview" id="fp-config-preview" aria-label="Tóm tắt cấu hình sẽ lưu">
+            <div class="fp-section-heading">
+              <div><strong>Cấu hình sẽ áp dụng</strong><p>Đây là cấu hình khai báo, không phải kết quả đo website.</p></div>
+              <span class="fp-setup-tag" id="fp-config-status">Theo engine</span>
+            </div>
+            <div class="fp-preview-grid">
+              <div><small>Engine / chế độ</small><strong id="fp-preview-engine">—</strong></div>
+              <div><small>Ngôn ngữ</small><strong id="fp-preview-language">Theo engine</strong></div>
+              <div><small>Múi giờ</small><strong id="fp-preview-timezone">Theo engine</strong></div>
+              <div><small>Danh tính</small><strong id="fp-preview-identity">Chưa cấp</strong></div>
+            </div>
+          </section>
           <section class="fp-diagnostics">
             <div class="fp-audit-heading"><strong>Fingerprint Inspector</strong><button class="btn btn-sm btn-secondary" id="btn-fp-inspect" type="button">Kiểm tra cấu hình</button></div>
             <div id="fp-audit-results" role="status">Chưa kiểm tra. Báo cáo chỉ đánh giá cấu hình LHM, không đo tín hiệu Google.</div>
