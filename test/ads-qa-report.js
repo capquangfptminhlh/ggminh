@@ -51,6 +51,10 @@ const exempt=buildCampaignQaReport({urls:'https://example.com/shop',checks:{
 assert.equal(exempt.report.summary.userNotApplicable,1);
 assert.equal(exempt.report.summary.userNotChecked,CHECKS.length-1);
 assert.notEqual(exempt.report.decision,'LOCAL_QA_RECORDED');
+const allNotApplicable=buildCampaignQaReport({urls:'https://example.com/shop',checks:
+  Object.fromEntries(CHECKS.map(x=>[x.id,'not-applicable']))},now);
+assert.equal(allNotApplicable.report.decision,'REQUIRES_REVIEW',
+  'No user-confirmed QA cannot be represented as reviewed');
 const duplicate=normalizeChecks(selections);
 assert.equal(duplicate.length,CHECKS.length);
 assert.throws(()=>normalizeChecks(null),/checklist/);
