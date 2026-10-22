@@ -98,8 +98,13 @@ class AIUsageBudget {
     if (!Number.isSafeInteger(next.attempts + 1)) throw Error('AI budget counter overflow');
     next.attempts++;
     this.write(next);
+    this.reservedMonth = next.month;
   }
   recordResponse(usage) {
+    // An upstream response can arrive after midnight on the first day of
+    // a new month. Its attempt belongs to the previous month; do not
+    // incorrectly increment a new-month response without an attempt.
+    if (this.reservedMonth && this.reservedMonth !== monthKey(this.clock())) return;
     const next = this.current();
     if (!next.attempts) throw Error('AI budget has no reserved request');
     const prompt = reportedTokens(usage?.promptTokens);
