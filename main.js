@@ -36,6 +36,7 @@ const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
 const {runPerformanceLab}=require('./src/ops/performanceLab');
+const {UpdateCenter}=require('./src/update/updateCenter');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
@@ -229,6 +230,43 @@ function createWindow() {
 }
 
 function initIPC() {
+  const updatePublicKeyFile=app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
+    :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
+  const onlineUpdates=new UpdateCenter({
+    currentVersion:app.getVersion(),
+    publicKeyFile:updatePublicKeyFile,
+    licenseKey:LICENSE_PUBLIC_KEY
+  });
+  let lastVerifiedInstallerPath=null;
+  ipcMain.handle('app-online-update-status',()=>onlineUpdates.status());
+  ipcMain.handle('app-online-update-check',()=>onlineUpdates.check());
+  ipcMain.handle('app-online-update-download',async()=>{
+    // No renderer-supplied URL, filename, hash or destination.
+    const offer=onlineUpdates.lastOffer;
+    if(!offer||onlineUpdates.busy)throw Error('Chưa có bản cập nhật được xác minh');
+    const artifact=offer.details.artifact;
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Tải bộ cài LHM đã xác minh SHA-256',
+      defaultPath:path.join(app.getPath('downloads'),artifact.fileName),
+      filters:[{name:'Bộ cài Windows',extensions:['exe']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    // Enforce verified signed filename, so saved EXE cannot be swapped
+    // with a differently named artifact by a compromised renderer.
+    if(path.basename(filePath)!==artifact.fileName)
+      throw Error('Tên tệp phải khớp với bộ cài trong manifest đã ký');
+    lastVerifiedInstallerPath=null;
+    const result=await onlineUpdates.download(filePath);
+    lastVerifiedInstallerPath=filePath;
+    return {canceled:false,...result};
+  });
+  ipcMain.handle('app-online-update-open-folder',()=>{
+    if(!lastVerifiedInstallerPath||!fs.existsSync(lastVerifiedInstallerPath))
+      throw Error('Chưa có bộ cài đã xác minh để mở thư mục');
+    require('electron').shell.showItemInFolder(lastVerifiedInstallerPath);
+    return {opened:true};
+  });
   ipcMain.handle('get-profiles', () => store.getProfiles());
   ipcMain.handle('agency-network-preview',(_,input)=>{
     if(!input||!store.getProfile(input.profileId))throw Error('Hồ sơ không hợp lệ');

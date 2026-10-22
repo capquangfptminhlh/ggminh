@@ -357,6 +357,38 @@
           "node test/performance-lab.js"
         ]
       ]
+    },
+    {
+      "id": "lhm-signed-online-updates",
+      "label": "Opt-in publisher-signed online updates with SHA-256 verified local installer download",
+      "files": [
+        "src/update/updateCheck.js",
+        "src/update/updateCenter.js",
+        "src/ui/onlineUpdateCenter.js",
+        "src/ui/onlineUpdateCenter.css"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "app-online-update-check"
+        ],
+        [
+          "main.js",
+          "app-online-update-download"
+        ],
+        [
+          "preload.js",
+          "onlineUpdateCheck"
+        ],
+        [
+          "src/ui/index.html",
+          "lhm-update-check"
+        ],
+        [
+          "package.json",
+          "node test/online-update-center.js"
+        ]
+      ]
     }
   ]
 }
