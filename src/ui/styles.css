@@ -1003,3 +1003,40 @@ body[data-view="dashboard"] .app-container{height:auto;min-height:100vh}
 .criteria-evidence{margin-top:8px;display:flex;flex-direction:column;gap:4px}
 .criteria-evidence-line{font-size:12px;color:#b8c3d3;line-height:1.5}
 .criteria-evidence-line strong{color:#e5e7eb;font-weight:600}
+
+
+/* v5.8: engine-aware fingerprint settings, deliberately truthful about support. */
+#fp-camoufox-settings[hidden],#fingerprint-custom-fields[hidden]{display:none!important}
+.fp-setup-hero,.fp-camoufox-setup,.fp-config-preview{border:1px solid #35506d;border-radius:12px;padding:16px;margin:13px 0 17px;background:linear-gradient(130deg,#12243b,#182c47)}
+.fp-setup-hero-head,.fp-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.fp-setup-hero-head strong,.fp-section-heading strong{font-size:14px;color:#eef5ff}
+.fp-setup-hero-head p,.fp-section-heading p{font-size:12px;line-height:1.6;color:#aabbd4;margin-top:5px}
+.fp-engine-tag,.fp-setup-tag{border:1px solid #4776aa;background:#234066;color:#c8e2ff;border-radius:20px;padding:5px 9px;font-weight:650;font-size:10px;white-space:nowrap}
+.fp-capability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.fp-capability{border:1px solid #304861;border-radius:8px;padding:10px;background:#0d1b2d;min-width:0}
+.fp-capability span,.fp-preview-grid small{display:block;font-size:11px;line-height:1.55;color:#9cafd0;margin-bottom:4px}
+.fp-capability strong,.fp-preview-grid strong{display:block;font-size:12px;line-height:1.4;color:#e3eeff;overflow-wrap:anywhere}
+.fp-camoufox-setup .form-group{flex:1;min-width:0}
+.fp-camoufox-setup select{width:100%}
+.fp-inline-status{border-left:3px solid #447dc0;padding:10px 12px;border-radius:6px;background:#102840;font-size:12px;line-height:1.6;color:#c5dfff}
+.fp-inline-status.is-locked{border-left-color:#efa84f;background:#2b261d;color:#ffe4b9}
+.fp-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fp-preview-grid>div{min-width:0}
+@media(max-width:580px){.fp-capability-grid,.fp-preview-grid{grid-template-columns:1fr}.fp-camoufox-setup .form-row{flex-direction:column;gap:0}.fp-setup-hero-head,.fp-section-heading{flex-direction:column}}
+
+
+/* Signal-chain and operator compliance panels: no invented detection risk score. */
+.fp-consistency-panel{margin:14px 0;border:1px solid #34506a;background:#0e1d31;border-radius:12px;padding:16px}
+.fp-consistency-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fp-consistency-card{padding:12px;border:1px solid #354c66;border-radius:9px;background:#12253c;min-width:0}
+.fp-consistency-card-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.fp-consistency-card strong{font-size:12px;color:#e5edff}
+.fp-consistency-card p{font-size:11px;line-height:1.65;color:#afc2dd;margin-top:7px}
+.fp-consistency-state{padding:3px 7px;border-radius:8px;border:1px solid #497092;color:#c5dfff;background:#18314b;font-size:10px;font-weight:700}
+.fp-consistency-state.is-warning{border-color:#ad7240;background:#322619;color:#ffd49e}
+.fp-consistency-state.is-unknown{border-color:#556781;background:#232d43;color:#bdcce2}
+.fp-consistency-details{margin-top:13px;border:1px solid #334760;padding:10px 12px;border-radius:9px;color:#bdd2ed}
+.fp-consistency-details summary{cursor:pointer;font-size:12px;font-weight:600}
+.fp-consistency-details .fp-consistency-grid{margin-top:12px}
+.fp-consistency-footer{font-size:11px;line-height:1.6;color:#9caece;margin-top:12px}
+@media(max-width:600px){.fp-consistency-grid{grid-template-columns:1fr}}

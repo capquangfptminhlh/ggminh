@@ -69,6 +69,12 @@ const fpAuditResults = document.getElementById('fp-audit-results');
 const fieldFpCanvas = document.getElementById('field-fp-canvas');
 const fieldFpAudio = document.getElementById('field-fp-audio');
 const fieldFpWebrtc = document.getElementById('field-fp-webrtc');
+const fpCamoufoxSettings = document.getElementById('fp-camoufox-settings');
+const fieldFpLocale = document.getElementById('field-fp-locale');
+const fieldFpTimezone = document.getElementById('field-fp-timezone');
+const fpIdentityLockStatus = document.getElementById('fp-identity-lock-status');
+const fpEngineDescription = document.getElementById('fp-setup-engine-desc');
+const fpEngineTag = document.getElementById('fp-setup-engine-tag');
 
 // First-run guidance for Camoufox identity provisioning. The main process
 // records the provisioning outcome on the saved profile
@@ -271,11 +277,18 @@ async function refreshBehaviorAlerts() {
 function setupEventListeners() {
   fieldFpMode.addEventListener('change', () => {
     const native = fieldFpMode.value === 'native';
-    fpCustomFields.hidden = native;
+    setFingerprintMode(native ? 'native' : 'experimental');
     if (native) currentGeneratedFP = { mode: 'native' };
     else window.api.generateFingerprint({ os: fieldFpOs.value }).then(applyFingerprintToForm).catch(console.error);
+    refreshFingerprintSetup();
     fpAuditResults.textContent = 'Cấu hình đã thay đổi. Nhấn Kiểm tra cấu hình để xem cảnh báo.';
   });
+  for (const select of [fieldFpLocale, fieldFpTimezone]) {
+    select.addEventListener('change', () => {
+      refreshFingerprintSetup();
+      fpAuditResults.textContent = 'Cấu hình khai báo đã đổi. Lưu hồ sơ rồi kiểm tra engine thực tế trên máy.';
+    });
+  }
   document.getElementById('btn-fp-inspect').addEventListener('click', async () => {
     fpAuditResults.textContent = 'Đang chẩn đoán...';
     try {
@@ -299,13 +312,20 @@ function setupEventListeners() {
       const footer = document.createElement('p');
       footer.textContent = audit.explanation;
       fpAuditResults.append(footer);
+      if (fieldBrowserEngine.value === 'camoufox') {
+        const note = document.createElement('p');
+        note.textContent = 'Ngôn ngữ/múi giờ là yêu cầu gửi đến bộ sinh Camoufox, không phải đo thực tế; việc cấp danh tính và khả năng khớp chỉ được xác nhận sau khi có engine đã ký và bước kiểm chứng thành công.';
+        fpAuditResults.append(note);
+      }
     } catch (error) { fpAuditResults.textContent = 'Kiểm tra thất bại: ' + error.message; }
   });
+  fieldProxyType.addEventListener('change', refreshFingerprintSetup);
   fieldBrowserEngine.addEventListener('change', () => {
     const gecko = fieldBrowserEngine.value !== 'chromium';
     geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
     if (gecko) setFingerprintMode('native');
     fieldFpMode.disabled = gecko;
+    refreshFingerprintSetup();
     updateCamoufoxFormHint();
   });
   document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
@@ -499,6 +519,10 @@ async function openProfileModal(existingProfile = null) {
 
     currentGeneratedFP = existingProfile.fingerprint || { mode: 'native' };
     if (currentGeneratedFP.mode !== 'native') applyFingerprintToForm(currentGeneratedFP);
+    fieldFpLocale.value = currentGeneratedFP.language || currentGeneratedFP.languages?.[0] || '';
+    if (!fieldFpLocale.value) fieldFpLocale.value = '';
+    fieldFpTimezone.value = currentGeneratedFP.timezone || '';
+    if (!fieldFpTimezone.value) fieldFpTimezone.value = '';
     setFingerprintMode(currentGeneratedFP.mode === 'native' ? 'native' : 'experimental');
   } else {
     document.getElementById('modal-title').textContent = 'Tạo Profile Mới';
@@ -513,10 +537,13 @@ async function openProfileModal(existingProfile = null) {
     proxyFields.style.display = 'none';
 
     currentGeneratedFP = { mode: 'native' };
+    fieldFpLocale.value = '';
+    fieldFpTimezone.value = '';
     setFingerprintMode('native');
   }
   geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
   fieldFpMode.disabled = fieldBrowserEngine.value !== 'chromium';
+  refreshFingerprintSetup();
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   updateCamoufoxFormHint();
   openModal(modalProfile);
@@ -528,7 +555,83 @@ function parseStartupUrls(value) {
 function parseTags(value) {
   return value.split(',').map(tag => tag.trim()).filter(Boolean);
 }
+
+function refreshFingerprintSetup() {
+  const engine = fieldBrowserEngine.value;
+  const isCamoufox = engine === 'camoufox';
+  const isFirefox = engine === 'gecko';
+  const isChromium = engine === 'chromium';
+  const legacy = isChromium && fieldFpMode.value === 'experimental';
+  const pinned = isCamoufox && !!fieldId.value && !!currentGeneratedFP?.identity;
+
+  window.LHMProfileConsistency?.render({
+    engine, proxyType: fieldProxyType.value,
+    fingerprintMode: fieldFpMode.value,
+    pinned, language: fieldFpLocale.value, timezone: fieldFpTimezone.value
+  });
+  fpCamoufoxSettings.hidden = !isCamoufox;
+  fpCustomFields.hidden = !legacy;
+  fieldFpLocale.disabled = pinned;
+  fieldFpTimezone.disabled = pinned;
+  fpIdentityLockStatus.classList.toggle('is-locked', pinned);
+  fpIdentityLockStatus.textContent = pinned
+    ? 'Danh tính đã ghim: ngôn ngữ/múi giờ không thể đổi trên hồ sơ này. Để sử dụng bộ danh tính khác, hãy tạo hồ sơ mới.'
+    : 'Các lựa chọn sẽ được chuyển đến bộ sinh Camoufox khi tạo hồ sơ. Nếu thiếu engine đã được ký hoặc bộ sinh không đạt, ứng dụng ghi rõ CHƯA CẤP; không giả làm đã áp dụng.';
+
+  const textByEngine = isCamoufox
+    ? 'Camoufox: thiết lập ngôn ngữ và múi giờ trước khi cấp danh tính bằng bộ sinh chính thức. Các đặc điểm khác không thể gõ tùy ý.'
+    : isFirefox
+      ? 'Firefox hệ thống: sử dụng thuộc tính trình duyệt và thiết bị thực; trình chỉnh sửa vân tay không áp dụng cho engine này.'
+      : legacy
+        ? 'Chromium thử nghiệm: có các thông số mở rộng bên dưới; extension can thiệp có thể gây sai lệch, không bảo đảm nhất quán hoặc không bị nhận diện.'
+        : 'Chrome/Edge hệ thống: dùng thông số thực, không thay User-Agent, Canvas, WebGL hoặc thông tin CPU/RAM bằng extension.';
+  fpEngineDescription.textContent = textByEngine;
+  fpEngineTag.textContent = isCamoufox ? (pinned ? 'Đã ghim' : 'Tạo bằng engine') :
+    isFirefox ? 'Native Gecko' : legacy ? 'Thử nghiệm' : 'Native Chromium';
+
+  const statusById = {
+    'fp-cap-ua': isCamoufox ? 'Bộ sinh chính thức' : legacy ? 'Thử nghiệm' : 'Theo engine',
+    'fp-cap-locale': isCamoufox ? (pinned ? 'Đã khóa' : 'Có lựa chọn') : legacy ? 'Chưa đồng bộ' : 'Theo hệ thống',
+    'fp-cap-device': isCamoufox ? 'Đồng bộ theo danh tính' : legacy ? 'Thử nghiệm' : 'Thiết bị thật',
+    'fp-cap-render': isCamoufox ? 'Theo Camoufox' : legacy ? 'Thử nghiệm' : 'Theo engine',
+    'fp-cap-network': 'Phải đo riêng',
+    'fp-cap-pin': pinned ? 'Đã ghim · chưa đo' : isCamoufox ? 'Chưa cấp danh tính' : 'Phụ thuộc engine'
+  };
+  for (const [id, value] of Object.entries(statusById))
+    document.getElementById(id).textContent = value;
+  document.getElementById('fp-preview-engine').textContent = isCamoufox ? 'Camoufox / Native' :
+    isFirefox ? 'Firefox / Native' : legacy ? 'Chromium / Thử nghiệm' : 'Chromium / Native';
+  document.getElementById('fp-preview-language').textContent = isCamoufox
+    ? (pinned ? currentGeneratedFP.identity.expectations?.language || 'Không ghi nhận'
+      : fieldFpLocale.selectedOptions[0]?.textContent || 'Tự động')
+    : legacy ? (currentGeneratedFP?.languages?.[0] || 'Chưa xác nhận')
+      : 'Theo trình duyệt';
+  document.getElementById('fp-preview-timezone').textContent = isCamoufox
+    ? (pinned ? currentGeneratedFP.identity.expectations?.timezone || 'Không ghi nhận'
+      : fieldFpTimezone.value || 'Theo bộ sinh')
+    : legacy ? (currentGeneratedFP?.timezone || 'Chưa xác nhận')
+      : 'Theo máy';
+  document.getElementById('fp-preview-identity').textContent =
+    pinned ? 'Đã lưu (không sửa trực tiếp)' :
+      isCamoufox ? 'Chờ cấp / kiểm chứng' : legacy ? 'Giá trị thử nghiệm' : 'Thông số gốc';
+  document.getElementById('fp-config-status').textContent = pinned ? 'Đã ghim' :
+    legacy ? 'Thử nghiệm' : isCamoufox ? 'Chờ cấp' : 'Mặc định';
+}
+
 function selectedFingerprintConfig() {
+  if (fieldBrowserEngine.value === 'camoufox') {
+    // Identity is immutable per existing profile. A regular edit is NOT
+    // permission to replace the CAMOU_CONFIG blob with renderer-controlled data.
+    // The store preserves the pinned identity for the same profile/engine.
+    if (fieldId.value && currentGeneratedFP?.identity) return { mode: 'native' };
+    const fp = { mode: 'native' };
+    if (fieldFpLocale.value) {
+      fp.language = fieldFpLocale.value;
+      fp.languages = [fieldFpLocale.value];
+    }
+    if (fieldFpTimezone.value) fp.timezone = fieldFpTimezone.value;
+    return fp;
+  }
   if (fieldFpMode.value === 'native' || fieldBrowserEngine.value !== 'chromium')
     return { mode: 'native' };
   const [width,height] = fieldFpScreen.value.split('x').map(Number);
@@ -549,6 +652,7 @@ function setFingerprintMode(mode) {
   fieldFpMode.value = mode === 'native' ? 'native' : 'experimental';
   fpCustomFields.hidden = fieldFpMode.value === 'native';
   fpAuditResults.textContent = 'Nhấn Kiểm tra cấu hình để xem phân tích.';
+  refreshFingerprintSetup();
 }
 
 function applyFingerprintToForm(fp) {
@@ -570,6 +674,7 @@ function applyFingerprintToForm(fp) {
   fieldFpCanvas.checked = (fp.canvasNoiseSeed !== 0);
   fieldFpAudio.checked = (fp.audioNoiseSeed !== 0);
   fieldFpWebrtc.checked = (fp.webrtc !== 'real');
+  refreshFingerprintSetup();
 }
 
 async function loadProfiles() {
