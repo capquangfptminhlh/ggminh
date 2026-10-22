@@ -9,6 +9,7 @@ on:
       - feature/d1-camoufox-per-profile-identity
       - integration/v5.8-phase-c
       - integration/v5.8-wave-r
+      - release/v5.8.0-commercial-preflight-20261022
       - main
     paths:
       - .github/workflows/camoufox-upstream-smoke.yml

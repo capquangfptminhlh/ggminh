@@ -23,3 +23,5 @@ for(const [name,wf] of [['staged',yaml],['active',active]]) {
  assert.ok(step.includes('LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash'), name+': configured test must receive approved engine digest');
 }
 console.log('staged-workflow-contract: PASS (static patch check only; real configured Windows run NOT_RUN)');
+
+assert.ok(active.includes('release/v5.8.0-commercial-preflight-20261022'), 'release candidate must trigger configured Windows verification');
