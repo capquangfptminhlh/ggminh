@@ -375,20 +375,30 @@ async function runCheck() {
   /* One lab instance serving UDP and TCP on the SAME port, the
    * way port 53 works in the real run: the pack resolver's TCP
    * fallback must land on the TCP listener of the same server. */
-  // Windows may reserve TCP dynamic-port ranges independently of UDP.
-  // Select a usable TCP port FIRST, then attempt UDP on that exact port.
-  // Retry with a fresh lab on EACCES/EADDRINUSE; never skip the DNS and
-  // proxy round-trip checks or turn an unavailable socket into PASS.
+  // The Windows runner may exclude an OS-selected ephemeral TCP port
+  // from UDP (or vice versa). Alternate which transport reserves the port
+  // first and retry with fresh sockets. Every successful attempt MUST run
+  // the real UDP/TCP/DNS/SOCKS assertions below: never accept a mock PASS.
   let lab2, udpAddr, tcpAddr;
-  for (let attempt = 0; attempt < 12; attempt++) {
+  const maxBindAttempts = 40;
+  for (let attempt = 0; attempt < maxBindAttempts; attempt++) {
     lab2 = createDnsLabServer({ zone: ZONE, upstream: null });
     try {
-      tcpAddr = await lab2.listenTcp(0);
-      udpAddr = await lab2.listen(tcpAddr.port);
+      if (attempt % 2 === 0) {
+        tcpAddr = await lab2.listenTcp(0);
+        udpAddr = await lab2.listen(tcpAddr.port);
+      } else {
+        udpAddr = await lab2.listen(0);
+        tcpAddr = await lab2.listenTcp(udpAddr.port);
+      }
       break;
     } catch (error) {
       lab2.close();
-      if (!['EACCES', 'EADDRINUSE'].includes(error.code) || attempt === 11) throw error;
+      if (!['EACCES', 'EADDRINUSE'].includes(error.code) ||
+          attempt === maxBindAttempts - 1) throw error;
+      // Release the previous attempt's socket handles before reusing the
+      // event loop. This is a CI loopback retry, never a network bypass.
+      await new Promise(resolve => setTimeout(resolve, 15));
     }
   }
   const label = 'check' + crypto.randomBytes(3).toString('hex');

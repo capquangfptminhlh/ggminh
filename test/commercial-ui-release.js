@@ -4,7 +4,8 @@ const crypto=require('node:crypto');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {expectedExeName,produceReleaseEvidence}=require('../tools/ci-release-evidence');
+const {expectedExeName,produceReleaseEvidence,validateCaptureEvidence,CAPTURES}=require('../tools/ci-release-evidence');
+const {verify:verifyDraftArtifacts}=require('../tools/release-artifact-preflight');
 const pkg=require('../package.json');
 const name=expectedExeName(pkg);
 assert.equal(name,'LHM-Ads-Browser-'+pkg.version+'-Preview-Setup-x64.exe');
@@ -20,13 +21,46 @@ const screenshotNames=[
 ];
 try{
   fs.writeFileSync(path.join(root,name),Buffer.alloc(1024*1024+1,0x2b));
-  screenshotNames.forEach(file=>fs.writeFileSync(path.join(root,file),'synthetic unit-test marker'));
+  fs.mkdirSync(path.join(root,'packaged-ui'));
+  screenshotNames.forEach(file=>{
+    fs.writeFileSync(path.join(root,file),Buffer.alloc(10001,0x2b));
+    fs.writeFileSync(path.join(root,'packaged-ui',file),Buffer.alloc(10002,0x2c));
+  });
   const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,name))).digest('hex');
   const evidence=produceReleaseEvidence({dist:root,pkg,
     sha:'1'.repeat(40),runId:'39835712310'});
   assert.equal(evidence.build.windowsInstaller.sha256,hash);
   assert.equal(evidence.build.windowsInstaller.bytes,1024*1024+1);
   assert.equal(evidence.build.uiCaptureCount,12);
+  assert.deepEqual(CAPTURES,screenshotNames);
+  assert(validateCaptureEvidence(evidence.build));
+  assert.equal(evidence.build.uiCaptures.length,12);
+  assert.equal(evidence.build.uiCaptures[0].source.bytes,10001);
+  assert.equal(evidence.build.uiCaptures[0].packaged.bytes,10002);
+  const evidenceFile=path.join(root,'release-evidence.json');
+  fs.writeFileSync(evidenceFile,JSON.stringify(evidence));
+  const verifyArgs={assetsRoot:root,evidenceFile,uiRoot:root,
+    sha:'1'.repeat(40),runId:'39835712310',pkg};
+  const result=verifyDraftArtifacts(verifyArgs);
+  assert.equal(result.verifiedScreenshots,24);
+  assert.equal(result.verdict,'CI_BYTES_VERIFIED_ONLY_NOT_OWNER_ACCEPTANCE');
+  // Retaining a signed EXE hash is meaningless if the screenshot evidence can
+  // be replaced with different bytes under the same exact file names.
+  const packagedOne=path.join(root,'packaged-ui',screenshotNames[0]);
+  fs.writeFileSync(packagedOne,Buffer.alloc(10002,0x7e));
+  assert.throws(()=>verifyDraftArtifacts(verifyArgs),/SHA-256 mismatch/);
+  fs.writeFileSync(packagedOne,Buffer.alloc(10002,0x2c));
+  const sourceOne=path.join(root,screenshotNames[0]);
+  fs.writeFileSync(sourceOne,Buffer.alloc(10001,0x7e));
+  assert.throws(()=>verifyDraftArtifacts(verifyArgs),/SHA-256 mismatch/);
+  fs.writeFileSync(sourceOne,Buffer.alloc(10001,0x2b));
+  const badEvidence={...evidence,build:{...evidence.build,uiCaptureCount:11}};
+  fs.writeFileSync(evidenceFile,JSON.stringify(badEvidence));
+  assert.throws(()=>verifyDraftArtifacts(verifyArgs),/capture evidence/);
+  fs.writeFileSync(evidenceFile,JSON.stringify(evidence));
+  assert.throws(()=>verifyDraftArtifacts({...verifyArgs,runId:'99999999'}),/provenance/);
+  assert.throws(()=>verifyDraftArtifacts({...verifyArgs,sha:'f'.repeat(40)}),/provenance/);
+  assert.equal(verifyDraftArtifacts(verifyArgs).verifiedScreenshots,24);
   assert.equal(evidence.outcome,'CI_BUILD_EVIDENCE_ONLY_NOT_COMMERCIAL_APPROVAL');
   assert.equal(evidence.policy.publicReleaseAuthorized,false);
   assert.equal(evidence.policy.independentWindowsGate3,'NOT_VERIFIED_BY_CI');
@@ -59,6 +93,10 @@ try{
   assert(releaseWorkflow.includes('LHM-Release-Evidence-Windows'));
   assert(releaseWorkflow.includes('release-assets/release-evidence.json'));
   assert(releaseWorkflow.includes('--draft'), 'Never auto-publish commercial installer');
+  assert(releaseWorkflow.includes('.build.uiCaptureCount == 12'),'Draft must require actual 12 UI captures');
+  assert(!releaseWorkflow.includes('.build.uiCaptureCount == 11'),'Draft must not keep stale 11-image gate');
+  assert(releaseWorkflow.includes('node tools/release-artifact-preflight.js'),'Draft must validate all downloaded bytes');
+  assert(releaseWorkflow.includes('--name LHM-Workspace-UI-Preview'),'Draft must fetch actual UI artifact');
 
   assert.equal((html.match(/href="workspaceInteractions.css"/g)||[]).length,1);
   for(const id of ['modal-ads-launch-guard','modal-performance-lab','modal-launch-readiness','modal-app-about'])
