@@ -1559,6 +1559,17 @@ run();
           <div class="tower-kpi is-error"><span>Cần xử lý</span><strong id="tower-errors">0</strong><small>Lỗi cấu hình</small></div>
           <div class="tower-kpi is-warning"><span>Cảnh báo</span><strong id="tower-warnings">0</strong><small>Health + hành vi</small></div>
         </section>
+        <section class="tower-panel lhm-triage-panel" aria-label="Fleet Triage: các nhóm lỗi ưu tiên">
+          <div class="tower-panel-header">
+            <div><span class="lhm-triage-eyebrow">FLEET OPERATIONS · LIVE CONFIG CHECKS</span>
+              <h3>Ưu tiên xử lý toàn bộ hồ sơ</h3>
+              <p class="lhm-triage-desc">Tổng hợp lỗi cùng nguyên nhân, không phải điểm tín nhiệm Google/Meta. Không tự chỉnh sửa cấu hình.</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" id="tower-triage-refresh">Phân tích lại</button>
+          </div>
+          <p class="lhm-triage-status" id="tower-triage-status" role="status" aria-live="polite">Chưa chạy phân tích.</p>
+          <div id="tower-triage-list" class="lhm-triage-list"></div>
+        </section>
         <div class="tower-columns">
           <section class="tower-panel">
             <div class="tower-panel-header">
