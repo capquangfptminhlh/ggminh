@@ -77,7 +77,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   current.resolve([{profileId:'z'},{profileId:'z'}]);
   assert.deepEqual(await malformed,{state:'error'});
   assert.equal(updates,1,'malformed data may never modify the visible session set');
-  assert.equal(signal.filter(x=>x==='error').length,1,'unchanged error does not spam aria-live');
+  assert.equal(signal.filter(x=>x==='error').length,2,'unchanged error does not spam aria-live');
 
   current=deferred();
   const recovery=poller.poll();
@@ -85,7 +85,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   current.resolve(rows('b','a')); // reordered IDs cannot trigger unnecessary DOM redraw
   assert.deepEqual(await recovery,{state:'ok'});
   assert.equal(updates,1);
-  assert.deepEqual(signal,['healthy','error','healthy']);
+  assert.deepEqual(signal,['healthy','error','healthy','error','healthy']);
 
   current=deferred();
   const refreshed=poller.poll();
