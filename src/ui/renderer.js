@@ -612,7 +612,8 @@ async function loadProfiles() {
     ]);
     window.LHMProfileStatusPoller.parseActiveList(activeList);
   } catch (error) {
-    reportProfileSyncStatus('error');
+    if (profileStatusPoller) profileStatusPoller.markSnapshotFailed();
+    else reportProfileSyncStatus('error');
     // Preserve last rendered data and selection if IPC is temporarily down.
     return false;
   }
