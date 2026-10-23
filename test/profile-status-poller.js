@@ -14,7 +14,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 
 (async()=>{
   assert.deepEqual(parseActiveList(rows('a','b')),rows('a','b'));
-  assert.throws(()=>parseActiveList(null),/array/);
+  assert.throws(()=>parseActiveList(null),/active browser list/);
   assert.throws(()=>parseActiveList([{}]),/ID/);
   assert.throws(()=>parseActiveList(rows('x','x')),/duplicate/);
   assert.equal(differs(rows('x','y'),['y','x']),false);
@@ -63,6 +63,14 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert.deepEqual(signal,['healthy','error']);
   assert.deepEqual(active,['a','b'],'failed IPC preserves last known state');
 
+  // A failed manual reload must set the controller's internal error too.
+  // Otherwise the following successful poll could leave a stale red banner.
+  poller.markSnapshotLoaded();
+  assert.equal(poller.getStatus(),'healthy');
+  poller.markSnapshotFailed();
+  assert.equal(poller.getStatus(),'error');
+  assert.equal(signal.at(-1),'error');
+
   current=deferred();
   const malformed=poller.poll();
   await tick();
@@ -91,7 +99,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   poller.stop();poller.stop();
   assert.deepEqual(await poller.poll(),{state:'stopped'});
   assert.equal(intervals.filter(x=>x.cleared===12).length,1);
-  assert.throws(()=>create({}),/callbacks/);
+  assert.throws(()=>create({}),/callback/);
   assert.throws(()=>create({
     readActive(){},getCurrentIds(){},onUpdate(){},onStatus(){},intervalMs:10
   }),/interval/);
@@ -111,6 +119,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert(renderer.includes('window.LHMProfileStatusPoller.parseActiveList(activeList)'),
     'Invalid IPC payload must not silently clear running sessions');
   assert(renderer.includes('profileStatusPoller.markSnapshotLoaded()'));
+  assert(renderer.includes('profileStatusPoller.markSnapshotFailed()'));
   assert(renderer.includes('intervalMs: 2000'));
   assert(!renderer.includes('setInterval(async () => {\n    const activeList'),
     'Old overlapping async interval must be removed');
