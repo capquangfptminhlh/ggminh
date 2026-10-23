@@ -516,6 +516,37 @@
           "node test/customer-handoff.js"
         ]
       ]
+    },
+    {
+      "id": "lhm-fleet-triage",
+      "label": "Privacy-safe actionable fleet-wide profile health aggregation with one-click guided remediation",
+      "files": [
+        "src/ops/fleetTriage.js",
+        "src/ui/fleetTriage.css",
+        "test/fleet-triage.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "control-tower-triage"
+        ],
+        [
+          "src/ui/controlTower.js",
+          "api.controlTowerTriage()"
+        ],
+        [
+          "src/ui/index.html",
+          "tower-triage-list"
+        ],
+        [
+          "src/ui/index.html",
+          "fleetTriage.css"
+        ],
+        [
+          "package.json",
+          "node test/fleet-triage.js"
+        ]
+      ]
     }
   ]
 }

@@ -32,6 +32,58 @@
     display.textContent = message;
     display.style.color = error ? '#fda4af' : '#a3c9f0';
   }
+  let triageLoading=false;
+  function openTriageTool(action) {
+    // Never automate bulk edits: send the operator to the EXISTING tool.
+    close();
+    if(action==='health')return window.LHMMaintenance?.showHealth();
+    const id=action==='proxy'?'btn-proxy-center':
+      action==='engines'?'btn-engine-source':null;
+    if(id && byId(id))byId(id).click();
+  }
+  async function refreshTriage() {
+    if(triageLoading)return;
+    triageLoading=true;
+    const button=byId('tower-triage-refresh');
+    button.disabled=true;
+    const status=byId('tower-triage-status');
+    status.textContent='Đang gom nhóm lỗi cấu hình trên máy…';
+    try {
+      const report=await api.controlTowerTriage();
+      if(report?.schema!=='lhm.fleet.triage.v1'||!Array.isArray(report.items))
+        throw Error('Invalid triage payload');
+      const target=byId('tower-triage-list');
+      target.replaceChildren();
+      status.textContent=report.checked+'/'+report.profileCount+
+        ' hồ sơ đã kiểm tra · '+report.error+' có lỗi · '+
+        report.warning+' cảnh báo · '+report.categoryCount+' nhóm nguyên nhân';
+      if(!report.items.length) {
+        target.append(node('p','tower-empty','Không tìm thấy lỗi/cảnh báo cấu hình trong các hồ sơ đã kiểm tra.'));
+      } else {
+        for(const item of report.items) {
+          const card=node('article','lhm-triage-item');
+          card.dataset.state=item.severity;
+          const header=node('div','lhm-triage-item-head');
+          header.append(node('strong','',item.title));
+          header.append(node('span','lhm-triage-level',
+            item.blocking>0?'CẦN SỬA':'CẦN RÀ SOÁT'));
+          const details=node('p','',item.description);
+          const foot=node('div','lhm-triage-item-foot');
+          foot.append(node('span','',item.affected+' hồ sơ · '+
+            item.blocking+' lỗi · '+item.review+' cảnh báo'+
+            (item.activeAffected?' · '+item.activeAffected+' đang chạy':'')));
+          const action=node('button','btn btn-sm btn-secondary',item.actionLabel);
+          action.type='button';
+          action.addEventListener('click',()=>openTriageTool(item.action));
+          foot.append(action);
+          card.append(header,details,foot);
+          target.append(card);
+        }
+      }
+    } catch(error) {
+      status.textContent='Không kiểm tra được Fleet Triage. Hãy thử lại hoặc mở Health Check.';
+    } finally {triageLoading=false;button.disabled=false;}
+  }
   function makeGroup(group, max) {
     const button = node('button', 'tower-group');
     button.type = 'button';
@@ -111,11 +163,13 @@
   function show() {
     byId('modal-control-tower').classList.add('open');
     refresh();
+    refreshTriage();
   }
   function close() { byId('modal-control-tower').classList.remove('open'); }
   async function refreshProfiles() {
     if (typeof loadProfiles === 'function') await loadProfiles();
     await refresh();
+    await refreshTriage();
   }
   async function cloneSelected() {
     const ids = selected();
@@ -201,7 +255,8 @@
     byId('btn-control-tower').addEventListener('click', show);
     byId('tower-close').addEventListener('click', close);
     byId('tower-done').addEventListener('click', close);
-    byId('tower-refresh').addEventListener('click', refresh);
+    byId('tower-refresh').addEventListener('click',()=>{refresh();refreshTriage();});
+    byId('tower-triage-refresh').addEventListener('click',refreshTriage);
     byId('tower-export-all').addEventListener('click', () => exportProfiles([]));
     byId('tower-open-health').addEventListener('click', () => {
       close();

@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('api', {
   onlineUpdateDownload: () => ipcRenderer.invoke('app-online-update-download'),
   onlineUpdateOpenFolder: () => ipcRenderer.invoke('app-online-update-open-folder'),
   controlTowerSnapshot: () => ipcRenderer.invoke('control-tower-snapshot'),
+  controlTowerTriage: () => ipcRenderer.invoke('control-tower-triage'),
   controlTowerDuplicate: id => ipcRenderer.invoke('control-tower-duplicate', id),
   controlTowerStop: ids => ipcRenderer.invoke('control-tower-stop', ids),
   controlTowerOpen: ids => ipcRenderer.invoke('control-tower-open',ids),
