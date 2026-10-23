@@ -27,6 +27,15 @@ jobs:
         run: node tools/write-build-info.js
       - name: Run verification tests
         run: npm test
+      - name: Measure synthetic local profile scale (not browser launch)
+        run: node tools/profile-scale-benchmark.js --sizes 100,500,1000 --iterations 12 --output benchmarks/synthetic-profile-scale.json
+      - name: Upload measurable performance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Metadata-Performance-Windows
+          path: benchmarks/synthetic-profile-scale.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Windows Win32 helper smoke test
         shell: pwsh
         run: |
@@ -94,9 +103,9 @@ jobs:
               throw "Electron UI capture timed out"
             }
             if ($proc.ExitCode -ne 0) { throw "Electron UI capture exited $($proc.ExitCode)" }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png", "workspace-profile-paging-preview.png")) {
               $file = Get-Item ("dist\" + $screen) -ErrorAction Stop
-              if ($file.Length -eq 0) { throw "Empty actual Electron screenshot: $screen" }
+              if ($file.Length -lt 10000) { throw "Missing/undersized actual Electron screenshot: $screen" }
             }
           } finally {
             if (-not $proc.HasExited) {
@@ -118,9 +127,9 @@ jobs:
               throw "Packaged Electron UI capture timed out"
             }
             if ($proc.ExitCode -ne 0) { throw "Packaged Electron UI capture exited $($proc.ExitCode)" }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png", "workspace-profile-paging-preview.png")) {
               $file = Get-Item (Join-Path $capture $screen) -ErrorAction Stop
-              if ($file.Length -eq 0) { throw "Empty packaged Electron screenshot: $screen" }
+              if ($file.Length -lt 10000) { throw "Missing/undersized packaged Electron screenshot: $screen" }
             }
           } finally {
             if (-not $proc.HasExited) {
@@ -154,6 +163,15 @@ jobs:
             dist/packaged-ui/*.png
           if-no-files-found: ignore
           retention-days: 90
+      - name: Record installer SHA-256 and twelve real UI checks
+        run: node tools/ci-release-evidence.js dist dist/release-evidence.json
+      - name: Upload commercial preflight build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Release-Evidence-Windows
+          path: dist/release-evidence.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:

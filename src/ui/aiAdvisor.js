@@ -6,6 +6,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  const keyStatus=el('ai-advisor-key-status'),status=el('ai-advisor-request-status');
  const answer=el('ai-advisor-answer'),question=el('ai-advisor-question');
  const send=el('ai-advisor-ask'),stop=el('ai-advisor-stop');
+ const budgetInput=el('ai-advisor-monthly-budget'),budgetStatus=el('ai-advisor-budget-status');
  async function refresh(){
   const state=await window.api.aiAdvisorStatus();
   modelField.value=state.model;
@@ -13,6 +14,17 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(!state.encryptionAvailable)keyStatus.textContent='Mã hóa hệ điều hành chưa khả dụng';
   send.disabled=state.busy||!state.configured;
   stop.disabled=!state.busy;
+  const budget=state.budget;
+  if(budget?.available){
+   budgetInput.value=String(budget.limit);
+   budgetStatus.textContent='Tháng '+budget.month+': '+budget.attempts+
+    ' lượt gọi ('+budget.successes+' trả lời thành công)'+
+    (budget.limit ? ' / '+budget.limit+' lượt · còn '+budget.remaining : ' · không đặt hạn mức')+
+    ' · '+(budget.promptTokens+budget.completionTokens)+' token được báo cáo'+
+    (budget.unreportedUsage ? ' · '+budget.unreportedUsage+' lượt thiếu số liệu token' : '');
+  }else{
+   budgetStatus.textContent=budget?.error || 'Chưa tải được sổ sử dụng AI.';
+  }
  }
  async function refreshDraftProfiles(){
   const select=el('ai-draft-profile');
@@ -48,6 +60,19 @@ window.addEventListener('DOMContentLoaded',()=>{
    keyField.value='';answer.textContent='Khóa đã xóa. Nội dung hội thoại không được lưu trên máy.';
    await refresh();
   }catch(e){status.textContent=e.message;}
+ });
+ el('ai-advisor-save-budget').addEventListener('click',async()=>{
+  const limit=Number(budgetInput.value);
+  if(budgetInput.value.trim()===''||!Number.isInteger(limit)||limit<0||limit>1000){
+   budgetStatus.textContent='Hạn mức phải từ 0 đến 1000 yêu cầu/tháng.';
+   return;
+  }
+  const button=el('ai-advisor-save-budget');button.disabled=true;
+  try{
+   await window.api.aiAdvisorSetBudget(limit);
+   await refresh();
+  }catch(error){budgetStatus.textContent='Không cập nhật hạn mức: '+error.message;}
+  finally{button.disabled=false;}
  });
  send.addEventListener('click',async()=>{
   const prompt=question.value.trim();

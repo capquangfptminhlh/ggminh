@@ -33,6 +33,10 @@ biết rõ giới hạn hiện tại trước khi đưa vào vận hành quan tr
    các giới hạn nói thẳng: điều phần mềm không đo, không kiểm soát và
    không bảo đảm.
 
+8. [Local API an toàn](08-local-api-an-toan.md) — bật API theo phiên,
+   dùng khóa xác thực trên loopback, kết nối Chromium CDP và xử lý lỗi
+   401/403/409 mà không lộ thông tin đăng nhập.
+
 ## Quy ước trong tài liệu này
 
 - Trạng thái của một tiêu chí chỉ có ba giá trị: **ĐẠT** (phép thử đã

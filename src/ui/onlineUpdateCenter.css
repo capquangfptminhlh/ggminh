@@ -1,0 +1,31 @@
+/* Scoped to About dialog; keep existing LHM UI untouched */
+.lhm-update-center {
+ margin:14px 0;padding:15px;border-radius:14px;
+ border:1px solid rgba(148,163,184,.27);
+ background:rgba(15,23,42,.50);
+}
+.lhm-update-center h3{display:flex;align-items:center;gap:7px;margin:0 0 11px;font-size:1rem;color:#e2e8f0}
+.lhm-update-center #lhm-update-status{font-size:.86rem;line-height:1.6;color:#cbd5e1;min-height:1.6em}
+.lhm-update-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.lhm-update-offer{background:rgba(15,23,42,.60);border:1px solid rgba(148,163,184,.22);
+ border-radius:10px;padding:12px;margin:10px 0;font-size:.83rem;color:#dbeafe}
+.lhm-update-offer[hidden]{display:none}
+.lhm-update-offer p{margin:5px 0;overflow-wrap:anywhere}
+@media(max-width:620px){.lhm-update-actions{flex-direction:column}
+ .lhm-update-actions .btn{width:100%}}
+
+/* Local-only, non-invasive upgrade continuity checklist. */
+.lhm-upgrade-readiness {
+ margin:12px 0 15px;
+ padding:12px 14px;
+ background:rgba(15,23,42,.42);
+ border:1px solid rgba(148,163,184,.27);
+ border-radius:12px;
+}
+.lhm-upgrade-readiness h4{font-size:.92rem;margin:0 0 8px;color:#e2e8f0}
+#lhm-upgrade-safety-status{color:#cbd5e1;font-size:.85rem;margin:9px 0}
+.lhm-upgrade-safety-report{display:grid;gap:6px;margin:10px 0}
+.lhm-upgrade-safety-report p{margin:0;padding:7px 10px;border-radius:7px;
+ background:rgba(15,23,42,.52);font-size:.82rem;color:#cbd5e1;line-height:1.5}
+.lhm-upgrade-safety-report p.is-error{color:#fecaca;border-left:3px solid #ef4444}
+.lhm-upgrade-safety-report p.is-warning{color:#fde68a;border-left:3px solid #f59e0b}

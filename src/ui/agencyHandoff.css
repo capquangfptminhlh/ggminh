@@ -1,0 +1,29 @@
+/* LHM dark Control Tower – bounded, consent-only offline agency handoff. */
+#modal-control-tower .lhm-agency-panel{
+  margin:0 0 15px;border:1px solid #3b5a78;
+  background:linear-gradient(125deg,#18283f,#1c3149);
+}
+.lhm-agency-eyebrow{font-size:10px;font-weight:830;color:#a6e4ce;letter-spacing:.1em}
+#modal-control-tower .lhm-agency-panel h3{color:#f3f8ff;font-size:16px;margin:5px 0 8px}
+.lhm-agency-help,.lhm-agency-fineprint{
+  font-size:12px;line-height:1.6;color:#b8d1ea;max-width:780px;
+}
+.lhm-agency-fields{max-width:650px;margin:14px 0 12px}
+.lhm-agency-fields label{display:block;color:#e1ebfa;font-size:12px;font-weight:650;margin-bottom:7px}
+.lhm-agency-fields input{
+  display:block;width:100%;min-height:39px;border:1px solid #6381a4;
+  color:#eff7ff;background:#142338;border-radius:10px;padding:8px 12px;
+  font-size:13px;
+}
+.lhm-agency-fields input::placeholder{color:#aac2df}
+.lhm-agency-fields input:focus-visible,
+.lhm-agency-actions button:focus-visible{outline:3px solid #7bbcff;outline-offset:2px}
+.lhm-agency-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.lhm-agency-actions button{min-height:36px}
+.lhm-agency-status{font-size:12px;color:#c6e4f4;line-height:1.55;margin:12px 0}
+.lhm-agency-status[data-state="error"]{color:#fda4af}
+.lhm-agency-fineprint{font-size:11px;color:#9cb8d8}
+.lhm-agency-fineprint strong{color:#d7e9fa}
+@media(max-width:650px){.lhm-agency-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  .lhm-agency-actions button{width:100%;white-space:normal}}
+@media(prefers-reduced-motion:reduce){.lhm-agency-panel *{transition:none!important;animation:none!important}}

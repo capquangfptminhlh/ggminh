@@ -8,7 +8,14 @@
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="premiumWorkspace.css">
   <link rel="stylesheet" href="workspaceInteractions.css">
-  <link rel="stylesheet" href="workspaceInteractions.css">
+  <link rel="stylesheet" href="launchReadiness.css">
+  <link rel="stylesheet" href="adsLaunchGuard.css">
+  <link rel="stylesheet" href="performanceLab.css">
+  <link rel="stylesheet" href="onlineUpdateCenter.css">
+  <link rel="stylesheet" href="commercialPolish.css">
+  <link rel="stylesheet" href="fleetTriage.css">
+  <link rel="stylesheet" href="agencyHandoff.css">
+  <link rel="stylesheet" href="customerHandoff.css">
 </head>
 <body data-view="profiles">
 
@@ -139,6 +146,8 @@
             <button type="button" class="btn btn-secondary" id="btn-app-about">Thông tin phần mềm</button>
             <button type="button" class="btn btn-secondary" id="btn-license-center">Giấy phép & gia hạn</button>
             <button type="button" class="btn btn-secondary" id="btn-ai-advisor">AI Advisor</button>
+            <button type="button" class="btn btn-secondary" id="btn-ads-launch-guard"><span data-lhm-icon="shield-check"></span> Ads Launch Guard</button>
+            <button type="button" class="btn btn-secondary" id="btn-performance-lab"><span data-lhm-icon="gauge"></span> Performance Lab</button>
             <button type="button" class="btn btn-secondary" id="btn-session-snapshots">Snapshots</button>
             <button type="button" class="btn btn-secondary" id="btn-cache-manager"><span data-lhm-icon="database-backup"></span> Cache</button>
             <button type="button" class="btn btn-secondary" id="btn-extension-center"><span data-lhm-icon="layers"></span> Extensions</button>
@@ -165,6 +174,7 @@
           <p>Tất cả hồ sơ, kết nối và công cụ trong một không gian làm việc.</p>
         </div>
         <div class="lhm-v6-intro-actions">
+          <button type="button" class="lhm-v6-quiet-action lhm-commercial-quickaction" id="lhm-open-ads-review" title="Kiểm tra landing page, UTM và QA trước khi chạy quảng cáo"><span data-lhm-icon="shield-check" aria-hidden="true"></span><span>Kiểm tra quảng cáo</span></button>
           <button type="button" id="lhm-v7-show-rail" class="lhm-v6-quiet-action lhm-v7-show-rail" aria-controls="lhm-profile-panel" aria-expanded="true" title="Hiện hoặc thu gọn AI Control Center"><span data-lhm-icon="panel-right" aria-hidden="true"></span><span id="lhm-v7-rail-label">Thu gọn bảng AI</span></button>
           <span class="lhm-v6-local"><span class="lhm-v6-dot"></span> Dữ liệu trên thiết bị</span>
           <button type="button" class="lhm-v6-quiet-action" id="lhm-v6-refresh" aria-label="Làm mới số liệu"><span data-lhm-icon="refresh-cw"></span> Làm mới</button>
@@ -351,7 +361,7 @@
         <table class="profile-table">
           <thead>
             <tr>
-              <th width="40"><input type="checkbox" id="select-all"></th>
+              <th width="40"><input type="checkbox" id="select-all" aria-label="Chọn hoặc bỏ chọn toàn bộ hồ sơ trên trang đang xem" title="Chỉ chọn các hồ sơ trên trang hiện tại"></th>
               <th width="150" data-table-col="id">Mã hồ sơ</th>
               <th>Tên hồ sơ</th>
               <th data-table-col="proxy">Proxy</th>
@@ -364,6 +374,19 @@
             <!-- Rendered dynamically -->
           </tbody>
         </table>
+        <nav class="lhm-profile-pager" id="profile-page-controls" aria-label="Phân trang danh sách hồ sơ" hidden>
+          <p id="profile-page-status" role="status" aria-live="polite">Đang tải danh sách…</p>
+          <div class="lhm-profile-pager-actions">
+            <label for="profile-page-size">Hồ sơ mỗi trang</label>
+            <select id="profile-page-size" aria-label="Số hồ sơ trên một trang">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" id="profile-page-prev" aria-label="Trang hồ sơ trước">← Trước</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="profile-page-next" aria-label="Trang hồ sơ tiếp theo">Tiếp →</button>
+          </div>
+        </nav>
         <div class="empty-state" id="empty-state" style="display: none;">
           <div class="empty-icon"><span data-lhm-icon="panels-top-left"></span></div>
           <h3>Chưa có hồ sơ</h3>
@@ -406,13 +429,13 @@
   <div class="modal-overlay" id="modal-import-profiles">
     <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="profile-import-title">
       <div class="modal-header">
-        <h2 id="profile-import-title">Nhập hồ sơ hàng loạt từ CSV / TXT</h2>
+        <h2 id="profile-import-title">Nhập hồ sơ hàng loạt từ CSV / TXT / AdsPower JSON</h2>
         <button type="button" class="btn-close" id="profile-import-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="lhm-bulk-help">Hỗ trợ CSV Excel, dấu phẩy / chấm phẩy / tab, tối đa 200 hồ sơ và 256 KB. Cột <strong>name</strong> bắt buộc. Cột còn lại: group, engine, startUrls, tags, notes, proxyType, proxyHost, proxyPort. Tách nhiều URL hoặc tag bằng ký tự |.</p>
-        <div class="form-group"><label for="profile-import-file">Chọn file CSV hoặc TXT trên máy</label><input id="profile-import-file" type="file" accept=".csv,.txt,text/csv,text/plain"></div>
-        <div class="form-group"><label for="profile-import-text">Hoặc dán nội dung CSV</label><textarea id="profile-import-text" rows="9" spellcheck="false" placeholder="name,group,engine,startUrls,tags,notes,proxyType,proxyHost,proxyPort"></textarea></div>
+        <p class="lhm-bulk-help">CSV Excel: cột <strong>name</strong> bắt buộc; các cột khác gồm group, engine, startUrls, tags, notes, proxyType, proxyHost, proxyPort. Có thể chọn JSON danh sách profile do chính bạn xuất từ AdsPower (mảng hoặc data.list). Chỉ chuyển tên, nhóm, URL và nhãn; yêu cầu gán lại proxy trước khi mở. Không nhập cookie, mật khẩu, phiên hay fingerprint. Tối đa 200 hồ sơ, 256 KB.</p>
+        <div class="form-group"><label for="profile-import-file">Chọn CSV, TXT hoặc JSON hồ sơ trên máy</label><input id="profile-import-file" type="file" accept=".csv,.txt,.json,text/csv,text/plain,application/json"></div>
+        <div class="form-group"><label for="profile-import-text">Hoặc dán nội dung CSV / JSON</label><textarea id="profile-import-text" rows="9" spellcheck="false" placeholder="name,group,engine,startUrls,tags,notes,proxyType,proxyHost,proxyPort"></textarea></div>
         <button type="button" class="btn btn-secondary" id="profile-import-sample">Điền dữ liệu mẫu</button>
         <p class="lhm-bulk-help">Không nhập mật khẩu, cookie, token, 2FA hoặc thông tin tài khoản. Proxy chỉ lưu địa chỉ; cần kiểm tra và quản lý mật khẩu riêng trong Proxy Center.</p>
         <p id="profile-import-status" role="status" aria-live="polite">Xem trước để kiểm tra dữ liệu trước khi nhập.</p>
@@ -626,6 +649,111 @@
     </div>
   </div>
 
+  <!-- Local Performance Lab: benchmarks metadata only, no browser launch or account data export. -->
+  <div class="modal-overlay" id="modal-performance-lab">
+    <div class="modal-dialog modal-lg lhm-perf-dialog" role="dialog" aria-modal="true" aria-labelledby="performance-lab-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="performance-lab-title">LHM Performance Lab</h2>
+          <p class="lhm-bulk-help">Đo hiệu năng quản lý hồ sơ ngay trên máy này — số liệu thực, không số liệu AdsPower giả định</p>
+        </div>
+        <button class="btn-close" type="button" id="performance-lab-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="lhm-perf-actions">
+          <button class="btn btn-primary" type="button" id="performance-lab-run">Chạy kiểm thử cục bộ</button>
+          <button class="btn btn-secondary" type="button" id="performance-lab-export" disabled>Xuất báo cáo JSON</button>
+        </div>
+        <p id="performance-lab-status" role="status" aria-live="polite">Chưa có phép đo cho phiên này.</p>
+        <div id="performance-lab-metrics" class="lhm-perf-metrics" aria-live="polite"></div>
+        <p class="lhm-bulk-help"><strong>Phạm vi:</strong> thời gian đọc danh sách hồ sơ, tra cứu hồ sơ và dựng thống kê dashboard cục bộ (p50/p95). Không mở Chrome/Camoufox, không đo FPS, RAM theo cửa sổ hoặc kết quả Google/Meta. Báo cáo không chứa tên, ID, URL, mật khẩu, cookie hay token của khách.</p>
+        <p class="lhm-bulk-help">Để so sánh với đối thủ cần chạy cùng kịch bản, số profile, thiết bị, engine và điều kiện tải; kết quả này riêng LHM không đủ để khẳng định “số 1 thế giới”.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" id="performance-lab-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ads Launch Guard: user-initiated, offline advertising URL QA. -->
+  <div class="modal-overlay" id="modal-ads-launch-guard">
+    <div class="modal-dialog modal-lg lhm-ads-guard-dialog" role="dialog" aria-modal="true" aria-labelledby="ads-launch-title">
+      <div class="modal-header">
+        <div><h2 id="ads-launch-title">Ads Launch Guard</h2><p class="lhm-bulk-help">Kiểm tra link đích & tạo UTM trước khi phát hành quảng cáo</p></div>
+        <button class="btn-close" type="button" id="ads-guard-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="lhm-ads-guard-head">
+          <span>LOCAL-ONLY QA</span><span>Không lưu URL · Không gọi mạng</span>
+        </div>
+        <section class="lhm-ads-guard-section" aria-label="Kiểm tra link quảng cáo">
+          <h3>01 / Kiểm tra link quảng cáo</h3>
+          <label for="ads-guard-urls">Mỗi dòng một URL (tối đa 20)</label>
+          <textarea id="ads-guard-urls" rows="4" maxlength="32000" placeholder="https://example.com/san-pham?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=demo"></textarea>
+          <div class="lhm-ads-guard-actions">
+            <button type="button" class="btn btn-primary" id="ads-guard-inspect">Kiểm tra link</button>
+            <span id="ads-guard-inspect-status" role="status" aria-live="polite">Chưa kiểm tra</span>
+          </div>
+          <div class="lhm-ads-guard-results" id="ads-guard-results" aria-live="polite"></div>
+        </section>
+        <section class="lhm-ads-guard-section" aria-label="Tạo link UTM">
+          <h3>02 / Tạo link theo dõi UTM</h3>
+          <label for="ads-guard-base">Link gốc</label>
+          <input id="ads-guard-base" type="url" maxlength="4096" placeholder="https://example.com/san-pham" autocomplete="off">
+          <div class="lhm-ads-guard-grid">
+            <label>utm_source <input id="ads-guard-source" maxlength="100" placeholder="google"></label>
+            <label>utm_medium <input id="ads-guard-medium" maxlength="100" placeholder="cpc"></label>
+            <label>utm_campaign <input id="ads-guard-campaign" maxlength="100" placeholder="thang_10"></label>
+            <label>utm_content (tùy chọn) <input id="ads-guard-content" maxlength="100" placeholder="banner_a"></label>
+            <label>utm_term (tùy chọn) <input id="ads-guard-term" maxlength="100" placeholder="tu_khoa"></label>
+          </div>
+          <div class="lhm-ads-guard-actions">
+            <button type="button" class="btn btn-secondary" id="ads-guard-build">Tạo link UTM</button>
+            <span id="ads-guard-build-status" role="status" aria-live="polite"></span>
+          </div>
+          <label for="ads-guard-output">Link tạo mới (chọn và Ctrl+C để sao chép)</label>
+          <textarea id="ads-guard-output" rows="3" readonly spellcheck="false" aria-label="Link UTM kết quả"></textarea>
+        </section>
+        <section class="lhm-ads-guard-section" aria-label="Báo cáo QA chiến dịch cho khách hàng">
+          <h3>03 / Báo cáo kiểm tra chiến dịch</h3>
+          <p class="lhm-bulk-help">Chọn trạng thái do người phụ trách tự xác nhận cho từng mục. LHM chỉ xác minh cú pháp URL/UTM, không tự chứng thực Pixel, chuyển đổi hay quyền truy cập tài khoản.</p>
+          <div id="ads-qa-checklist" class="lhm-ads-qa-checklist" aria-label="Các mục kiểm tra thủ công"></div>
+          <div class="lhm-ads-guard-actions">
+            <button type="button" class="btn btn-secondary" id="ads-qa-preview">Xem tổng hợp</button>
+            <button type="button" class="btn btn-primary" id="ads-qa-export">Lưu báo cáo JSON</button>
+          </div>
+          <p id="ads-qa-status" class="lhm-bulk-help" role="status" aria-live="polite">Chưa có báo cáo. Mọi mục mặc định chưa kiểm tra.</p>
+          <p class="lhm-bulk-help">Báo cáo chỉ chứa tên miền, mã lỗi, trạng thái thủ công và checksum SHA-256, không chứa URL gốc, path, query, email, cookie hay token. File chỉ được lưu sau khi bạn bấm chọn nơi lưu. Checksum không phải chữ ký xác thực.</p>
+        </section>
+        <p class="lhm-bulk-help"><strong>Giới hạn:</strong> Kiểm tra offline không xác nhận HTTP status, redirect, Meta Pixel, GA4, GTM, chuyển đổi thực tế hoặc việc Google/Meta phê duyệt quảng cáo. Thiếu UTM chưa chắc là lỗi khi đã dùng auto-tagging.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="ads-guard-done">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LHM four-layer diagnostic is a local configuration check, NOT a platform anti-fraud bypass. -->
+  <div class="modal-overlay" id="modal-launch-readiness">
+    <div class="modal-dialog modal-lg lhm-launch-dialog" role="dialog" aria-modal="true" aria-labelledby="launch-readiness-title">
+      <div class="modal-header">
+        <h2 id="launch-readiness-title">LHM Launch Readiness · Kiểm tra trước khi mở</h2>
+        <button class="btn-close" type="button" id="launch-readiness-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="lhm-bulk-help" id="launch-readiness-profile"></p>
+        <p class="lhm-launch-status" id="launch-readiness-status" data-state="loading" role="status" aria-live="polite">Đang kiểm tra…</p>
+        <div class="lhm-launch-layers" id="launch-readiness-layers" aria-label="Bốn lớp đánh giá"></div>
+        <div class="lhm-launch-issues" id="launch-readiness-issues" aria-live="polite"></div>
+        <p class="lhm-bulk-help"><strong>Giới hạn bắt buộc:</strong> Kết quả chỉ phản ánh cấu hình cục bộ; chưa đo DNS, WebRTC, IP thoát thật hay đánh giá phía máy chủ Google/Meta. Không có kết quả nào chứng minh “người dùng mới” hoặc bảo đảm không bị theo dõi.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="launch-readiness-cancel">Hủy mở</button>
+        <button type="button" class="btn btn-primary" id="launch-readiness-confirm" disabled>Đang kiểm tra…</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AI Advisor v4.3: explicit prompts, no autonomous browser/account actions. -->
   <div class="modal-overlay" id="modal-ai-advisor">
     <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="ai-advisor-title">
@@ -650,6 +778,20 @@
           <button class="btn btn-secondary" type="button" id="ai-advisor-forget-key">Xóa API key</button>
           <span id="ai-advisor-key-status" role="status"></span>
         </div>
+        <section class="lhm-ai-budget-panel" aria-label="Hạn mức sử dụng AI">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ai-advisor-monthly-budget">Giới hạn yêu cầu AI mỗi tháng (0 = không giới hạn)</label>
+              <input id="ai-advisor-monthly-budget" type="number" min="0" max="1000" step="1" value="0">
+            </div>
+            <div class="form-group">
+              <label for="ai-advisor-save-budget">Bảo vệ hạn mức</label>
+              <button class="btn btn-secondary" type="button" id="ai-advisor-save-budget">Áp dụng hạn mức</button>
+            </div>
+          </div>
+          <p id="ai-advisor-budget-status" class="lhm-bulk-help" role="status" aria-live="polite">Đang kiểm tra lượt dùng AI tháng này…</p>
+          <p class="lhm-bulk-help">Đếm số yêu cầu AI (kể cả lần thất bại/đã dừng) trên máy này, không phải hạn mức USD hay số token bảo đảm. Dữ liệu chỉ gồm số đếm và tổng token khi nhà cung cấp trả về; không lưu câu hỏi hoặc khóa API.</p>
+        </section>
         <div class="form-group">
           <label for="ai-advisor-question">Câu hỏi (tối đa 2.000 ký tự)</label>
           <textarea id="ai-advisor-question" rows="4" maxlength="2000" placeholder="Ví dụ: Nên phân nhóm và kiểm tra cấu hình profile ra sao để dễ quản lý?"></textarea>
@@ -776,6 +918,42 @@
           <div><dt>Bản phát hành</dt><dd id="lhm-about-build">—</dd></div>
           <div><dt>Chế độ cấp phép</dt><dd id="lhm-about-license">—</dd></div>
         </dl>
+        <section class="lhm-customer-handoff" aria-label="Báo cáo sẵn sàng bàn giao khách hàng">
+          <div class="lhm-customer-heading">
+            <div><span class="lhm-customer-eyebrow">CUSTOMER HANDOFF · LOCAL REVIEW</span>
+              <h3>Kiểm tra trước khi bàn giao khách hàng</h3>
+              <p>Đối chiếu license, cập nhật, dữ liệu và hồ sơ từ trạng thái thật trên máy. Không thay thế nghiệm thu phát hành.</p>
+            </div>
+            <span id="lhm-customer-label" class="lhm-customer-label" data-state="unknown">CHƯA KIỂM TRA</span>
+          </div>
+          <div class="lhm-customer-actions">
+            <button type="button" class="btn btn-primary" id="lhm-customer-check">Chạy kiểm tra cục bộ</button>
+            <button type="button" class="btn btn-secondary" id="lhm-customer-export" disabled>Xuất báo cáo hỗ trợ JSON</button>
+          </div>
+          <p id="lhm-customer-status" role="status" aria-live="polite">Chưa có bằng chứng cho phiên làm việc này.</p>
+          <div id="lhm-customer-checks" class="lhm-customer-checks" aria-live="polite"></div>
+          <p class="lhm-customer-disclaimer">Bốn điều kiện phát hành vẫn cần nghiệm thu riêng: Windows máy khách, cập nhật có chữ ký thật, hạ tầng gia hạn/thanh toán và chủ dự án phê duyệt. Báo cáo không lưu mã cài đặt, URL, token, cookie hay dữ liệu phiên.</p>
+        </section>
+        <section class="lhm-update-center" aria-label="Cập nhật phần mềm online">
+          <h3><span data-lhm-icon="refresh-cw" aria-hidden="true"></span> Cập nhật phiên bản online</h3>
+          <p class="lhm-bulk-help">Chỉ kiểm tra khi bạn bấm; ứng dụng không tải ngầm và không tự chạy EXE. Bộ cài không cần ký Authenticode nhưng manifest cập nhật phải có chữ ký Ed25519 hợp lệ, và file tải về phải đúng SHA-256.</p>
+          <p id="lhm-update-status" role="status" aria-live="polite">Đang kiểm tra cấu hình cập nhật…</p>
+          <section class="lhm-upgrade-readiness" aria-label="Kiểm tra bảo toàn dữ liệu khi nâng cấp">
+            <h4>Kiểm tra dữ liệu trước nâng cấp</h4>
+            <p class="lhm-bulk-help">Kiểm tra cục bộ, chỉ đọc: hồ sơ, workflow, tình trạng license/proxy vault và các phiên đang chạy. Không truy cập website, không đổi hay sao lưu cookie.</p>
+            <button type="button" class="btn btn-secondary" id="lhm-upgrade-safety-check">Kiểm tra an toàn nâng cấp</button>
+            <p id="lhm-upgrade-safety-status" role="status" aria-live="polite">Chưa thực hiện kiểm tra.</p>
+            <div id="lhm-upgrade-safety-report" class="lhm-upgrade-safety-report"></div>
+            <p class="lhm-bulk-help">Sao lưu cấu hình .lhmbak <strong>không</strong> chứa cookie hay toàn bộ dữ liệu phiên; khi cần hãy sử dụng Session Snapshots trước khi cài bản mới. Chạy lại bài kiểm tra sau khi nâng cấp để đối chiếu.</p>
+          </section>
+          <div id="lhm-update-offer" class="lhm-update-offer" hidden></div>
+          <div class="lhm-update-actions">
+            <button type="button" class="btn btn-secondary" id="lhm-update-check">Kiểm tra phiên bản online</button>
+            <button type="button" class="btn btn-primary" id="lhm-update-download" disabled>Tải bản cập nhật đã xác minh</button>
+            <button type="button" class="btn btn-secondary" id="lhm-update-folder" disabled>Mở thư mục bộ cài</button>
+          </div>
+          <p class="lhm-bulk-help">Nếu chưa có khóa nhà phát hành hoặc manifest hợp lệ, chức năng tải bị khóa an toàn. Kiểm tra online có thể tiết lộ IP tới máy chủ GitHub. Bản tải về cần được người dùng chủ động cài và có thể thấy cảnh báo SmartScreen.</p>
+        </section>
         <p class="lhm-bulk-help">Ứng dụng quản lý hồ sơ trình duyệt cục bộ, proxy và các quy trình được phê duyệt. Việc kiểm thử đóng gói không chứng minh phần mềm có khả năng vượt qua phát hiện của website hoặc đầy đủ tính năng của sản phẩm khác.</p>
         <p id="lhm-about-message" role="status" aria-live="polite"></p>
       </div>
@@ -1222,6 +1400,12 @@ run();
             </div>
             <label class="studio-search-label" for="studio-workflow-search">Tìm quy trình</label>
             <input id="studio-workflow-search" class="studio-workflow-search" type="search" maxlength="100" placeholder="Tên quy trình..." autocomplete="off">
+            <label class="studio-search-label" for="studio-template-select">Mẫu quy trình có sẵn</label>
+            <select id="studio-template-select" aria-label="Chọn mẫu quy trình">
+              <option value="">Chọn một mẫu để bắt đầu</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-secondary" id="studio-template-load" disabled>Dùng mẫu</button>
+            <p class="studio-muted" id="studio-template-description" role="status" aria-live="polite">Mẫu hoạt động cục bộ, không tự chạy. Hãy sửa URL, tên miền, kiểm tra bước và lưu trước khi sử dụng.</p>
             <div id="studio-workflows" class="studio-saved-list" aria-live="polite"></div>
           </aside>
           <section id="studio-editor" class="studio-editor" aria-label="Thiết kế quy trình">
@@ -1490,6 +1674,37 @@ run();
           <div class="tower-kpi is-error"><span>Cần xử lý</span><strong id="tower-errors">0</strong><small>Lỗi cấu hình</small></div>
           <div class="tower-kpi is-warning"><span>Cảnh báo</span><strong id="tower-warnings">0</strong><small>Health + hành vi</small></div>
         </section>
+        <section class="tower-panel lhm-triage-panel" aria-label="Fleet Triage: các nhóm lỗi ưu tiên">
+          <div class="tower-panel-header">
+            <div><span class="lhm-triage-eyebrow">FLEET OPERATIONS · LIVE CONFIG CHECKS</span>
+              <h3>Ưu tiên xử lý toàn bộ hồ sơ</h3>
+              <p class="lhm-triage-desc">Tổng hợp lỗi cùng nguyên nhân, không phải điểm tín nhiệm Google/Meta. Không tự chỉnh sửa cấu hình.</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" id="tower-triage-refresh">Phân tích lại</button>
+          </div>
+          <p class="lhm-triage-status" id="tower-triage-status" role="status" aria-live="polite">Chưa chạy phân tích.</p>
+          <div id="tower-triage-list" class="lhm-triage-list"></div>
+        </section>
+        <section class="tower-panel lhm-agency-panel" aria-label="Bàn giao mẫu hồ sơ mã hóa">
+          <div class="tower-panel-header">
+            <div>
+              <span class="lhm-agency-eyebrow">AGENCY OPERATIONS · ENCRYPTED OFFLINE</span>
+              <h3>Bàn giao mẫu hồ sơ cho nhân viên</h3>
+              <p class="lhm-agency-help">Chỉ chuyển tên, nhóm, nhãn, loại engine và tên miền mở đầu. Mật khẩu AES-256-GCM; không chuyển cookie, đăng nhập, proxy, identity hoặc thao tác AI.</p>
+            </div>
+          </div>
+          <div class="lhm-agency-fields">
+            <label for="tower-agency-password">Mật khẩu bảo vệ tệp (tối thiểu 12 ký tự)</label>
+            <input type="password" id="tower-agency-password" autocomplete="new-password" minlength="12" maxlength="512" placeholder="Nhập mật khẩu mạnh để xuất hoặc nhập">
+          </div>
+          <div class="lhm-agency-actions">
+            <button class="btn btn-sm btn-primary" id="tower-agency-export" type="button" disabled>Xuất hồ sơ đã chọn</button>
+            <button class="btn btn-sm btn-secondary" id="tower-agency-preview" type="button">Chọn tệp và xem trước</button>
+            <button class="btn btn-sm btn-secondary" id="tower-agency-commit" type="button" disabled>Xác nhận nhập hồ sơ mới</button>
+          </div>
+          <p class="lhm-agency-status" id="tower-agency-status" role="status" aria-live="polite">Chọn 1–50 hồ sơ trên bảng, nhập mật khẩu rồi xuất. Khi nhận gói, xem trước trước khi xác nhận nhập.</p>
+          <p class="lhm-agency-fineprint">Đây là chuyển mẫu cấu hình giữa các máy theo thao tác người dùng, <strong>không phải</strong> đồng bộ đa máy hoặc phân quyền tài khoản. Gói chia sẻ không bao gồm dữ liệu phiên. Hãy gửi mật khẩu bằng kênh khác với tệp.</p>
+        </section>
         <div class="tower-columns">
           <section class="tower-panel">
             <div class="tower-panel-header">
@@ -1629,7 +1844,11 @@ run();
 
   <script src="icons.js"></script>
   <script src="profileConsistency.js"></script>
+  <script src="profilePagination.js"></script>
   <script src="renderer.js"></script>
+  <script src="launchReadiness.js"></script>
+  <script src="adsLaunchGuard.js"></script>
+  <script src="performanceLab.js"></script>
   <script src="profileImport.js"></script>
   <script src="profileTrash.js"></script>
   <script src="profileCsvUpdate.js"></script>
@@ -1640,6 +1859,8 @@ run();
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
   <script src="appIdentity.js"></script>
+  <script src="onlineUpdateCenter.js"></script>
+  <script src="customerHandoff.js"></script>
   <script src="premiumWorkspace.js"></script>
   <script src="workspaceInteractions.js"></script>
   <script src="aiAdvisor.js"></script>

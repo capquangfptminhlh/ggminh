@@ -1,0 +1,587 @@
+{
+  "schemaVersion": 1,
+  "description": "Additive LHM feature-preservation contract: presence and IPC/UI wiring, not a production readiness certificate.",
+  "features": [
+    {
+      "id": "lhm-multi-engine",
+      "label": "Engine Factory và Camoufox được xác minh",
+      "files": [
+        "src/engine/EngineFactory.js",
+        "src/engine/camoufoxInstallService.js",
+        "src/engine/camoufoxPublisherTrust.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "CamoufoxInstallService"
+        ],
+        [
+          "main.js",
+          "resolveEngineType"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-native-inspector",
+      "label": "Native Fingerprint Inspector",
+      "files": [
+        "src/privacy/fingerprintAudit.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "inspectFingerprint"
+        ],
+        [
+          "preload.js",
+          "inspectFingerprint"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-signal-chain",
+      "label": "Signal Chain preflight",
+      "files": [
+        "src/health/signalChain.js"
+      ],
+      "anchors": [
+        [
+          "src/engine/browserLauncher.js",
+          "checkProfileSignalChain"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-graph-defense",
+      "label": "GraphDefense review",
+      "files": [
+        "src/health/GraphDefense.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "GraphDefense"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-local-ip",
+      "label": "IP & local health observations",
+      "files": [
+        "src/health/autoIpWarnings.js",
+        "src/health/runtimeEgressObservation.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "observeRuntimeExitIp"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-proxy-vault",
+      "label": "OS-encrypted proxy credential vault",
+      "files": [
+        "src/security/proxyCredentialVault.js",
+        "src/proxies/proxyCenter.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "ProxyCredentialVault"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-session-snapshots",
+      "label": "Encrypted local session snapshots",
+      "files": [
+        "src/ops/sessionSnapshots.js",
+        "src/ops/snapshotRecovery.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "SessionSnapshots"
+        ],
+        [
+          "preload.js",
+          "createSessionSnapshot"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-control-tower",
+      "label": "LHM Control Tower",
+      "files": [
+        "src/ops/dashboard.js",
+        "src/ops/operations.js"
+      ],
+      "anchors": [
+        [
+          "preload.js",
+          "controlTowerSnapshot"
+        ],
+        [
+          "src/ui/index.html",
+          "data-lhm-target=\"tower\""
+        ]
+      ]
+    },
+    {
+      "id": "lhm-rpa-approval",
+      "label": "Approval-gated Automation Studio",
+      "files": [
+        "src/automation/studio.js",
+        "src/automation/batch.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "studio-approve"
+        ],
+        [
+          "preload.js",
+          "studioBatchRun"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-ai-advisor",
+      "label": "Encrypted AI Advisor",
+      "files": [
+        "src/ai/advisor.js",
+        "src/ai/workflowDraft.js"
+      ],
+      "anchors": [
+        [
+          "preload.js",
+          "aiAdvisorAsk"
+        ],
+        [
+          "main.js",
+          "proposeWorkflow"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-license",
+      "label": "Local commercial license enforcement",
+      "files": [
+        "src/licensing/enforcement.js",
+        "src/licensing/manager.js",
+        "src/licensing/onlineVerifier.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "licensePolicy.require('api')"
+        ],
+        [
+          "preload.js",
+          "activateLicense"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-api-auth",
+      "label": "Authenticated opt-in Local API",
+      "files": [
+        "src/api/server.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "setApiEnabled(enabled)"
+        ],
+        [
+          "preload.js",
+          "copyApiKey"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-import-metadata",
+      "label": "Safe AdsPower metadata migration",
+      "files": [
+        "src/ops/adspowerJsonImport.js"
+      ],
+      "anchors": [
+        [
+          "src/ops/profileCsvImport.js",
+          "parseAdsPowerProfileJson"
+        ],
+        [
+          "src/ui/index.html",
+          "AdsPower JSON"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-rpa-templates",
+      "label": "Local RPA starter templates",
+      "files": [
+        "src/automation/workflowTemplates.js"
+      ],
+      "anchors": [
+        [
+          "preload.js",
+          "studioTemplates"
+        ],
+        [
+          "src/ui/index.html",
+          "studio-template-select"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-ai-budget",
+      "label": "Local monthly AI usage budget",
+      "files": [
+        "src/ai/usageBudget.js"
+      ],
+      "anchors": [
+        [
+          "preload.js",
+          "aiAdvisorSetBudget"
+        ],
+        [
+          "src/ui/index.html",
+          "ai-advisor-monthly-budget"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-launch-readiness",
+      "label": "Four-layer local Launch Readiness inspection with fail-closed profile launch",
+      "files": [
+        "src/health/launchReadiness.js",
+        "src/ui/launchReadiness.js",
+        "src/ui/launchReadiness.css"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "get-launch-readiness"
+        ],
+        [
+          "preload.js",
+          "getLaunchReadiness"
+        ],
+        [
+          "src/engine/browserLauncher.js",
+          "launchReadiness(profile"
+        ],
+        [
+          "src/ui/renderer.js",
+          "LHMLaunchReadiness.confirm(profile.id)"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-ads-launch-guard",
+      "label": "Offline advertiser landing URL and UTM audit without customer data retention",
+      "files": [
+        "src/ads/landingGuard.js",
+        "src/ui/adsLaunchGuard.js",
+        "src/ui/adsLaunchGuard.css"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "ads-landing-inspect"
+        ],
+        [
+          "main.js",
+          "ads-utm-build"
+        ],
+        [
+          "preload.js",
+          "inspectAdsLandingUrls"
+        ],
+        [
+          "src/ui/index.html",
+          "btn-ads-launch-guard"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-ads-qa-dossier",
+      "label": "Privacy-safe, opt-in campaign launch QA evidence for client handoff",
+      "files": [
+        "src/ads/campaignQaReport.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "ads-qa-export"
+        ],
+        [
+          "preload.js",
+          "exportAdsQa"
+        ],
+        [
+          "src/ui/index.html",
+          "ads-qa-checklist"
+        ],
+        [
+          "src/ui/adsLaunchGuard.js",
+          "api.previewAdsQa"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-performance-lab",
+      "label": "Aggregate-only, read-only profile metadata performance evidence and synthetic benchmark",
+      "files": [
+        "src/ops/performanceLab.js",
+        "src/ui/performanceLab.js",
+        "src/ui/performanceLab.css",
+        "tools/profile-scale-benchmark.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "performance-lab-run"
+        ],
+        [
+          "preload.js",
+          "runPerformanceLab"
+        ],
+        [
+          "src/ui/index.html",
+          "btn-performance-lab"
+        ],
+        [
+          "package.json",
+          "node test/performance-lab.js"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-signed-online-updates",
+      "label": "Opt-in publisher-signed online updates with SHA-256 verified local installer download",
+      "files": [
+        "src/update/updateCheck.js",
+        "src/update/updateCenter.js",
+        "src/ui/onlineUpdateCenter.js",
+        "src/ui/onlineUpdateCenter.css"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "app-online-update-check"
+        ],
+        [
+          "main.js",
+          "app-online-update-download"
+        ],
+        [
+          "preload.js",
+          "onlineUpdateCheck"
+        ],
+        [
+          "src/ui/index.html",
+          "lhm-update-check"
+        ],
+        [
+          "package.json",
+          "node test/online-update-center.js"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-release-operator-tooling",
+      "label": "Offline encrypted update publisher bootstrap, signed installer release preflight, and owner-only draft release workflow",
+      "files": [
+        "tools/setup-update-publisher.js",
+        "tools/update-release-preflight.js",
+        ".github/workflows/prepare-draft-release.yml"
+      ],
+      "anchors": [
+        [
+          "package.json",
+          "node test/online-release-operator.js"
+        ],
+        [
+          "docs/LHM_SIGNED_ONLINE_UPDATES.md",
+          "tools/setup-update-publisher.js"
+        ],
+        [
+          "src/update/updateCenter.js",
+          "downloadVerifiedArtifact"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-upgrade-continuity-safety",
+      "label": "Read-only upgrade safety inspection and simulated restart continuity across profiles, workflows, license, proxy vault and sessions",
+      "files": [
+        "src/update/upgradeSafety.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "app-upgrade-safety-check"
+        ],
+        [
+          "preload.js",
+          "checkUpgradeSafety"
+        ],
+        [
+          "src/ui/index.html",
+          "lhm-upgrade-safety-check"
+        ],
+        [
+          "src/ui/onlineUpdateCenter.js",
+          "api.checkUpgradeSafety()"
+        ],
+        [
+          "package.json",
+          "node test/upgrade-continuity.js"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-commercial-ui-evidence",
+      "label": "Light-theme commercial workspace compatibility and eight real Electron capture release evidence",
+      "files": [
+        "src/ui/commercialPolish.css",
+        "tools/ci-release-evidence.js",
+        "test/commercial-ui-release.js"
+      ],
+      "anchors": [
+        [
+          "src/ui/index.html",
+          "commercialPolish.css"
+        ],
+        [
+          "main.js",
+          "workspace-ads-guard-preview.png"
+        ],
+        [
+          "main.js",
+          "workspace-performance-lab-preview.png"
+        ],
+        [
+          "main.js",
+          "workspace-about-update-preview.png"
+        ],
+        [
+          "main.js",
+          "workspace-license-preview.png"
+        ],
+        [
+          ".github/workflows/windows-exe.yml",
+          "LHM-Release-Evidence-Windows"
+        ],
+        [
+          "package.json",
+          "node test/commercial-ui-release.js"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-customer-handoff",
+      "label": "Commercial beta/customer handoff checklist with privacy-safe local evidence and unverified Gate 3/4 warnings",
+      "files": [
+        "src/ops/customerHandoff.js",
+        "src/ui/customerHandoff.js",
+        "src/ui/customerHandoff.css",
+        "test/customer-handoff.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "customer-handoff-preview"
+        ],
+        [
+          "main.js",
+          "customer-handoff-export"
+        ],
+        [
+          "preload.js",
+          "customerHandoffPreview"
+        ],
+        [
+          "src/ui/index.html",
+          "lhm-customer-check"
+        ],
+        [
+          ".github/workflows/windows-exe.yml",
+          "workspace-customer-handoff-preview.png"
+        ],
+        [
+          "package.json",
+          "node test/customer-handoff.js"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-fleet-triage",
+      "label": "Privacy-safe actionable fleet-wide profile health aggregation with one-click guided remediation",
+      "files": [
+        "src/ops/fleetTriage.js",
+        "src/ui/fleetTriage.css",
+        "test/fleet-triage.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "control-tower-triage"
+        ],
+        [
+          "src/ui/controlTower.js",
+          "api.controlTowerTriage()"
+        ],
+        [
+          "src/ui/index.html",
+          "tower-triage-list"
+        ],
+        [
+          "src/ui/index.html",
+          "fleetTriage.css"
+        ],
+        [
+          "package.json",
+          "node test/fleet-triage.js"
+        ]
+      ]
+    },
+    {
+      "id": "lhm-agency-encrypted-handoff",
+      "label": "Selective AES-256-GCM encrypted offline agency profile template handoff with no credentials/sessions",
+      "files": [
+        "src/ops/agencyTemplateHandoff.js",
+        "src/ui/agencyHandoff.css",
+        "test/agency-handoff.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "agency-handoff-import-commit"
+        ],
+        [
+          "preload.js",
+          "agencyHandoffExport"
+        ],
+        [
+          "src/ui/controlTower.js",
+          "api.agencyHandoffPreview("
+        ],
+        [
+          "src/ui/index.html",
+          "tower-agency-password"
+        ],
+        [
+          ".github/workflows/windows-exe.yml",
+          "workspace-agency-handoff-preview.png"
+        ],
+        [
+          "package.json",
+          "node test/agency-handoff.js"
+        ]
+      ]
+    }
+  ]
+}

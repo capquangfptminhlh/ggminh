@@ -26,11 +26,132 @@
     byId('selection-open').disabled = ids.length === 0 || ids.length > 10;
     byId('selection-group').disabled = ids.length === 0;
     byId('selection-export').disabled = ids.length === 0;
+    byId('tower-agency-export').disabled=agencyBusy||ids.length<1||ids.length>50;
   }
   function status(message, error = false) {
     const display = byId('tower-status');
     display.textContent = message;
     display.style.color = error ? '#fda4af' : '#a3c9f0';
+  }
+  let triageLoading=false;
+  function openTriageTool(action) {
+    // Never automate bulk edits: send the operator to the EXISTING tool.
+    close();
+    if(action==='health')return window.LHMMaintenance?.showHealth();
+    const id=action==='proxy'?'btn-proxy-center':
+      action==='engines'?'btn-engine-source':null;
+    if(id && byId(id))byId(id).click();
+  }
+  async function refreshTriage() {
+    if(triageLoading)return;
+    triageLoading=true;
+    const button=byId('tower-triage-refresh');
+    button.disabled=true;
+    const status=byId('tower-triage-status');
+    status.textContent='Đang gom nhóm lỗi cấu hình trên máy…';
+    try {
+      const report=await api.controlTowerTriage();
+      if(report?.schema!=='lhm.fleet.triage.v1'||!Array.isArray(report.items))
+        throw Error('Invalid triage payload');
+      const target=byId('tower-triage-list');
+      target.replaceChildren();
+      status.textContent=report.checked+'/'+report.profileCount+
+        ' hồ sơ đã kiểm tra · '+report.error+' có lỗi · '+
+        report.warning+' cảnh báo · '+report.categoryCount+' nhóm nguyên nhân';
+      if(!report.items.length) {
+        target.append(node('p','tower-empty','Không tìm thấy lỗi/cảnh báo cấu hình trong các hồ sơ đã kiểm tra.'));
+      } else {
+        for(const item of report.items) {
+          const card=node('article','lhm-triage-item');
+          card.dataset.state=item.severity;
+          const header=node('div','lhm-triage-item-head');
+          header.append(node('strong','',item.title));
+          header.append(node('span','lhm-triage-level',
+            item.blocking>0?'CẦN SỬA':'CẦN RÀ SOÁT'));
+          const details=node('p','',item.description);
+          const foot=node('div','lhm-triage-item-foot');
+          foot.append(node('span','',item.affected+' hồ sơ · '+
+            item.blocking+' lỗi · '+item.review+' cảnh báo'+
+            (item.activeAffected?' · '+item.activeAffected+' đang chạy':'')));
+          const action=node('button','btn btn-sm btn-secondary',item.actionLabel);
+          action.type='button';
+          action.addEventListener('click',()=>openTriageTool(item.action));
+          foot.append(action);
+          card.append(header,details,foot);
+          target.append(card);
+        }
+      }
+    } catch(error) {
+      status.textContent='Không kiểm tra được Fleet Triage. Hãy thử lại hoặc mở Health Check.';
+    } finally {triageLoading=false;button.disabled=false;}
+  }
+  let agencyBusy=false;
+  let agencyPreviewReady=false;
+  function handoffMessage(message,error=false) {
+    const line=byId('tower-agency-status');
+    line.textContent=message;
+    line.dataset.state=error?'error':'normal';
+  }
+  function agencyPassword() {
+    const value=byId('tower-agency-password').value;
+    if(value.length<12||value.length>512)throw Error('Mật khẩu cần tối thiểu 12 ký tự, tối đa 512.');
+    return value;
+  }
+  function resetAgencyControls() {
+    byId('tower-agency-password').value='';
+    byId('tower-agency-export').disabled=agencyBusy||selected().length<1||selected().length>50;
+    byId('tower-agency-preview').disabled=agencyBusy;
+    byId('tower-agency-commit').disabled=agencyBusy||!agencyPreviewReady;
+  }
+  async function agencyExport() {
+    if(agencyBusy)return;
+    const ids=selected();
+    if(!ids.length||ids.length>50)return handoffMessage('Chọn 1–50 hồ sơ trên bảng trước khi xuất.',true);
+    let pass;
+    try{pass=agencyPassword();}catch(error){return handoffMessage(error.message,true);}
+    if(!confirm('Xuất '+ids.length+' mẫu hồ sơ mã hóa? Không chuyển đăng nhập/cookie, tài khoản, fingerprint hoặc proxy. Người nhận sẽ phải gán lại proxy nếu cần.'))return;
+    agencyBusy=true;resetAgencyControls();
+    try{
+      const result=await api.agencyHandoffExport(ids,pass);
+      handoffMessage(result.canceled?'Đã hủy lưu gói chia sẻ.':
+        'Đã xuất '+result.count+' mẫu hồ sơ mã hóa. Gửi mật khẩu qua kênh riêng.');
+    }catch(error){handoffMessage('Không thể xuất mẫu: '+String(error.message||error),true);}
+    finally{pass=null;agencyBusy=false;resetAgencyControls();}
+  }
+  async function agencyPreview() {
+    if(agencyBusy)return;
+    let pass;
+    try{pass=agencyPassword();}catch(error){return handoffMessage(error.message,true);}
+    agencyBusy=true;agencyPreviewReady=false;resetAgencyControls();
+    try{
+      const result=await api.agencyHandoffPreview(pass);
+      if(result.canceled)handoffMessage('Đã hủy chọn tệp.');
+      else if(result.schema!=='lhm.agency.preview.v1')throw Error('Định dạng xem trước không đúng');
+      else{
+        agencyPreviewReady=true;
+        handoffMessage('Đã giải mã và xem trước '+result.count+' mẫu ('+
+          result.browserFamilies.chromium+' Chromium, '+
+          result.browserFamilies.gecko+' Gecko). '+
+          result.requiresProxySetup+' mẫu cần cấu hình lại proxy. '+
+          'Nhập lại mật khẩu và bấm Xác nhận nhập để tạo profile mới.');
+      }
+    }catch(error){handoffMessage('Không thể xem trước: '+String(error.message||error),true);}
+    finally{pass=null;agencyBusy=false;resetAgencyControls();}
+  }
+  async function agencyCommit() {
+    if(agencyBusy||!agencyPreviewReady)return;
+    let pass;
+    try{pass=agencyPassword();}catch(error){return handoffMessage(error.message,true);}
+    if(!confirm('Nhập các mẫu thành hồ sơ MỚI trên máy này? Mỗi hồ sơ sẽ có phiên trống, fingerprint native và proxy direct. Không gộp hay ghi đè hồ sơ cũ.'))return;
+    agencyBusy=true;agencyPreviewReady=false;resetAgencyControls();
+    try{
+      const result=await api.agencyHandoffCommit(pass,'IMPORT_NEW_TEMPLATES');
+      handoffMessage('Đã tạo '+result.created+' hồ sơ mới; '+
+        result.needsProxySetup+' hồ sơ phải cấu hình lại proxy trước khi mở. '+
+        'Không có cookie, mật khẩu hay phiên đăng nhập được nhập.');
+      await refreshProfiles();
+    }catch(error){handoffMessage('Không thể nhập mẫu: '+String(error.message||error),true);}
+    finally{pass=null;agencyBusy=false;resetAgencyControls();}
   }
   function makeGroup(group, max) {
     const button = node('button', 'tower-group');
@@ -111,11 +232,13 @@
   function show() {
     byId('modal-control-tower').classList.add('open');
     refresh();
+    refreshTriage();
   }
-  function close() { byId('modal-control-tower').classList.remove('open'); }
+  function close() { byId('modal-control-tower').classList.remove('open'); byId('tower-agency-password').value=''; }
   async function refreshProfiles() {
     if (typeof loadProfiles === 'function') await loadProfiles();
     await refresh();
+    await refreshTriage();
   }
   async function cloneSelected() {
     const ids = selected();
@@ -131,7 +254,17 @@
   async function openSelected() {
     const ids=selected();
     if(!ids.length || ids.length>10)return alert('Chọn tối đa 10 hồ sơ.');
-    if(!confirm('Mở '+ids.length+' hồ sơ? LHM khởi động đồng thời tối đa 2 cửa sổ và không tự thao tác trên website.'))return;
+    // Batch launches also expose local errors before opening any browser.
+    // A configuration warning is not an anti-fraud or privacy certification.
+    let preflights;
+    try { preflights = await Promise.all(ids.map(id=>api.getLaunchReadiness(id))); }
+    catch(error) { return alert('Không thể kiểm tra hồ sơ trước khi mở: '+error.message); }
+    const blocked = preflights.filter(report=>!report.canLaunch);
+    if (blocked.length) return alert(blocked.length+
+      ' hồ sơ có lỗi cấu hình bắt buộc. Hãy sửa trong Proxy Center hoặc Kiểm tra hồ sơ trước khi mở.');
+    const warnings = preflights.reduce((total,report)=>total+report.warningCount,0);
+    if(!confirm('Mở '+ids.length+' hồ sơ? Kiểm tra cục bộ ghi nhận '+warnings+
+      ' cảnh báo/chưa đo. Không chứng minh ẩn danh, tuyến DNS/WebRTC hay được Google/Meta coi là người dùng mới. LHM khởi động tối đa 2 cửa sổ.'))return;
     const button=byId('selection-open');
     button.disabled=true;
     try {
@@ -191,7 +324,11 @@
     byId('btn-control-tower').addEventListener('click', show);
     byId('tower-close').addEventListener('click', close);
     byId('tower-done').addEventListener('click', close);
-    byId('tower-refresh').addEventListener('click', refresh);
+    byId('tower-refresh').addEventListener('click',()=>{refresh();refreshTriage();});
+    byId('tower-triage-refresh').addEventListener('click',refreshTriage);
+    byId('tower-agency-export').addEventListener('click',agencyExport);
+    byId('tower-agency-preview').addEventListener('click',agencyPreview);
+    byId('tower-agency-commit').addEventListener('click',agencyCommit);
     byId('tower-export-all').addEventListener('click', () => exportProfiles([]));
     byId('tower-open-health').addEventListener('click', () => {
       close();

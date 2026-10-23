@@ -22,6 +22,7 @@ const { createCurrentContextResolver } = require('./src/measurement/currentConte
 const { observeRuntimeExitIp } = require('./src/health/runtimeEgressObservation');
 const { provisionCamoufoxIdentity } = require('./src/engine/camoufoxProvisioning');
 const { WorkflowStore, AutomationRunner } = require('./src/automation/studio');
+const { listWorkflowTemplates } = require('./src/automation/workflowTemplates');
 const { BatchAutomation } = require('./src/automation/batch');
 const { LocalScheduler } = require('./src/automation/localScheduler');
 const { graphForSteps } = require('./src/automation/flowGraph');
@@ -29,10 +30,19 @@ const { createWindowBrowser } = require('./src/automation/windowBrowser');
 const { RecorderManager } = require('./src/automation/recorder');
 const { createRecorderWindow } = require('./src/automation/recorderWindow');
 const { checkProfile } = require('./src/health/profileHealth');
+const { launchReadiness } = require('./src/health/launchReadiness');
+const { inspectLandingUrls, buildUtmUrl } = require('./src/ads/landingGuard');
+const { CHECKS: ADS_QA_CHECKS, buildCampaignQaReport } = require('./src/ads/campaignQaReport');
 const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
+const {buildFleetTriage}=require('./src/ops/fleetTriage');
+const {MAX_FILE_BYTES,exportSelectedTemplates,previewTemplates,importTemplates}=require('./src/ops/agencyTemplateHandoff');
+const {runPerformanceLab}=require('./src/ops/performanceLab');
+const {UpdateCenter}=require('./src/update/updateCenter');
+const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
 const {buildSupportReport}=require('./src/ops/supportReport');
+const {buildCustomerHandoff}=require('./src/ops/customerHandoff');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
@@ -214,6 +224,109 @@ function createWindow() {
           const engineImage=await mainWindow.webContents.capturePage();
           writeCapture('workspace-engine-provider-preview.png', engineImage);
           console.log('[UI smoke] Verified selected Camoufox and browser-engine provider modal');
+          // Release UX Gate: exercise NEW commercial panels from both the
+          // unpacked source and the actual packaged Windows EXE.
+          // Use synthetic web addresses ONLY; never record license secrets.
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('engine-source-done').click()",true);
+          const adsCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-ads-launch-guard').click(); const modal=document.getElementById('modal-ads-launch-guard'); const url=document.getElementById('ads-guard-urls'); url.value='https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=ci-demo'; document.getElementById('ads-guard-inspect').click(); return {open:modal.classList.contains('open'),bg:getComputedStyle(modal.querySelector('.lhm-ads-guard-section')).backgroundColor,input:getComputedStyle(url).backgroundColor,scroll:getComputedStyle(modal.querySelector('.modal-body')).overflowY}; })()",true);
+          if(!adsCheck.open||adsCheck.bg!=='rgb(245, 248, 254)'||
+             adsCheck.input!=='rgb(255, 255, 255)'||adsCheck.scroll!=='auto')
+            throw Error('Ads Launch Guard theme/modal failed: '+JSON.stringify(adsCheck));
+          await new Promise(resolve=>setTimeout(resolve,800));
+          const adsResults=await mainWindow.webContents.executeJavaScript(
+            "({count:document.querySelectorAll('#ads-guard-results .lhm-ads-guard-result').length,status:document.getElementById('ads-guard-inspect-status').textContent})",true);
+          if(adsResults.count!==1||!adsResults.status.includes('1 link'))
+            throw Error('Ads Launch Guard live UI test failed: '+JSON.stringify(adsResults));
+          writeCapture('workspace-ads-guard-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('ads-guard-done').click()",true);
+
+          const perfOpen=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-performance-lab').click(); document.getElementById('performance-lab-run').click(); return document.getElementById('modal-performance-lab').classList.contains('open'); })()",true);
+          if(!perfOpen)throw Error('Performance Lab dialog did not open');
+          await new Promise(resolve=>setTimeout(resolve,950));
+          const perfReport=await mainWindow.webContents.executeJavaScript(
+            "(() => { const cards=document.querySelectorAll('#performance-lab-metrics .lhm-perf-card'); return {cards:cards.length,background:cards.length?getComputedStyle(cards[0]).backgroundColor:'none',status:document.getElementById('performance-lab-status').textContent}; })()",true);
+          if(perfReport.cards!==3||perfReport.background!=='rgb(246, 249, 255)'||
+             !perfReport.status.includes('Đã đo'))
+            throw Error('Performance Lab measured UI failed: '+JSON.stringify(perfReport));
+          writeCapture('workspace-performance-lab-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('performance-lab-done').click()",true);
+
+          const aboutCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-app-about').click(); const modal=document.getElementById('modal-app-about'); const center=modal.querySelector('.lhm-update-center'); return {open:modal.classList.contains('open'),update:!!center,background:getComputedStyle(center).backgroundColor,check:!!document.getElementById('lhm-update-check')}; })()",true);
+          if(!aboutCheck.open||!aboutCheck.update||!aboutCheck.check||
+             aboutCheck.background!=='rgb(245, 248, 254)')
+            throw Error('About/Update Center UI failed: '+JSON.stringify(aboutCheck));
+          await new Promise(resolve=>setTimeout(resolve,350));
+          writeCapture('workspace-about-update-preview.png',await mainWindow.webContents.capturePage());
+          // Read-only commercial handoff: assert actual main-process signal
+          // collection and that no owner-approval claims are made.
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('lhm-customer-check').click()",true);
+          await new Promise(resolve=>setTimeout(resolve,900));
+          const handoffCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => ({cards:document.querySelectorAll('#lhm-customer-checks .lhm-customer-check').length,label:document.getElementById('lhm-customer-label').textContent,status:document.getElementById('lhm-customer-status').textContent,pending:document.getElementById('lhm-customer-checks').textContent.includes('chưa xác minh')}))()",true);
+          if(handoffCheck.cards!==6||handoffCheck.label==='CHƯA KIỂM TRA'||
+             !handoffCheck.status.includes('Đã kiểm tra')||!handoffCheck.pending)
+            throw Error('Customer handoff operational UI failed: '+JSON.stringify(handoffCheck));
+          writeCapture('workspace-customer-handoff-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('lhm-about-close').click()",true);
+
+          const licenseCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-license-center').click(); const modal=document.getElementById('modal-license-center'); return {open:modal.classList.contains('open'),state:!!document.getElementById('license-state'),activate:!!document.getElementById('license-activate'),renew:!!document.getElementById('license-expires')}; })()",true);
+          if(!Object.values(licenseCheck).every(Boolean))
+            throw Error('License/renewal UI failed: '+JSON.stringify(licenseCheck));
+          await new Promise(resolve=>setTimeout(resolve,500));
+          await mainWindow.webContents.executeJavaScript(
+            "(() => { const id=document.getElementById('license-installation-id'); if(id)id.value='[REDACTED FOR CI SCREENSHOT]'; const token=document.getElementById('license-token'); if(token)token.value=''; })()",true);
+          writeCapture('workspace-license-preview.png',await mainWindow.webContents.capturePage());
+          // Fleet Triage smoke uses actual IPC -> checkProfile -> triage aggregation.
+          // Screenshot contains synthetic/default local profiles only.
+          await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('license-done').click(); document.getElementById('btn-control-tower').click(); })()",true);
+          await new Promise(resolve=>setTimeout(resolve,1150));
+          const fleetResult=await mainWindow.webContents.executeJavaScript(
+            "(() => { const modal=document.getElementById('modal-control-tower'); const state=document.getElementById('tower-triage-status').textContent; const list=document.getElementById('tower-triage-list'); return {open:modal.classList.contains('open'),status:state,styles:!!document.querySelector('link[href=\\\"fleetTriage.css\\\"]'),list:!!list}; })()",true);
+          if(!fleetResult.open||!fleetResult.list||!fleetResult.styles||
+             !fleetResult.status.includes('hồ sơ đã kiểm tra'))
+            throw Error('Fleet Triage packaged Electron UI failed: '+JSON.stringify(fleetResult));
+          writeCapture('workspace-fleet-triage-preview.png',await mainWindow.webContents.capturePage());
+          // Handoff UI smoke: secret input blank and action locked until
+          // profile selection; never include real customer/private data.
+          const handoffPanel=await mainWindow.webContents.executeJavaScript(
+            "(() => { const password=document.getElementById('tower-agency-password'); const exportBtn=document.getElementById('tower-agency-export'); const preview=document.getElementById('tower-agency-preview'); const commit=document.getElementById('tower-agency-commit'); return {visible:!!password&&!!exportBtn&&!!preview&&!!commit,secure:password?.type==='password',empty:password?.value==='',importLocked:commit?.disabled===true,exportLocked:exportBtn?.disabled===true,theme:!!document.querySelector('link[href=\\\"agencyHandoff.css\\\"]')}; })()",true);
+          if(!handoffPanel.visible||!handoffPanel.secure||!handoffPanel.empty||
+             !handoffPanel.importLocked||!handoffPanel.exportLocked||!handoffPanel.theme)
+            throw Error('Agency template handoff UI privacy gate failed: '+JSON.stringify(handoffPanel));
+          writeCapture('workspace-agency-handoff-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] Agency encrypted handoff controls validated, no secret in screenshot');
+
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('tower-done').click()",true);
+          // Actual source AND packaged Electron renderer interaction proof
+          // for bounded 1,000-profile metadata table; no persistent profile changes.
+          const pagerQa=await mainWindow.webContents.executeJavaScript("(() => {\n  // Synthetic metadata only; no profile is created in the store, no browser\n  // opened, no API token, proxy secret, cookie or customer data is involved.\n  const mockProfiles = Array.from({ length:1000 }, (_, i) => ({\n    id:'qa_'+String(i+1).padStart(4,'0'), name:'QA Profile '+String(i+1),\n    group:'QA local', engine:'chromium', tags:[],\n    proxy:{type:'direct',host:'',port:''},\n  }));\n  allProfiles = mockProfiles;\n  activeBrowserMap.clear();\n  window.LHMProfileSelection.clear();\n  for(const id of ['filter-group','filter-tag','filter-engine','filter-proxy','filter-status']){\n    document.getElementById(id).value='all';\n  }\n  document.getElementById('search-input').value='';\n  document.getElementById('profile-page-size').value='50';\n  document.getElementById('profile-page-size').dispatchEvent(new Event('change',{bubbles:true}));\n  const rows = () => document.querySelectorAll('#profile-list-body tr');\n  const first = {rows:rows().length,\n    first:rows()[0]?.dataset.profileId,\n    last:rows()[rows().length-1]?.dataset.profileId,\n    label:document.getElementById('profile-page-status').textContent};\n  const head = document.getElementById('select-all');\n  head.click(); // The selected IDs must be exactly page 1 (50), never 1000.\n  const selectedPage1 = window.LHMProfileSelection.getSelected().length;\n  document.getElementById('profile-page-next').click();\n  const second = {rows:rows().length,first:rows()[0]?.dataset.profileId,\n    selected:window.LHMProfileSelection.getSelected().length};\n  const check = rows()[0]?.querySelector('input[type=\"checkbox\"][data-id]');\n  check.checked=true;check.dispatchEvent(new Event('change',{bubbles:true}));\n  const selectedCrossPage=window.LHMProfileSelection.getSelected().length;\n  const input=document.getElementById('search-input');\n  input.value='QA Profile 1000';\n  input.dispatchEvent(new Event('input',{bubbles:true}));\n  const filtered={rows:rows().length,first:rows()[0]?.dataset.profileId,\n    selected:window.LHMProfileSelection.getSelected().length};\n  input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));\n  const size=document.getElementById('profile-page-size');\n  size.value='100';size.dispatchEvent(new Event('change',{bubbles:true}));\n  const hundred={rows:rows().length,label:document.getElementById('profile-page-status').textContent,\n    selected:window.LHMProfileSelection.getSelected().length};\n  return {first,selectedPage1,second,selectedCrossPage,filtered,hundred};\n})()",true);
+          if(pagerQa.first.rows!==50||pagerQa.first.first!=='qa_0001'||
+             pagerQa.first.last!=='qa_0050'||!pagerQa.first.label.includes('1000')||
+             pagerQa.selectedPage1!==50||pagerQa.second.rows!==50||
+             pagerQa.second.first!=='qa_0051'||pagerQa.second.selected!==50||
+             pagerQa.selectedCrossPage!==51||pagerQa.filtered.rows!==1||
+             pagerQa.filtered.first!=='qa_1000'||pagerQa.filtered.selected!==51||
+             pagerQa.hundred.rows!==100||pagerQa.hundred.selected!==51||
+             !pagerQa.hundred.label.includes('1000'))
+            throw Error('Real Electron 1000-profile pager regression: '+JSON.stringify(pagerQa));
+          writeCapture('workspace-profile-paging-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] 1000 synthetic metadata profiles: bounded rows, cross-page selection, full-dataset search and 100/page PASS');
+
+          console.log('[UI smoke] Fleet Triage real local health aggregation rendered and captured');
+
+          console.log('[UI smoke] Ads Guard, real metadata timing, signed-update UI, and license renewal panels verified in actual Electron');
+
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
@@ -226,6 +339,51 @@ function createWindow() {
 }
 
 function initIPC() {
+  const updatePublicKeyFile=app.isPackaged
+    ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
+    :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
+  const onlineUpdates=new UpdateCenter({
+    currentVersion:app.getVersion(),
+    publicKeyFile:updatePublicKeyFile,
+    licenseKey:LICENSE_PUBLIC_KEY
+  });
+  let lastVerifiedInstallerPath=null;
+  const inspectCurrentUpgrade=()=>inspectUpgradeSafety({
+    storageDir:store.baseDir,store,workflowStore,proxyVault,launcher
+  });
+  ipcMain.handle('app-upgrade-safety-check',()=>inspectCurrentUpgrade());
+  ipcMain.handle('app-online-update-status',()=>onlineUpdates.status());
+  ipcMain.handle('app-online-update-check',()=>onlineUpdates.check());
+  ipcMain.handle('app-online-update-download',async()=>{
+    // A corrupt/unreadable local data store must be reviewed before updating.
+    const readiness=inspectCurrentUpgrade();
+    if(readiness.status==='blocked')
+      throw Error('Kiểm tra dữ liệu trước nâng cấp chưa đạt; hãy kiểm tra hồ sơ và sao lưu trước.');
+    // No renderer-supplied URL, filename, hash or destination.
+    const offer=onlineUpdates.lastOffer;
+    if(!offer||onlineUpdates.busy)throw Error('Chưa có bản cập nhật được xác minh');
+    const artifact=offer.details.artifact;
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Tải bộ cài LHM đã xác minh SHA-256',
+      defaultPath:path.join(app.getPath('downloads'),artifact.fileName),
+      filters:[{name:'Bộ cài Windows',extensions:['exe']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    // Enforce verified signed filename, so saved EXE cannot be swapped
+    // with a differently named artifact by a compromised renderer.
+    if(path.basename(filePath)!==artifact.fileName)
+      throw Error('Tên tệp phải khớp với bộ cài trong manifest đã ký');
+    lastVerifiedInstallerPath=null;
+    const result=await onlineUpdates.download(filePath);
+    lastVerifiedInstallerPath=filePath;
+    return {canceled:false,...result};
+  });
+  ipcMain.handle('app-online-update-open-folder',()=>{
+    if(!lastVerifiedInstallerPath||!fs.existsSync(lastVerifiedInstallerPath))
+      throw Error('Chưa có bộ cài đã xác minh để mở thư mục');
+    require('electron').shell.showItemInFolder(lastVerifiedInstallerPath);
+    return {opened:true};
+  });
   ipcMain.handle('get-profiles', () => store.getProfiles());
   ipcMain.handle('agency-network-preview',(_,input)=>{
     if(!input||!store.getProfile(input.profileId))throw Error('Hồ sơ không hợp lệ');
@@ -309,6 +467,7 @@ function initIPC() {
     return {canceled:false,...importEncrypted(sessionSnapshots,id,filePaths[0],passphrase)};
   });
   ipcMain.handle('ai-advisor-status', () => aiAdvisor.status());
+  ipcMain.handle('ai-advisor-budget-set', (_, limit) => aiAdvisor.setMonthlyRequestLimit(limit));
   ipcMain.handle('ai-advisor-configure', (_, value) => aiAdvisor.configure(value));
   ipcMain.handle('ai-advisor-forget-key', () => aiAdvisor.clear());
   ipcMain.handle('ai-advisor-ask', (_, value) => aiAdvisor.ask(value,store.getProfiles()));
@@ -440,6 +599,25 @@ function initIPC() {
 
   ipcMain.handle('audit-profile-isolation', () =>
     auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id) }));
+  // Measurements contain aggregate numbers only. They are not browser
+  // startup timings and never leave this computer automatically.
+  let lastPerformanceEvidence=null;
+  ipcMain.handle('performance-lab-run', () => {
+    lastPerformanceEvidence=runPerformanceLab(store);
+    return lastPerformanceEvidence;
+  });
+  ipcMain.handle('performance-lab-export', async () => {
+    if(!lastPerformanceEvidence)throw Error('Hãy chạy phép đo trước khi xuất báo cáo');
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Lưu bằng chứng hiệu năng LHM (chỉ số tổng hợp)',
+      defaultPath:'LHM-Performance-'+lastPerformanceEvidence.generatedAt.slice(0,10)+'.json',
+      filters:[{name:'JSON performance evidence',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    const text=JSON.stringify(lastPerformanceEvidence,null,2)+'\n';
+    fs.writeFileSync(filePath,text,{encoding:'utf8',mode:0o600});
+    return {canceled:false,bytes:Buffer.byteLength(text,'utf8')};
+  });
   ipcMain.handle('dashboard-overview', () => {
     const profiles = store.getProfiles();
     return buildDashboardSummary({
@@ -451,6 +629,56 @@ function initIPC() {
       automation: automationRunner.status(),
       behavior: behaviorMonitor.getReport()
     });
+  });
+  ipcMain.handle('control-tower-triage', () => {
+    const profiles=store.getProfiles();
+    const settings=store.getSettings();
+    const proxies=store.data.proxies;
+    const health=profiles.map(p=>checkProfile(p,{settings,proxies,vault:proxyVault}));
+    return buildFleetTriage(profiles,health,launcher.listActive());
+  });
+  // Consent-based, single-user OFFLINE template handoff (not cloud sync/RBAC).
+  // Keep only the ENCRYPTED selected file in RAM for up to 10 minutes.
+  let pendingAgencyHandoff=null;
+  ipcMain.handle('agency-handoff-export',async(_,ids,password)=>{
+    const result=exportSelectedTemplates(store,ids,password);
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Chia sẻ mẫu hồ sơ LHM đã mã hóa (không có cookie/phiên)',
+      defaultPath:'LHM-Agency-Templates-'+new Date().toISOString().slice(0,10)+'.lhmshare',
+      filters:[{name:'LHM Encrypted Templates',extensions:['lhmshare']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    fs.writeFileSync(filePath,result.text,{encoding:'utf8',mode:0o600});
+    return {canceled:false,count:result.count,encrypted:true,
+      includesSessions:false,includesProxyCredentials:false};
+  });
+  ipcMain.handle('agency-handoff-import-preview',async(_,password)=>{
+    pendingAgencyHandoff=null;
+    if(typeof password!=='string'||password.length<12||password.length>512)
+      throw Error('Mật khẩu chia sẻ cần 12–512 ký tự');
+    const selected=await dialog.showOpenDialog(mainWindow,{
+      title:'Chọn gói mẫu hồ sơ LHM được chia sẻ đã mã hóa',
+      properties:['openFile'],
+      filters:[{name:'LHM Encrypted Templates',extensions:['lhmshare']}]
+    });
+    if(selected.canceled||!selected.filePaths?.length)return {canceled:true};
+    const name=selected.filePaths[0];
+    const meta=fs.lstatSync(name);
+    if(!meta.isFile()||meta.isSymbolicLink()||meta.size>MAX_FILE_BYTES)
+      throw Error('Gói chia sẻ không hợp lệ hoặc quá lớn (256 KB).');
+    const encrypted=fs.readFileSync(name,'utf8');
+    const summary=previewTemplates(encrypted,password);
+    pendingAgencyHandoff={encrypted,createdAt:Date.now()};
+    return {canceled:false,...summary};
+  });
+  ipcMain.handle('agency-handoff-import-commit',(_,password,confirmation)=>{
+    if(confirmation!=='IMPORT_NEW_TEMPLATES')
+      throw Error('Chưa xác nhận nhập hồ sơ mới.');
+    const pending=pendingAgencyHandoff;
+    pendingAgencyHandoff=null; // one-shot, even if password or license fails
+    if(!pending||Date.now()-pending.createdAt>10*60*1000)
+      throw Error('Phiên xem trước đã hết hạn; hãy chọn lại gói chia sẻ.');
+    return importTemplates(store,pending.encrypted,password);
   });
   ipcMain.handle('control-tower-snapshot', () => {
     const profiles = store.getProfiles();
@@ -493,6 +721,35 @@ function initIPC() {
     const report = exportCsv(profiles, reports, launcher.listActive());
     fs.writeFileSync(filePath, report, 'utf8');
     return { canceled: false, count: profiles.length };
+  });
+  ipcMain.handle('ads-qa-checklist', () => ADS_QA_CHECKS);
+  ipcMain.handle('ads-qa-preview', (_, input) => {
+    const {report} = buildCampaignQaReport(input);
+    return {decision:report.decision,summary:report.summary,scope:report.scope,
+      note:report.disclaimer};
+  });
+  ipcMain.handle('ads-qa-export', async (_, input) => {
+    // Explicit local export. Never automatically upload advertising/customer data.
+    const {report,text} = buildCampaignQaReport(input);
+    const {canceled,filePath} = await dialog.showSaveDialog(mainWindow,{
+      title:'Lưu báo cáo kiểm tra chiến dịch (không chứa URL gốc)',
+      defaultPath:'LHM-Ads-QA-'+report.generatedAt.slice(0,10)+'.json',
+      filters:[{name:'JSON QA report',extensions:['json']}]
+    });
+    if(canceled || !filePath)return {canceled:true};
+    fs.writeFileSync(filePath,text,{encoding:'utf8',flag:'w'});
+    return {canceled:false,decision:report.decision,
+      sha256:report.integrity.bodySha256,bytes:Buffer.byteLength(text,'utf8')};
+  });
+    ipcMain.handle('ads-landing-inspect', (_, input) => inspectLandingUrls(input));
+  ipcMain.handle('ads-utm-build', (_, url, values) => buildUtmUrl(url, values));
+    ipcMain.handle('get-launch-readiness', (_, id) => {
+    const profile = store.getProfile(id);
+    if (!profile) throw Error('Không tìm thấy hồ sơ');
+    return launchReadiness(profile, {
+      proxies: store.data.proxies,
+      vault: proxyVault
+    });
   });
   ipcMain.handle('get-profile-health', (_, id) => {
     const profile = store.getProfile(id);
@@ -544,6 +801,40 @@ function initIPC() {
     return buildReadiness({profiles,reports,proxies:proxyCenter.list(),
       active:launcher.listActive(),workflows:workflowStore.list(),
       vault:proxyVault,platform:process.platform});
+  });
+  // Local customer handoff: strictly projected aggregate data. Never send
+  // license tokens, installation IDs, profile names or paths to renderer.
+  const customerHandoff=()=>{
+    const profiles=store.getProfiles();
+    const reports=profiles.map(profile=>checkProfile(profile,{
+      settings:store.getSettings(),proxies:store.data.proxies,vault:proxyVault
+    }));
+    const local=buildReadiness({profiles,reports,proxies:proxyCenter.list(),
+      active:launcher.listActive(),workflows:workflowStore.list(),
+      vault:proxyVault,platform:process.platform});
+    return buildCustomerHandoff({
+      appInfo:{version:app.getVersion(),platform:process.platform,arch:process.arch,
+        packaged:app.isPackaged},
+      license:licensePolicy.status(),
+      update:onlineUpdates.status(),
+      upgrade:inspectCurrentUpgrade(),
+      local
+    });
+  };
+  ipcMain.handle('customer-handoff-preview',()=>customerHandoff());
+  ipcMain.handle('customer-handoff-export',async()=>{
+    // Export freshly computed evidence only AFTER explicit user interaction.
+    const report=customerHandoff();
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Lưu báo cáo bàn giao LHM (không chứa thông tin định danh)',
+      defaultPath:'LHM-Customer-Handoff-'+report.createdAt.slice(0,10)+'.json',
+      filters:[{name:'JSON Customer Handoff',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    const content=JSON.stringify(report,null,2)+'\n';
+    fs.writeFileSync(filePath,content,{mode:0o600,encoding:'utf8'});
+    return {canceled:false,bytes:Buffer.byteLength(content,'utf8'),
+      status:report.status};
   });
   ipcMain.handle('export-support-report', async () => {
     const profiles=store.getProfiles();
@@ -598,6 +889,7 @@ function initIPC() {
     return { canceled: false, ...report };
   });
   ipcMain.handle('studio-list', () => workflowStore.list());
+  ipcMain.handle('studio-templates', () => listWorkflowTemplates());
   ipcMain.handle('studio-batch-status', () => batchAutomation.status());
   ipcMain.handle('studio-batch-preview', (_, id,ids,onError) =>
     batchAutomation.preview(id,ids,onError));

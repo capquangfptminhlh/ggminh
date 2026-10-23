@@ -1,0 +1,48 @@
+/* LHM Launch Readiness — isolated, additive dark workspace styling */
+.lhm-launch-dialog { max-width: 830px; }
+.lhm-launch-status {
+  margin: 10px 0 15px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  border: 1px solid rgba(148,163,184,.28);
+  background: rgba(100,116,139,.09);
+  color: var(--text-primary, #e5e7eb);
+  font-weight: 700;
+  letter-spacing: .015em;
+}
+.lhm-launch-status[data-state="blocked"] {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.55);
+  background: rgba(153,27,27,.18);
+}
+.lhm-launch-status[data-state="review"] {
+  color: #fef08a;
+  border-color: rgba(234,179,8,.40);
+  background: rgba(161,98,7,.14);
+}
+.lhm-launch-status[data-state="ready"] {
+  color: #a7f3d0;
+  border-color: rgba(16,185,129,.32);
+}
+.lhm-launch-layers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+}
+.lhm-launch-layer {
+  background: rgba(15,23,42,.56);
+  border: 1px solid rgba(148,163,184,.22);
+  border-radius: 12px;
+  padding: 13px;
+  min-width: 0;
+}
+.lhm-launch-layer strong { display: block; margin-bottom: 5px; color: #e2e8f0; }
+.lhm-launch-row { line-height: 1.5; white-space: pre-wrap; margin: 7px 0; font-size: .88rem; color: #cbd5e1; }
+.lhm-launch-state { display: inline-block; font-size: .72rem; color: #fbbf24; font-weight: 750; margin-top: 4px; }
+.lhm-launch-issues { margin-top: 13px; }
+.lhm-launch-issues .is-error { color: #fca5a5; }
+.lhm-launch-issues .is-warning { color: #fcd34d; }
+@media (max-width: 700px) {
+  .lhm-launch-layers { grid-template-columns: minmax(0,1fr); }
+  .lhm-launch-dialog { max-width: 98vw; }
+}

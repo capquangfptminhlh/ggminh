@@ -52,7 +52,7 @@ assert(workflowSource.includes('workspace-engine-provider-preview.png'),
   'CI must verify all four QA views');
 assert(workflowSource.includes('$proc.ExitCode -ne 0'),
   'CI must reject a packaged/source smoke process that exits non-zero');
-assert(workflowSource.includes('.Length -eq 0'),
-  'CI must reject empty screenshots');
+assert(workflowSource.includes('.Length -lt 10000'),
+  'CI must reject screenshots smaller than 10KB, not merely empty screenshots');
 
 console.log('packaged QA capture path: source compatibility, writable packaged target and unsafe override rejection passed');

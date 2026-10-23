@@ -60,6 +60,12 @@ const rendererSandbox = {
   console, setInterval: () => {}, alert: () => {},
 };
 vm.createContext(rendererSandbox);
+// Renderer loads after profilePagination.js in the real Electron document.
+// Execute that real browser helper in this sandbox too, rather than
+// replacing it with a fake default or weakening the production dependency.
+const paginationSource = fs.readFileSync(path.join(uiDir, 'profilePagination.js'), 'utf8');
+vm.runInContext(paginationSource, rendererSandbox, { filename: 'profilePagination.js' });
+assert.equal(rendererWindow.LHMProfilePagination.DEFAULT_SIZE, 50);
 vm.runInContext(renderer, rendererSandbox, { filename: 'renderer.js' });
 const guide = rendererWindow.LHMFirstRunGuide;
 assert.ok(guide, 'renderer must expose LHMFirstRunGuide');
