@@ -441,6 +441,45 @@
           "node test/upgrade-continuity.js"
         ]
       ]
+    },
+    {
+      "id": "lhm-commercial-ui-evidence",
+      "label": "Light-theme commercial workspace compatibility and eight real Electron capture release evidence",
+      "files": [
+        "src/ui/commercialPolish.css",
+        "tools/ci-release-evidence.js",
+        "test/commercial-ui-release.js"
+      ],
+      "anchors": [
+        [
+          "src/ui/index.html",
+          "commercialPolish.css"
+        ],
+        [
+          "main.js",
+          "workspace-ads-guard-preview.png"
+        ],
+        [
+          "main.js",
+          "workspace-performance-lab-preview.png"
+        ],
+        [
+          "main.js",
+          "workspace-about-update-preview.png"
+        ],
+        [
+          "main.js",
+          "workspace-license-preview.png"
+        ],
+        [
+          ".github/workflows/windows-exe.yml",
+          "LHM-Release-Evidence-Windows"
+        ],
+        [
+          "package.json",
+          "node test/commercial-ui-release.js"
+        ]
+      ]
     }
   ]
 }
