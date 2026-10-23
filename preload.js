@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('api', {
   getAllProfileHealth: () => ipcRenderer.invoke('get-all-profile-health'),
   getLocalReadiness: () => ipcRenderer.invoke('get-local-readiness'),
   exportSupportReport: () => ipcRenderer.invoke('export-support-report'),
+  customerHandoffPreview: () => ipcRenderer.invoke('customer-handoff-preview'),
+  customerHandoffExport: () => ipcRenderer.invoke('customer-handoff-export'),
   exportConfigBackup: password => ipcRenderer.invoke('export-config-backup', password),
   importConfigBackup: password => ipcRenderer.invoke('import-config-backup', password),
   previewConfigBackup: password => ipcRenderer.invoke('preview-config-backup',password),
