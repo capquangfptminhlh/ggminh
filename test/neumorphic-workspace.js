@@ -26,6 +26,8 @@ for(const id of [
  'lhm-v7-motion-toggle'
 ])assert.equal(html.split('id="'+id+'"').length,2,'Missing or duplicate action: '+id);
 assert(html.includes('id="lhm-nm-license-activate-face" class="lhm-nm-license-face back" aria-label="Kích hoạt giấy phép" aria-hidden="true" inert'));
+assert(css.includes('#modal-ads-launch-guard #ads-guard-urls{background-color:#fff!important}'),
+ 'Component-specific Ads Guard input must retain existing release-verified white background');
 assert(!js.includes('fetch(')&&!js.includes('window.api')&&!js.includes('localStorage'),
  'Video motion must not introduce fake authentication or alter licensing');
 for(const signature of [
