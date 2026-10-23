@@ -105,6 +105,15 @@ jobs:
             dist/packaged-ui/*.png
           if-no-files-found: ignore
           retention-days: 14
+      - name: Record installer SHA-256 and eight real UI checks
+        run: node tools/ci-release-evidence.js dist dist/release-evidence.json
+      - name: Upload commercial preflight build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Release-Evidence-Windows
+          path: dist/release-evidence.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
