@@ -791,3 +791,25 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 #lhm-about-message{color:#ad403b;font-size:12px;white-space:pre-wrap}
 #modal-app-about .modal-body{max-height:70vh;overflow:auto}
 @media(max-width:680px){.lhm-about-metrics{grid-template-columns:1fr}}
+
+/* Bounded profile rendering: usable paging at 100/500/1000+ metadata rows. */
+.lhm-profile-pager[hidden]{display:none!important}
+.lhm-profile-pager{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+  gap:12px;padding:12px 16px;background:#fbfcfe;border-top:1px solid #e7ebf0;
+  color:#53647a;font-size:12px
+}
+.lhm-profile-pager p{margin:0;min-width:0;overflow-wrap:anywhere}
+.lhm-profile-pager-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.lhm-profile-pager-actions label{color:#63738a;font-size:11px}
+.lhm-profile-pager-actions select{min-height:33px;padding:5px 28px 5px 9px;font-size:12px}
+.lhm-profile-pager-actions button{min-height:33px;min-width:68px}
+@media(max-width:640px){
+  .lhm-profile-pager{align-items:stretch;padding:12px}
+  .lhm-profile-pager p{width:100%;font-size:11px}
+  .lhm-profile-pager-actions{justify-content:space-between;gap:5px}
+  .lhm-profile-pager-actions button{min-width:58px}
+}
+@media(prefers-reduced-motion:reduce){
+  .lhm-profile-pager-actions button{transition:none!important}
+}
