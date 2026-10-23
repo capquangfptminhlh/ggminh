@@ -306,6 +306,21 @@ function createWindow() {
 
           await mainWindow.webContents.executeJavaScript(
             "document.getElementById('tower-done').click()",true);
+          // Actual source AND packaged Electron renderer interaction proof
+          // for bounded 1,000-profile metadata table; no persistent profile changes.
+          const pagerQa=await mainWindow.webContents.executeJavaScript("(() => {\n  // Synthetic metadata only; no profile is created in the store, no browser\n  // opened, no API token, proxy secret, cookie or customer data is involved.\n  const mockProfiles = Array.from({ length:1000 }, (_, i) => ({\n    id:'qa_'+String(i+1).padStart(4,'0'), name:'QA Profile '+String(i+1),\n    group:'QA local', engine:'chromium', tags:[],\n    proxy:{type:'direct',host:'',port:''},\n  }));\n  allProfiles = mockProfiles;\n  activeBrowserMap.clear();\n  window.LHMProfileSelection.clear();\n  for(const id of ['filter-group','filter-tag','filter-engine','filter-proxy','filter-status']){\n    document.getElementById(id).value='all';\n  }\n  document.getElementById('search-input').value='';\n  document.getElementById('profile-page-size').value='50';\n  document.getElementById('profile-page-size').dispatchEvent(new Event('change',{bubbles:true}));\n  const rows = () => document.querySelectorAll('#profile-list-body tr');\n  const first = {rows:rows().length,\n    first:rows()[0]?.dataset.profileId,\n    last:rows()[rows().length-1]?.dataset.profileId,\n    label:document.getElementById('profile-page-status').textContent};\n  const head = document.getElementById('select-all');\n  head.click(); // The selected IDs must be exactly page 1 (50), never 1000.\n  const selectedPage1 = window.LHMProfileSelection.getSelected().length;\n  document.getElementById('profile-page-next').click();\n  const second = {rows:rows().length,first:rows()[0]?.dataset.profileId,\n    selected:window.LHMProfileSelection.getSelected().length};\n  const check = rows()[0]?.querySelector('input[type=\"checkbox\"][data-id]');\n  check.checked=true;check.dispatchEvent(new Event('change',{bubbles:true}));\n  const selectedCrossPage=window.LHMProfileSelection.getSelected().length;\n  const input=document.getElementById('search-input');\n  input.value='QA Profile 1000';\n  input.dispatchEvent(new Event('input',{bubbles:true}));\n  const filtered={rows:rows().length,first:rows()[0]?.dataset.profileId,\n    selected:window.LHMProfileSelection.getSelected().length};\n  input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));\n  const size=document.getElementById('profile-page-size');\n  size.value='100';size.dispatchEvent(new Event('change',{bubbles:true}));\n  const hundred={rows:rows().length,label:document.getElementById('profile-page-status').textContent,\n    selected:window.LHMProfileSelection.getSelected().length};\n  return {first,selectedPage1,second,selectedCrossPage,filtered,hundred};\n})()",true);
+          if(pagerQa.first.rows!==50||pagerQa.first.first!=='qa_0001'||
+             pagerQa.first.last!=='qa_0050'||!pagerQa.first.label.includes('1000')||
+             pagerQa.selectedPage1!==50||pagerQa.second.rows!==50||
+             pagerQa.second.first!=='qa_0051'||pagerQa.second.selected!==50||
+             pagerQa.selectedCrossPage!==51||pagerQa.filtered.rows!==1||
+             pagerQa.filtered.first!=='qa_1000'||pagerQa.filtered.selected!==51||
+             pagerQa.hundred.rows!==100||pagerQa.hundred.selected!==51||
+             !pagerQa.hundred.label.includes('1000'))
+            throw Error('Real Electron 1000-profile pager regression: '+JSON.stringify(pagerQa));
+          writeCapture('workspace-profile-paging-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] 1000 synthetic metadata profiles: bounded rows, cross-page selection, full-dataset search and 100/page PASS');
+
           console.log('[UI smoke] Fleet Triage real local health aggregation rendered and captured');
 
           console.log('[UI smoke] Ads Guard, real metadata timing, signed-update UI, and license renewal panels verified in actual Electron');
