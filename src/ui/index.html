@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="onlineUpdateCenter.css">
   <link rel="stylesheet" href="commercialPolish.css">
   <link rel="stylesheet" href="fleetTriage.css">
+  <link rel="stylesheet" href="agencyHandoff.css">
   <link rel="stylesheet" href="customerHandoff.css">
 </head>
 <body data-view="profiles">
@@ -1570,6 +1571,26 @@ run();
           </div>
           <p class="lhm-triage-status" id="tower-triage-status" role="status" aria-live="polite">Chưa chạy phân tích.</p>
           <div id="tower-triage-list" class="lhm-triage-list"></div>
+        </section>
+        <section class="tower-panel lhm-agency-panel" aria-label="Bàn giao mẫu hồ sơ mã hóa">
+          <div class="tower-panel-header">
+            <div>
+              <span class="lhm-agency-eyebrow">AGENCY OPERATIONS · ENCRYPTED OFFLINE</span>
+              <h3>Bàn giao mẫu hồ sơ cho nhân viên</h3>
+              <p class="lhm-agency-help">Chỉ chuyển tên, nhóm, nhãn, loại engine và tên miền mở đầu. Mật khẩu AES-256-GCM; không chuyển cookie, đăng nhập, proxy, identity hoặc thao tác AI.</p>
+            </div>
+          </div>
+          <div class="lhm-agency-fields">
+            <label for="tower-agency-password">Mật khẩu bảo vệ tệp (tối thiểu 12 ký tự)</label>
+            <input type="password" id="tower-agency-password" autocomplete="new-password" minlength="12" maxlength="512" placeholder="Nhập mật khẩu mạnh để xuất hoặc nhập">
+          </div>
+          <div class="lhm-agency-actions">
+            <button class="btn btn-sm btn-primary" id="tower-agency-export" type="button" disabled>Xuất hồ sơ đã chọn</button>
+            <button class="btn btn-sm btn-secondary" id="tower-agency-preview" type="button">Chọn tệp và xem trước</button>
+            <button class="btn btn-sm btn-secondary" id="tower-agency-commit" type="button" disabled>Xác nhận nhập hồ sơ mới</button>
+          </div>
+          <p class="lhm-agency-status" id="tower-agency-status" role="status" aria-live="polite">Chọn 1–50 hồ sơ trên bảng, nhập mật khẩu rồi xuất. Khi nhận gói, xem trước trước khi xác nhận nhập.</p>
+          <p class="lhm-agency-fineprint">Đây là chuyển mẫu cấu hình giữa các máy theo thao tác người dùng, <strong>không phải</strong> đồng bộ đa máy hoặc phân quyền tài khoản. Gói chia sẻ không bao gồm dữ liệu phiên. Hãy gửi mật khẩu bằng kênh khác với tệp.</p>
         </section>
         <div class="tower-columns">
           <section class="tower-panel">
