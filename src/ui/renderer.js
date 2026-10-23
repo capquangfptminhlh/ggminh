@@ -6,6 +6,9 @@ let apiEnabled = false;
 let behaviorAlertsSeen = new Set();
 let behaviorInitialized = false;
 const selectedProfileIds = new Set();
+// Table pagination bounds DOM work, not the metadata search or bulk selection.
+let profilePage = 1;
+let profilePageSize = window.LHMProfilePagination.DEFAULT_SIZE;
 window.LHMProfileContextData = () => ({profiles:allProfiles,activeIds:[...activeBrowserMap.keys()]});
 window.LHMProfileSelection = {
   getSelected: () => [...selectedProfileIds],
@@ -25,6 +28,11 @@ const filterEngine = document.getElementById('filter-engine');
 const filterProxy = document.getElementById('filter-proxy');
 const filterStatus = document.getElementById('filter-status');
 const btnRefresh = document.getElementById('btn-refresh');
+const pageControls = document.getElementById('profile-page-controls');
+const pageStatus = document.getElementById('profile-page-status');
+const pageSizeControl = document.getElementById('profile-page-size');
+const pagePrev = document.getElementById('profile-page-prev');
+const pageNext = document.getElementById('profile-page-next');
 
 // Modals
 const modalProfile = document.getElementById('modal-profile');
@@ -443,7 +451,7 @@ function setupEventListeners() {
     }
   });
 
-  // Select all currently visible (filtered) profiles.
+  // Select only rendered profiles on the CURRENT PAGE (never hidden pages).
   document.getElementById('select-all').addEventListener('change', event => {
     const boxes = [...profileListBody.querySelectorAll('input[type="checkbox"][data-id]')];
     for (const input of boxes) {
@@ -455,12 +463,30 @@ function setupEventListeners() {
   });
 
   // Search & Filter
-  searchInput.addEventListener('input', renderProfiles);
-  filterGroup.addEventListener('change', renderProfiles);
-  filterTag.addEventListener('change', renderProfiles);
-  filterEngine.addEventListener('change', renderProfiles);
-  filterProxy.addEventListener('change', renderProfiles);
-  filterStatus.addEventListener('change', renderProfiles);
+  // A changed query or facet starts at page 1; ordinary status refresh keeps
+  // the user's current page and clamps it if records have been removed.
+  const searchFromFirstPage = () => { profilePage = 1; renderProfiles(); };
+  searchInput.addEventListener('input', searchFromFirstPage);
+  filterGroup.addEventListener('change', searchFromFirstPage);
+  filterTag.addEventListener('change', searchFromFirstPage);
+  filterEngine.addEventListener('change', searchFromFirstPage);
+  filterProxy.addEventListener('change', searchFromFirstPage);
+  filterStatus.addEventListener('change', searchFromFirstPage);
+  pageSizeControl.addEventListener('change', () => {
+    const size = Number(pageSizeControl.value);
+    if (!window.LHMProfilePagination.SIZE_OPTIONS.includes(size)) return;
+    profilePageSize = size;
+    profilePage = 1;
+    renderProfiles();
+  });
+  pagePrev.addEventListener('click', () => {
+    profilePage = Math.max(1, profilePage - 1);
+    renderProfiles();
+  });
+  pageNext.addEventListener('click', () => {
+    profilePage += 1;
+    renderProfiles();
+  });
   btnRefresh.addEventListener('click', loadProfiles);
 }
 
@@ -611,6 +637,17 @@ function updateStats() {
   document.getElementById('lhm-profiles-running').textContent = activeBrowserMap.size;
 }
 
+function updateProfilePageControls(pageInfo) {
+  pageControls.hidden = pageInfo.total === 0;
+  pagePrev.disabled = !pageInfo.hasPrevious;
+  pageNext.disabled = !pageInfo.hasNext;
+  pageSizeControl.value = String(pageInfo.size);
+  // Counts, not IDs/names: this status is safe for accessibility and screenshots.
+  pageStatus.textContent = pageInfo.total === 0
+    ? 'Không có hồ sơ khớp'
+    : `Hiển thị ${pageInfo.from}–${pageInfo.to} trong ${pageInfo.total} hồ sơ · Trang ${pageInfo.page}/${pageInfo.pageCount}. Chọn tất cả chỉ áp dụng trang này.`;
+}
+
 function renderProfiles() {
   const query = searchInput.value.toLowerCase().trim();
   const selectedGroup = filterGroup.value;
@@ -642,6 +679,9 @@ function renderProfiles() {
       (selectedTag === 'all' || (p.tags || []).includes(selectedTag));
   });
 
+  const pageInfo = window.LHMProfilePagination.paginate(filtered, profilePage, profilePageSize);
+  profilePage = pageInfo.page; // Clamp after delete, filter and background refresh.
+  updateProfilePageControls(pageInfo);
   profileListBody.innerHTML = '';
 
   if (filtered.length === 0) {
@@ -671,7 +711,7 @@ function renderProfiles() {
   }
   emptyState.style.display = 'none';
 
-  filtered.forEach(profile => {
+  pageInfo.items.forEach(profile => {
     const isRunning = activeBrowserMap.has(profile.id);
     const activeInfo = activeBrowserMap.get(profile.id);
     const fp = profile.fingerprint || {};

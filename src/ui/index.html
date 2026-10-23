@@ -361,7 +361,7 @@
         <table class="profile-table">
           <thead>
             <tr>
-              <th width="40"><input type="checkbox" id="select-all"></th>
+              <th width="40"><input type="checkbox" id="select-all" aria-label="Chọn hoặc bỏ chọn toàn bộ hồ sơ trên trang đang xem" title="Chỉ chọn các hồ sơ trên trang hiện tại"></th>
               <th width="150" data-table-col="id">Mã hồ sơ</th>
               <th>Tên hồ sơ</th>
               <th data-table-col="proxy">Proxy</th>
@@ -374,6 +374,19 @@
             <!-- Rendered dynamically -->
           </tbody>
         </table>
+        <nav class="lhm-profile-pager" id="profile-page-controls" aria-label="Phân trang danh sách hồ sơ" hidden>
+          <p id="profile-page-status" role="status" aria-live="polite">Đang tải danh sách…</p>
+          <div class="lhm-profile-pager-actions">
+            <label for="profile-page-size">Hồ sơ mỗi trang</label>
+            <select id="profile-page-size" aria-label="Số hồ sơ trên một trang">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" id="profile-page-prev" aria-label="Trang hồ sơ trước">← Trước</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="profile-page-next" aria-label="Trang hồ sơ tiếp theo">Tiếp →</button>
+          </div>
+        </nav>
         <div class="empty-state" id="empty-state" style="display: none;">
           <div class="empty-icon"><span data-lhm-icon="panels-top-left"></span></div>
           <h3>Chưa có hồ sơ</h3>
@@ -1730,6 +1743,7 @@ run();
   </div>
 
   <script src="icons.js"></script>
+  <script src="profilePagination.js"></script>
   <script src="renderer.js"></script>
   <script src="launchReadiness.js"></script>
   <script src="adsLaunchGuard.js"></script>
