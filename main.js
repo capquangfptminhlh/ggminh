@@ -36,6 +36,7 @@ const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
 const {buildFleetTriage}=require('./src/ops/fleetTriage');
+const {MAX_FILE_BYTES,exportSelectedTemplates,previewTemplates,importTemplates}=require('./src/ops/agencyTemplateHandoff');
 const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {UpdateCenter}=require('./src/update/updateCenter');
 const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
@@ -293,6 +294,16 @@ function createWindow() {
              !fleetResult.status.includes('hồ sơ đã kiểm tra'))
             throw Error('Fleet Triage packaged Electron UI failed: '+JSON.stringify(fleetResult));
           writeCapture('workspace-fleet-triage-preview.png',await mainWindow.webContents.capturePage());
+          // Handoff UI smoke: secret input blank and action locked until
+          // profile selection; never include real customer/private data.
+          const handoffPanel=await mainWindow.webContents.executeJavaScript(
+            "(() => { const password=document.getElementById('tower-agency-password'); const exportBtn=document.getElementById('tower-agency-export'); const preview=document.getElementById('tower-agency-preview'); const commit=document.getElementById('tower-agency-commit'); return {visible:!!password&&!!exportBtn&&!!preview&&!!commit,secure:password?.type==='password',empty:password?.value==='',importLocked:commit?.disabled===true,exportLocked:exportBtn?.disabled===true,theme:!!document.querySelector('link[href=\\\"agencyHandoff.css\\\"]')}; })()",true);
+          if(!handoffPanel.visible||!handoffPanel.secure||!handoffPanel.empty||
+             !handoffPanel.importLocked||!handoffPanel.exportLocked||!handoffPanel.theme)
+            throw Error('Agency template handoff UI privacy gate failed: '+JSON.stringify(handoffPanel));
+          writeCapture('workspace-agency-handoff-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] Agency encrypted handoff controls validated, no secret in screenshot');
+
           await mainWindow.webContents.executeJavaScript(
             "document.getElementById('tower-done').click()",true);
           console.log('[UI smoke] Fleet Triage real local health aggregation rendered and captured');
@@ -608,6 +619,49 @@ function initIPC() {
     const proxies=store.data.proxies;
     const health=profiles.map(p=>checkProfile(p,{settings,proxies,vault:proxyVault}));
     return buildFleetTriage(profiles,health,launcher.listActive());
+  });
+  // Consent-based, single-user OFFLINE template handoff (not cloud sync/RBAC).
+  // Keep only the ENCRYPTED selected file in RAM for up to 10 minutes.
+  let pendingAgencyHandoff=null;
+  ipcMain.handle('agency-handoff-export',async(_,ids,password)=>{
+    const result=exportSelectedTemplates(store,ids,password);
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Chia sẻ mẫu hồ sơ LHM đã mã hóa (không có cookie/phiên)',
+      defaultPath:'LHM-Agency-Templates-'+new Date().toISOString().slice(0,10)+'.lhmshare',
+      filters:[{name:'LHM Encrypted Templates',extensions:['lhmshare']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    fs.writeFileSync(filePath,result.text,{encoding:'utf8',mode:0o600});
+    return {canceled:false,count:result.count,encrypted:true,
+      includesSessions:false,includesProxyCredentials:false};
+  });
+  ipcMain.handle('agency-handoff-import-preview',async(_,password)=>{
+    pendingAgencyHandoff=null;
+    if(typeof password!=='string'||password.length<12||password.length>512)
+      throw Error('Mật khẩu chia sẻ cần 12–512 ký tự');
+    const selected=await dialog.showOpenDialog(mainWindow,{
+      title:'Chọn gói mẫu hồ sơ LHM được chia sẻ đã mã hóa',
+      properties:['openFile'],
+      filters:[{name:'LHM Encrypted Templates',extensions:['lhmshare']}]
+    });
+    if(selected.canceled||!selected.filePaths?.length)return {canceled:true};
+    const name=selected.filePaths[0];
+    const meta=fs.lstatSync(name);
+    if(!meta.isFile()||meta.isSymbolicLink()||meta.size>MAX_FILE_BYTES)
+      throw Error('Gói chia sẻ không hợp lệ hoặc quá lớn (256 KB).');
+    const encrypted=fs.readFileSync(name,'utf8');
+    const summary=previewTemplates(encrypted,password);
+    pendingAgencyHandoff={encrypted,createdAt:Date.now()};
+    return {canceled:false,...summary};
+  });
+  ipcMain.handle('agency-handoff-import-commit',(_,password,confirmation)=>{
+    if(confirmation!=='IMPORT_NEW_TEMPLATES')
+      throw Error('Chưa xác nhận nhập hồ sơ mới.');
+    const pending=pendingAgencyHandoff;
+    pendingAgencyHandoff=null; // one-shot, even if password or license fails
+    if(!pending||Date.now()-pending.createdAt>10*60*1000)
+      throw Error('Phiên xem trước đã hết hạn; hãy chọn lại gói chia sẻ.');
+    return importTemplates(store,pending.encrypted,password);
   });
   ipcMain.handle('control-tower-snapshot', () => {
     const profiles = store.getProfiles();
