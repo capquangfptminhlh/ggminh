@@ -25,6 +25,7 @@ function validateCaptureEvidence(build){
     if(item?.name!==CAPTURES[index])throw Error('Unexpected CI capture name/order');
     for(const source of ['source','packaged']){
       if(!Number.isSafeInteger(item[source]?.bytes)||item[source].bytes<10000||
+         typeof item[source]?.sha256!=='string'||
          !/^[0-9a-f]{64}$/.test(item[source]?.sha256||''))
         throw Error('Invalid CI capture size/digest');
     }

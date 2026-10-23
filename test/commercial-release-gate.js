@@ -87,6 +87,7 @@ try{
   {uiCaptures:ciReport.build.uiCaptures.map(x=>({...x,packaged:{bytes:0,sha256:engine}}))},
   {uiCaptures:ciReport.build.uiCaptures.map(x=>({...x,name:captures[0]}))},
   {uiCaptures:ciReport.build.uiCaptures.map(x=>({...x,source:{bytes:10001,sha256:'bad'}}))},
+  {uiCaptures:ciReport.build.uiCaptures.map(x=>({...x,source:{bytes:10001,sha256:[engine]}}))},
   {packagedBuildInfoSha256:'e'.repeat(64)}]){
   fs.writeFileSync(ci,JSON.stringify({...ciReport,build:{...ciReport.build,...patch}}));
   assert.ok(check({}).blockers.some(x=>x.code==='BUILD_PROVENANCE_MISMATCH'));
