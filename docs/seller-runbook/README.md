@@ -59,6 +59,11 @@ Tài liệu vận hành nội bộ cho bên bán/cấp license. Mọi lệnh dư
    - `MONTHS`: số tháng hiệu lực (công cụ cấp trực tiếp giới hạn
      1–12 tháng; bản ghi gia hạn dùng lại gói và giới hạn cũ).
    - `MAX_PROFILES`: giới hạn số hồ sơ của khách.
+   - Gói **đúng 30 ngày**: thay `<MONTHS>` bằng `--days 30`, ví dụ:
+     `node tools\license-admin.js issue <LEDGER> <CUSTOMER_ID> pro --days 30 100 <PRIVATE_PEM> owner-sweep`.
+     `--days` nhận số nguyên 1–365, mỗi ngày đúng 24 giờ. Không dùng cùng tháng.
+     Các lệnh tháng lịch cũ và token đã cấp giữ nguyên ý nghĩa; 1 tháng không
+     đồng nghĩa 30 ngày.
    - Gói và tính năng: **starter** = chỉ tính năng hồ sơ;
      **pro** và **business** = hồ sơ + API cục bộ + Automation.
    - Mặc định là `owner-sweep`: hết kỳ thuê vẫn dùng được khi máy chủ
@@ -96,6 +101,10 @@ chuẩn được.
    ```bat
    node tools\license-admin.js renew <LEDGER> <OLD_LICENSE_ID> <MONTHS> <PRIVATE_PEM>
    ```
+
+   Gia hạn đúng 30 ngày: `node tools\license-admin.js renew <LEDGER> <OLD_LICENSE_ID> --days 30 <PRIVATE_PEM>`.
+   Nếu còn hạn thì cộng từ hạn cũ; nếu đã hết hạn thì cộng từ thời điểm cấp.
+   Vẫn giữ giới hạn tổng thời hạn token không quá 370 ngày tính từ lúc cấp.
 
 3. Gửi token mới cho khách; khách dán thay token cũ trong mục
    License.
