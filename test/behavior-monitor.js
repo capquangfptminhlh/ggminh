@@ -26,6 +26,48 @@ require('./behavior-warning-ui');
     assert.throws(() => monitor.record('profile_open', '../injection'), /Invalid profile ID/);
     assert.throws(() => monitor.record('unknown', 'p001'), /Invalid activity type/);
 
+    // listEvents() is a pruned copy, never a mutable reference into the
+    // monitor. Loaded records are projected to the four-field privacy
+    // schema, and invalid profile IDs are discarded.
+    const projectedDir = fs.mkdtempSync(path.join(directory, 'lhm-projected-'));
+    fs.writeFileSync(path.join(projectedDir, 'behavior-events.json'), JSON.stringify([
+      { action: 'profile_open', profileId: 'safe-profile', source: 'manual',
+        at: time, password: 'MUST-NOT-LOAD', clipboard: 'MUST-NOT-LOAD' },
+      { action: 'profile_open', profileId: '../invalid', source: 'manual', at: time },
+    ]));
+    const projected = new BehaviorMonitor(projectedDir, () => time);
+    assert.deepStrictEqual(projected.listEvents(), [
+      { action: 'profile_open', profileId: 'safe-profile', source: 'manual', at: time },
+    ]);
+    const external = projected.listEvents();
+    external[0].profileId = 'mutated-outside';
+    assert.strictEqual(projected.listEvents()[0].profileId, 'safe-profile');
+
+    // clear() deletes durable state and only clears memory after the file
+    // operations have completed successfully.
+    projected.record('profile_close', 'safe-profile');
+    const projectedFile = path.join(projectedDir, 'behavior-events.json');
+    assert.strictEqual(fs.existsSync(projectedFile), true);
+    projected.clear();
+    assert.strictEqual(fs.existsSync(projectedFile), false);
+    assert.deepStrictEqual(projected.listEvents(), []);
+
+    const failingDir = fs.mkdtempSync(path.join(directory, 'lhm-clear-fail-'));
+    const failing = new BehaviorMonitor(failingDir, () => time);
+    failing.record('profile_open', 'kept-after-failure');
+    const originalRmSync = fs.rmSync;
+    try {
+      fs.rmSync = (target, options) => {
+        if (target === failing.file) throw Object.assign(new Error('synthetic EBUSY'), { code: 'EBUSY' });
+        return originalRmSync(target, options);
+      };
+      assert.throws(() => failing.clear(), /synthetic EBUSY/);
+    } finally {
+      fs.rmSync = originalRmSync;
+    }
+    assert.strictEqual(failing.listEvents().length, 1,
+      'failed durable deletion must not clear in-memory evidence');
+
     // Mọi sự kiện ghi từ main process phải thuộc đúng tập dữ liệu tối thiểu
     // mà BehaviorMonitor chấp nhận. Test này ngăn một action mới làm hỏng
     // luồng tạo/lưu hồ sơ sau khi thao tác chính đã thành công.

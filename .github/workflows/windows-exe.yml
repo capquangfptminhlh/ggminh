@@ -19,6 +19,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Verify build provenance and release evidence tools
+        run: |
+          node test/write-build-info.js
+          node test/release-evidence.js
+      - name: Write immutable build provenance
+        run: node tools/write-build-info.js
       - name: Run verification tests
         run: npm test
       - name: Windows Win32 helper smoke test
@@ -35,12 +41,47 @@ jobs:
         run: node test/real-chromium-smoke.js
       - name: Build Windows installer
         run: npm run build:win
+      - name: Verify packaged build provenance
+        shell: pwsh
+        run: |
+          $asarPath = Join-Path $PWD 'dist\win-unpacked\resources\app.asar'
+          if (-not (Test-Path -LiteralPath $asarPath)) {
+            throw 'Packaged app.asar is missing'
+          }
+          node -e "const asar=require('@electron/asar'); const raw=asar.extractFile(process.argv[1], 'build-info.json'); const info=JSON.parse(raw.toString('utf8')); if(!/^[0-9a-f]{40}$/.test(info.commit)) throw Error('Packaged build-info commit is not a full SHA'); if(info.commit!==process.env.GITHUB_SHA.toLowerCase()) throw Error('Packaged build-info commit does not match checkout'); if(info.schema!=='lhm.build-info.v1') throw Error('Unexpected packaged build-info schema'); console.log(JSON.stringify({packagedCommit:info.commit,appVersion:info.appVersion}));" "$asarPath"
       - name: Verify packaged Win32 helper is unpacked
         shell: pwsh
         run: |
           if (-not (Test-Path ".\dist\win-unpacked\resources\app.asar.unpacked\src\ops\windowControl.ps1")) {
             throw "PowerShell helper missing from Electron unpacked bundle"
           }
+      - name: Verify external bundled engine staging
+        shell: pwsh
+        run: |
+          $resources = ".\\dist\\win-unpacked\\resources\\lhm-engines"
+          if (-not (Test-Path (Join-Path $resources "README.md"))) {
+            throw "External bundled browser resources missing from packaged installer"
+          }
+          if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\bundled-engines") {
+            throw "Bundled engine resources unexpectedly duplicated inside app bundle"
+          }
+          if (-not (Test-Path ".\\dist\\win-unpacked\\resources\\lhm-camoufox\\README.md")) {
+            throw "Camoufox external release staging directory missing"
+          }
+          if (Test-Path ".\\dist\\win-unpacked\\resources\\app.asar.unpacked\\resources\\camoufox-engine") {
+            throw "Camoufox resource folder was packed inside app bundle unexpectedly"
+          }
+          $extractor = Join-Path $PWD "dist/win-unpacked/resources/app.asar.unpacked/tools/extract-signed-engine.ps1"
+          if (-not (Test-Path $extractor)) {
+            throw "Signed extraction helper missing from unpacked Electron resources"
+          }
+          $camoufoxStaging = Join-Path $PWD "dist/win-unpacked/resources/lhm-camoufox"
+          foreach ($unsafe in @("camoufox.exe", "release.json", "publisher-ed25519.pub")) {
+            if (Test-Path (Join-Path $camoufoxStaging $unsafe)) {
+              throw "Draft preview unexpectedly contains unapproved Camoufox commercial asset: $unsafe"
+            }
+          }
+          node -e "const m=require('./src/engine/bundledEngineManager'); if(typeof m.BundledEngineManager!=='function')process.exit(1)"
       - name: Capture actual Electron UI (sample data)
         shell: pwsh
         env:
@@ -86,6 +127,23 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             }
           }
+      - name: Generate and verify release evidence
+        shell: pwsh
+        env:
+          LHM_TEST_STATUS: PASS
+          LHM_CHROMIUM_SMOKE_STATUS: PASS
+          LHM_PACKAGED_UI_STATUS: PASS
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath '.\dist' -Filter '*.exe' -File)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one installer, found $($installers.Count)"
+          }
+          $signature = Get-AuthenticodeSignature -LiteralPath $installers[0].FullName
+          $env:LHM_AUTHENTICODE_STATUS = $signature.Status.ToString()
+          node tools/release-evidence.js --installer $installers[0].FullName --build-info '.\build-info.json' --output '.\dist\release-evidence.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Release evidence generation failed' }
+          node tools/release-evidence.js --verify --installer $installers[0].FullName --build-info '.\build-info.json' --evidence '.\dist\release-evidence.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Release evidence verification failed' }
       - name: Upload actual Electron UI preview
         if: always()
         uses: actions/upload-artifact@v4
@@ -95,11 +153,14 @@ jobs:
             dist/workspace-*.png
             dist/packaged-ui/*.png
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 90
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
           name: LHM-Ads-Browser-Windows-x64
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/release-evidence.json
+            build-info.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90

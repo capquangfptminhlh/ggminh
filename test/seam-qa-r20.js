@@ -204,6 +204,7 @@ async function seam2() {
   const { createWarningService } = require('../src/monitor/warningService');
   const { createWarningHistory } = require('../src/monitor/warningHistory');
   const { ExitIpObservationStore } = require('../src/health/exitIpObservations');
+  const BehaviorMonitor = require('../src/monitor/behaviorMonitor');
 
   const dir = tmp('lhm-r20-s2-');
   try {
@@ -237,7 +238,7 @@ async function seam2() {
     assert.ok(slice.includes('clear-warning-history'), 'handler slice extracted');
     const handlers = {};
     const ipcMain = { handle: (ch, fn) => { handlers[ch] = fn; } };
-    const behaviorMonitor = { events: [], getReport: () => ({ alerts: [] }) };
+    const behaviorMonitor = new BehaviorMonitor(dir);
     const localHealthDrift = { report: () => null };
     new Function('ipcMain', 'behaviorMonitor', 'ipObservationStore', 'localHealthDrift',
       'createWarningService', 'scope',
@@ -354,7 +355,7 @@ async function seam4() {
           await jitter();
           const out = await observeRuntimeExitIp({
             page: stubPage, profileId: 'rt-' + (i % 3), sessionId: 'sess-rt',
-            echoUrl: 'http://echo.lab.test/ip', store, timeoutMs: 2000,
+            echoUrl: 'https://echo.lab.test/ip', store, timeoutMs: 2000,
           });
           assert.ok(out.recorded, 'runtime observation recorded');
           runtimeIps.push(out.entry.ip);

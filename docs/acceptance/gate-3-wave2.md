@@ -137,7 +137,9 @@ lệch thì báo chủ dự án, không cài đặt.
    hiện trước khi trình cài đặt mở ra:
    - Có hiện màn hình SmartScreen "Windows protected your PC" /
      nhà phát hành không xác định không? Nếu có: chụp lại, rồi
-     bấm **More info → Run anyway** để đi tiếp và ghi rõ đã bấm.
+     ghi nhận cảnh báo và tình trạng chặn. Nếu hệ thống không cho phép
+     cài đặt, đánh dấu KHÔNG ĐẠT và tạm dừng; không yêu cầu vô hiệu hóa
+     hoặc vượt qua SmartScreen/Defender để có kết quả nghiệm thu.
    - Hộp thoại UAC ghi nhà phát hành là gì (dự kiến: không xác
      định/unknown, vì bản cài chưa ký Authenticode)?
 2. Đi hết trình cài đặt (bản này cho chọn thư mục cài, không phải
@@ -148,9 +150,10 @@ lệch thì báo chủ dự án, không cài đặt.
    phát hiện) và kiểm tra Protection history xem có mục nào liên
    quan tới LHM Ads Browser trong lúc cài/chạy lần đầu không.
 4. Kiểm tra shortcut trên desktop và trong Start Menu: ứng dụng mở
-   được từ shortcut; **ghi lại icon đang hiển thị** — ở bản Preview
-   này icon riêng của sản phẩm chưa có, ứng dụng dùng icon mặc
-   định của Electron. Đây là tồn tại đã biết thuộc nhóm tài sản
+   được từ shortcut; **ghi lại icon đang hiển thị** — bản Wave R
+   hiện có `build/icon.ico`; phải xác minh icon thực tế trong bản
+   đóng gói trên máy, không mặc định icon Electron vẫn được dùng.
+   Kết quả nhận diện cần ghi riêng với kết quả tính năng
    thương mại, ghi nhận chứ không tính FAIL chức năng.
 
 **Kỳ vọng**
@@ -190,7 +193,7 @@ trên. FAIL khi cài không xong, hoặc Defender phát hiện/chặn tệp
 
 **Kỳ vọng** (đối chiếu tài liệu khách hàng, chương 1)
 
-- Dùng thử tự bắt đầu ở lần cài đầu tiên: **30 ngày, tối đa 10 hồ
+- Dùng thử tự bắt đầu ở lần cài đầu tiên: **10 ngày, tối đa 10 hồ
   sơ**, gồm tính năng hồ sơ + Automation + API cục bộ.
 - Hồ sơ thứ 11 bị chặn với thông báo rõ ràng về giới hạn dùng thử.
 - Thư mục `storage` được tạo đúng vị trí đã ghi.
@@ -761,7 +764,7 @@ tế. Không sửa tên bước, không xóa dòng NOT_RUN.
 |---|---|---|---|
 | G3-01 | Tải artifact + đối chiếu SHA-256/dung lượng | | |
 | G3-02 | Cài đặt + SmartScreen + Defender (+ ghi nhận icon) | | |
-| G3-03 | Chạy lần đầu + dùng thử 30 ngày/10 hồ sơ + trần hồ sơ | | |
+| G3-03 | Chạy lần đầu + dùng thử 10 ngày/10 hồ sơ + trần hồ sơ | | |
 | G3-04 | Hồ sơ Chromium: tạo/mở/đóng/mở lại, thông số gốc | | |
 | G3-05 | Hồ sơ Camoufox: trạng thái cấp danh tính + chặn mở khi chưa có engine | | |
 | G3-05B | Nhánh Camoufox đầy đủ với engine đã ký (có điều kiện) | | |

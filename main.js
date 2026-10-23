@@ -15,6 +15,7 @@ const { createApiServer } = require('./src/api/server');
 const BehaviorMonitor = require('./src/monitor/behaviorMonitor');
 const { createWarningService } = require('./src/monitor/warningService');
 const { createWarningHistory } = require('./src/monitor/warningHistory');
+const { validateRuntimeEchoUrl } = require('./src/health/runtimeEchoConfig');
 const { ExitIpObservationStore } = require('./src/health/exitIpObservations');
 const { MeasurementRecordStore } = require('./src/measurement/measurementRecords');
 const { createCurrentContextResolver } = require('./src/measurement/currentContext');
@@ -61,6 +62,13 @@ const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught exception in main process:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[CRITICAL] Unhandled promise rejection in main process:', reason);
+});
+
 let mainWindow = null;
 let store = null;
 let launcher = null;
@@ -72,6 +80,7 @@ let camoufoxApprovedRelease = null;
 let behaviorMonitor = null;
 let warningService = null;
 let warningHistory = null;
+let monitoringGeneration = 0;
 let ipObservationStore = null;
 let measurementRecordStore = null;
 let currentContextResolver = null;
@@ -701,6 +710,9 @@ function initIPC() {
   ipcMain.handle('start-browser', async (_, id) => {
     const opened = await launcher.start(id);
     behaviorMonitor.record('profile_open', id, 'manual');
+    const generation = monitoringGeneration;
+    const observationSink = { record: observation => generation === monitoringGeneration
+      ? ipObservationStore?.record(observation) : null };
     // Exit-IP observation (Constitution s.19/22): record what the
     // profile's configured proxy actually exits as, feeding the
     // automatic IP warnings. Fire-and-forget: a failed measurement
@@ -722,7 +734,7 @@ function initIPC() {
           const context=controller&&controller.contextFor?controller.contextFor(id):null;
           if(typeof echoUrl==='string'&&echoUrl&&context){
             void observeRuntimeExitIp({context,profileId:id,sessionId:appSessionId,
-              echoUrl,store:ipObservationStore,timeoutMs:8000}).catch(()=>{});
+              echoUrl,store:observationSink,timeoutMs:8000}).catch(()=>{});
           }
         }catch(_){}
         const p=store.getProfile(id);
@@ -730,7 +742,7 @@ function initIPC() {
         if(!proxy||!proxy.type||proxy.type==='direct'||proxy.type==='none') return;
         const result=await checkProxy(proxy);
         if(result&&typeof result.ip==='string')
-          ipObservationStore.record({profileId:id,ip:result.ip,sessionId:appSessionId,
+          observationSink.record({profileId:id,ip:result.ip,sessionId:appSessionId,
             source:'manager-process'});
       }catch(_){}
     })();
@@ -758,13 +770,15 @@ function initIPC() {
     if (typeof settings?.chromePath === 'string') allowed.chromePath = settings.chromePath;
     if (typeof settings?.geckoPath === 'string') allowed.geckoPath = settings.geckoPath;
     if (['dark', 'light'].includes(settings?.theme)) allowed.theme = settings.theme;
+    if (Object.prototype.hasOwnProperty.call(settings || {}, 'runtimeEchoUrl'))
+      allowed.runtimeEchoUrl = validateRuntimeEchoUrl(settings.runtimeEchoUrl);
     return store.updateSettings(allowed);
   });
   ipcMain.handle('get-behavior-report', () => behaviorMonitor.getReport());
   ipcMain.handle('get-warning-report', () => {
     if (!warningService) warningService = createWarningService({ seed: warningHistory ? warningHistory.seedRecords() : null });
     const report = warningService.evaluate({
-      behaviorEvents: behaviorMonitor ? behaviorMonitor.events : [],
+      behaviorEvents: behaviorMonitor ? behaviorMonitor.listEvents() : [],
       ipObservations: ipObservationStore ? ipObservationStore.list() : [],
       healthDrift: localHealthDrift ? localHealthDrift.report() : null,
       monitorAlerts: behaviorMonitor ? behaviorMonitor.getReport().alerts : [],
@@ -783,6 +797,16 @@ function initIPC() {
   ipcMain.handle('clear-warning-history', () => {
     if (warningService) warningService.reset();
     return warningHistory ? warningHistory.clear() : { ok: false, error: 'history not initialised' };
+  });
+  ipcMain.handle('clear-monitoring-data', (_, confirmed) => {
+    if (confirmed !== true) throw Error('Cần xác nhận xóa dữ liệu giám sát cục bộ.');
+    monitoringGeneration++;
+    behaviorMonitor.clear();
+    if (ipObservationStore) ipObservationStore.clear();
+    const result = warningHistory ? warningHistory.clear() : { ok: true };
+    if (!result.ok) throw Error('Không xóa được lịch sử cảnh báo: ' + result.error);
+    if (warningService) warningService.reset();
+    return { ok: true };
   });
   // Per-profile measurement records (Agent 9 contract, R15 wiring):
   // the checklist provider's Section-23 validity gate needs both the
@@ -887,9 +911,25 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
-  bundledEngine=new BundledEngineManager(app.isPackaged
+  const chromiumAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-engines')
-    :path.join(__dirname,'resources','bundled-engines'));
+    :path.join(__dirname,'resources','bundled-engines');
+  // Chromium and Camoufox both require an independent Ed25519 publisher
+  // trust anchor (publisher-ed25519.pub in their OWN engine resource root).
+  // Missing/invalid anchors disable only the bundled engine, not Chrome/Edge
+  // already installed on the customer's system.
+  let chromiumPublisherKey=null;
+  try{
+    chromiumPublisherKey=loadCamoufoxPublisherKey(chromiumAssets,{
+      licenseKey:LICENSE_PUBLIC_KEY
+    });
+  }catch(error){
+    console.warn('[Engine] Bundled Chromium publisher trust unavailable:',
+      String(error.message).slice(0,200));
+  }
+  bundledEngine=new BundledEngineManager(chromiumAssets,{
+    publicKey:chromiumPublisherKey,engine:'chromium'
+  });
   launcher.bundledEngine=bundledEngine;
   const releaseAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-camoufox')

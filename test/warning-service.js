@@ -73,6 +73,9 @@ function assertEvidenceShape(w) {
   assert.equal(w.source, 'behavior-patterns');
   assert.equal(w.level, 'medium');
   assert.equal(w.observed.count, 3);
+  assert.deepEqual(w.observed.profiles, ['a', 'b', 'c']);
+  assert.deepEqual(w.observed.values,
+    { action: 'profile_open', windowMs: 60000 });
   assert.equal(w.windowFrom, T);
   assert.equal(w.windowTo, T + 45000);
   assertEvidenceShape(w);
@@ -90,6 +93,10 @@ function assertEvidenceShape(w) {
   const w = r.warnings.find(x => x.code === 'identical_sequence');
   assert.ok(w);
   assert.deepEqual(w.observed.profiles, ['a', 'b']);
+  assert.deepEqual(w.observed.values.sequence,
+    ['profile_open', 'profile_save', 'profile_close']);
+  assert.equal(w.windowFrom, T);
+  assert.equal(w.windowTo, T + 300000);
   assertEvidenceShape(w);
 }
 
@@ -103,7 +110,63 @@ function assertEvidenceShape(w) {
   assert.deepEqual(w.observed.profiles, ['solo']);
   assert.equal(w.windowFrom, T);
   assert.equal(w.windowTo, T + 1800000);
+  assert.deepEqual(w.observed.values.intervalsMs,
+    [600000, 600000, 600000]);
+  assert.equal(w.observed.values.coefficientOfVariation, 0);
   assertEvidenceShape(w);
+}
+
+// 5b. A durable seed restores counters/history but never becomes active.
+// Re-evaluating exactly the same evidence after restart is still one
+// observation, and evidenceId is an opaque SHA-256 digest.
+{
+  let clock = T;
+  const input = { behaviorEvents: [
+    ev('profile_open', 'a', T), ev('profile_open', 'b', T + 15000),
+    ev('profile_open', 'c', T + 45000),
+  ] };
+  const first = createWarningService({ now: () => clock }).evaluate(input);
+  const seeded = createWarningService({ now: () => (clock += 60000), seed: first.history });
+  assert.equal(seeded.list().warningCount, 0);
+  assert.equal(seeded.list().history.length, 1);
+  const again = seeded.evaluate(input).warnings[0];
+  assert.equal(again.timesObserved, 1);
+  assert.equal(again.lastDetectedAt, T);
+  assert.match(again.evidenceId, /^[a-f0-9]{64}$/);
+  assert.ok(!again.evidenceId.includes('profile_open'));
+}
+
+// 5c. Duplicate source alerts with identical evidence produce one active
+// warning and one history observation, not one count per duplicate object.
+{
+  const duplicate = { code: 'repeat_open', level: 'medium', profileId: 'a',
+    count: 5, message: 'Một hồ sơ bị yêu cầu mở nhiều lần.', latestAt: T };
+  const report = createWarningService({ now: () => T }).evaluate({
+    monitorAlerts: [duplicate, { ...duplicate }],
+  });
+  assert.equal(report.warnings.filter(w => w.id.includes('repeat_open')).length, 1);
+  assert.equal(report.warnings.find(w => w.id.includes('repeat_open')).timesObserved, 1);
+}
+
+// 5d. Seed records cross a privacy boundary too: arbitrary fields and a
+// non-digest evidenceId are projected away before appearing in history.
+{
+  const first = createWarningService({ now: () => T }).evaluate({
+    behaviorEvents: [
+      ev('profile_open', 'a', T), ev('profile_open', 'b', T + 15000),
+      ev('profile_open', 'c', T + 45000),
+    ],
+  }).history[0];
+  const polluted = {
+    ...first,
+    evidenceId: 'SECRET-ARBITRARY-EVIDENCE',
+    password: 'SECRET-SEED-PASSWORD',
+    observed: { ...first.observed, clipboard: 'SECRET-SEED-CLIPBOARD' },
+  };
+  const report = createWarningService({ now: () => T, seed: [polluted] }).list();
+  assert.equal(report.history.length, 1);
+  assert.equal(report.history[0].evidenceId, null);
+  assert.ok(!JSON.stringify(report).includes('SECRET-'));
 }
 
 // 6. Malformed behaviour input fails closed as a source error, and the

@@ -110,22 +110,11 @@
     const runtimeMeasured = runtimeProfiles.includes(profileId);
     const mine = warningsForProfile(report, profileId)
       .filter(w => w.source === 'ip-observations');
-    const runtimeMine = mine.filter(w =>
-      w.observed && w.observed.values &&
-      w.observed.values.measurementSource === 'browser-runtime');
-    const runtimeRoute = runtimeMine.find(w => ROUTE_CODES.includes(w.code));
-    if (runtimeRoute) {
-      const route = runtimeRoute;
-      entries.push(warningToEntry('network-route', route));
-    } else if (runtimeMeasured) {
-      entries.push({
-        id: 'network-route', status: 'pass',
-        evidence: 'Khong co canh bao IP thoat nao cho ho so nay trong lan danh gia gan nhat',
-        observedAt: report.evaluatedAt || '',
-        method: 'Dich vu canh bao thong nhat (D3) tren quan sat IP thoat da ghi',
-        limit: 'Chi dua tren cac quan sat IP thoat ung dung da ghi lai; khong bao gom DNS/WebRTC (chua do).',
-        nextStep: '',
-      });
+    if (runtimeMeasured) {
+      entries.push(unmeasured('network-route',
+        'Có quan sát IP thoát từ runtime hồ sơ; chưa có phép đối chiếu với tuyến mạng đã khai báo.',
+        'IP ổn định hoặc thay đổi không tự chứng minh tuân thủ hay vi phạm chính sách tuyến. Quan sát IP không thay phép đo DNS/WebRTC.',
+        'Đo tuyến trên phiên hiện tại và đối chiếu với chính sách proxy của hồ sơ.'));
     } else {
       const managerProfiles = Array.isArray(d3.managerProfiles) ? d3.managerProfiles : [];
       const managerObserved = managerProfiles.includes(profileId);

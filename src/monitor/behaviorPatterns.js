@@ -9,7 +9,7 @@
  * - many profiles opened inside one tight burst window;
  * - two profiles repeating the same action sequence back to back;
  * - bulk open+close cycles across the whole app;
- * - one profile opened at near-constant, machine-like intervals.
+ * - one profile opened at near-constant intervals.
  *
  * Only application actions are analysed — no page content, no credentials,
  * no keystrokes. Warnings are operational review prompts, never a claim
@@ -42,8 +42,9 @@ function normalizeEvents(events){
 function behaviorPatternWarnings(events){
  const list=normalizeEvents(events);
  const alerts=[];
- const push=(code,level,profileId,count,message,latestAt)=>
-  alerts.push({code,level,profileId,count,message,latestAt});
+ const push=({code,level,profiles,count,message,windowFrom,windowTo,values={}})=>
+  alerts.push({code,level,profiles,profileId:profiles.length===1?profiles[0]:null,
+   count,message,windowFrom,windowTo,latestAt:windowTo,values});
 
  // Synchronized burst: >=3 distinct profiles opened within 60 seconds.
  const opens=list.filter(e=>e.action==='profile_open');
@@ -52,10 +53,13 @@ function behaviorPatternWarnings(events){
    o.at-opens[i].at<=BURST_WINDOW_MS);
   const distinct=new Set(window.map(o=>o.profileId));
   if(distinct.size>=3){
-   push('synchronized_open_burst','medium',null,distinct.size,
-    'Nhiều hồ sơ được mở gần như đồng thời trong 60 giây. Nhịp mở đồng bộ '+
-    'giữa các hồ sơ dễ tạo mẫu hành vi giống nhau; xem lại quy trình mở.',
-    Math.max(...window.map(o=>o.at)));
+   push({code:'synchronized_open_burst',level:'medium',
+    profiles:[...distinct].sort(),count:distinct.size,
+    message:'Nhiều hồ sơ được mở gần như đồng thời trong 60 giây. '+
+     'Kiểm tra lịch hoặc tác vụ điều phối nếu đây không phải chủ đích vận hành.',
+    windowFrom:Math.min(...window.map(o=>o.at)),
+    windowTo:Math.max(...window.map(o=>o.at)),
+    values:{action:'profile_open',windowMs:BURST_WINDOW_MS}});
    break;
   }
  }
@@ -73,7 +77,7 @@ function behaviorPatternWarnings(events){
    if(triple[2].at-triple[0].at>SEQUENCE_WINDOW_MS)continue;
    const key=triple.map(t=>t.action).join('>');
    if(!found.has(key))found.set(key,[]);
-   found.get(key).push(triple[2].at);
+   found.get(key).push(triple);
   }
   return found;
  };
@@ -82,16 +86,27 @@ function behaviorPatternWarnings(events){
  const ids=[...perProfileTriples.keys()];
  for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
   const a=perProfileTriples.get(ids[i]),b=perProfileTriples.get(ids[j]);
-  for(const [key,timesA] of a){
-   const timesB=b.get(key);
-   if(!timesB)continue;
-   const near=timesA.some(t=>timesB.some(u=>Math.abs(u-t)<=SEQUENCE_WINDOW_MS));
-   if(near)
-    push('identical_sequence','medium',null,2,
-     'Hai hồ sơ ('+ids[i]+', '+ids[j]+') lặp lại cùng chuỗi thao tác '+
-     key.replaceAll('>',' → ')+' trong thời gian gần nhau. Xem lại quy '+
-     'trình thao tác bị sao chép giữa các hồ sơ.',
-     Math.max(...timesA,...timesB));
+  for(const [key,triplesA] of a){
+   const triplesB=b.get(key);
+   if(!triplesB)continue;
+   let pair=null;
+   for(const ta of triplesA){
+    const tb=triplesB.find(candidate=>
+     Math.abs(candidate[2].at-ta[2].at)<=SEQUENCE_WINDOW_MS);
+    if(tb){pair=[ta,tb];break;}
+   }
+   if(pair){
+    const relevant=pair.flat();
+    push({code:'identical_sequence',level:'medium',profiles:[ids[i],ids[j]].sort(),
+     count:2,
+     message:'Hai hồ sơ ('+ids[i]+', '+ids[j]+') lặp lại cùng chuỗi thao tác '+
+      key.replaceAll('>',' → ')+' trong thời gian gần nhau. Xem lại quy '+
+      'trình thao tác được dùng cho hai hồ sơ.',
+     windowFrom:Math.min(...relevant.map(e=>e.at)),
+     windowTo:Math.max(...relevant.map(e=>e.at)),
+     values:{sequence:key.split('>'),windowMs:SEQUENCE_WINDOW_MS}});
+    break;
+   }
   }
  }
 
@@ -102,15 +117,19 @@ function behaviorPatternWarnings(events){
   const o=window.filter(e=>e.action==='profile_open').length;
   const c=window.filter(e=>e.action==='profile_close').length;
   if(o>=8&&c>=8){
-   push('bulk_open_close','medium',null,o+c,
-    'Mở/đóng hồ sơ hàng loạt trong 10 phút trên toàn ứng dụng. Kiểm tra '+
-    'tác vụ hàng loạt và nhịp thao tác.',Math.max(...window.map(e=>e.at)));
+   push({code:'bulk_open_close',level:'medium',
+    profiles:[...new Set(window.map(e=>e.profileId))].sort(),count:o+c,
+    message:'Mở/đóng hồ sơ hàng loạt trong 10 phút trên toàn ứng dụng. '+
+     'Kiểm tra tác vụ hàng loạt và nhịp thao tác.',
+    windowFrom:Math.min(...window.map(e=>e.at)),
+    windowTo:Math.max(...window.map(e=>e.at)),
+    values:{opens:o,closes:c,windowMs:SEQUENCE_WINDOW_MS}});
    break;
   }
  }
 
- // Machine-like regularity: one profile opened >=4 times at near-constant
- // intervals (coefficient of variation below 0.1).
+ // Near-constant intervals are an operational review signal only, not a
+ // conclusion about whether a person or automation performed the actions.
  for(const [id] of sequences){
   const times=opens.filter(o=>o.profileId===id).map(o=>o.at);
   if(times.length<REGULAR_MIN_OPENS)continue;
@@ -121,9 +140,13 @@ function behaviorPatternWarnings(events){
   const variance=gaps.reduce((s,g)=>s+(g-mean)**2,0)/gaps.length;
   const cv=Math.sqrt(variance)/mean;
   if(cv<0.1)
-   push('regular_interval_open','medium',id,times.length,
-    'Hồ sơ được mở theo nhịp gần như không đổi (sai lệch nhịp <10%). '+
-    'Nhịp đều như máy nên được xem lại.',times[times.length-1]);
+   push({code:'regular_interval_open',level:'medium',profiles:[id],
+    count:times.length,
+    message:'Hồ sơ được mở theo khoảng cách thời gian gần như không đổi '+
+     '(hệ số biến thiên <0,1). Kiểm tra lịch hoặc tác vụ tự động nếu '+
+     'đây không phải chủ đích vận hành.',
+    windowFrom:times[0],windowTo:times[times.length-1],
+    values:{intervalsMs:gaps,coefficientOfVariation:cv}});
  }
 
  const levelOrder={high:0,medium:1};

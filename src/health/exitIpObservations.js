@@ -117,7 +117,15 @@ class ExitIpObservationStore {
     return entry;
   }
 
-  list() { return this.entries.slice(); }
+  list() { this.prune(); return this.entries.map(entry => ({ ...entry })); }
+
+  clear() {
+    // Chỉ xóa hai file thuộc kho quan sát; lỗi I/O phải tới được UI.
+    fs.rmSync(this.file, { force: true });
+    fs.rmSync(this.file + '.tmp', { force: true });
+    this.entries = [];
+    return { ok: true };
+  }
 }
 
 module.exports = { ExitIpObservationStore, MAX_ENTRIES, MAX_AGE_MS, OBSERVATION_SOURCES, isObservationSource };

@@ -133,6 +133,10 @@ const okJson = ip => async () => ({
     // Fail-closed: invalid inputs never reach the page.
     assert.equal((await observeRuntimeExitIp({ page: stubPage(), echoUrl: ECHO })).reason, 'profile-id-required');
     assert.equal((await observeRuntimeExitIp({ page: stubPage(), profileId: 'p', echoUrl: 'ftp://x' })).reason, 'echo-url-invalid');
+    assert.equal((await observeRuntimeExitIp({ page: stubPage(), profileId: 'p', echoUrl: 'http://echo.example.com/ip' })).reason, 'echo-url-unsafe-transport');
+    assert.equal((await observeRuntimeExitIp({ page: stubPage(), profileId: 'p', echoUrl: 'https://user:pass@echo.example.com/ip' })).reason, 'echo-url-disallowed-components');
+    assert.equal((await observeRuntimeExitIp({ page: stubPage(), profileId: 'p', echoUrl: 'https://echo.example.com/ip?profile=1' })).reason, 'echo-url-disallowed-components');
+    assert.equal((await observeRuntimeExitIp({ page: stubPage(), profileId: 'p', echoUrl: 'https://echo.example.com/ip#token' })).reason, 'echo-url-disallowed-components');
     assert.equal((await observeRuntimeExitIp({ profileId: 'p', echoUrl: ECHO })).reason, 'no-page-or-context');
     assert.equal(store.list().length, 2, 'no invalid call recorded anything');
     console.log('PASS runtime observation success + fail-closed matrix');

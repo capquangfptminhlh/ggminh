@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
 const { safeWebUrls } = require('../engine/launchArgs');
 const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
+const {validateCamoufoxPreferences}=require('../engine/camoufoxPreferences');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -174,6 +175,31 @@ class Store {
         const selected = input.fingerprint ?? old.fingerprint ?? { mode: 'native' };
         if (!selected || typeof selected !== 'object' || Array.isArray(selected)) throw new Error('Invalid fingerprint configuration');
         const fp = Object.keys(selected).length ? { ...selected } : { mode: 'native' };
+        if(type==='camoufox'&&options.allowIdentity!==true){
+          // Save only documented constraints which the official generator can
+          // apply. On edit, the identity blob is immutable, even if the
+          // renderer submits a fresh plain {mode:native} fingerprint object.
+          validateCamoufoxPreferences(fp);
+          const oldPin=old.engine_type==='camoufox'&&old.fingerprint?.identity;
+          if(oldPin){
+            const existing=old.fingerprint;
+            const oldLang=existing.language||existing.languages?.[0]||null;
+            const sentLang=fp.language||fp.languages?.[0]||null;
+            const oldTz=existing.timezone||null;
+            const sentTz=fp.timezone||null;
+            if((sentLang!==null&&sentLang!==oldLang)||
+               (sentTz!==null&&sentTz!==oldTz))
+              throw Error('Danh tính Camoufox đã ghim: không thay ngôn ngữ/múi giờ của hồ sơ hiện tại. Hãy tạo hồ sơ mới.');
+            fp.identity=oldPin;
+            if(existing.language!==undefined&&fp.language===undefined)fp.language=existing.language;
+            if(existing.languages!==undefined&&fp.languages===undefined)fp.languages=existing.languages;
+            if(existing.timezone!==undefined&&fp.timezone===undefined)fp.timezone=existing.timezone;
+            if(existing.identityProvisioning!==undefined)
+              fp.identityProvisioning=existing.identityProvisioning;
+            if(existing.identityProvisioningReason!==undefined)
+              fp.identityProvisioningReason=existing.identityProvisioningReason;
+          }
+        }
         // Identity provenance gate (R13 security audit; Constitution
         // s.8/D1: a pinned Camoufox identity may only ever be drawn by
         // the official generator). A plain save can PRESERVE the blob

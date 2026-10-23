@@ -14,10 +14,11 @@ Firefox/Gecko continues to use the installed Firefox engine.
 - A release manifest enumerates and hashes **every shipped file** (SHA-256).
   The manifest's canonical fields are signed with Ed25519. The signature
   format is domain-separated from license token messages.
-- The current verifier uses the *existing* public verification key in the
-  LHM licensing manager. The offline release signer must have the matching
-  private key. A dedicated engine-release signing key should replace this
-  shared trust root before wider commercial distribution.
+- Engine manifests must be signed with a **separate Ed25519 publisher key**,
+  never with the licensing key. The offline release tool refuses to sign
+  without `LHM_ENGINE_PUBLISHER_KEY_FILE`. The runtime reads the approved
+  public key `publisher-ed25519.pub` from the bundled engine root; missing,
+  invalid or license-equal keys keep Bundled mode disabled (fail-closed).
 - The installer deliberately ships **no private signing keys** and performs
   **no third-party binary downloads**.
 - Unlisted files, invalid signatures, symlinked files, changed SHA-256 or
@@ -38,8 +39,13 @@ Firefox/Gecko continues to use the installed Firefox engine.
    `resources/bundled-engines/`, including all DLLs, locales and data files.
    Never commit these binaries or customer profiles to the public repo.
 3. Configure `LHM_ENGINE_SIGNING_KEY_FILE` to the **absolute path** of the
-   protected release private key in your CI secret facility, not the repo.
-4. Run `node tools/sign-bundled-engine.js <absolute-resource-dir> <browser-version>`.
+   protected release private key OUTSIDE the repo. Provide
+   `LHM_ENGINE_PUBLISHER_KEY_FILE` as the absolute path to the matching
+   independently generated **public** Ed25519 key.
+4. Stage the public key in each engine's distribution root as
+   `publisher-ed25519.pub` only when preparing the signed distribution;
+   ensure it is enumerated in the manifest. Run
+   `node tools/sign-bundled-engine.js <absolute-resource-dir> <browser-version>`.
    It emits `manifest.json` after signature/key verification.
 5. Run `npm test` followed by `npm run build:win`; inspect
    `dist/win-unpacked/resources/lhm-engines/` and confirm all files are
@@ -47,8 +53,9 @@ Firefox/Gecko continues to use the installed Firefox engine.
 6. Install on clean Windows VMs, verify that System and Bundled select
    different installed executables as expected, then test update/rollback,
    crash recovery, permission handling and multiple profiles.
-7. Perform Authenticode signing of the installer and appropriate internal
-   binaries with normal publisher release procedures.
+7. Follow the owner's Authenticode decision for the target release; an
+   unsigned Preview must be labelled as unsigned and is not production
+   code-signing acceptance. Never advise bypassing Windows protection.
 
 The verifier is for a **Chromium-compatible Windows exe named chrome.exe or
 msedge.exe**. Firefox is not part of this bundle. Do not assume a specific
@@ -74,8 +81,8 @@ https://www.electron.build/docs/contents/
 - A commercially licensed and tested engine binary, with actual Windows
   process smoke confirming it launches from the resource directory.
 - External code signing and distribution/license authority approval.
-- Separate engine signing trust root, updater with rollback, CI release
-  provisioning, native C++ patch tests or a full security assessment.
+- Production provisioning of an **independent** engine publisher key,
+  updater release feed/rollback, native patch tests and full assessment.
 - SQLite migration: current per-profile storage remains the local JSON store.
   This PR deliberately avoids a potentially destructive migration.
 - Any guarantee about anti-bot or Google's detection decisions.

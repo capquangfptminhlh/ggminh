@@ -38,6 +38,8 @@ const { automaticIpWarnings, normalizeObservations } =
   require('../health/autoIpWarnings');
 const { detectDrift } = require('../health/localDrift');
 const { GraphDefense } = require('../health/GraphDefense');
+const { projectWarning } = require('./warningHistory');
+const crypto = require('node:crypto');
 
 const LEVELS = { high: 3, medium: 2, notice: 1 };
 const DRIFT_STATUSES = new Set(['insufficient', 'stable', 'review', 'investigate']);
@@ -187,6 +189,18 @@ const DEFAULT_NEXT_STEPS = [
 
 function isRecord(x) { return !!x && typeof x === 'object' && !Array.isArray(x); }
 function iso(ms) { return Number.isFinite(ms) ? new Date(ms).toISOString() : null; }
+function stableJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(stableJson).join(',') + ']';
+  if (isRecord(value)) return '{' + Object.keys(value).sort()
+    .map(key => JSON.stringify(key) + ':' + stableJson(value[key])).join(',') + '}';
+  return JSON.stringify(value);
+}
+function evidenceDigest(warning) {
+  const evidence = [warning.source, warning.code, warning.observed.profiles,
+    warning.observed.sessionIds, warning.windowFrom, warning.windowTo,
+    warning.observed.values];
+  return crypto.createHash('sha256').update(stableJson(evidence)).digest('hex');
+}
 
 function makeWarning(fields) {
   const w = {
@@ -222,27 +236,14 @@ function makeWarning(fields) {
 function fromBehaviorPatterns(events, evaluatedAt) {
   const normalised = normalizeEvents(events); // throws on malformed input
   const report = behaviorPatternWarnings(normalised);
-  const warnings = report.alerts.map(alert => {
-    // D2 messages carry the profile pair for identical_sequence only in
-    // prose; extract it strictly, otherwise leave profiles empty and let
-    // count + summary carry the fact.
-    let profiles = alert.profileId ? [alert.profileId] : [];
-    if (alert.code === 'identical_sequence') {
-      const m = /^Hai hồ sơ \(([^,]+), ([^)]+)\)/.exec(alert.message || '');
-      if (m) profiles = [m[1], m[2]];
-    }
-    let relevant = normalised;
-    if (alert.profileId)
-      relevant = normalised.filter(e => e.profileId === alert.profileId);
-    const times = relevant.map(e => e.at);
-    return makeWarning({
+  const warnings = report.alerts.map(alert => makeWarning({
       source: 'behavior-patterns', code: alert.code, level: alert.level,
-      summary: alert.message, profiles, count: alert.count,
-      windowFrom: times.length ? Math.min(...times) : null,
-      windowTo: times.length ? Math.max(...times) : null,
+      summary: alert.message, profiles: alert.profiles.slice(), count: alert.count,
+      values: { ...alert.values },
+      windowFrom: alert.windowFrom,
+      windowTo: alert.windowTo,
       evaluatedAt,
-    });
-  });
+    }));
   return { warnings, meta: { eventsAnalysed: report.eventsAnalysed } };
 }
 
@@ -414,10 +415,8 @@ function createWarningService({ now = () => Date.now(), seed = null } = {}) {
   // fields over from the previous registry entry, so no other change
   // is needed.
   if (Array.isArray(seed)) for (const w of seed) {
-    if (isRecord(w) && typeof w.id === 'string' &&
-        Number.isFinite(w.firstDetectedAt) &&
-        Number.isInteger(w.timesObserved) && w.timesObserved > 0)
-      registry.set(w.id, w);
+    const projected = projectWarning(w);
+    if (projected) registry.set(projected.id, projected);
   }
   let lastSources = {};
 
@@ -462,11 +461,13 @@ function createWarningService({ now = () => Date.now(), seed = null } = {}) {
       run('behaviorMonitor', true,
         () => fromMonitorAlerts(input.monitorAlerts, evaluatedAt), '');
 
+    const uniqueFresh = [];
+    const seenEvidence = new Set();
     for (const w of fresh) {
-      w.evidenceId = JSON.stringify([
-        w.source, w.code, w.observed.profiles, w.observed.sessionIds,
-        w.windowFrom, w.windowTo, w.observed.values,
-      ]);
+      w.evidenceId = evidenceDigest(w);
+      const evidenceKey = w.id + ':' + w.evidenceId;
+      if (seenEvidence.has(evidenceKey)) continue;
+      seenEvidence.add(evidenceKey);
       const prev = registry.get(w.id);
       if (prev) {
         w.firstDetectedAt = prev.firstDetectedAt;
@@ -479,8 +480,9 @@ function createWarningService({ now = () => Date.now(), seed = null } = {}) {
         w.lastDetectedAt = evaluatedAt;
       }
       registry.set(w.id, w);
+      uniqueFresh.push(w);
     }
-    active = fresh;
+    active = uniqueFresh;
     lastSources = sources;
     return report(sources, evaluatedAt);
   }

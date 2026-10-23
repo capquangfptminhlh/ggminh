@@ -5,8 +5,8 @@
 // Key separation (constitution section 8): engine manifests are signed with
 // a dedicated engine publisher key, NEVER with the application license
 // signing key. Camoufox manifests require an explicit publisher public key
-// file (LHM_ENGINE_PUBLISHER_KEY_FILE); a publisher key identical to the
-// license key is refused for every engine. The tool also refuses to sign
+// file (LHM_ENGINE_PUBLISHER_KEY_FILE) for EVERY engine; a publisher key
+// identical to the license key is refused for every engine. The tool also refuses to sign
 // a tree that contains standalone private key material, and refuses a
 // signing key file located inside the tree being packaged.
 const fs=require('fs');
@@ -46,8 +46,9 @@ function issueManifest({root,version,keyFile,engine='chromium',publisherKeyFile=
  const privateKey=crypto.createPrivateKey(fs.readFileSync(keyFile));
  if(privateKey.asymmetricKeyType!=='ed25519')
   throw Error('Engine release signing key must use Ed25519');
- // Resolve the expected publisher public key. A separately provisioned
- // publisher key file wins; Camoufox has no legacy fallback at all.
+ // No engine has a legacy fallback to the app license key.
+ if(!publisherKeyFile)
+  throw Error('Every engine manifest requires an independent publisher public key file');
  let expectedKey;
  if(publisherKeyFile){
   if(typeof publisherKeyFile!=='string'||!path.isAbsolute(publisherKeyFile))
@@ -57,10 +58,6 @@ function issueManifest({root,version,keyFile,engine='chromium',publisherKeyFile=
    throw Error('Engine publisher public key must use Ed25519');
   if(spkiDer(expectedKey).equals(spkiDer(LICENSE_PUBLIC_KEY)))
    throw Error('Engine publisher key must be independent of the application license signing key');
- }else if(engine==='camoufox'){
-  throw Error('Camoufox engine manifests require a separate publisher key file; the license signing key is not accepted');
- }else{
-  expectedKey=LICENSE_PUBLIC_KEY;
  }
  const entry=engine==='camoufox'?'camoufox.exe':'chrome.exe';
  const filenames=listFiles(root);

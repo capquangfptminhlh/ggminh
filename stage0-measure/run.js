@@ -119,6 +119,8 @@ async function run(){
  });
  const tokens={a:crypto.randomBytes(16).toString('hex'),b:crypto.randomBytes(16).toString('hex')};
  let cleanupError=null;
+ let phase='preflight';
+ const enter=name=>{phase=name;console.log('[Stage-0 phase] '+name)};
  const report={
   classification:'LOCAL_STAGE0_DIAGNOSTIC_ONLY',
   executedAt:new Date().toISOString(),
@@ -134,23 +136,34 @@ async function run(){
   caveat:'Isolation at a local origin does not prove websites cannot associate profiles'
  };
  try{
+  enter('launch-a');
   const a=await controller.launch(profile('stage0_a'));
+  enter('launch-b');
   const b=await controller.launch(profile('stage0_b'));
+  enter('create-pages');
   const ap=await a.context.newPage(),bp=await b.context.newPage();
+  enter('navigate');
   await Promise.all([ap.goto(server.url),bp.goto(server.url)]);
+  enter('write-a');
   await writeValues(ap,tokens.a);
+  enter('read-b-before');
   const beforeB=await readValues(bp);
+  enter('write-b');
   await writeValues(bp,tokens.b);
+  enter('capture-storage-and-exposure');
   const [afterA,afterB,exposedA,exposedB,extendedA,extendedB]=await Promise.all([
    readValues(ap),readValues(bp),captureEnvironment(ap),captureEnvironment(bp),
    captureExtended(ap),captureExtended(bp)
   ]);
+  enter('stop-both-before-restart');
   await Promise.all([controller.stop('stage0_a'),controller.stop('stage0_b')]);
+  enter('restart-both');
   const ra=await controller.launch(profile('stage0_a'));
   const rb=await controller.launch(profile('stage0_b'));
   const rap=await ra.context.newPage(),rbp=await rb.context.newPage();
   await Promise.all([rap.goto(server.url),rbp.goto(server.url)]);
   const [restartA,restartB]=await Promise.all([readValues(rap),readValues(rbp)]);
+  enter('evaluate-isolation');
   const observations=stageStorageResult(beforeB,afterA,afterB,restartA,restartB,tokens);
   report.checks={status:observations.pass?'PASS':'FAIL',...observations};
   report.browserExposedValues={
@@ -160,7 +173,7 @@ async function run(){
   };
   report.extendedEnvironment={profileA:extendedA,profileB:extendedB};
  }catch(error){
-  report.checks={status:'FAIL',errorType:error?.code||error?.name||'Error',
+  report.checks={status:'FAIL',phase,errorType:error?.code||error?.name||'Error',
    reason:String(error.message||error).slice(0,280)};
  }finally{
   for(const id of ['stage0_a','stage0_b']){

@@ -7,6 +7,7 @@ const TEN_MIN = 10 * 60 * 1000;
 const MAX_EVENTS = 1200;
 const ALLOWED = new Set(['profile_open', 'profile_close', 'profile_save', 'profile_delete']);
 const SOURCES = new Set(['manual', 'api']);
+const PROFILE_ID = /^[\w-]{1,64}$/;
 
 class BehaviorMonitor {
   constructor(baseDir, now = () => Date.now()) {
@@ -28,16 +29,18 @@ class BehaviorMonitor {
 
   prune() {
     const cutoff = this.now() - RETAIN_MS;
-    this.events = this.events.filter(e =>
+    this.events = this.events.flatMap(e =>
       e && ALLOWED.has(e.action) && SOURCES.has(e.source) &&
-      typeof e.profileId === 'string' &&
+      typeof e.profileId === 'string' && PROFILE_ID.test(e.profileId) &&
       Number.isFinite(e.at) && e.at >= cutoff && e.at <= this.now()
+        ? [{ action: e.action, profileId: e.profileId, source: e.source, at: e.at }]
+        : []
     ).slice(-MAX_EVENTS);
   }
 
   record(action, profileId, source = 'manual') {
     if (!ALLOWED.has(action) || !SOURCES.has(source)) throw new Error('Invalid activity type');
-    if (typeof profileId !== 'string' || !/^[\w-]{1,64}$/.test(profileId)) throw new Error('Invalid profile ID');
+    if (typeof profileId !== 'string' || !PROFILE_ID.test(profileId)) throw new Error('Invalid profile ID');
     this.events.push({ action, profileId, source, at: this.now() });
     this.prune();
     const temporary = this.file + '.tmp';
@@ -48,6 +51,18 @@ class BehaviorMonitor {
     try { fs.chmodSync(temporary, 0o600); } catch (_) { /* best effort */ }
     fs.renameSync(temporary, this.file);
     return this.getReport();
+  }
+
+  listEvents() {
+    this.prune();
+    return this.events.map(event => ({ ...event }));
+  }
+
+  clear() {
+    fs.rmSync(this.file, { force: true });
+    fs.rmSync(this.file + '.tmp', { force: true });
+    this.events = [];
+    return { ok: true };
   }
 
   getReport() {
