@@ -106,23 +106,27 @@
     const d3 = report.sources.ipWarnings;
     const ipMeasured = d3 && d3.status === 'ok';
     if (!ipMeasured) return entries;
+    const runtimeProfiles = Array.isArray(d3.runtimeProfiles) ? d3.runtimeProfiles : [];
+    const runtimeMeasured = runtimeProfiles.includes(profileId);
     const mine = warningsForProfile(report, profileId)
       .filter(w => w.source === 'ip-observations');
-    if (mine.length) {
-      const route = mine.find(w => ROUTE_CODES.includes(w.code)) || mine[0];
-      entries.push(warningToEntry('network-route', route));
-      const shared = mine.find(w => COINCIDENCE_CODES.includes(w.code));
-      if (shared) entries.push(warningToEntry('cross-profile-coincidence', shared));
+    if (runtimeMeasured) {
+      entries.push(unmeasured('network-route',
+        'Có quan sát IP thoát từ runtime hồ sơ; chưa có phép đối chiếu với tuyến mạng đã khai báo.',
+        'IP ổn định hoặc thay đổi không tự chứng minh tuân thủ hay vi phạm chính sách tuyến. Quan sát IP không thay phép đo DNS/WebRTC.',
+        'Đo tuyến trên phiên hiện tại và đối chiếu với chính sách proxy của hồ sơ.'));
     } else {
-      entries.push({
-        id: 'network-route', status: 'pass',
-        evidence: 'Khong co canh bao IP thoat nao cho ho so nay trong lan danh gia gan nhat',
-        observedAt: report.evaluatedAt || '',
-        method: 'Dich vu canh bao thong nhat (D3) tren quan sat IP thoat da ghi',
-        limit: 'Chi dua tren cac quan sat IP thoat ung dung da ghi lai; khong bao gom DNS/WebRTC (chua do).',
-        nextStep: '',
-      });
+      const managerProfiles = Array.isArray(d3.managerProfiles) ? d3.managerProfiles : [];
+      const managerObserved = managerProfiles.includes(profileId);
+      entries.push(unmeasured('network-route',
+        managerObserved
+          ? 'Chỉ có quan sát IP từ tiến trình quản lý cho hồ sơ này; chưa có phép đo trong runtime trình duyệt.'
+          : 'Chưa có quan sát IP thoát trong runtime trình duyệt cho hồ sơ này.',
+        'Quan sát của tiến trình quản lý không thay thế phép đo trong runtime hồ sơ; DNS và WebRTC cũng chưa được suy ra từ phép đo IP.',
+        'Cấu hình endpoint HTTPS được phép rồi chạy lại phép đo IP từ chính runtime hồ sơ.'));
     }
+    const shared = mine.find(w => COINCIDENCE_CODES.includes(w.code));
+    if (shared) entries.push(warningToEntry('cross-profile-coincidence', shared));
     return entries;
   }
 

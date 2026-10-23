@@ -52,6 +52,7 @@ const DEFAULT_FILE_NAME = 'warning-history.json';
 const MAX_ENTRIES = 1000;
 const MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 const LEVELS = new Set(['high', 'medium', 'notice']);
+const EVIDENCE_DIGEST = /^[a-f0-9]{64}$/;
 
 function isRecord(x) { return !!x && typeof x === 'object' && !Array.isArray(x); }
 function isFiniteOrNull(x) { return x === null || Number.isFinite(x); }
@@ -120,6 +121,8 @@ function projectWarning(w) {
     firstDetectedAt,
     lastDetectedAt,
     timesObserved,
+    evidenceId: typeof w.evidenceId === 'string' && EVIDENCE_DIGEST.test(w.evidenceId)
+      ? w.evidenceId : null,
   };
 }
 

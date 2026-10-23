@@ -6,6 +6,12 @@ const os=require('node:os');
 const path=require('node:path');
 const {expectedExeName,produceReleaseEvidence}=require('../tools/ci-release-evidence');
 const pkg=require('../package.json');
+const {createBuildInfo}=require('../tools/write-build-info');
+const buildInfo=createBuildInfo({commit:'1'.repeat(40),appVersion:pkg.version,
+  builtAt:'2026-10-23T00:00:00.000Z',environment:{GITHUB_ACTIONS:'true',
+    GITHUB_REPOSITORY:'capquangfptminhlh/ggminh',GITHUB_REF:'refs/heads/test',
+    GITHUB_WORKFLOW:'Build Windows EXE',GITHUB_RUN_ID:'39835712310'}});
+const provenance={buildInfo,packagedBuildInfo:Buffer.from(JSON.stringify(buildInfo))};
 const name=expectedExeName(pkg);
 assert.equal(name,'LHM-Ads-Browser-'+pkg.version+'-Preview-Setup-x64.exe');
 assert.throws(()=>expectedExeName({...pkg,version:'bad'}),/version/);
@@ -20,13 +26,29 @@ const screenshotNames=[
 ];
 try{
   fs.writeFileSync(path.join(root,name),Buffer.alloc(1024*1024+1,0x2b));
-  screenshotNames.forEach(file=>fs.writeFileSync(path.join(root,file),'synthetic unit-test marker'));
+  fs.mkdirSync(path.join(root,'packaged-ui'));
+  screenshotNames.forEach(file=>{
+    fs.writeFileSync(path.join(root,file),Buffer.alloc(10001,0x2b));
+    fs.writeFileSync(path.join(root,'packaged-ui',file),Buffer.alloc(10002,0x2c));
+  });
   const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,name))).digest('hex');
   const evidence=produceReleaseEvidence({dist:root,pkg,
-    sha:'1'.repeat(40),runId:'39835712310'});
+    sha:'1'.repeat(40),runId:'39835712310',...provenance});
   assert.equal(evidence.build.windowsInstaller.sha256,hash);
   assert.equal(evidence.build.windowsInstaller.bytes,1024*1024+1);
   assert.equal(evidence.build.uiCaptureCount,12);
+  assert.deepEqual(evidence.build.buildInfo,buildInfo);
+  assert.equal(evidence.build.uiCaptures.length,12);
+  assert.equal(evidence.build.uiCaptures[0].source.bytes,10001);
+  assert.equal(evidence.build.uiCaptures[0].packaged.bytes,10002);
+  const args={dist:root,pkg,sha:'1'.repeat(40),runId:'39835712310',...provenance};
+  assert.throws(()=>produceReleaseEvidence({...args,buildInfo:undefined}),/build-info/);
+  assert.throws(()=>produceReleaseEvidence({...args,
+    packagedBuildInfo:Buffer.from(JSON.stringify({...buildInfo,commit:'2'.repeat(40)}))}),/packaged.*provenance/i);
+  assert.throws(()=>produceReleaseEvidence({...args,runId:'39835712311'}),/provenance/);
+  fs.writeFileSync(path.join(root,'packaged-ui',screenshotNames[0]),'too short');
+  assert.throws(()=>produceReleaseEvidence(args),/undersized/);
+  fs.writeFileSync(path.join(root,'packaged-ui',screenshotNames[0]),Buffer.alloc(10002,0x2c));
   assert.equal(evidence.outcome,'CI_BUILD_EVIDENCE_ONLY_NOT_COMMERCIAL_APPROVAL');
   assert.equal(evidence.policy.publicReleaseAuthorized,false);
   assert.equal(evidence.policy.independentWindowsGate3,'NOT_VERIFIED_BY_CI');
@@ -35,7 +57,7 @@ try{
   assert.equal(evidence.policy.engineAndUpdateTrustMustRemainCryptographicallyVerified,true);
   fs.rmSync(path.join(root,'workspace-license-preview.png'));
   assert.throws(()=>produceReleaseEvidence({dist:root,pkg,
-    sha:'1'.repeat(40),runId:'39835712310'}),/CI UI captures missing/);
+    sha:'1'.repeat(40),runId:'39835712310',...provenance}),/CI UI captures missing/);
   assert.throws(()=>produceReleaseEvidence({dist:root,pkg,
     sha:'not-a-real-commit',runId:'39835712310'}),/commit SHA/);
   const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/windows-exe.yml'),'utf8');
@@ -59,6 +81,10 @@ try{
   assert(releaseWorkflow.includes('LHM-Release-Evidence-Windows'));
   assert(releaseWorkflow.includes('release-assets/release-evidence.json'));
   assert(releaseWorkflow.includes('--draft'), 'Never auto-publish commercial installer');
+  assert(releaseWorkflow.includes('.build.uiCaptureCount == '+screenshotNames.length),
+    'Draft gate must agree with the current capture contract');
+  assert(!workflow.includes('node tools/release-evidence.js'),
+    'Only one evidence producer may own dist/release-evidence.json');
 
   assert.equal((html.match(/href="workspaceInteractions.css"/g)||[]).length,1);
   for(const id of ['modal-ads-launch-guard','modal-performance-lab','modal-launch-readiness','modal-app-about'])

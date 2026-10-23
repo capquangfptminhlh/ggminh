@@ -74,7 +74,8 @@ async function providerEntries(env, profileId) {
 // --- factories ------------------------------------------------------
 function ipWarn(code, profiles, summary) {
   return { source: 'ip-observations', code, title: code,
-    observed: { summary: summary || code, profiles, sessionIds: [], count: null, values: {} },
+    observed: { summary: summary || code, profiles, sessionIds: [], count: null,
+      values: { measurementSource: 'browser-runtime' } },
     lastDetectedAt: '2026-10-21T14:59:00.000Z', evaluatedAt: '2026-10-21T15:00:00.000Z',
     method: 'D3', limitation: 'gioi han D3', nextSteps: ['buoc xu ly'] };
 }
@@ -84,7 +85,7 @@ function driftWarn(profiles, summary) {
     evaluatedAt: '2026-10-21T15:00:00.000Z',
     method: 'Health Drift', limitation: 'gioi han drift', nextSteps: ['buoc xu ly'] };
 }
-function warningReport({ ip = { status: 'ok' }, drift = { status: 'ok', driftStatus: 'stable' }, warnings = [] } = {}) {
+function warningReport({ ip = { status: 'ok', runtimeProfiles: ['p1'] }, drift = { status: 'ok', driftStatus: 'stable' }, warnings = [] } = {}) {
   return { evaluatedAt: '2026-10-21T15:00:00.000Z',
     sources: { ipWarnings: ip, healthDrift: drift }, warnings };
 }
@@ -123,14 +124,16 @@ function envWithData(data) {
       ipWarn('shared_exit_ip', ['p1', 'p2'], 'Chung IP thoat'),
     ] }), measurementRecord: null });
     const e = await providerEntries(env, 'p1');
-    assert.equal(e['network-route'].status, 'fail');
+    assert.equal(e['network-route'].status, 'unmeasured', 'IP change alone does not prove a route-policy violation');
     assert.equal(e['cross-profile-coincidence'].status, 'fail');
     console.log('PASS provider ip fail branches');
   }
   { // 2: measured sources, no warnings, no record
     const env = envWithData({ warningReport: warningReport({}), measurementRecord: null });
     const e = await providerEntries(env, 'p1');
-    assert.equal(e['network-route'].status, 'pass');
+    assert.equal(e['network-route'].status, 'unmeasured', 'one runtime sample without declared-route comparison is not acceptance');
+    assert.match(e['network-route'].limit, /chính sách|tuyến/i);
+    assert.equal(e['network-route'].observedAt, '', 'evaluation time must not masquerade as measurement time');
     assert.equal(e['no-unexpected-drift'].status, 'unmeasured');
     assert.match(e['no-unexpected-drift'].evidence, /toàn đội/);
     for (const id of ['storage-isolation', 'self-consistency', 'pinned-identity']) {
@@ -138,6 +141,16 @@ function envWithData(data) {
       assert.match(e[id].evidence, /không có bản ghi/i);
     }
     console.log('PASS provider measured-but-empty branches');
+  }
+  { // 2b: manager process is useful context, but not runtime evidence
+    const env = envWithData({ warningReport: warningReport({
+      ip: { status: 'ok', runtimeProfiles: [], managerProfiles: ['p1'] },
+    }), measurementRecord: null });
+    const e = await providerEntries(env, 'p1');
+    assert.equal(e['network-route'].status, 'unmeasured');
+    assert.match(e['network-route'].evidence, /tiến trình quản lý/i);
+    assert.match(e['network-route'].limit, /không thay thế/i);
+    console.log('PASS provider manager-only remains unmeasured');
   }
   { // 3: good record -> three stage0 criteria pass with exact counts
     const env = envWithData({ warningReport: warningReport({}),
@@ -252,7 +265,7 @@ function envWithData(data) {
       measurementRecord: null });
     const e = await providerEntries(env, 'p1');
     assert.equal(e['no-unexpected-drift'].status, 'fail');
-    assert.equal(e['network-route'].status, 'fail');
+    assert.equal(e['network-route'].status, 'unmeasured');
     console.log('PASS provider ip-change drift branch');
   }
   { // 15: zero comparable identity fields -> unmeasured, never pass

@@ -8,6 +8,10 @@ on:
       - integration/v5.8-core-selective
       - feature/d1-camoufox-per-profile-identity
       - integration/v5.8-phase-c
+      - integration/v5.8-wave-r
+      - release/v5.8.0-commercial-preflight-20261022
+      - codex/v58-wave-r-finish
+      - main
     paths:
       - .github/workflows/camoufox-upstream-smoke.yml
       - tools/stage-camoufox-upstream-smoke.ps1
@@ -104,26 +108,23 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
           }
-      - name: Stage-0 two-profile real Camoufox local storage and restart measurement
-        shell: pwsh
-        timeout-minutes: 12
-        run: |
-          $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
-          # EXE comes from the upstream ZIP verified against the pinned official hash in an earlier step.
-          node stage0-measure/run.js
-          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox Stage-0 isolation result was not PASS' }
-      - name: Publish only synthetic Stage-0 measurements (never browser binaries)
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Restore Node.js 22 for official identity generator
+        uses: actions/setup-node@v4
         with:
-          name: LHM-Stage0-Camoufox-Synthetic-Report
-          path: stage0-measure-results/stage0-local-report.json
-          if-no-files-found: ignore
+          node-version: '22'
       - name: Generate two pinned identities with the official launcher
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $runtime=Join-Path $env:RUNNER_TEMP 'lhm-camoufox-runtime'
+          New-Item -ItemType Directory -Force $runtime | Out-Null
+          if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
+            # Isolated, pinned runtime: the repository-level npm install
+            # does NOT create this prefix (root cause of D1 CI failure).
+            npm install --prefix "$runtime" --no-save --no-package-lock `
+              --ignore-scripts --no-audit --no-fund camoufox@0.5.8 playwright-core@1.62.0
+            if($LASTEXITCODE -ne 0){throw 'Install pinned launcher runtime failed'}
+          }
           if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
            throw 'Pinned camoufox launcher runtime missing'
           }
@@ -147,11 +148,16 @@ jobs:
            --out (Join-Path $env:RUNNER_TEMP 'identity-b.json')
           if($LASTEXITCODE -ne 0){throw 'Identity B generation failed'}
       - name: Measure two configured Camoufox profiles through the selective controller
+        timeout-minutes: 9
+        continue-on-error: true
         shell: pwsh
         env:
           LHM_STAGE0_IDENTITY_A: ${{ runner.temp }}\identity-a.json
           LHM_STAGE0_IDENTITY_B: ${{ runner.temp }}\identity-b.json
         run: |
+          # Configured Stage-0 must use the SHA pinned to the same verified
+          # upstream binary as the baseline; missing SHA used to fail early.
+          $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
           node stage0-measure/run-config.js
           if($LASTEXITCODE -ne 0){
            throw "Configured Stage-0 measurement failed with exit code $LASTEXITCODE"
@@ -164,6 +170,22 @@ jobs:
           path: stage0-measure-results/stage0-config-report.json
           if-no-files-found: ignore
           retention-days: 7
+      - name: Stage-0 two-profile real Camoufox local storage and restart measurement
+        shell: pwsh
+        timeout-minutes: 8
+        continue-on-error: true
+        run: |
+          $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
+          # EXE comes from the upstream ZIP verified against the pinned official hash in an earlier step.
+          node stage0-measure/run.js
+          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox Stage-0 isolation result was not PASS' }
+      - name: Publish only synthetic Stage-0 measurements (never browser binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Stage0-Camoufox-Synthetic-Report
+          path: stage0-measure-results/stage0-local-report.json
+          if-no-files-found: ignore
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
@@ -176,3 +198,10 @@ jobs:
             throw 'Upstream CI browser unexpectedly included in installed application'
           }
           Write-Host 'Verified: no Camoufox binary was committed or packaged by the smoke test.'
+
+      - name: Verify BOTH Stage-0 reports and block missing evidence
+        if: always()
+        shell: pwsh
+        run: |
+          node stage0-measure/verify-gate2-reports.js
+          if($LASTEXITCODE -ne 0){throw 'Gate 2 evidence incomplete: baseline and configured reports require independent PASS'}

@@ -11,12 +11,17 @@ function cli(argv=process.argv.slice(2),env=process.env,{publicKey=PUBLIC_KEY,cl
   values[argv[i]]=argv[i+1];
  }
  for(const k of Object.keys(values))
-  if(!['--key','--installation','--customer','--plan','--months','--max-profiles','--enforcement'].includes(k))
+  if(!['--key','--installation','--customer','--plan','--months','--days','--max-profiles','--enforcement'].includes(k))
    throw Error('Unknown issuer argument: '+k);
- for(const k of ['--key','--installation','--customer','--plan','--months'])
+ for(const k of ['--key','--installation','--customer','--plan'])
   if(!values[k])throw Error('Missing '+k);
- const months=Number(values['--months']);
- if(!Number.isInteger(months)||months<1||months>12)throw Error('Months must be 1–12');
+ if(Boolean(values['--months'])===Boolean(values['--days']))
+  throw Error('Supply exactly one of --months or --days');
+ const byDays=values['--days']!==undefined;
+ const months=Number(values['--months']),days=Number(values['--days']);
+ if(byDays){
+  if(!Number.isInteger(days)||days<1||days>365)throw Error('Days must be 1–365');
+ }else if(!Number.isInteger(months)||months<1||months>12)throw Error('Months must be 1–12');
  const maxProfiles=Number(values['--max-profiles']||100);
  if(!Number.isInteger(maxProfiles)||maxProfiles<1||maxProfiles>10000)
   throw Error('Profile cap must be 1–10000');
@@ -34,7 +39,8 @@ function cli(argv=process.argv.slice(2),env=process.env,{publicKey=PUBLIC_KEY,cl
  catch(_){throw Error('Issuer key or passphrase invalid');}
  const now=new Date(clock()),end=new Date(now);
  if(!Number.isFinite(now.getTime()))throw Error('Issuer clock invalid');
- end.setUTCMonth(end.getUTCMonth()+months);
+ if(byDays)end.setTime(now.getTime()+days*86400000);
+ else end.setUTCMonth(end.getUTCMonth()+months);
  const plans={
   starter:['profiles'],
   pro:['api','automation','profiles'],

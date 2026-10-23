@@ -103,6 +103,67 @@ const {makeAuthority,readRegistry}=require('../src/licensing/authority');
   assert(!json.includes(password));
   assert(!json.includes('PRIVATE KEY'));
   assert(!json.includes('Cookies'));
+  // Exact-day rentals retain the existing token format and owner-sweep default.
+  const dayFile=path.join(base,'exact-day-ledger.json');
+  const dayCustomer=addCustomer(dayFile,'Day rental',crypto.randomUUID(),{now:clock});
+  const dayOptions={customerId:dayCustomer.id,plan:'pro',maxProfiles:40,
+   privateKey:keys.privateKey,publicKey,now:clock};
+  for(const [start,expected] of [
+   ['2026-10-20T09:00:00.000Z','2026-11-19T09:00:00.000Z'],
+   ['2027-02-01T09:00:00.000Z','2027-03-03T09:00:00.000Z'],
+   ['2028-02-01T09:00:00.000Z','2028-03-02T09:00:00.000Z']
+  ]){
+   now=Date.parse(start);
+   const rental=issue(dayFile,{...dayOptions,days:30});
+   const rentalClaims=verifyLicense(rental.token,publicKey);
+   assert.strictEqual(rentalClaims.expiresAt,expected);
+   assert.strictEqual(rentalClaims.enforcementMode,'owner_sweep');
+   assert.strictEqual(rentalClaims.version,2);
+   assert.strictEqual(Date.parse(rentalClaims.expiresAt)-Date.parse(rentalClaims.issuedAt),30*86400000);
+  }
+  now=Date.parse('2026-10-20T09:00:00.000Z');
+  const firstRental=issue(dayFile,{...dayOptions,days:30});
+  now+=10*86400000;
+  const earlyRenewal=issue(dayFile,{...dayOptions,days:30,renewFrom:firstRental.record.licenseId});
+  assert.strictEqual(earlyRenewal.record.expiresAt,'2026-12-19T09:00:00.000Z');
+  assert.strictEqual(earlyRenewal.record.renewalOf,firstRental.record.licenseId);
+  now=Date.parse('2027-01-01T09:00:00.000Z');
+  assert.strictEqual(issue(dayFile,{...dayOptions,days:30,renewFrom:firstRental.record.licenseId})
+   .record.expiresAt,'2027-01-31T09:00:00.000Z');
+  for(const days of [1,365])assert.strictEqual(Date.parse(issue(dayFile,{...dayOptions,days})
+   .record.expiresAt)-now,days*86400000);
+  const beforeInvalid=fs.readFileSync(dayFile,'utf8');
+  for(const days of [0,-1,366,1.5,NaN,Infinity,'30',null])
+   assert.throws(()=>issue(dayFile,{...dayOptions,days}),/Invalid license issuance/);
+  assert.throws(()=>issue(dayFile,{...dayOptions}),/Invalid license issuance/);
+  assert.throws(()=>issue(dayFile,{...dayOptions,days:30,months:1}),/Invalid license issuance/);
+  assert.throws(()=>issue(dayFile,{...dayOptions,days:30,months:null}),/Invalid license issuance/);
+  const longRental=readLedger(dayFile).licenses.at(-1);
+  assert.throws(()=>issue(dayFile,{...dayOptions,days:30,renewFrom:longRental.licenseId}),/370-day/);
+  assert.strictEqual(fs.readFileSync(dayFile,'utf8'),beforeInvalid,'Rejected durations do not mutate the ledger');
+  now=Date.parse('2028-01-31T09:00:00.000Z');
+  assert.strictEqual(issue(dayFile,{...dayOptions,months:1}).record.expiresAt,
+   '2028-02-29T09:00:00.000Z','Legacy ledger month clamp is unchanged');
+  const dailyCli=commands(['issue',dayFile,dayCustomer.id,'pro','--days','30','40',pem],
+   {now:clock,env,publicKey});
+  assert.strictEqual(dailyCli.record.expiresAt,'2028-03-01T09:00:00.000Z');
+  assert.strictEqual(dailyCli.record.enforcementMode,'owner_sweep');
+  const dailyRenewed=commands(['renew',dayFile,dailyCli.record.licenseId,'--days','30',pem],
+   {now:clock,env,publicKey});
+  assert.strictEqual(dailyRenewed.record.expiresAt,'2028-03-31T09:00:00.000Z');
+  assert.strictEqual(dailyRenewed.record.enforcementMode,'owner_sweep');
+  assert.strictEqual(commands(['issue',dayFile,dayCustomer.id,'pro','--days','30','40',pem,'strict'],
+   {now:clock,env,publicKey}).record.enforcementMode,'strict');
+  for(const duration of ['0','366','1.5','nope']){
+   assert.throws(()=>commands(['issue',dayFile,dayCustomer.id,'pro','--days',duration,'40',pem],
+    {now:clock,env,publicKey}),/Invalid license issuance/);
+   assert.throws(()=>commands(['renew',dayFile,dailyCli.record.licenseId,'--days',duration,pem],
+    {now:clock,env,publicKey}),/Invalid license issuance/);
+  }
+  assert.throws(()=>commands(['issue',dayFile,dayCustomer.id,'pro','1','--days','30','40',pem],
+   {now:clock,env,publicKey}),/Usage/);
+  assert.throws(()=>commands(['renew',dayFile,dailyCli.record.licenseId,'1','--days','30',pem],
+   {now:clock,env,publicKey}),/Usage/);
   console.log('v5.4 admin ledger: customer enrollment, signed issue/renew, expiry alerts, registry revocation, loopback server and audit passed');
  }finally{
   if(server)await new Promise(resolve=>server.close(resolve));

@@ -77,6 +77,27 @@ try{
   '--plan','pro','--months','13'],{LHM_ISSUER_PASSPHRASE:passphrase}),/Months/);
  assert.throws(()=>cli(['--key',extra,'--installation',id,'--customer','QA',
   '--plan','pro','--months','1'],{}),/PASSPHRASE/);
+ const issuerArgs=['--key',extra,'--installation',id,'--customer','QA','--plan','pro'];
+ const issuerEnv={LHM_ISSUER_PASSPHRASE:passphrase};
+ for(const [start,expected] of [
+  ['2026-10-20T12:00:00.000Z','2026-11-19T12:00:00.000Z'],
+  ['2027-02-01T12:00:00.000Z','2027-03-03T12:00:00.000Z'],
+  ['2028-02-01T12:00:00.000Z','2028-03-02T12:00:00.000Z']
+ ]){
+  const issued=cli([...issuerArgs,'--days','30'],issuerEnv,{publicKey:pub,clock:()=>Date.parse(start)});
+  assert.strictEqual(issued.expiresAt,expected);
+  assert.strictEqual(verifyLicense(issued.token,pub).enforcementMode,'strict');
+ }
+ for(const days of ['1','365'])assert.strictEqual(Date.parse(cli([...issuerArgs,'--days',days],
+  issuerEnv,{publicKey:pub,clock:()=>now}).expiresAt)-now,Number(days)*86400000);
+ for(const days of ['0','-1','366','1.5','NaN','Infinity','abc'])
+  assert.throws(()=>cli([...issuerArgs,'--days',days],issuerEnv,{publicKey:pub}),/Days/);
+ assert.throws(()=>cli([...issuerArgs,'--days','30','--months','1'],issuerEnv),/exactly one|exclusive/i);
+ assert.throws(()=>cli(issuerArgs,issuerEnv),/exactly one|Missing/i);
+ assert.throws(()=>cli([...issuerArgs,'--days','30','--enforcement','owner-sweep'],issuerEnv),/ledger-backed/);
+ assert.strictEqual(cli([...issuerArgs,'--months','1'],issuerEnv,
+  {publicKey:pub,clock:()=>Date.parse('2027-01-31T12:00:00.000Z')}).expiresAt,
+  '2027-03-03T12:00:00.000Z','Legacy standalone calendar-month overflow is unchanged');
  assert(fs.readFileSync(path.join(__dirname,'../src/licensing/manager.js'),'utf8')
   .includes('BEGIN PUBLIC KEY'));
  assert(!fs.readFileSync(path.join(__dirname,'../src/licensing/manager.js'),'utf8')

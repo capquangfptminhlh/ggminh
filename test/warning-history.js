@@ -62,6 +62,7 @@ function sharedIpReport(svc, at) {
   assert.deepEqual(e.observed.profiles, ['alpha', 'beta']);
   assert.ok(e.method.length > 0 && e.criterion.length > 0);
   assert.ok(e.limitation.length > 0 && e.nextSteps.length > 0);
+  assert.match(e.evidenceId, /^[a-f0-9]{64}$/);
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
@@ -139,6 +140,7 @@ function sharedIpReport(svc, at) {
     evaluatedAt: T0, evaluatedAtIso: null, method: 'm', criterion: 'c',
     limitation: 'l', nextSteps: ['n'],
     firstDetectedAt: T0, lastDetectedAt: T0, timesObserved: 1,
+    evidenceId: 'POLLUTED-EVIDENCE-ID-SECRET',
     keystrokeContent: 'POLLUTED-KEYSTROKES',
     password: 'POLLUTED-PASSWORD',
   };
@@ -150,6 +152,8 @@ function sharedIpReport(svc, at) {
   const entry = hist.entries()[0];
   assert.equal(entry.keystrokeContent, undefined);
   assert.equal(entry.observed.rawFormContent, undefined);
+  assert.equal(entry.evidenceId, null,
+    'only an opaque SHA-256 evidence digest may be persisted');
   fs.rmSync(dir, { recursive: true, force: true });
 }
 

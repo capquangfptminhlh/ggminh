@@ -66,6 +66,7 @@ contextBridge.exposeInMainWorld('api', {
   getBehaviorReport: () => ipcRenderer.invoke('get-behavior-report'),
   getWarningReport: () => ipcRenderer.invoke('get-warning-report'),
   clearWarningHistory: () => ipcRenderer.invoke('clear-warning-history'),
+  clearMonitoringData: confirmed => ipcRenderer.invoke('clear-monitoring-data', confirmed),
   getProfileMeasurement: (profileId) => ipcRenderer.invoke('get-profile-measurement', profileId),
   provisionCamoufoxIdentity: (id) => ipcRenderer.invoke('provision-camoufox-identity', id),
   getApiStatus: () => ipcRenderer.invoke('get-api-status'),

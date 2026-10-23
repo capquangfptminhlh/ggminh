@@ -9,8 +9,8 @@ const { detectDrift } = require('../src/health/localDrift');
 const T = Date.parse('2026-10-21T00:00:00Z');
 const ev = (action, profileId, at, source = 'manual') =>
   ({ action, profileId, source, at });
-const ob = (profileId, ip, observedAt, sessionId) =>
-  ({ profileId, ip, observedAt, sessionId });
+const ob = (profileId, ip, observedAt, sessionId, source) =>
+  ({ profileId, ip, observedAt, sessionId, ...(source ? { source } : {}) });
 
 // Every normalised warning must answer the six Mục 22 questions.
 function assertEvidenceShape(w) {
@@ -73,6 +73,9 @@ function assertEvidenceShape(w) {
   assert.equal(w.source, 'behavior-patterns');
   assert.equal(w.level, 'medium');
   assert.equal(w.observed.count, 3);
+  assert.deepEqual(w.observed.profiles, ['a', 'b', 'c']);
+  assert.deepEqual(w.observed.values,
+    { action: 'profile_open', windowMs: 60000 });
   assert.equal(w.windowFrom, T);
   assert.equal(w.windowTo, T + 45000);
   assertEvidenceShape(w);
@@ -90,6 +93,10 @@ function assertEvidenceShape(w) {
   const w = r.warnings.find(x => x.code === 'identical_sequence');
   assert.ok(w);
   assert.deepEqual(w.observed.profiles, ['a', 'b']);
+  assert.deepEqual(w.observed.values.sequence,
+    ['profile_open', 'profile_save', 'profile_close']);
+  assert.equal(w.windowFrom, T);
+  assert.equal(w.windowTo, T + 300000);
   assertEvidenceShape(w);
 }
 
@@ -103,7 +110,63 @@ function assertEvidenceShape(w) {
   assert.deepEqual(w.observed.profiles, ['solo']);
   assert.equal(w.windowFrom, T);
   assert.equal(w.windowTo, T + 1800000);
+  assert.deepEqual(w.observed.values.intervalsMs,
+    [600000, 600000, 600000]);
+  assert.equal(w.observed.values.coefficientOfVariation, 0);
   assertEvidenceShape(w);
+}
+
+// 5b. A durable seed restores counters/history but never becomes active.
+// Re-evaluating exactly the same evidence after restart is still one
+// observation, and evidenceId is an opaque SHA-256 digest.
+{
+  let clock = T;
+  const input = { behaviorEvents: [
+    ev('profile_open', 'a', T), ev('profile_open', 'b', T + 15000),
+    ev('profile_open', 'c', T + 45000),
+  ] };
+  const first = createWarningService({ now: () => clock }).evaluate(input);
+  const seeded = createWarningService({ now: () => (clock += 60000), seed: first.history });
+  assert.equal(seeded.list().warningCount, 0);
+  assert.equal(seeded.list().history.length, 1);
+  const again = seeded.evaluate(input).warnings[0];
+  assert.equal(again.timesObserved, 1);
+  assert.equal(again.lastDetectedAt, T);
+  assert.match(again.evidenceId, /^[a-f0-9]{64}$/);
+  assert.ok(!again.evidenceId.includes('profile_open'));
+}
+
+// 5c. Duplicate source alerts with identical evidence produce one active
+// warning and one history observation, not one count per duplicate object.
+{
+  const duplicate = { code: 'repeat_open', level: 'medium', profileId: 'a',
+    count: 5, message: 'Một hồ sơ bị yêu cầu mở nhiều lần.', latestAt: T };
+  const report = createWarningService({ now: () => T }).evaluate({
+    monitorAlerts: [duplicate, { ...duplicate }],
+  });
+  assert.equal(report.warnings.filter(w => w.id.includes('repeat_open')).length, 1);
+  assert.equal(report.warnings.find(w => w.id.includes('repeat_open')).timesObserved, 1);
+}
+
+// 5d. Seed records cross a privacy boundary too: arbitrary fields and a
+// non-digest evidenceId are projected away before appearing in history.
+{
+  const first = createWarningService({ now: () => T }).evaluate({
+    behaviorEvents: [
+      ev('profile_open', 'a', T), ev('profile_open', 'b', T + 15000),
+      ev('profile_open', 'c', T + 45000),
+    ],
+  }).history[0];
+  const polluted = {
+    ...first,
+    evidenceId: 'SECRET-ARBITRARY-EVIDENCE',
+    password: 'SECRET-SEED-PASSWORD',
+    observed: { ...first.observed, clipboard: 'SECRET-SEED-CLIPBOARD' },
+  };
+  const report = createWarningService({ now: () => T, seed: [polluted] }).list();
+  assert.equal(report.history.length, 1);
+  assert.equal(report.history[0].evidenceId, null);
+  assert.ok(!JSON.stringify(report).includes('SECRET-'));
 }
 
 // 6. Malformed behaviour input fails closed as a source error, and the
@@ -146,6 +209,9 @@ function assertEvidenceShape(w) {
   assert.equal(r.overall, 'high');
   assert.equal(r.sources.ipWarnings.status, 'ok');
   assert.equal(r.sources.ipWarnings.observations, 3);
+  assert.deepEqual(r.sources.ipWarnings.runtimeProfiles, []);
+  assert.deepEqual(r.sources.ipWarnings.managerProfiles, []);
+  assert.deepEqual(r.sources.ipWarnings.unlabelledProfiles, ['a', 'b']);
   const w = r.warnings.find(x => x.code === 'shared_exit_ip');
   assert.ok(w);
   assert.equal(w.level, 'high');
@@ -155,6 +221,22 @@ function assertEvidenceShape(w) {
   assert.equal(w.windowFrom, T + 1000);
   assert.equal(w.windowTo, T + 3000);
   assertEvidenceShape(w);
+}
+
+// 8b. Nguồn quan sát phải được giữ ở metadata để UI không biến phép đo
+// của tiến trình quản lý thành bằng chứng IP thoát trong runtime hồ sơ.
+{
+  const svc = createWarningService({ now: () => T + 900000 });
+  const r = svc.evaluate({ ipObservations: [
+    ob('a', '203.0.113.8', T + 1000, 's1', 'manager-process'),
+    ob('b', '203.0.113.9', T + 2000, 's1', 'browser-runtime'),
+    ob('c', '203.0.113.10', T + 3000, 's1'),
+  ] });
+  assert.deepEqual(r.sources.ipWarnings.runtimeProfiles, ['b']);
+  assert.deepEqual(r.sources.ipWarnings.managerProfiles, ['a']);
+  assert.deepEqual(r.sources.ipWarnings.unlabelledProfiles, ['c']);
+  assert.deepEqual(r.sources.ipWarnings.sourceCounts,
+    { browserRuntime: 1, managerProcess: 1, unlabelled: 1 });
 }
 
 // 9. IP changed mid-session: both addresses are the evidence; wording
@@ -256,8 +338,8 @@ function assertEvidenceShape(w) {
   assertEvidenceShape(w);
 }
 
-// 16. Registry: re-evaluating the same evidence accumulates detection
-// metadata; reset clears it.
+// 16. Re-reading identical evidence must not inflate history. A warning
+// disappears from the active report when its condition is gone.
 {
   let clock = T;
   const svc = createWarningService({ now: () => clock });
@@ -272,10 +354,16 @@ function assertEvidenceShape(w) {
   clock = T + 60000;
   r = svc.evaluate(input);
   w = r.warnings.find(x => x.code === 'shared_exit_ip');
-  assert.equal(w.timesObserved, 2);
+  assert.equal(w.timesObserved, 1);
   assert.equal(w.firstDetectedAt, T);
-  assert.equal(w.lastDetectedAt, T + 60000);
+  assert.equal(w.lastDetectedAt, T);
   assert.equal(svc.list().warningCount, 1);
+  r = svc.evaluate({ ipObservations: [
+    ob('a', '203.0.113.8', T + 70000, 's2'),
+    ob('b', '198.51.100.9', T + 71000, 's2'),
+  ] });
+  assert.equal(r.warningCount, 0, 'resolved condition is not an active warning');
+  assert.equal(r.history.length, 1, 'resolved warning remains in service history');
   svc.reset();
   assert.equal(svc.list().warningCount, 0);
 }

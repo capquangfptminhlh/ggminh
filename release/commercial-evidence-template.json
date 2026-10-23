@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "product": "LHM Ads Browser",
+  "targetVersion": "5.8.0",
+  "source": {
+    "branch": "release/v5.8.0-commercial-preflight-20261022",
+    "sha": null
+  },
+  "gate1": {
+    "status": "NOT_RUN",
+    "gitHubRun": null,
+    "verifiedCommit": null,
+    "testSteps": null
+  },
+  "gate2": {
+    "status": "NOT_RUN",
+    "windowsCiRun": null,
+    "baselineReport": null,
+    "configuredReport": null,
+    "camoufoxEngineSha256": null
+  },
+  "build": {
+    "status": "NOT_RUN",
+    "exePath": null,
+    "exeSha256": null,
+    "ciEvidencePath": null,
+    "buildInfoPath": null,
+    "installerSha256Verified": false,
+    "installerLabel": "Preview",
+    "authenticodeStatus": "NOT_RUN"
+  },
+  "engine": {
+    "distributionStatus": "NOT_RUN",
+    "approvedOrigin": null,
+    "enginePublisherVerified": false,
+    "licensedForDistribution": false,
+    "fontsDecision": null
+  },
+  "gate3": {
+    "status": "NOT_RUN",
+    "machineWindowsVersion": null,
+    "operator": null,
+    "completedAt": null,
+    "testedExeSha256": null,
+    "evidenceDir": null,
+    "checkpoints": {}
+  },
+  "decisions": {
+    "approvedBy": null,
+    "approvedAt": null,
+    "items": {}
+  },
+  "gate4": {
+    "status": "NOT_RUN",
+    "ownerApprovalForExactSha": false,
+    "sourceSha": null,
+    "exeSha256": null,
+    "approvedBy": null,
+    "approvedAt": null
+  },
+  "note": "A template, not an acceptance report. Fill privately after measurement. Do not commit credentials, customer data, private keys, or machine identifiers."
+}

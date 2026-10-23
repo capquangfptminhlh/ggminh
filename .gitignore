@@ -5,6 +5,7 @@ data_test/
 *.log
 .DS_Store
 stage0-measure-results/
+/build-info.json
 
 # Private key material must never be committed (QA-002). Keys live
 # outside the repo (see docs/agents/agent-13/OWNER-RUNBOOK.md); public
