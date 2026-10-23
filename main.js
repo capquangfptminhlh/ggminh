@@ -294,6 +294,16 @@ function createWindow() {
              !fleetResult.status.includes('hồ sơ đã kiểm tra'))
             throw Error('Fleet Triage packaged Electron UI failed: '+JSON.stringify(fleetResult));
           writeCapture('workspace-fleet-triage-preview.png',await mainWindow.webContents.capturePage());
+          // Handoff UI smoke: secret input blank and action locked until
+          // profile selection; never include real customer/private data.
+          const handoffPanel=await mainWindow.webContents.executeJavaScript(
+            "(() => { const password=document.getElementById('tower-agency-password'); const exportBtn=document.getElementById('tower-agency-export'); const preview=document.getElementById('tower-agency-preview'); const commit=document.getElementById('tower-agency-commit'); return {visible:!!password&&!!exportBtn&&!!preview&&!!commit,secure:password?.type==='password',empty:password?.value==='',importLocked:commit?.disabled===true,exportLocked:exportBtn?.disabled===true,theme:!!document.querySelector('link[href=\\\"agencyHandoff.css\\\"]')}; })()",true);
+          if(!handoffPanel.visible||!handoffPanel.secure||!handoffPanel.empty||
+             !handoffPanel.importLocked||!handoffPanel.exportLocked||!handoffPanel.theme)
+            throw Error('Agency template handoff UI privacy gate failed: '+JSON.stringify(handoffPanel));
+          writeCapture('workspace-agency-handoff-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] Agency encrypted handoff controls validated, no secret in screenshot');
+
           await mainWindow.webContents.executeJavaScript(
             "document.getElementById('tower-done').click()",true);
           console.log('[UI smoke] Fleet Triage real local health aggregation rendered and captured');
