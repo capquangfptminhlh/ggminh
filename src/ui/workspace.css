@@ -813,3 +813,13 @@ body[data-view="dashboard"] .lhm-dashboard{padding:26px 30px!important}
 @media(prefers-reduced-motion:reduce){
   .lhm-profile-pager-actions button{transition:none!important}
 }
+
+/* Local session sync health: errors are visible without a modal or retry storm. */
+.lhm-profile-sync-status{display:inline-flex;align-items:center;gap:6px;max-width:220px;
+  font-size:11px;line-height:1.4;color:#63748a;overflow-wrap:anywhere}
+.lhm-profile-sync-status::before{content:"";width:7px;height:7px;flex:0 0 7px;
+  border-radius:50%;background:#a0aec0}
+.lhm-profile-sync-status[data-state="healthy"]::before{background:#178366}
+.lhm-profile-sync-status[data-state="error"]{color:#9b3740}
+.lhm-profile-sync-status[data-state="error"]::before{background:#c33e4b}
+@media(max-width:760px){.lhm-profile-sync-status{max-width:none;flex:1 1 100%}}
