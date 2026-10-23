@@ -259,6 +259,17 @@ function createWindow() {
             throw Error('About/Update Center UI failed: '+JSON.stringify(aboutCheck));
           await new Promise(resolve=>setTimeout(resolve,350));
           writeCapture('workspace-about-update-preview.png',await mainWindow.webContents.capturePage());
+          // Read-only commercial handoff: assert actual main-process signal
+          // collection and that no owner-approval claims are made.
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('lhm-customer-check').click()",true);
+          await new Promise(resolve=>setTimeout(resolve,900));
+          const handoffCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => ({cards:document.querySelectorAll('#lhm-customer-checks .lhm-customer-check').length,label:document.getElementById('lhm-customer-label').textContent,status:document.getElementById('lhm-customer-status').textContent,pending:document.getElementById('lhm-customer-checks').textContent.includes('chưa xác minh')}))()",true);
+          if(handoffCheck.cards!==6||handoffCheck.label==='CHƯA KIỂM TRA'||
+             !handoffCheck.status.includes('Đã kiểm tra')||!handoffCheck.pending)
+            throw Error('Customer handoff operational UI failed: '+JSON.stringify(handoffCheck));
+          writeCapture('workspace-customer-handoff-preview.png',await mainWindow.webContents.capturePage());
           await mainWindow.webContents.executeJavaScript(
             "document.getElementById('lhm-about-close').click()",true);
 
