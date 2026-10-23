@@ -282,6 +282,21 @@ function createWindow() {
           await mainWindow.webContents.executeJavaScript(
             "(() => { const id=document.getElementById('license-installation-id'); if(id)id.value='[REDACTED FOR CI SCREENSHOT]'; const token=document.getElementById('license-token'); if(token)token.value=''; })()",true);
           writeCapture('workspace-license-preview.png',await mainWindow.webContents.capturePage());
+          // Fleet Triage smoke uses actual IPC -> checkProfile -> triage aggregation.
+          // Screenshot contains synthetic/default local profiles only.
+          await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('license-done').click(); document.getElementById('btn-control-tower').click(); })()",true);
+          await new Promise(resolve=>setTimeout(resolve,1150));
+          const fleetResult=await mainWindow.webContents.executeJavaScript(
+            "(() => { const modal=document.getElementById('modal-control-tower'); const state=document.getElementById('tower-triage-status').textContent; const list=document.getElementById('tower-triage-list'); return {open:modal.classList.contains('open'),status:state,styles:!!document.querySelector('link[href=\\\"fleetTriage.css\\\"]'),list:!!list}; })()",true);
+          if(!fleetResult.open||!fleetResult.list||!fleetResult.styles||
+             !fleetResult.status.includes('hồ sơ đã kiểm tra'))
+            throw Error('Fleet Triage packaged Electron UI failed: '+JSON.stringify(fleetResult));
+          writeCapture('workspace-fleet-triage-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('tower-done').click()",true);
+          console.log('[UI smoke] Fleet Triage real local health aggregation rendered and captured');
+
           console.log('[UI smoke] Ads Guard, real metadata timing, signed-update UI, and license renewal panels verified in actual Electron');
 
         } catch (error) {
