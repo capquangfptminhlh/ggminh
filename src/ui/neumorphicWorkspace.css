@@ -98,6 +98,11 @@ input[readonly]{color:#56738f!important}
 .modal-header h2{color:var(--nm-ink)!important;letter-spacing:-.026em}
 .modal-body{background:#f3f8ff!important;color:#37516e!important}
 .form-group label{color:#294663!important;font-weight:660}
+/* Preserve specialized release-acceptance theme invariants: Ads Guard
+   expects a white URL input, and its own component background/scroll colors.
+   Global neumorphic fields must not silently override measured dialogs. */
+#modal-ads-launch-guard #ads-guard-urls{background-color:#fff!important}
+
 
 /* Video reference: softly embossed orbit, raised card, light inputs,
    bright pill CTA and a functional 3D flip on the EXISTING signed license. */
