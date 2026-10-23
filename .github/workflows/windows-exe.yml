@@ -62,7 +62,7 @@ jobs:
               throw "Electron UI capture timed out"
             }
             if ($proc.ExitCode -ne 0) { throw "Electron UI capture exited $($proc.ExitCode)" }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png", "workspace-profile-paging-preview.png")) {
               $file = Get-Item ("dist\" + $screen) -ErrorAction Stop
               if ($file.Length -lt 10000) { throw "Missing/undersized actual Electron screenshot: $screen" }
             }
@@ -86,7 +86,7 @@ jobs:
               throw "Packaged Electron UI capture timed out"
             }
             if ($proc.ExitCode -ne 0) { throw "Packaged Electron UI capture exited $($proc.ExitCode)" }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png")) {
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png", "workspace-profile-paging-preview.png")) {
               $file = Get-Item (Join-Path $capture $screen) -ErrorAction Stop
               if ($file.Length -lt 10000) { throw "Missing/undersized packaged Electron screenshot: $screen" }
             }
@@ -105,7 +105,7 @@ jobs:
             dist/packaged-ui/*.png
           if-no-files-found: ignore
           retention-days: 14
-      - name: Record installer SHA-256 and eight real UI checks
+      - name: Record installer SHA-256 and twelve real UI checks
         run: node tools/ci-release-evidence.js dist dist/release-evidence.json
       - name: Upload commercial preflight build evidence
         uses: actions/upload-artifact@v4

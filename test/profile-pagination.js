@@ -78,6 +78,7 @@ assert.equal(paginate(large, 101, 100).page, 100);
 
 const ui = path.join(__dirname, '..', 'src', 'ui');
 const html = fs.readFileSync(path.join(ui, 'index.html'),'utf8');
+const mainSource = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
 const renderer = fs.readFileSync(path.join(ui, 'renderer.js'),'utf8');
 const css = fs.readFileSync(path.join(ui, 'workspace.css'),'utf8');
 const helperScript = '<script src="profilePagination.js"></script>';
@@ -98,5 +99,9 @@ assert(html.includes('Chỉ chọn các hồ sơ trên trang hiện tại'), 'Se
 assert(renderer.includes('window.LHMTablePreferences?.apply();'), 'Column/density settings must survive');
 assert(css.includes('.lhm-profile-pager[hidden]'), 'Empty pager must be hidden');
 assert(css.includes('@media(max-width:640px)'), 'Pager must be responsive');
+assert(mainSource.includes('1000 synthetic metadata profiles:'), 'Packaged Electron must exercise real 1,000-profile DOM');
+assert(mainSource.includes("writeCapture('workspace-profile-paging-preview.png'"), 'Real paging screenshot must be captured');
+assert(mainSource.includes("pagerQa.selectedCrossPage!==51"), 'Cross-page bulk selection must be verified in live Electron');
+assert(mainSource.includes("pagerQa.filtered.first!=='qa_1000'"), 'Full-list search must be verified in live Electron');
 
 console.log('PASS: 1000/10000-profile page bounds, full-set filters, 25/50/100 pages, selected IDs, renderer wiring and accessible controls');

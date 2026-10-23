@@ -16,7 +16,7 @@ const screenshotNames=[
   'workspace-command-preview.png','workspace-engine-provider-preview.png',
   'workspace-ads-guard-preview.png','workspace-performance-lab-preview.png',
   'workspace-about-update-preview.png','workspace-customer-handoff-preview.png',
-  'workspace-license-preview.png','workspace-fleet-triage-preview.png','workspace-agency-handoff-preview.png'
+  'workspace-license-preview.png','workspace-fleet-triage-preview.png','workspace-agency-handoff-preview.png','workspace-profile-paging-preview.png'
 ];
 try{
   fs.writeFileSync(path.join(root,name),Buffer.alloc(1024*1024+1,0x2b));
@@ -26,7 +26,7 @@ try{
     sha:'1'.repeat(40),runId:'39835712310'});
   assert.equal(evidence.build.windowsInstaller.sha256,hash);
   assert.equal(evidence.build.windowsInstaller.bytes,1024*1024+1);
-  assert.equal(evidence.build.uiCaptureCount,11);
+  assert.equal(evidence.build.uiCaptureCount,12);
   assert.equal(evidence.outcome,'CI_BUILD_EVIDENCE_ONLY_NOT_COMMERCIAL_APPROVAL');
   assert.equal(evidence.policy.publicReleaseAuthorized,false);
   assert.equal(evidence.policy.independentWindowsGate3,'NOT_VERIFIED_BY_CI');
@@ -64,5 +64,5 @@ try{
   for(const id of ['modal-ads-launch-guard','modal-performance-lab','modal-launch-readiness','modal-app-about'])
     assert(css.includes('#'+id));
   assert(main.includes('[REDACTED FOR CI SCREENSHOT]'), 'Mask installation ID in public UI screenshots');
-  console.log('LHM release evidence: exact installer SHA-256, eight UI captures, strict preview-only claim and key privacy PASSED');
+  console.log('LHM release evidence: exact installer SHA-256, twelve UI captures, strict preview-only claim and key privacy PASSED');
 } finally {fs.rmSync(root,{recursive:true,force:true});}
