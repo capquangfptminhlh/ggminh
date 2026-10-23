@@ -54,50 +54,68 @@ toàn" tổng hợp.
 
 ---
 
-## 🤖 Kết nối Tự động hóa RPA (Python Playwright)
+## 🤖 Local API an toàn (Python + Playwright, chỉ Chromium)
 
-Với các endpoint thuộc tập con đã hỗ trợ, script viết cho AdsPower có
-thể dùng lại mà không cần đổi logic gọi API. Endpoint ngoài tập con sẽ
-báo lỗi rõ ràng thay vì chạy ngầm:
+**Điều kiện:** sử dụng Chrome/Edge, hồ sơ được cấp quyền API trong license, và người dùng **tự bật Local API** trong ứng dụng (mặc định tắt). API chỉ lắng nghe trên `127.0.0.1:50325`; vào giao diện ứng dụng để **Sao chép API Key** của phiên hiện tại rồi đặt biến môi trường `LHM_API_KEY` trong phiên terminal riêng. Không nhúng key vào file Python, Git, video hay ảnh hỗ trợ.
+
+Ví dụ dưới đây yêu cầu `requests` và `playwright` trong môi trường Python. Thay `ID_PROFILE_CHROMIUM` bằng ID hồ sơ Chromium đang dùng; không dùng ví dụ này cho Firefox/Camoufox.
 
 ```python
+import os
 import requests
 from playwright.sync_api import sync_playwright
 
-PROFILE_ID = "pb_main01"
-API_URL = f"http://127.0.0.1:50325/api/v1/browser/start?user_id={PROFILE_ID}"
+api_key = os.environ.get("LHM_API_KEY")
+if not api_key:
+    raise RuntimeError("Bật Local API trong LHM rồi đặt LHM_API_KEY trước khi chạy")
 
-# 1. Mở profile và lấy WebSocket CDP
-res = requests.get(API_URL).json()
-ws_endpoint = res["data"]["ws"]["puppeteer"]
+response = requests.get(
+    "http://127.0.0.1:50325/api/v1/browser/start",
+    params={"user_id": "ID_PROFILE_CHROMIUM"},
+    headers={"X-API-Key": api_key},
+    timeout=20,
+)
+response.raise_for_status()  # Báo lỗi 401/403/409, không coi lỗi là thành công
+payload = response.json()
+if payload.get("code") != 0:
+    raise RuntimeError(payload.get("msg", "Không thể mở profile"))
+ws_endpoint = ((payload.get("data") or {}).get("ws") or {}).get("puppeteer")
+if not ws_endpoint:
+    raise RuntimeError("Không có Chromium CDP endpoint để kết nối")
 
-# 2. Điều khiển trình duyệt
 with sync_playwright() as p:
     browser = p.chromium.connect_over_cdp(ws_endpoint)
-    page = browser.contexts[0].pages[0] if browser.contexts[0].pages else browser.new_page()
-    page.goto("https://browserleaks.com/canvas")
-    print("Page Title:", page.title())
+    print("Số context hiện có:", len(browser.contexts))
+    browser.close()
 ```
+
+**Giới hạn engine:** Firefox Gecko là chế độ thủ công, không có CDP. Camoufox có thể dùng điều khiển Playwright **nội bộ** khi đã được bật và kiểm chứng; API không trả về WebSocket CDP giả, không thể dùng `p.chromium.connect_over_cdp` cho Camoufox. Không tự động hóa trang đăng nhập/thanh toán Google hoặc các thao tác trái chính sách.
+
+Tham khảo: [Hướng dẫn Local API cho khách](docs/customer-guide/08-local-api-an-toan.md), [Sổ tay người dùng](docs/customer-guide/README.md).
 
 
 ## Bản cài đặt Windows
-- Vào **GitHub → Actions → Build Windows EXE**. Mỗi lần cập nhật nhánh main sẽ chạy kiểm thử và dựng installer.
-- Tải artifact **LHM-Ads-Browser-Windows-x64** khi workflow thành công và giải nén để lấy file Setup.exe.
-- Có thể dựng tại máy Windows bằng `npm ci` rồi `npm run build:win`.
-- Chạy bản nguồn bằng `npm ci` và `npm start`. Cần Chrome hoặc Edge cài đặt sẵn.
 
-## Quyền riêng tư và API
-- Hồ sơ được lưu trong thư mục dữ liệu ứng dụng của Windows, không lưu trong thư mục cài đặt.
-- Khi mới cài, Local API **tắt mặc định**; chỉ chạy trên `127.0.0.1` nếu bật bằng nút API của ứng dụng.
-- Mỗi phiên chạy có API Key ngẫu nhiên. Chọn **Sao chép API Key**, sau đó gửi header `X-API-Key: <key>` hoặc `Authorization: Bearer <key>`.
-- API không cung cấp CORS và từ chối request có header Origin. Cổng DevTools chỉ mở khi bật chế độ API.
-- Khi bật API, mọi ứng dụng trên chính máy tính có API Key đều có thể thao tác; hãy bảo vệ key và khóa máy tính.
-- Proxy có username/password **chưa hỗ trợ** trong bản này. Kiểm tra proxy hiện chỉ kiểm tra TCP, **chưa** xác minh IP thoát.
-- Các mẫu gọi API ở phần đầu README là lịch sử; cần thêm header xác thực như mô tả trên.
-- Các module thay đổi fingerprint chưa được kiểm định về hiệu quả hay tính tương thích với Google; không sử dụng để vượt chính sách nền tảng.
+- Trên GitHub, mở [Actions → Build Windows EXE](https://github.com/capquangfptminhlh/ggminh/actions/workflows/windows-exe.yml), chọn run **thành công** đúng commit rồi tải artifact `LHM-Ads-Browser-Windows-x64`. Trong ZIP có installer `LHM-Ads-Browser-5.8.0-Preview-Setup-x64.exe`.
+- Đối chiếu SHA-256 của **file EXE thực tế** với hồ sơ bằng chứng đúng run. Gói build tự động là **Preview**, không thay thế nghiệm thu bản cài trên máy Windows độc lập và quyết định phát hành của chủ dự án.
+- Bản Preview có thể chưa có chữ ký Windows Authenticode; **không** tắt SmartScreen/Defender để cài đặt. Nếu Windows/tổ chức chặn, cần đánh giá nguồn phát hành, chữ ký và chính sách bảo mật trước khi tiếp tục.
+- Dựng từ nguồn: `npm ci`, `npm test` rồi `npm run build:win` trên Windows; chạy thử nguồn bằng `npm start` (cần Chrome/Edge đã cài). Không dùng CI PASS để quảng cáo bản thương mại đã được phê duyệt.
 
-## Kế hoạch tiếp theo
-Đưa vào danh sách công việc: quản lý proxy có xác thực bảo mật, backup/export dữ liệu, kiểm thử E2E trên Windows, quản lý tài khoản Google Ads hợp lệ thông qua OAuth/MCC, và dashboard web với phân quyền.
+
+## Quyền riêng tư, proxy và API
+
+- Dữ liệu hồ sơ/phiên được lưu trên máy người dùng. Local API **tắt mặc định**, chỉ lắng nghe `127.0.0.1` sau khi được bật và cấp quyền.
+- API Key của phiên là bắt buộc: gửi `X-API-Key` hoặc `Authorization: Bearer`. API từ chối HTTP `Origin` và host không phải loopback; không truyền key qua URL hoặc ghi vào log.
+- Máy tính đã bị kiểm soát bởi phần mềm độc hại vẫn có rủi ro: localhost và API Key **không** tạo hàng rào giữa mọi tiến trình chạy dưới cùng tài khoản Windows.
+- Proxy Center hỗ trợ cấu hình HTTP và SOCKS5 (gồm trường hợp xác thực được hỗ trợ theo engine), dùng kho thông tin nhạy cảm được mã hóa riêng thay vì để mật khẩu trong dữ liệu profile/API/export. Một số đường Camoufox có proxy xác thực chỉ được bật sau khi kiểm chứng môi trường mạng; không mặc định coi proxy là bằng chứng không rò rỉ DNS/WebRTC/IPv6.
+- Kiểm tra IP thoát HTTPS là phép đo theo thời điểm, không phải cam kết ẩn danh hoặc tránh liên kết tài khoản.
+
+
+## Tài liệu và tình trạng phát hành
+
+- [Sổ tay khách hàng](docs/customer-guide/README.md) và [sổ tay bán hàng](docs/seller-runbook/README.md).
+- Bằng chứng CI Windows, ảnh chụp màn hình Electron và installer chỉ xác nhận các bước đã chạy; **Gate 3 trên máy khách Windows độc lập và phê duyệt cuối cùng Gate 4 không được suy ra từ CI**.
+- Các mục `v1.x–v5.x` bên dưới là **lịch sử phát triển**: giới hạn được mô tả ở một phiên bản cũ có thể đã thay đổi. Ưu tiên các mục hướng dẫn hiện hành ở đầu README và sổ tay khách hàng.
 
 
 ## Cảnh báo hành vi — phiên bản 1.2
@@ -637,4 +655,4 @@ for server-side authenticated role-based access and audit-backed billing.
 - **Lệnh nhanh** opens an operator-only keyboard command palette (Ctrl+Shift+P, Cmd+Shift+P); local existing profile metadata and safe navigational actions can be searched with keyboard arrows and Enter, without opening or modifying an account automatically. All names are inserted with textContent, no HTML interpolation or remote queries.
 - **Thu gọn bảng AI** toggles a full-width profile data grid. Ctrl+B toggles only outside text fields, and the UI preference persists locally on this computer. The right-side panel and data remain fully available after reopening.
 - Accessible command list and keyboard focus, subtle spring-like entrance animation and reduced-motion support. Original buttons/IPC handlers remain operational.
-- Package version and Electron runtime UI are now aligned at v5.7.0. Screenshots in Windows CI remain from the actual Electron app, not visual mockups.
+- Package version and Electron runtime UI are now aligned at v5.8.0. Screenshots in Windows CI remain from the actual Electron app, not visual mockups.
