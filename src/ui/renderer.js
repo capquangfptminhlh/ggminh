@@ -9,6 +9,8 @@ const selectedProfileIds = new Set();
 // Table pagination bounds DOM work, not the metadata search or bulk selection.
 let profilePage = 1;
 let profilePageSize = window.LHMProfilePagination.DEFAULT_SIZE;
+let profileStatusPoller = null;
+let profileLoadSequence = 0;
 window.LHMProfileContextData = () => ({profiles:allProfiles,activeIds:[...activeBrowserMap.keys()]});
 window.LHMProfileSelection = {
   getSelected: () => [...selectedProfileIds],
@@ -778,10 +780,26 @@ function applyFingerprintToForm(fp) {
 }
 
 async function loadProfiles() {
-  allProfiles = await window.api.getProfiles();
+  // Capture a complete snapshot; never leave profiles updated while active
+  // state is stale. Older concurrent loads cannot replace newer results.
+  const sequence = ++profileLoadSequence;
+  profileStatusPoller?.invalidate();
+  let profiles, activeList;
+  try {
+    [profiles, activeList] = await Promise.all([
+      window.api.getProfiles(), window.api.getActiveBrowsers()
+    ]);
+    window.LHMProfileStatusPoller.parseActiveList(activeList);
+  } catch (error) {
+    if (profileStatusPoller) profileStatusPoller.markSnapshotFailed();
+    else reportProfileSyncStatus('error');
+    // Preserve last rendered data and selection if IPC is temporarily down.
+    return false;
+  }
+  if (sequence !== profileLoadSequence) return false;
+  allProfiles = profiles;
   const freshIds = new Set(allProfiles.map(p => p.id));
   for (const id of selectedProfileIds) if (!freshIds.has(id)) selectedProfileIds.delete(id);
-  const activeList = await window.api.getActiveBrowsers();
   activeBrowserMap.clear();
   activeList.forEach(item => activeBrowserMap.set(item.profileId, item));
 
@@ -805,6 +823,9 @@ async function loadProfiles() {
   if (tags.has(previousTag)) filterTag.value = previousTag;
   renderProfiles();
   updateStats();
+  if (profileStatusPoller) profileStatusPoller.markSnapshotLoaded();
+  else reportProfileSyncStatus('healthy');
+  return true;
 }
 
 function updateStats() {
@@ -984,28 +1005,32 @@ function renderProfiles() {
   window.LHMTablePreferences?.apply();
 }
 
-function startStatusPoller() {
-  setInterval(async () => {
-    const activeList = await window.api.getActiveBrowsers();
-    let changed = false;
-    if (activeList.length !== activeBrowserMap.size) {
-      changed = true;
-    } else {
-      for (const item of activeList) {
-        if (!activeBrowserMap.has(item.profileId)) {
-          changed = true;
-          break;
-        }
-      }
-    }
+function reportProfileSyncStatus(state) {
+  const status = document.getElementById('lhm-profile-sync-status');
+  if (!status || status.dataset.state === state) return;
+  status.dataset.state = state;
+  status.textContent = state === 'healthy'
+    ? 'Trạng thái đã đồng bộ'
+    : state === 'error'
+      ? 'Mất kết nối trạng thái · Làm mới để thử lại'
+      : 'Đang kết nối trạng thái…';
+}
 
-    if (changed) {
+function startStatusPoller() {
+  if (profileStatusPoller) return;
+  profileStatusPoller = window.LHMProfileStatusPoller.create({
+    readActive: () => window.api.getActiveBrowsers(),
+    getCurrentIds: () => [...activeBrowserMap.keys()],
+    onUpdate: (activeList) => {
       activeBrowserMap.clear();
       activeList.forEach(item => activeBrowserMap.set(item.profileId, item));
       renderProfiles();
       updateStats();
-    }
-  }, 2000);
+    },
+    onStatus: reportProfileSyncStatus,
+    intervalMs: 2000
+  });
+  profileStatusPoller.start();
 }
 
 function escapeHtml(str) {

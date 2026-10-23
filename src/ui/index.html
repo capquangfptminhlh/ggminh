@@ -321,6 +321,7 @@
         </select>
         <button type="button" class="btn btn-secondary" id="btn-table-options" aria-expanded="false" aria-controls="table-options-panel">Tùy biến bảng</button>
         <button class="btn btn-icon" id="btn-refresh" title="Làm mới" aria-label="Làm mới danh sách"><span data-lhm-icon="refresh-cw"></span></button>
+        <span id="lhm-profile-sync-status" class="lhm-profile-sync-status" data-state="idle" role="status" aria-live="polite">Đang kết nối trạng thái…</span>
       </div>
     </section>
 
@@ -1845,6 +1846,7 @@ run();
   <script src="icons.js"></script>
   <script src="profileConsistency.js"></script>
   <script src="profilePagination.js"></script>
+  <script src="profileStatusPoller.js"></script>
   <script src="renderer.js"></script>
   <script src="launchReadiness.js"></script>
   <script src="adsLaunchGuard.js"></script>
