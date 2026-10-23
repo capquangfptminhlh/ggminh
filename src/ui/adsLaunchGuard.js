@@ -167,6 +167,7 @@
   }
   function bind() {
     byId('btn-ads-launch-guard').addEventListener('click', show);
+    byId('lhm-open-ads-review')?.addEventListener('click', show);
     for (const id of ['ads-guard-close','ads-guard-done'])
       byId(id).addEventListener('click',hide);
     byId('ads-guard-inspect').addEventListener('click',inspect);
