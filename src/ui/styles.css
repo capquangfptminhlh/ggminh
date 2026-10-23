@@ -884,6 +884,20 @@ select {
 .fp-audit-item.warning{border-left-color:#f9bd57;color:#ffd89a}
 .fp-audit-item.notice{border-left-color:#54a4da;color:#c0d9f5}
 .fp-audit-summary{font-size:13px;font-weight:650;color:#f5f8ff;margin-bottom:9px}
+.fp-identity-panel{border:1px solid #3b546f;background:linear-gradient(130deg,#152439,#1b2640);border-radius:11px;padding:14px;margin-top:12px}
+.fp-identity-desc{font-size:12px;line-height:1.6;color:#acbfd8;margin:0 0 10px}
+.fp-state-chip{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:999px;background:#1d2b40;color:#ffd89a;border:1px solid #3b546f;white-space:nowrap}
+.fp-state-chip.is-ok{color:#8fe3b0}
+.fp-declared{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;margin:0;font-size:12px}
+.fp-declared dt{color:#7691b8}
+.fp-declared dd{margin:0;color:#dbe7f7}
+.fp-criteria-preview{margin-top:11px;border-top:1px solid #2b4469;padding-top:10px}
+.fp-criteria-title{font-size:12px;font-weight:650;color:#f5f8ff;margin-bottom:4px}
+.fp-criteria-list{list-style:none;margin:0;padding:0}
+.fp-criteria-list li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:12px;color:#c0d9f5;border-bottom:1px dashed #22334f}
+.fp-criteria-list li:last-child{border-bottom:none}
+.fp-crit-chip{font-size:10px;font-weight:700;letter-spacing:.06em;color:#ffd89a;white-space:nowrap}
+.fp-audit-empty{margin:0}
 
 
 /* -------- LHM Mission Control 2.1 (real local data, no fake metrics) -------- */
