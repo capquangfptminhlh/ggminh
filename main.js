@@ -35,6 +35,7 @@ const { CHECKS: ADS_QA_CHECKS, buildCampaignQaReport } = require('./src/ads/camp
 const {LocalHealthDrift}=require('./src/health/localDrift');
 const {GraphDefense}=require('./src/health/GraphDefense');
 const {buildReadiness}=require('./src/health/releaseReadiness');
+const {buildFleetTriage}=require('./src/ops/fleetTriage');
 const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {UpdateCenter}=require('./src/update/updateCenter');
 const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
@@ -585,6 +586,13 @@ function initIPC() {
       automation: automationRunner.status(),
       behavior: behaviorMonitor.getReport()
     });
+  });
+  ipcMain.handle('control-tower-triage', () => {
+    const profiles=store.getProfiles();
+    const settings=store.getSettings();
+    const proxies=store.data.proxies;
+    const health=profiles.map(p=>checkProfile(p,{settings,proxies,vault:proxyVault}));
+    return buildFleetTriage(profiles,health,launcher.listActive());
   });
   ipcMain.handle('control-tower-snapshot', () => {
     const profiles = store.getProfiles();
