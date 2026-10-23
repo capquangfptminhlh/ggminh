@@ -39,6 +39,7 @@ const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {UpdateCenter}=require('./src/update/updateCenter');
 const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
 const {buildSupportReport}=require('./src/ops/supportReport');
+const {buildCustomerHandoff}=require('./src/ops/customerHandoff');
 const { ConfigBackup } = require('./src/backup/configBackup');
 const { auditIsolation } = require('./src/privacy/isolation');
 const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
@@ -695,6 +696,40 @@ function initIPC() {
     return buildReadiness({profiles,reports,proxies:proxyCenter.list(),
       active:launcher.listActive(),workflows:workflowStore.list(),
       vault:proxyVault,platform:process.platform});
+  });
+  // Local customer handoff: strictly projected aggregate data. Never send
+  // license tokens, installation IDs, profile names or paths to renderer.
+  const customerHandoff=()=>{
+    const profiles=store.getProfiles();
+    const reports=profiles.map(profile=>checkProfile(profile,{
+      settings:store.getSettings(),proxies:store.data.proxies,vault:proxyVault
+    }));
+    const local=buildReadiness({profiles,reports,proxies:proxyCenter.list(),
+      active:launcher.listActive(),workflows:workflowStore.list(),
+      vault:proxyVault,platform:process.platform});
+    return buildCustomerHandoff({
+      appInfo:{version:app.getVersion(),platform:process.platform,arch:process.arch,
+        packaged:app.isPackaged},
+      license:licensePolicy.status(),
+      update:onlineUpdates.status(),
+      upgrade:inspectCurrentUpgrade(),
+      local
+    });
+  };
+  ipcMain.handle('customer-handoff-preview',()=>customerHandoff());
+  ipcMain.handle('customer-handoff-export',async()=>{
+    // Export freshly computed evidence only AFTER explicit user interaction.
+    const report=customerHandoff();
+    const {canceled,filePath}=await dialog.showSaveDialog(mainWindow,{
+      title:'Lưu báo cáo bàn giao LHM (không chứa thông tin định danh)',
+      defaultPath:'LHM-Customer-Handoff-'+report.createdAt.slice(0,10)+'.json',
+      filters:[{name:'JSON Customer Handoff',extensions:['json']}]
+    });
+    if(canceled||!filePath)return {canceled:true};
+    const content=JSON.stringify(report,null,2)+'\n';
+    fs.writeFileSync(filePath,content,{mode:0o600,encoding:'utf8'});
+    return {canceled:false,bytes:Buffer.byteLength(content,'utf8'),
+      status:report.status};
   });
   ipcMain.handle('export-support-report', async () => {
     const profiles=store.getProfiles();
