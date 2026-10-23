@@ -219,6 +219,58 @@ function createWindow() {
           const engineImage=await mainWindow.webContents.capturePage();
           writeCapture('workspace-engine-provider-preview.png', engineImage);
           console.log('[UI smoke] Verified selected Camoufox and browser-engine provider modal');
+          // Release UX Gate: exercise NEW commercial panels from both the
+          // unpacked source and the actual packaged Windows EXE.
+          // Use synthetic web addresses ONLY; never record license secrets.
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('engine-source-done').click()",true);
+          const adsCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-ads-launch-guard').click(); const modal=document.getElementById('modal-ads-launch-guard'); const url=document.getElementById('ads-guard-urls'); url.value='https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=ci-demo'; document.getElementById('ads-guard-inspect').click(); return {open:modal.classList.contains('open'),bg:getComputedStyle(modal.querySelector('.lhm-ads-guard-section')).backgroundColor,input:getComputedStyle(url).backgroundColor,scroll:getComputedStyle(modal.querySelector('.modal-body')).overflowY}; })()",true);
+          if(!adsCheck.open||adsCheck.bg!=='rgb(245, 248, 254)'||
+             adsCheck.input!=='rgb(255, 255, 255)'||adsCheck.scroll!=='auto')
+            throw Error('Ads Launch Guard theme/modal failed: '+JSON.stringify(adsCheck));
+          await new Promise(resolve=>setTimeout(resolve,800));
+          const adsResults=await mainWindow.webContents.executeJavaScript(
+            "({count:document.querySelectorAll('#ads-guard-results .lhm-ads-guard-result').length,status:document.getElementById('ads-guard-inspect-status').textContent})",true);
+          if(adsResults.count!==1||!adsResults.status.includes('1 link'))
+            throw Error('Ads Launch Guard live UI test failed: '+JSON.stringify(adsResults));
+          writeCapture('workspace-ads-guard-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('ads-guard-done').click()",true);
+
+          const perfOpen=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-performance-lab').click(); document.getElementById('performance-lab-run').click(); return document.getElementById('modal-performance-lab').classList.contains('open'); })()",true);
+          if(!perfOpen)throw Error('Performance Lab dialog did not open');
+          await new Promise(resolve=>setTimeout(resolve,950));
+          const perfReport=await mainWindow.webContents.executeJavaScript(
+            "(() => { const cards=document.querySelectorAll('#performance-lab-metrics .lhm-perf-card'); return {cards:cards.length,background:cards.length?getComputedStyle(cards[0]).backgroundColor:'none',status:document.getElementById('performance-lab-status').textContent}; })()",true);
+          if(perfReport.cards!==3||perfReport.background!=='rgb(246, 249, 255)'||
+             !perfReport.status.includes('Đã đo'))
+            throw Error('Performance Lab measured UI failed: '+JSON.stringify(perfReport));
+          writeCapture('workspace-performance-lab-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('performance-lab-done').click()",true);
+
+          const aboutCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-app-about').click(); const modal=document.getElementById('modal-app-about'); const center=modal.querySelector('.lhm-update-center'); return {open:modal.classList.contains('open'),update:!!center,background:getComputedStyle(center).backgroundColor,check:!!document.getElementById('lhm-update-check')}; })()",true);
+          if(!aboutCheck.open||!aboutCheck.update||!aboutCheck.check||
+             aboutCheck.background!=='rgb(245, 248, 254)')
+            throw Error('About/Update Center UI failed: '+JSON.stringify(aboutCheck));
+          await new Promise(resolve=>setTimeout(resolve,350));
+          writeCapture('workspace-about-update-preview.png',await mainWindow.webContents.capturePage());
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('lhm-about-close').click()",true);
+
+          const licenseCheck=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('btn-license-center').click(); const modal=document.getElementById('modal-license-center'); return {open:modal.classList.contains('open'),state:!!document.getElementById('license-state'),activate:!!document.getElementById('license-activate'),renew:!!document.getElementById('license-expires')}; })()",true);
+          if(!Object.values(licenseCheck).every(Boolean))
+            throw Error('License/renewal UI failed: '+JSON.stringify(licenseCheck));
+          await new Promise(resolve=>setTimeout(resolve,500));
+          await mainWindow.webContents.executeJavaScript(
+            "(() => { const id=document.getElementById('license-installation-id'); if(id)id.value='[REDACTED FOR CI SCREENSHOT]'; const token=document.getElementById('license-token'); if(token)token.value=''; })()",true);
+          writeCapture('workspace-license-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] Ads Guard, real metadata timing, signed-update UI, and license renewal panels verified in actual Electron');
+
         } catch (error) {
           console.error('[UI smoke] Screenshot unavailable:', error);
           process.exitCode = 1;
