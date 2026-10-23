@@ -62,7 +62,7 @@ try {
   assert.equal(pre.requiresProxySetup,1);
   assert.deepEqual(pre.browserFamilies,{chromium:1,gecko:1});
   assert(!JSON.stringify(pre).includes('Agency Campaign'));
-  assert.throws(()=>open(first.text,'wrong-password'),/12–512|12/);
+  assert.throws(()=>open(first.text,'wrong-password'),/Mật khẩu không đúng/);
   assert.throws(()=>open(first.text,'another-strong-pass-2026'),/Mật khẩu không đúng/);
   const tampered={...envelope,payload:envelope.payload.slice(0,-4)+'AAAA'};
   assert.throws(()=>open(JSON.stringify(tampered),password),/sửa đổi|không hợp lệ/);
