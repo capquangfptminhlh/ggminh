@@ -71,6 +71,27 @@ jobs:
           }
           [[ -s "${files[0]}" ]] || { echo "EXE empty"; exit 1; }
           sha256sum "${files[0]}" | tee release-assets/SHA256SUMS.txt
+          # Bind the user-reviewed draft to both the SHA-256 of the
+          # exact EXE AND the eight actual Windows source/packaged captures.
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name LHM-Release-Evidence-Windows --dir release-assets
+          evidence=release-assets/release-evidence.json
+          [[ -s "$evidence" ]] || { echo "Missing commercial preflight evidence"; exit 1; }
+          jq -e --arg sha "$VERIFIED_MAIN_SHA" --arg run "$RUN_ID" \
+            --arg filename "$(basename "${files[0]}")" \
+            '.schema == "lhm.release.build-evidence.v1" and
+             .build.commit == $sha and .build.runId == $run and
+             .build.windowsInstaller.name == $filename and
+             .build.uiCaptureCount == 8 and
+             .policy.publicReleaseAuthorized == false and
+             .policy.independentWindowsGate3 == "NOT_VERIFIED_BY_CI" and
+             .outcome == "CI_BUILD_EVIDENCE_ONLY_NOT_COMMERCIAL_APPROVAL"' "$evidence" >/dev/null ||
+            { echo "Evidence does not bind exact current release"; exit 1; }
+          actual_sha=$(sha256sum "${files[0]}" | awk '{print $1}')
+          evidence_sha=$(jq -r .build.windowsInstaller.sha256 "$evidence")
+          [[ "$actual_sha" == "$evidence_sha" ]] ||
+            { echo "Installer SHA-256 differs from build evidence"; exit 1; }
+
       - name: Create draft-only release; never publish automatically
         shell: bash
         env:
@@ -92,6 +113,6 @@ jobs:
           EXE Authenticode signing is optional under LHM Constitution v1.4.
           EOF
           gh release create "v$RELEASE_VERSION" release-assets/*.exe \
-            release-assets/SHA256SUMS.txt --draft --title "LHM Ads Browser v$RELEASE_VERSION (DRAFT)" \
+            release-assets/SHA256SUMS.txt release-assets/release-evidence.json --draft --title "LHM Ads Browser v$RELEASE_VERSION (DRAFT)" \
             --target "$VERIFIED_MAIN_SHA" --notes-file release-notes.txt
           echo "DRAFT release created. Nothing was publicly published."
