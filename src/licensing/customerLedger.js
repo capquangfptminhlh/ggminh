@@ -113,11 +113,15 @@ function addCustomer(file,name,installationId,{now=()=>Date.now()}={}){
  });
 }
 function issue(file,{
- customerId,plan,months,maxProfiles,privateKey,publicKey=PUBLIC_KEY,
+ customerId,plan,months,days,maxProfiles,privateKey,publicKey=PUBLIC_KEY,
  renewFrom=null,enforcementMode='owner_sweep',now=()=>Date.now()
 }={}){
+ // Gói theo ngày dùng đúng 24 giờ/ngày; không đổi ý nghĩa tháng lịch cũ.
+ const durationValid=days!==undefined
+  ? months===undefined&&Number.isInteger(days)&&days>=1&&days<=365
+  : Number.isInteger(months)&&months>=1&&months<=12;
  if(!CUSTOMER.test(customerId||'')||!Object.hasOwn(PLAN_FEATURES,plan)||
-    !Number.isInteger(months)||months<1||months>12||
+    !durationValid||
     !Number.isInteger(maxProfiles)||maxProfiles<1||maxProfiles>10000||
     !['strict','owner_sweep'].includes(enforcementMode))
   throw Error('Invalid license issuance parameters');
@@ -134,7 +138,7 @@ function issue(file,{
   if(!Number.isFinite(issuedAt.getTime()))throw Error('Invalid issuer time');
   const start=old&&Date.parse(old.expiresAt)>issuedAt.getTime()
    ?new Date(old.expiresAt):issuedAt;
-  const expiresAt=addMonths(start,months);
+  const expiresAt=days!==undefined?new Date(start.getTime()+days*86400000):addMonths(start,months);
   if(expiresAt.getTime()-issuedAt.getTime()>370*86400000)
    throw Error('License renewal extends beyond 370-day signed-token maximum');
   const claims={
