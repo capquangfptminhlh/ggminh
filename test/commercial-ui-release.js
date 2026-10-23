@@ -50,6 +50,15 @@ try{
   const html=fs.readFileSync(path.join(__dirname,'../src/ui/index.html'),'utf8');
   const css=fs.readFileSync(path.join(__dirname,'../src/ui/commercialPolish.css'),'utf8');
   assert(html.includes('href="commercialPolish.css"'));
+  assert(html.includes('id="lhm-open-ads-review"'), 'Advertiser QA quick action must stay discoverable');
+  const adsUi=fs.readFileSync(path.join(__dirname,'../src/ui/adsLaunchGuard.js'),'utf8');
+  assert(adsUi.includes("byId('lhm-open-ads-review')?.addEventListener('click', show)"));
+  assert(css.includes('.lhm-commercial-quickaction'));
+  const releaseWorkflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/prepare-draft-release.yml'),'utf8');
+  assert(releaseWorkflow.includes('LHM-Release-Evidence-Windows'));
+  assert(releaseWorkflow.includes('release-assets/release-evidence.json'));
+  assert(releaseWorkflow.includes('--draft'), 'Never auto-publish commercial installer');
+
   assert.equal((html.match(/href="workspaceInteractions.css"/g)||[]).length,1);
   for(const id of ['modal-ads-launch-guard','modal-performance-lab','modal-launch-readiness','modal-app-about'])
     assert(css.includes('#'+id));
