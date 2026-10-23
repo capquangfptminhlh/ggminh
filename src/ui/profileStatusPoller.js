@@ -90,7 +90,11 @@
       // Called only after a successful explicit full refresh.
       setStatus('healthy');
     }
-    return Object.freeze({ poll, start, stop, invalidate, markSnapshotLoaded,
+    function markSnapshotFailed() {
+      // Keep internal and visible status in sync after a manual IPC failure.
+      setStatus('error');
+    }
+    return Object.freeze({ poll, start, stop, invalidate, markSnapshotLoaded, markSnapshotFailed,
       getStatus: () => lastStatus });
   }
 
