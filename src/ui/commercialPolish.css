@@ -195,3 +195,28 @@
   #modal-launch-readiness .modal-dialog,
   #modal-app-about .modal-dialog{animation:none!important;transition:none!important}
 }
+
+/* Primary user journey: surface the unique LHM Ads QA beside workspace controls. */
+.lhm-v6-intro-actions .lhm-commercial-quickaction{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#eaf2ff!important;color:#2559af!important;
+  border:1px solid #c7d9fa!important;border-radius:12px;
+  padding:9px 13px;min-height:36px;font-weight:740;
+  box-shadow:0 3px 13px rgba(25,77,170,.065);
+}
+.lhm-v6-intro-actions .lhm-commercial-quickaction:hover{
+  background:#dceaff!important;transform:translateY(-1px);
+  border-color:#a5c3fa!important;
+}
+.lhm-v6-intro-actions .lhm-commercial-quickaction:focus-visible{
+  outline:3px solid rgba(52,104,217,.48);outline-offset:2px;
+}
+@media(max-width:900px){
+  .lhm-v6-intro-actions .lhm-commercial-quickaction{padding:8px 9px;font-size:11px}
+}
+@media(max-width:670px){
+  .lhm-v6-intro-actions .lhm-commercial-quickaction{order:-1;flex:1;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){
+  .lhm-v6-intro-actions .lhm-commercial-quickaction:hover{transform:none}
+}
