@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="fleetTriage.css">
   <link rel="stylesheet" href="agencyHandoff.css">
   <link rel="stylesheet" href="customerHandoff.css">
+  <link rel="stylesheet" href="neumorphicWorkspace.css">
 </head>
 <body data-view="profiles">
 
@@ -861,13 +862,23 @@
   </div>
 
   <!-- Offline signed license dashboard. The app has no embedded issuer private key. -->
-  <div class="modal-overlay" id="modal-license-center">
+  <div class="modal-overlay" id="modal-license-center" data-lhm-license-mode="status">
     <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="license-center-title">
       <div class="modal-header">
         <h2 id="license-center-title">Giấy phép LHM Browser & gia hạn</h2>
         <button type="button" class="btn-close" id="license-center-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="lhm-nm-license-stage">
+          <span class="lhm-nm-orb one" aria-hidden="true"></span>
+          <span class="lhm-nm-orb two" aria-hidden="true"></span>
+          <span class="lhm-nm-orb three" aria-hidden="true"></span>
+          <div class="lhm-nm-flip-shell">
+            <div class="lhm-nm-flip-card">
+              <section id="lhm-nm-license-status-face" class="lhm-nm-license-face front" aria-label="Thông tin giấy phép" aria-hidden="false">
+                <span class="lhm-nm-mark" aria-hidden="true">L</span>
+                <h3>Chào mừng trở lại</h3>
+                <p class="lhm-nm-license-caption">Quản lý giấy phép và gia hạn LHM Browser</p>
         <p class="lhm-bulk-help">Kích hoạt bằng license do đơn vị phát hành ký bằng Ed25519. Không cần gửi cookie, mật khẩu, proxy hoặc dữ liệu phiên duyệt web. Khi cấu hình máy chủ xác minh, ứng dụng chỉ gửi mã license và mã cài đặt cần thiết để nhận biên nhận trạng thái có chữ ký.</p>
         <div class="lhm-license-status">
           <div><span>Trạng thái</span><strong id="license-state">Đang kiểm tra…</strong></div>
@@ -882,6 +893,15 @@
             <button type="button" class="btn btn-secondary" id="license-copy-installation">Sao chép mã</button>
           </div>
         </div>
+        <p id="license-features" class="lhm-bulk-help" role="status"></p>
+        <p id="license-online-state" class="lhm-bulk-help" role="status"></p>
+        <button type="button" id="lhm-nm-license-next" class="lhm-nm-primary" aria-controls="lhm-nm-license-activate-face">Kích hoạt hoặc gia hạn <span aria-hidden="true">→</span></button>
+              </section>
+              <section id="lhm-nm-license-activate-face" class="lhm-nm-license-face back" aria-label="Kích hoạt giấy phép" aria-hidden="true" inert>
+                <button type="button" class="lhm-nm-back" id="lhm-nm-license-back" aria-controls="lhm-nm-license-status-face">← Quay lại</button>
+                <span class="lhm-nm-mark" aria-hidden="true">✦</span>
+                <h3>Kích hoạt tài khoản thuê</h3>
+                <p class="lhm-nm-license-caption">Dán mã license do bên phát hành cung cấp</p>
         <div class="form-group">
           <label for="license-token">Nhập mã license có chữ ký số</label>
           <textarea id="license-token" rows="4" spellcheck="false" autocomplete="off" placeholder="lhmlic1.xxxxx.yyyyy"></textarea>
@@ -893,8 +913,10 @@
           <button type="button" class="btn btn-secondary" id="license-verify-online">Xác minh máy chủ</button>
           <button type="button" class="btn btn-danger" id="license-deactivate">Xóa license trên máy này</button>
         </div>
-        <p id="license-features" class="lhm-bulk-help" role="status"></p>
-        <p id="license-online-state" class="lhm-bulk-help" role="status"></p>
+              </section>
+            </div>
+          </div>
+        </div>
         <p id="license-message" role="status" aria-live="polite"></p>
         <p class="lhm-bulk-help">Bản này áp dụng dùng thử 10 ngày (tối đa 10 hồ sơ); sau đó cần license để tạo/mở phiên và chạy tự động hóa. Starter hỗ trợ hồ sơ; Pro/Business hỗ trợ thêm API và RPA. Với gói thuê theo chế độ owner-sweep, khách vẫn dùng khi máy chủ chủ sở hữu đang ngoại tuyến; sau lần quét hết hạn và khi ứng dụng nhận biên nhận thu hồi có chữ ký, các lần mở hoặc tác vụ mới sẽ bị chặn. Phiên browser đang chạy không bị tự động đóng. Dữ liệu, bản sao lưu và khôi phục vẫn truy cập được khi hết hạn.</p>
       </div>
@@ -1759,6 +1781,7 @@ run();
   <script src="extensionCenter.js"></script>
   <script src="toolMenu.js"></script>
   <script src="licenseCenter.js"></script>
+  <script src="neumorphicWorkspace.js"></script>
   <script src="appIdentity.js"></script>
   <script src="onlineUpdateCenter.js"></script>
   <script src="customerHandoff.js"></script>
