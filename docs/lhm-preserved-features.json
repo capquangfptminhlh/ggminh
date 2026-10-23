@@ -547,6 +547,41 @@
           "node test/fleet-triage.js"
         ]
       ]
+    },
+    {
+      "id": "lhm-agency-encrypted-handoff",
+      "label": "Selective AES-256-GCM encrypted offline agency profile template handoff with no credentials/sessions",
+      "files": [
+        "src/ops/agencyTemplateHandoff.js",
+        "src/ui/agencyHandoff.css",
+        "test/agency-handoff.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "agency-handoff-import-commit"
+        ],
+        [
+          "preload.js",
+          "agencyHandoffExport"
+        ],
+        [
+          "src/ui/controlTower.js",
+          "api.agencyHandoffPreview("
+        ],
+        [
+          "src/ui/index.html",
+          "tower-agency-password"
+        ],
+        [
+          ".github/workflows/windows-exe.yml",
+          "workspace-agency-handoff-preview.png"
+        ],
+        [
+          "package.json",
+          "node test/agency-handoff.js"
+        ]
+      ]
     }
   ]
 }
