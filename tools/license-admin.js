@@ -26,26 +26,30 @@ function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now()
   return ledger.addCustomer(filename,argv[2],argv[3],{now});
  }
  if(cmd==='issue'){
-  if(![7,8].includes(argv.length))
-   throw Error('Usage: issue LEDGER CUSTOMER_ID starter|pro|business MONTHS MAX_PROFILES PRIVATE_PEM [owner-sweep|strict]');
-  const enforcementMode=argv[7]===undefined?'owner_sweep':
-   argv[7]==='owner-sweep'?'owner_sweep':argv[7];
+  const byDays=argv[4]==='--days',offset=byDays?1:0;
+  if(![7+offset,8+offset].includes(argv.length))
+   throw Error('Usage: issue LEDGER CUSTOMER_ID starter|pro|business MONTHS|--days DAYS MAX_PROFILES PRIVATE_PEM [owner-sweep|strict]');
+  const enforcementMode=argv[7+offset]===undefined?'owner_sweep':
+   argv[7+offset]==='owner-sweep'?'owner_sweep':argv[7+offset];
   const signed=ledger.issue(filename,{
-   customerId:argv[2],plan:argv[3],months:Number(argv[4]),
-   maxProfiles:Number(argv[5]),privateKey:issuerKey(argv[6],env),
+   customerId:argv[2],plan:argv[3],
+   ...(byDays?{days:Number(argv[5])}:{months:Number(argv[4])}),
+   maxProfiles:Number(argv[5+offset]),privateKey:issuerKey(argv[6+offset],env),
    enforcementMode,...(publicKey?{publicKey}:{}),now
   });
   return {token:signed.token,record:signed.record};
  }
  if(cmd==='renew'){
-  if(argv.length!==5)throw Error('Usage: renew LEDGER OLD_LICENSE_ID MONTHS PRIVATE_PEM');
+  const byDays=argv[3]==='--days',offset=byDays?1:0;
+  if(argv.length!==5+offset)throw Error('Usage: renew LEDGER OLD_LICENSE_ID MONTHS|--days DAYS PRIVATE_PEM');
   const record=ledger.readLedger(filename).licenses.find(x=>x.licenseId===argv[2]);
   if(!record)throw Error('Prior license not found');
   const signed=ledger.issue(filename,{
-   customerId:record.customerId,plan:record.plan,months:Number(argv[3]),
+   customerId:record.customerId,plan:record.plan,
+   ...(byDays?{days:Number(argv[4])}:{months:Number(argv[3])}),
    maxProfiles:record.maxProfiles,renewFrom:record.licenseId,
    enforcementMode:record.enforcementMode||'strict',
-   privateKey:issuerKey(argv[4],env),...(publicKey?{publicKey}:{}),now
+   privateKey:issuerKey(argv[4+offset],env),...(publicKey?{publicKey}:{}),now
   });
   return {token:signed.token,record:signed.record};
  }
