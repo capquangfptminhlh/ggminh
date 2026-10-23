@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="performanceLab.css">
   <link rel="stylesheet" href="onlineUpdateCenter.css">
   <link rel="stylesheet" href="commercialPolish.css">
+  <link rel="stylesheet" href="customerHandoff.css">
 </head>
 <body data-view="profiles">
 
@@ -902,6 +903,22 @@
           <div><dt>Bản phát hành</dt><dd id="lhm-about-build">—</dd></div>
           <div><dt>Chế độ cấp phép</dt><dd id="lhm-about-license">—</dd></div>
         </dl>
+        <section class="lhm-customer-handoff" aria-label="Báo cáo sẵn sàng bàn giao khách hàng">
+          <div class="lhm-customer-heading">
+            <div><span class="lhm-customer-eyebrow">CUSTOMER HANDOFF · LOCAL REVIEW</span>
+              <h3>Kiểm tra trước khi bàn giao khách hàng</h3>
+              <p>Đối chiếu license, cập nhật, dữ liệu và hồ sơ từ trạng thái thật trên máy. Không thay thế nghiệm thu phát hành.</p>
+            </div>
+            <span id="lhm-customer-label" class="lhm-customer-label" data-state="unknown">CHƯA KIỂM TRA</span>
+          </div>
+          <div class="lhm-customer-actions">
+            <button type="button" class="btn btn-primary" id="lhm-customer-check">Chạy kiểm tra cục bộ</button>
+            <button type="button" class="btn btn-secondary" id="lhm-customer-export" disabled>Xuất báo cáo hỗ trợ JSON</button>
+          </div>
+          <p id="lhm-customer-status" role="status" aria-live="polite">Chưa có bằng chứng cho phiên làm việc này.</p>
+          <div id="lhm-customer-checks" class="lhm-customer-checks" aria-live="polite"></div>
+          <p class="lhm-customer-disclaimer">Bốn điều kiện phát hành vẫn cần nghiệm thu riêng: Windows máy khách, cập nhật có chữ ký thật, hạ tầng gia hạn/thanh toán và chủ dự án phê duyệt. Báo cáo không lưu mã cài đặt, URL, token, cookie hay dữ liệu phiên.</p>
+        </section>
         <section class="lhm-update-center" aria-label="Cập nhật phần mềm online">
           <h3><span data-lhm-icon="refresh-cw" aria-hidden="true"></span> Cập nhật phiên bản online</h3>
           <p class="lhm-bulk-help">Chỉ kiểm tra khi bạn bấm; ứng dụng không tải ngầm và không tự chạy EXE. Bộ cài không cần ký Authenticode nhưng manifest cập nhật phải có chữ ký Ed25519 hợp lệ, và file tải về phải đúng SHA-256.</p>
@@ -1695,6 +1712,7 @@ run();
   <script src="licenseCenter.js"></script>
   <script src="appIdentity.js"></script>
   <script src="onlineUpdateCenter.js"></script>
+  <script src="customerHandoff.js"></script>
   <script src="premiumWorkspace.js"></script>
   <script src="workspaceInteractions.js"></script>
   <script src="aiAdvisor.js"></script>

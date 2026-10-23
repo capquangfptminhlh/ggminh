@@ -33,7 +33,8 @@ function produceReleaseEvidence({dist,pkg,sha,runId,files}){
     'workspace-preview.png','workspace-expanded-preview.png',
     'workspace-command-preview.png','workspace-engine-provider-preview.png',
     'workspace-ads-guard-preview.png','workspace-performance-lab-preview.png',
-    'workspace-about-update-preview.png','workspace-license-preview.png'
+    'workspace-about-update-preview.png','workspace-customer-handoff-preview.png',
+    'workspace-license-preview.png'
   ];
   const absent=captures.filter(name=>!present.has(name));
   if(absent.length)throw Error('CI UI captures missing: '+absent.join(', '));

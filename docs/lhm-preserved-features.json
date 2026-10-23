@@ -480,6 +480,42 @@
           "node test/commercial-ui-release.js"
         ]
       ]
+    },
+    {
+      "id": "lhm-customer-handoff",
+      "label": "Commercial beta/customer handoff checklist with privacy-safe local evidence and unverified Gate 3/4 warnings",
+      "files": [
+        "src/ops/customerHandoff.js",
+        "src/ui/customerHandoff.js",
+        "src/ui/customerHandoff.css",
+        "test/customer-handoff.js"
+      ],
+      "anchors": [
+        [
+          "main.js",
+          "customer-handoff-preview"
+        ],
+        [
+          "main.js",
+          "customer-handoff-export"
+        ],
+        [
+          "preload.js",
+          "customerHandoffPreview"
+        ],
+        [
+          "src/ui/index.html",
+          "lhm-customer-check"
+        ],
+        [
+          ".github/workflows/windows-exe.yml",
+          "workspace-customer-handoff-preview.png"
+        ],
+        [
+          "package.json",
+          "node test/customer-handoff.js"
+        ]
+      ]
     }
   ]
 }
