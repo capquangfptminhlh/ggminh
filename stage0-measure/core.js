@@ -71,16 +71,27 @@ function identityExpectationResult(expectations,observed){
  * UNSUPPORTED (API absent in this engine) or BLOCKED (API present but
  * the call failed), never merged into an overall verdict.
  * ------------------------------------------------------------------ */
-async function extendedProbe(){
+async function extendedProbe(options={}){
  const out={};
+ // Some browser APIs return promises that never settle (observed on Windows
+ // headless). Limit EACH independent probe rather than hanging the mandatory
+ // profile identity/storage tests for the full GitHub step timeout.
+ const requestedMs=options?.probeTimeoutMs;
+ const probeTimeoutMs=Number.isInteger(requestedMs)&&requestedMs>0&&requestedMs<=15000
+  ?requestedMs:5000;
  const run=async(name,fn)=>{
-  try{const value=await fn();
+  let timer=null;
+  try{
+   const value=await Promise.race([
+    Promise.resolve().then(fn),
+    new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('ProbeTimedOut: '+name)),probeTimeoutMs)})
+   ]);
    out[name]=value===undefined?{status:'unsupported'}:{status:'measured',value};
   }catch(error){
    out[name]={status:'blocked',
     error:String((error&&error.name)||'Error')+': '+
      String((error&&error.message)||'').slice(0,120)};
-  }
+  }finally{if(timer!==null)clearTimeout(timer)}
  };
  const fnv=(bytes)=>{
   let h=0x811c9dc5;

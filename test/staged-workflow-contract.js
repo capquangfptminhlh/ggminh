@@ -18,4 +18,10 @@ assert.ok(yaml.includes('Restore Node.js 22 for official identity generator'), '
 assert.ok(active.includes('Restore Node.js 22 for official identity generator'), 'active official generator requires Node.js 22');
 assert.ok(active.includes('npm install --prefix "$runtime"'), 'active workflow must install pinned runtime into correct prefix');
 assert.ok(active.includes('LHM-Stage0-Camoufox-Configured-Report'), 'active workflow must upload configured measurement report');
+for(const [name,wf] of [['staged',yaml],['active',active]]) {
+ const step=wf.slice(wf.indexOf('- name: Measure two configured Camoufox profiles'),wf.indexOf('- name: Publish only the configured Stage-0 report'));
+ assert.ok(step.includes('LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash'), name+': configured test must receive approved engine digest');
+}
 console.log('staged-workflow-contract: PASS (static patch check only; real configured Windows run NOT_RUN)');
+
+assert.ok(active.includes('release/v5.8.0-commercial-preflight-20261022'), 'release candidate must trigger configured Windows verification');
