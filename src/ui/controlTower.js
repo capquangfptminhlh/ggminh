@@ -26,6 +26,7 @@
     byId('selection-open').disabled = ids.length === 0 || ids.length > 10;
     byId('selection-group').disabled = ids.length === 0;
     byId('selection-export').disabled = ids.length === 0;
+    byId('tower-agency-export').disabled=agencyBusy||ids.length<1||ids.length>50;
   }
   function status(message, error = false) {
     const display = byId('tower-status');
@@ -83,6 +84,74 @@
     } catch(error) {
       status.textContent='Không kiểm tra được Fleet Triage. Hãy thử lại hoặc mở Health Check.';
     } finally {triageLoading=false;button.disabled=false;}
+  }
+  let agencyBusy=false;
+  let agencyPreviewReady=false;
+  function handoffMessage(message,error=false) {
+    const line=byId('tower-agency-status');
+    line.textContent=message;
+    line.dataset.state=error?'error':'normal';
+  }
+  function agencyPassword() {
+    const value=byId('tower-agency-password').value;
+    if(value.length<12||value.length>512)throw Error('Mật khẩu cần tối thiểu 12 ký tự, tối đa 512.');
+    return value;
+  }
+  function resetAgencyControls() {
+    byId('tower-agency-password').value='';
+    byId('tower-agency-export').disabled=agencyBusy||selected().length<1||selected().length>50;
+    byId('tower-agency-preview').disabled=agencyBusy;
+    byId('tower-agency-commit').disabled=agencyBusy||!agencyPreviewReady;
+  }
+  async function agencyExport() {
+    if(agencyBusy)return;
+    const ids=selected();
+    if(!ids.length||ids.length>50)return handoffMessage('Chọn 1–50 hồ sơ trên bảng trước khi xuất.',true);
+    let pass;
+    try{pass=agencyPassword();}catch(error){return handoffMessage(error.message,true);}
+    if(!confirm('Xuất '+ids.length+' mẫu hồ sơ mã hóa? Không chuyển đăng nhập/cookie, tài khoản, fingerprint hoặc proxy. Người nhận sẽ phải gán lại proxy nếu cần.'))return;
+    agencyBusy=true;resetAgencyControls();
+    try{
+      const result=await api.agencyHandoffExport(ids,pass);
+      handoffMessage(result.canceled?'Đã hủy lưu gói chia sẻ.':
+        'Đã xuất '+result.count+' mẫu hồ sơ mã hóa. Gửi mật khẩu qua kênh riêng.');
+    }catch(error){handoffMessage('Không thể xuất mẫu: '+String(error.message||error),true);}
+    finally{pass=null;agencyBusy=false;resetAgencyControls();}
+  }
+  async function agencyPreview() {
+    if(agencyBusy)return;
+    let pass;
+    try{pass=agencyPassword();}catch(error){return handoffMessage(error.message,true);}
+    agencyBusy=true;agencyPreviewReady=false;resetAgencyControls();
+    try{
+      const result=await api.agencyHandoffPreview(pass);
+      if(result.canceled)handoffMessage('Đã hủy chọn tệp.');
+      else if(result.schema!=='lhm.agency.preview.v1')throw Error('Định dạng xem trước không đúng');
+      else{
+        agencyPreviewReady=true;
+        handoffMessage('Đã giải mã và xem trước '+result.count+' mẫu ('+
+          result.browserFamilies.chromium+' Chromium, '+
+          result.browserFamilies.gecko+' Gecko). '+
+          result.requiresProxySetup+' mẫu cần cấu hình lại proxy. '+
+          'Nhập lại mật khẩu và bấm Xác nhận nhập để tạo profile mới.');
+      }
+    }catch(error){handoffMessage('Không thể xem trước: '+String(error.message||error),true);}
+    finally{pass=null;agencyBusy=false;resetAgencyControls();}
+  }
+  async function agencyCommit() {
+    if(agencyBusy||!agencyPreviewReady)return;
+    let pass;
+    try{pass=agencyPassword();}catch(error){return handoffMessage(error.message,true);}
+    if(!confirm('Nhập các mẫu thành hồ sơ MỚI trên máy này? Mỗi hồ sơ sẽ có phiên trống, fingerprint native và proxy direct. Không gộp hay ghi đè hồ sơ cũ.'))return;
+    agencyBusy=true;agencyPreviewReady=false;resetAgencyControls();
+    try{
+      const result=await api.agencyHandoffCommit(pass,'IMPORT_NEW_TEMPLATES');
+      handoffMessage('Đã tạo '+result.created+' hồ sơ mới; '+
+        result.needsProxySetup+' hồ sơ phải cấu hình lại proxy trước khi mở. '+
+        'Không có cookie, mật khẩu hay phiên đăng nhập được nhập.');
+      await refreshProfiles();
+    }catch(error){handoffMessage('Không thể nhập mẫu: '+String(error.message||error),true);}
+    finally{pass=null;agencyBusy=false;resetAgencyControls();}
   }
   function makeGroup(group, max) {
     const button = node('button', 'tower-group');
@@ -165,7 +234,7 @@
     refresh();
     refreshTriage();
   }
-  function close() { byId('modal-control-tower').classList.remove('open'); }
+  function close() { byId('modal-control-tower').classList.remove('open'); byId('tower-agency-password').value=''; }
   async function refreshProfiles() {
     if (typeof loadProfiles === 'function') await loadProfiles();
     await refresh();
@@ -257,6 +326,9 @@
     byId('tower-done').addEventListener('click', close);
     byId('tower-refresh').addEventListener('click',()=>{refresh();refreshTriage();});
     byId('tower-triage-refresh').addEventListener('click',refreshTriage);
+    byId('tower-agency-export').addEventListener('click',agencyExport);
+    byId('tower-agency-preview').addEventListener('click',agencyPreview);
+    byId('tower-agency-commit').addEventListener('click',agencyCommit);
     byId('tower-export-all').addEventListener('click', () => exportProfiles([]));
     byId('tower-open-health').addEventListener('click', () => {
       close();
