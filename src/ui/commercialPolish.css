@@ -1,0 +1,197 @@
+/* LHM commercial preview polish
+   UI-only final cascade for the existing light workspace design.
+   No change to product security, network, fingerprint, license, or release gates. */
+:root{
+  --lhm-surface:#ffffff;
+  --lhm-subtle:#f5f8fe;
+  --lhm-border:#dce5f2;
+  --lhm-heading:#162a48;
+  --lhm-body:#3c526d;
+  --lhm-muted:#526986;
+  --lhm-focus:#3468d9;
+  --lhm-danger:#a52532;
+  --lhm-warn:#8a4d0a;
+  --lhm-ok:#176746;
+}
+#modal-ads-launch-guard .modal-dialog,
+#modal-performance-lab .modal-dialog,
+#modal-launch-readiness .modal-dialog,
+#modal-app-about .modal-dialog{
+  width:min(930px,calc(100vw - 28px));
+  max-width:calc(100vw - 28px);
+  max-height:calc(100dvh - 28px);
+  border:1px solid var(--lhm-border);
+  border-radius:19px;
+  box-shadow:0 26px 80px rgba(16,39,76,.21);
+  background:var(--lhm-surface);
+  overflow:hidden;
+}
+#modal-ads-launch-guard .modal-header,
+#modal-performance-lab .modal-header,
+#modal-launch-readiness .modal-header,
+#modal-app-about .modal-header{
+  background:linear-gradient(113deg,#fff 0%,#f2f6fe 100%)!important;
+  flex-shrink:0;
+  gap:12px;
+}
+#modal-ads-launch-guard .modal-header h2,
+#modal-performance-lab .modal-header h2,
+#modal-launch-readiness .modal-header h2,
+#modal-app-about .modal-header h2{
+  color:var(--lhm-heading);
+  font-weight:780;
+  letter-spacing:-.025em;
+}
+#modal-ads-launch-guard .modal-body,
+#modal-performance-lab .modal-body,
+#modal-launch-readiness .modal-body,
+#modal-app-about .modal-body{
+  background:var(--lhm-surface);
+  color:var(--lhm-body);
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+#modal-ads-launch-guard .modal-footer,
+#modal-performance-lab .modal-footer,
+#modal-launch-readiness .modal-footer,
+#modal-app-about .modal-footer{
+  flex-shrink:0;
+  background:#f8fafd;
+  border-top:1px solid var(--lhm-border);
+}
+#modal-ads-launch-guard .btn-close,
+#modal-performance-lab .btn-close,
+#modal-launch-readiness .btn-close,
+#modal-app-about .btn-close{
+  flex:0 0 auto;
+  color:#435b7b;
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+}
+#modal-ads-launch-guard .btn-close:hover,
+#modal-performance-lab .btn-close:hover,
+#modal-launch-readiness .btn-close:hover,
+#modal-app-about .btn-close:hover{background:#e8eef9;color:#1b3d76}
+#modal-ads-launch-guard :is(button,input,textarea,select):focus-visible,
+#modal-performance-lab button:focus-visible,
+#modal-launch-readiness button:focus-visible,
+#modal-app-about button:focus-visible{
+  outline:3px solid rgba(52,104,217,.52);
+  outline-offset:2px;
+}
+#modal-ads-launch-guard .lhm-ads-guard-head{
+  color:#226e55;
+  padding:8px 2px 2px;
+  font-weight:800;
+}
+#modal-ads-launch-guard .lhm-ads-guard-section{
+  background:var(--lhm-subtle);
+  border:1px solid var(--lhm-border);
+  box-shadow:0 4px 13px rgba(31,59,112,.025);
+}
+#modal-ads-launch-guard .lhm-ads-guard-section h3{
+  color:var(--lhm-heading);
+  font-size:15px;
+  letter-spacing:-.015em;
+}
+#modal-ads-launch-guard .lhm-ads-guard-section label,
+#modal-ads-launch-guard .lhm-ads-guard-actions{color:#3e526d}
+#modal-ads-launch-guard .lhm-ads-guard-section input,
+#modal-ads-launch-guard .lhm-ads-guard-section textarea,
+#modal-ads-launch-guard .lhm-ads-qa-item select{
+  background:#fff;
+  color:#1e3553;
+  border:1px solid #bccce2;
+  border-radius:9px;
+}
+#modal-ads-launch-guard .lhm-ads-guard-section :is(input,textarea)::placeholder{color:#70829e;opacity:1}
+#modal-ads-launch-guard .lhm-ads-guard-result,
+#modal-ads-launch-guard .lhm-ads-qa-item{
+  background:#fff;
+  border:1px solid var(--lhm-border);
+  color:#293f5d;
+}
+#modal-ads-launch-guard .lhm-ads-guard-result-head strong{color:#223a58}
+#modal-ads-launch-guard .lhm-ads-guard-state{color:#2d5fab}
+#modal-ads-launch-guard .lhm-ads-guard-finding{color:#455b79}
+#modal-ads-launch-guard .lhm-ads-guard-finding.is-error,
+#modal-ads-launch-guard .lhm-ads-guard-result[data-state="blocked"] .lhm-ads-guard-state{color:var(--lhm-danger)}
+#modal-ads-launch-guard .lhm-ads-guard-finding.is-warning,
+#modal-ads-launch-guard .lhm-ads-guard-result[data-state="review"] .lhm-ads-guard-state{color:var(--lhm-warn)}
+#modal-ads-launch-guard .lhm-ads-guard-result[data-state="blocked"]{border-left:4px solid #d45160}
+#modal-ads-launch-guard .lhm-ads-guard-result[data-state="review"]{border-left:4px solid #e6a82e}
+
+#modal-performance-lab #performance-lab-status{color:var(--lhm-body)}
+#modal-performance-lab .lhm-perf-head{
+  color:#245943;
+  background:#e8f7f0;
+  border:1px solid #b9e2ce;
+}
+#modal-performance-lab .lhm-perf-card{
+  background:#f6f9ff;
+  border:1px solid var(--lhm-border);
+  box-shadow:0 5px 15px rgba(25,47,91,.04);
+}
+#modal-performance-lab .lhm-perf-card strong{color:var(--lhm-heading)}
+#modal-performance-lab .lhm-perf-time{color:#2555af}
+#modal-performance-lab .lhm-perf-card small{color:#526984}
+
+#modal-launch-readiness .lhm-launch-layer{
+  background:#f4f8ff;
+  border:1px solid var(--lhm-border);
+}
+#modal-launch-readiness .lhm-launch-layer strong{color:var(--lhm-heading)}
+#modal-launch-readiness .lhm-launch-row{color:#3e546f}
+#modal-launch-readiness .lhm-launch-state{color:var(--lhm-warn)}
+#modal-launch-readiness .lhm-launch-status{background:#eff4fc;color:#344d6a;border-color:var(--lhm-border)}
+#modal-launch-readiness .lhm-launch-status[data-state="blocked"]{background:#fff0f1;color:var(--lhm-danger);border-color:#f2bec6}
+#modal-launch-readiness .lhm-launch-status[data-state="review"]{background:#fff8e8;color:var(--lhm-warn);border-color:#f2d39b}
+#modal-launch-readiness .lhm-launch-status[data-state="ready"]{background:#e9f7ee;color:var(--lhm-ok);border-color:#b5e0c4}
+#modal-launch-readiness .lhm-launch-issues .is-error{color:var(--lhm-danger)}
+#modal-launch-readiness .lhm-launch-issues .is-warning{color:var(--lhm-warn)}
+
+#modal-app-about .lhm-update-center,
+#modal-app-about .lhm-upgrade-readiness{
+  color:var(--lhm-body);
+  background:var(--lhm-subtle);
+  border:1px solid var(--lhm-border);
+}
+#modal-app-about .lhm-update-center h3,
+#modal-app-about .lhm-upgrade-readiness h4{color:var(--lhm-heading)}
+#modal-app-about :is(#lhm-update-status,#lhm-upgrade-safety-status){color:#405775}
+#modal-app-about .lhm-update-offer,
+#modal-app-about .lhm-upgrade-safety-report p{
+  color:var(--lhm-body);
+  background:#fff;
+  border:1px solid var(--lhm-border);
+}
+#modal-app-about .lhm-upgrade-safety-report .is-error{color:var(--lhm-danger)}
+#modal-app-about .lhm-upgrade-safety-report .is-warning{color:var(--lhm-warn)}
+
+@media(max-width:700px){
+  #modal-ads-launch-guard .modal-dialog,
+  #modal-performance-lab .modal-dialog,
+  #modal-launch-readiness .modal-dialog,
+  #modal-app-about .modal-dialog{width:calc(100vw - 12px);max-width:calc(100vw - 12px);max-height:calc(100dvh - 12px);border-radius:14px}
+  #modal-ads-launch-guard .modal-header,
+  #modal-performance-lab .modal-header,
+  #modal-launch-readiness .modal-header,
+  #modal-app-about .modal-header{padding:14px 16px}
+  #modal-ads-launch-guard .modal-body,
+  #modal-performance-lab .modal-body,
+  #modal-launch-readiness .modal-body,
+  #modal-app-about .modal-body{padding:15px}
+  #modal-ads-launch-guard .lhm-ads-guard-section{padding:12px}
+  #modal-ads-launch-guard .lhm-ads-guard-actions .btn{min-height:36px}
+}
+@media(prefers-reduced-motion:reduce){
+  #modal-ads-launch-guard .modal-dialog,
+  #modal-performance-lab .modal-dialog,
+  #modal-launch-readiness .modal-dialog,
+  #modal-app-about .modal-dialog{animation:none!important;transition:none!important}
+}
