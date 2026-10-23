@@ -143,7 +143,7 @@ function importTemplates(store,text,password){
   const imported=[];
   for(const t of templates){
     imported.push(staged.saveProfile({
-      name:t.name.slice(0,148)+' (được chia sẻ)',
+      name:t.name.slice(0,138)+' (được chia sẻ)',
       group:t.group,tags:t.tags,
       engine:t.engine,engine_type:t.engine==='gecko'?'firefox':'chromium',
       startUrls:[t.startUrl],
