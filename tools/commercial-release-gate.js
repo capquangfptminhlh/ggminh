@@ -13,6 +13,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const cp = require('node:child_process');
+const {readBuildInfo,validateBuildInfo}=require('./write-build-info');
+const {validateCaptureEvidence}=require('./ci-release-evidence');
 
 const HEX64=/^[0-9a-f]{64}$/i;
 const HEX40=/^[0-9a-f]{40}$/i;
@@ -112,14 +114,35 @@ function evaluate(e,env={}){
         throw Error('installer SHA-256 does not match observed file bytes');
     }catch(error){add('PACKAGE','EXE_DIGEST_UNVERIFIED',String(error.message||error).slice(0,180));}
   }
-  if(build?.installerLabel==='Preview')
+  // Bằng chứng CI và build-info phải cùng nguồn; không nhận hash EXE tự khai riêng lẻ.
+  try{
+    if(!build?.ciEvidencePath||!build?.buildInfoPath)throw Error('Missing CI evidence/build-info path');
+    const ci=JSON.parse(fs.readFileSync(path.resolve(ROOT,build.ciEvidencePath),'utf8'));
+    validateCaptureEvidence(ci.build);
+    const biPath=path.resolve(ROOT,build.buildInfoPath),bi=readBuildInfo(biPath);
+    const exePath=path.resolve(ROOT,build.exePath);
+    const runUrl='https://github.com/'+bi.source.repository+'/actions/runs/'+bi.source.runId;
+    if(ci.schema!=='lhm.release.build-evidence.v1'||ci.version!==version||
+       ci.build?.commit!==sha||ci.build?.runId!==bi.source.runId||
+       bi.source.provider!=='github-actions'||bi.commit!==sha||bi.appVersion!==version||
+       one?.gitHubRun!==runUrl||
+       JSON.stringify(validateBuildInfo(ci.build?.buildInfo))!==JSON.stringify(bi)||
+       ci.build?.packagedBuildInfoSha256!==sha256(biPath)||
+       ci.build?.windowsInstaller?.name!==path.basename(exePath)||
+       ci.build?.windowsInstaller?.bytes!==fs.statSync(exePath).size||
+       ci.build?.windowsInstaller?.sha256!==build.exeSha256||
+       ci.policy?.publicReleaseAuthorized!==false||
+       ci.outcome!=='CI_BUILD_EVIDENCE_ONLY_NOT_COMMERCIAL_APPROVAL')
+      throw Error('CI evidence, packaged provenance, current commit or exact installer differ');
+  }catch(error){add('PACKAGE','BUILD_PROVENANCE_MISMATCH',String(error.message||error).slice(0,180));}
+  if(build?.installerLabel!=='Commercial'||/preview/i.test(path.basename(build?.exePath||'')))
     add('PACKAGE','PREVIEW_LABEL','A commercial release must not silently be marketed as a signed production build');
   if(!['SIGNED_VALID','OWNER_ACCEPTED_UNSIGNED'].includes(build?.authenticodeStatus))
     add('PACKAGE','AUTHENTICODE_POLICY','Authenticode signature or explicit owner acceptance of unsigned delivery required');
 
   const engine=e?.engine;
   if(engine?.distributionStatus!=='SIGNED_APPROVED'||
-    !engine.enginePublisherVerified||!engine.licensedForDistribution||
+    engine.enginePublisherVerified!==true||engine.licensedForDistribution!==true||
     typeof engine.approvedOrigin!=='string'||!engine.approvedOrigin.trim()||
     typeof engine.fontsDecision!=='string'||!engine.fontsDecision.trim())
     add('ENGINE','ENGINE_DISTRIBUTION_PENDING','Official engine rights, publisher trust and approved font treatment are unverified');
@@ -180,8 +203,10 @@ function evaluate(e,env={}){
       add('OWNER','DECISION_'+code,'Owner decision missing: '+code);
   }
   const four=e?.gate4;
+  const approvalTime=Date.parse(four?.approvedAt),acceptanceTime=Date.parse(three?.completedAt);
   if(four?.status!=='APPROVED'||four.ownerApprovalForExactSha!==true||
-     !four?.approvedBy||!four?.approvedAt)
+     !four?.approvedBy||four.sourceSha!==sha||four.exeSha256!==build?.exeSha256||
+     !Number.isFinite(approvalTime)||!Number.isFinite(acceptanceTime)||approvalTime<acceptanceTime)
     add('GATE4','FINAL_OWNER_APPROVAL','Final signoff must name exact commit after Gate 3');
 
   return verdict();

@@ -72,7 +72,7 @@ jobs:
           [[ -s "${files[0]}" ]] || { echo "EXE empty"; exit 1; }
           sha256sum "${files[0]}" | tee release-assets/SHA256SUMS.txt
           # Bind the user-reviewed draft to both the SHA-256 of the
-          # exact EXE AND the eight actual Windows source/packaged captures.
+          # exact EXE AND the twelve actual Windows source/packaged captures.
           gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name LHM-Release-Evidence-Windows --dir release-assets
           evidence=release-assets/release-evidence.json
@@ -82,7 +82,7 @@ jobs:
             '.schema == "lhm.release.build-evidence.v1" and
              .build.commit == $sha and .build.runId == $run and
              .build.windowsInstaller.name == $filename and
-             .build.uiCaptureCount == 11 and
+             .build.uiCaptureCount == 12 and
              .policy.publicReleaseAuthorized == false and
              .policy.independentWindowsGate3 == "NOT_VERIFIED_BY_CI" and
              .outcome == "CI_BUILD_EVIDENCE_ONLY_NOT_COMMERCIAL_APPROVAL"' "$evidence" >/dev/null ||

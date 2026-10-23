@@ -22,7 +22,7 @@ jobs:
       - name: Verify build provenance and release evidence tools
         run: |
           node test/write-build-info.js
-          node test/release-evidence.js
+          node test/commercial-ui-release.js
       - name: Write immutable build provenance
         run: node tools/write-build-info.js
       - name: Run verification tests
@@ -96,7 +96,7 @@ jobs:
         env:
           LHM_CI_UI_CAPTURE: '1'
         run: |
-          $proc = Start-Process -FilePath ".\node_modules\electron\dist\electron.exe" -ArgumentList "." -PassThru
+          $proc = Start-Process -FilePath ".\node_modules\electron\dist\electron.exe" -ArgumentList "." -PassThru -WindowStyle Hidden
           try {
             if (-not $proc.WaitForExit(45000)) {
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
@@ -120,7 +120,7 @@ jobs:
           $capture = Join-Path $PWD 'dist\packaged-ui'
           New-Item -ItemType Directory -Force -Path $capture | Out-Null
           $env:LHM_CI_UI_CAPTURE_DIR = $capture
-          $proc = Start-Process -FilePath ".\dist\win-unpacked\LHM Ads Browser.exe" -PassThru
+          $proc = Start-Process -FilePath ".\dist\win-unpacked\LHM Ads Browser.exe" -PassThru -WindowStyle Hidden
           try {
             if (-not $proc.WaitForExit(45000)) {
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
@@ -136,23 +136,6 @@ jobs:
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             }
           }
-      - name: Generate and verify release evidence
-        shell: pwsh
-        env:
-          LHM_TEST_STATUS: PASS
-          LHM_CHROMIUM_SMOKE_STATUS: PASS
-          LHM_PACKAGED_UI_STATUS: PASS
-        run: |
-          $installers = @(Get-ChildItem -LiteralPath '.\dist' -Filter '*.exe' -File)
-          if ($installers.Count -ne 1) {
-            throw "Expected exactly one installer, found $($installers.Count)"
-          }
-          $signature = Get-AuthenticodeSignature -LiteralPath $installers[0].FullName
-          $env:LHM_AUTHENTICODE_STATUS = $signature.Status.ToString()
-          node tools/release-evidence.js --installer $installers[0].FullName --build-info '.\build-info.json' --output '.\dist\release-evidence.json'
-          if ($LASTEXITCODE -ne 0) { throw 'Release evidence generation failed' }
-          node tools/release-evidence.js --verify --installer $installers[0].FullName --build-info '.\build-info.json' --evidence '.\dist\release-evidence.json'
-          if ($LASTEXITCODE -ne 0) { throw 'Release evidence verification failed' }
       - name: Upload actual Electron UI preview
         if: always()
         uses: actions/upload-artifact@v4

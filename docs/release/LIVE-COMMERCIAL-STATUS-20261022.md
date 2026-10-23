@@ -1,5 +1,8 @@
 # LHM Ads Browser v5.8.0 — tình trạng phát hành thương mại (22/10/2026)
 
+> Hồ sơ lịch sử của các commit ghi bên dưới, không phải kết quả của bản tích hợp mới.
+> Xem `docs/audits/integration-convergence-20261023.md` cho phạm vi tích hợp tiếp theo.
+
 **QUYẾT ĐỊNH:** NOT_READY. Chủ dự án đã đề nghị phát hành chính thức, nhưng chỉ sau khi đủ **Gate 1 → Gate 2 → Gate 3 → Gate 4** theo `TIEU-CHI-SAN-PHAM.md` §12. Không gắn tag, không merge `main`, không tạo GitHub Release từ cây chưa nghiệm thu.
 
 ## Bằng chứng mới nhất đã đối chiếu trực tiếp GitHub

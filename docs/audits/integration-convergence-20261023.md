@@ -9,7 +9,7 @@ chữ ký manifest/cập nhật và các cổng nghiệm thu vẫn giữ nguyên
 
 ## Nguồn tích hợp cố định cho lượt này
 
-- main: `2b5eb5ffe7be2d9d12a88ecb8797ba76143d2c86` (bao gồm PR #25–#33).
+- main: `e66769043fc1af33c0f84db02dedfc3a0c7f2a27` (bao gồm PR #25–#44).
 - PR #23: `cd7d6b95ecc74a255de8098751b163b67c842388`, gồm nền PR #21.
 - PR #24: `19564b581fac84a9c036e28b67ff523be9254fd7`.
 - Nhánh cục bộ: `08edd42` cùng thay đổi chưa commit về cảnh báo, xóa dữ liệu
