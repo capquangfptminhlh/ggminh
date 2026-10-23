@@ -7,6 +7,38 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');
+const CAPTURES=Object.freeze([
+  'workspace-preview.png','workspace-expanded-preview.png',
+  'workspace-command-preview.png','workspace-engine-provider-preview.png',
+  'workspace-ads-guard-preview.png','workspace-performance-lab-preview.png',
+  'workspace-about-update-preview.png','workspace-customer-handoff-preview.png',
+  'workspace-license-preview.png','workspace-fleet-triage-preview.png',
+  'workspace-agency-handoff-preview.png','workspace-profile-paging-preview.png'
+]);
+const sha256=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+function validateCaptureEvidence(build){
+  if(build?.uiCaptureCount!==CAPTURES.length||
+     JSON.stringify(build.uiCaptureNames)!==JSON.stringify(CAPTURES)||
+     !Array.isArray(build.uiCaptures)||build.uiCaptures.length!==CAPTURES.length)
+    throw Error('Incomplete CI capture evidence');
+  for(let i=0;i<CAPTURES.length;i++){
+    const capture=build.uiCaptures[i];
+    if(capture?.name!==CAPTURES[i])throw Error('Unexpected CI capture name/order');
+    for(const place of ['source','packaged']){
+      const entry=capture[place];
+      if(!Number.isSafeInteger(entry?.bytes)||entry.bytes<10000||
+         typeof entry?.sha256!=='string'||!/^[a-f0-9]{64}$/.test(entry.sha256))
+        throw Error('Invalid CI capture byte count or SHA-256');
+    }
+  }
+  return true;
+}
+function captureDigest(filename){
+  const info=fs.statSync(filename);
+  if(!info.isFile()||info.size<10000)
+    throw Error('Missing or undersized CI UI capture: '+path.basename(filename));
+  return {bytes:info.size,sha256:sha256(fs.readFileSync(filename))};
+}
 function expectedExeName(pkg){
   const version=String(pkg.version||'');
   if(!/^\d+\.\d+\.\d+$/.test(version))throw Error('Invalid package version');
@@ -29,15 +61,17 @@ function produceReleaseEvidence({dist,pkg,sha,runId,files}){
   if(size<1024*1024)throw Error('Installer is implausibly small');
   const digest=crypto.createHash('sha256').update(fs.readFileSync(exePath)).digest('hex');
   const present=new Set(files||fs.readdirSync(dist));
-  const captures=[
-    'workspace-preview.png','workspace-expanded-preview.png',
-    'workspace-command-preview.png','workspace-engine-provider-preview.png',
-    'workspace-ads-guard-preview.png','workspace-performance-lab-preview.png',
-    'workspace-about-update-preview.png','workspace-customer-handoff-preview.png',
-    'workspace-license-preview.png','workspace-fleet-triage-preview.png','workspace-agency-handoff-preview.png','workspace-profile-paging-preview.png'
-  ];
+  const captures=CAPTURES;
   const absent=captures.filter(name=>!present.has(name));
   if(absent.length)throw Error('CI UI captures missing: '+absent.join(', '));
+  const uiCaptures=captures.map(name=>({
+    name,
+    source:captureDigest(path.join(dist,name)),
+    packaged:captureDigest(path.join(dist,'packaged-ui',name))
+  }));
+  validateCaptureEvidence({
+    uiCaptureCount:captures.length,uiCaptureNames:captures,uiCaptures
+  });
   return {
     schema:'lhm.release.build-evidence.v1',
     product:'LHM Ads Browser',
@@ -45,6 +79,7 @@ function produceReleaseEvidence({dist,pkg,sha,runId,files}){
     build:{commit:sha,runId:String(runId),platform:'windows-latest',arch:'x64',
       windowsInstaller:{name:exe,bytes:size,sha256:digest},
       uiCaptureNames:captures,uiCaptureCount:captures.length,
+      uiCaptures,
       scope:'automated_ci_only'},
     policy:{
       authenticodeRequired:false,
@@ -74,4 +109,4 @@ function main(){
 if(require.main===module){
   try{main();}catch(error){console.error(error.message);process.exitCode=1;}
 }
-module.exports={expectedExeName,produceReleaseEvidence};
+module.exports={expectedExeName,produceReleaseEvidence,validateCaptureEvidence,CAPTURES,sha256};
