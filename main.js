@@ -279,7 +279,17 @@ function createWindow() {
             "(() => { document.getElementById('btn-license-center').click(); const modal=document.getElementById('modal-license-center'); return {open:modal.classList.contains('open'),state:!!document.getElementById('license-state'),activate:!!document.getElementById('license-activate'),renew:!!document.getElementById('license-expires')}; })()",true);
           if(!Object.values(licenseCheck).every(Boolean))
             throw Error('License/renewal UI failed: '+JSON.stringify(licenseCheck));
-          await new Promise(resolve=>setTimeout(resolve,500));
+          await new Promise(resolve=>setTimeout(resolve,350));
+          const licenseMotion=await mainWindow.webContents.executeJavaScript(
+            "(() => { document.getElementById('lhm-nm-license-next').click(); const modal=document.getElementById('modal-license-center'); const front=document.getElementById('lhm-nm-license-status-face'); const back=document.getElementById('lhm-nm-license-activate-face'); return {mode:modal.dataset.lhmLicenseMode,frontInert:front.inert,backInert:back.inert,frontHidden:front.getAttribute('aria-hidden'),backHidden:back.getAttribute('aria-hidden')}; })()",true);
+          if(licenseMotion.mode!=='activate'||!licenseMotion.frontInert||licenseMotion.backInert||
+             licenseMotion.frontHidden!=='true'||licenseMotion.backHidden!=='false')
+            throw Error('License 3D flip / focus safety failed: '+JSON.stringify(licenseMotion));
+          await new Promise(resolve=>setTimeout(resolve,880));
+          const cardTransform=await mainWindow.webContents.executeJavaScript(
+            "getComputedStyle(document.querySelector('.lhm-nm-flip-card')).transform",true);
+          if(!cardTransform||cardTransform==='none'||!cardTransform.includes('matrix'))
+            throw Error('License flip CSS transition not rendered in Electron');
           await mainWindow.webContents.executeJavaScript(
             "(() => { const id=document.getElementById('license-installation-id'); if(id)id.value='[REDACTED FOR CI SCREENSHOT]'; const token=document.getElementById('license-token'); if(token)token.value=''; })()",true);
           writeCapture('workspace-license-preview.png',await mainWindow.webContents.capturePage());
