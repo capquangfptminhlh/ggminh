@@ -56,17 +56,30 @@ function paidState(row){return row.status==='paid'||row.status==='issued';}
 export function createPortalApi({database,now,env,issuerKeys,signToken}){
  async function handle(path,input){
   if(path==='summary'){
-   const [orders,licenses]=await Promise.all([
+   // The table intentionally lists only 150 recent rows, but summary cards
+   // MUST aggregate the full ledger. A confirmed payment is not equivalent to
+   // an issued key; both 'paid' and 'issued' count as manually confirmed funds.
+   const [orders,licenses,totals]=await Promise.all([
     database.prepare('SELECT * FROM portal_orders ORDER BY created_at DESC LIMIT 150').all(),
-    database.prepare('SELECT license_id AS licenseId, installation_id AS installationId, expires_at AS expiresAt, enforcement_mode AS enforcementMode, revoked FROM licenses ORDER BY updated_at DESC LIMIT 150').all()
+    database.prepare('SELECT license_id AS licenseId, installation_id AS installationId, expires_at AS expiresAt, enforcement_mode AS enforcementMode, revoked FROM licenses ORDER BY updated_at DESC LIMIT 150').all(),
+    database.prepare(`SELECT COUNT(*) AS orders,
+      COUNT(CASE WHEN status='pending' THEN 1 END) AS pending,
+      COUNT(CASE WHEN status='paid' THEN 1 END) AS paidAwaitingIssue,
+      COUNT(CASE WHEN status='issued' THEN 1 END) AS issued,
+      COALESCE(SUM(CASE WHEN status IN ('paid','issued') THEN amount_vnd ELSE 0 END),0) AS paidValueVnd
+      FROM portal_orders`).first()
    ]);
    const rows=(orders.results||[]).map(orderPublic);
+   const counts={orders:totals?.orders,pending:totals?.pending,
+    paidAwaitingIssue:totals?.paidAwaitingIssue,issued:totals?.issued,
+    paidValueVnd:totals?.paidValueVnd,scope:'all_orders',
+    paymentSource:'administrator_manual_confirmation'};
+   if(['orders','pending','paidAwaitingIssue','issued','paidValueVnd'].some(
+      key=>!Number.isSafeInteger(counts[key])||counts[key]<0))
+    return json(503,{error:'financial_summary_unavailable'});
    return json(200,{currency:'VND',priceMode:'manual_per_order',
     paymentMethod:'manual_bank_transfer',paymentAutomatic:false,
-    orders:rows,licenses:licenses.results||[],
-    counts:{orders:rows.length,pending:rows.filter(x=>x.status==='pending').length,
-      issued:rows.filter(x=>x.status==='issued').length,
-      paidValueVnd:rows.filter(x=>x.status==='issued').reduce((s,x)=>s+x.amountVnd,0)}});
+    orders:rows,licenses:licenses.results||[],counts});
   }
   if(path==='create'){
    if(!input||Object.keys(input).sort().join('|')!=='action|amountVnd|customerEmail|customerName|installationId|licenseId|months')
