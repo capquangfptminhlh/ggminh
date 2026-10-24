@@ -1,5 +1,7 @@
 # LHM License Authority — Cloudflare Workers + D1 (không cần VPS riêng)
 
+**Mục tiêu của `browser.lhmcrm.com` đã cập nhật: WEB QUẢN TRỊ KEY, GIA HẠN VÀ THANH TOÁN.** Trang chủ không còn là trang giới thiệu. Đọc [ADMIN_PORTAL.md](ADMIN_PORTAL.md) để biết quy trình thực tế và Secret mã hóa key; xem [DEPLOY_BROWSER_LHMCRM.md](DEPLOY_BROWSER_LHMCRM.md) để triển khai Cloudflare.
+
 **Đích tên miền đã cấu hình trong Wrangler:** `browser.lhmcrm.com` cho trang LHM Ads Browser tại `/` và API license tại `/v1/verify`. [Hướng dẫn triển khai tên miền và DNS Cloudflare](DEPLOY_BROWSER_LHMCRM.md). Cấu hình trong repo **không đồng nghĩa domain đã live**.
 
 **Mức hoàn thành: mã triển khai + bài thử tổng hợp, CHƯA DEPLOY production.**

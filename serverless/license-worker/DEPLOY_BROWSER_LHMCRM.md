@@ -4,7 +4,7 @@
 
 ## Kiến trúc đã chốt
 
-- `https://browser.lhmcrm.com/` — trang giới thiệu LHM Ads Browser, ghi rõ phần mềm Windows và chưa phát hành thương mại.
+- `https://browser.lhmcrm.com/` — **web quản trị** tạo đơn, cấp key, gia hạn và kiểm tra thanh toán thủ công; chưa tự thu tiền từ ngân hàng.
 - `https://browser.lhmcrm.com/health` — health của dịch vụ license; trả `{"status":"ok"}` **chỉ khi** D1 và cặp khóa issuer đã được thiết lập đúng.
 - `https://browser.lhmcrm.com/v1/verify` — endpoint POST từ bộ cài Windows, ký biên nhận Ed25519.
 - `/v1/admin/register`, `/v1/admin/revocation` — chỉ cho quản trị viên có Bearer secret, cần bảo vệ thêm tại Cloudflare WAF/Access phù hợp.
@@ -22,10 +22,11 @@
      - `LHM_ISSUER_PRIVATE_PKCS8_B64` (khóa issuer Ed25519 đúng PKCS#8 DER base64)
      - `LHM_ISSUER_PUBLIC_SPKI_B64` (public SPKI DER base64 tương ứng và khớp EXE)
      - `LHM_LICENSE_ADMIN_TOKEN` (bí mật quản trị 32+ ký tự ngẫu nhiên)
+     - `LHM_ORDER_TOKEN_ENC_KEY_B64` (32 byte ngẫu nhiên dạng base64 dùng AES-GCM mã hóa key trong D1; backup riêng)
    - `npx wrangler deploy`
 5. Cloudflare **tự tạo DNS record và HTTPS certificate** cho Custom Domain khi deploy/attach thành công; không cần tạo thêm CNAME thủ công. Kiểm tra trong **Worker → Settings → Domains & Routes** phải có `browser.lhmcrm.com` trạng thái active và không có lỗi conflict. Nếu đã deploy từ Wrangler nhưng chưa attach, chọn **Add → Custom Domain → browser.lhmcrm.com** theo đúng Worker.
 6. Kiểm tra HTTPS:
-   - Mở `https://browser.lhmcrm.com/`: hiển thị trang LHM Ads Browser (Preview).
+   - Mở `https://browser.lhmcrm.com/`: hiển thị trang đăng nhập **LHM License Center**. Cần nhập Secret admin mới vào dashboard. Không có Secret thì không xem được đơn/key. Xem `ADMIN_PORTAL.md`.
    - Mở `https://browser.lhmcrm.com/health`: trả HTTP 200 + `status:ok` khi **D1 đã migrate và issuer keys đúng**. 503 là lỗi và chưa cho phép phục vụ khách.
    - `POST /v1/verify` với token hợp lệ **chưa được đăng ký** phải từ chối; sau `register` phải trả **biên nhận có chữ ký**, app Windows xác minh được. Không kiểm thử bằng token thật qua công cụ công khai.
    - Thử sai key, revoke, renew, offline, D1 down, thời hạn owner-sweep trên **Windows độc lập**.

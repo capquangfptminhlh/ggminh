@@ -4,7 +4,9 @@
  * Runs only over Cloudflare HTTPS; production keys are Worker secrets.
  * IMPORTANT: verify / sign use the EXACT lhmlic1 + lhmproof1 formats.
  */
-import { renderLanding } from './landing.mjs';
+import { renderAdminPage } from './adminPage.mjs';
+import { renderClientScript } from './adminClient.mjs';
+import { createPortalApi } from './adminPortal.mjs';
 const LICENSE_ID=/^lic_[a-f0-9]{24}$/;
 const INSTALL_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const NONCE=/^[a-zA-Z0-9_-]{22}$/;
@@ -101,6 +103,12 @@ async function verifyToken(token,publicKey){
   encoder.encode('lhmlic1.'+pieces[1]));
  if(!ok)throw Error('invalid_license');
  return parsed;
+}
+async function signToken(claims,privateKey){
+ const content=base64url(encoder.encode(stableClaims(claims)));
+ const message='lhmlic1.'+content;
+ const signature=new Uint8Array(await crypto.subtle.sign('Ed25519',privateKey,encoder.encode(message)));
+ return message+'.'+base64url(signature);
 }
 async function signProof(data,privateKey){
  const payload=JSON.stringify({version:1,licenseId:data.licenseId,
@@ -225,7 +233,9 @@ export function createAuthority({clock=()=>Date.now()}={}){
    if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))
     return response(400,{error:'https_required'});
    if(url.pathname==='/'&&['GET','HEAD'].includes(request.method))
-    return renderLanding(request);
+    return renderAdminPage(request);
+   if(url.pathname==='/admin.js'&&request.method==='GET')
+    return renderClientScript();
    if(url.pathname==='/health'&&request.method==='GET'){
     try{
      const database=db(env);
@@ -238,15 +248,29 @@ export function createAuthority({clock=()=>Date.now()}={}){
    const isVerify=url.pathname==='/v1/verify'&&request.method==='POST';
    const isRegister=url.pathname==='/v1/admin/register'&&request.method==='POST';
    const isRevoke=url.pathname==='/v1/admin/revocation'&&request.method==='POST';
-   if(!isVerify&&!isRegister&&!isRevoke)
+   const portalMethod=url.pathname==='/v1/admin/portal/summary'?'GET':'POST';
+   const isPortal=url.pathname.startsWith('/v1/admin/portal/')&&
+     ['summary','create','confirm-payment','issue','token'].includes(url.pathname.split('/').pop())&&
+     request.method===portalMethod;
+   if(!isVerify&&!isRegister&&!isRevoke&&!isPortal)
     return response(404,{error:'not_found'});
    try{
     const database=db(env);
     const now=clock();
     if(!Number.isSafeInteger(now)||now<0)throw Error('clock_invalid');
     // Authenticate BEFORE reading an administrative request body.
-    if((isRegister||isRevoke)&&!await isAdmin(request,env))
+    if((isRegister||isRevoke||isPortal)&&!await isAdmin(request,env))
      return response(401,{error:'unauthorized'});
+    if(isPortal){
+     // No cross-origin mutations. Authorization is via Bearer (never cookies).
+     const origin=request.headers.get('Origin');
+     if(origin&&origin!==url.origin)return response(403,{error:'cross_origin_forbidden'});
+     const action=url.pathname.split('/').pop();
+     const input=action==='summary'?null:await readJson(request);
+     if(input?.error)return input.error;
+     return await createPortalApi({database,now,env,issuerKeys,signToken})
+       .handle(action,input?.data||null);
+    }
     const parsed=await readJson(request);
     if(parsed.error)return parsed.error;
     const input=parsed.data;
