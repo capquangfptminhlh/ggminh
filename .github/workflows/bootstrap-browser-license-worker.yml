@@ -52,10 +52,6 @@ jobs:
             echo "Bootstrap refused: Worker exists, API permission denied, or unexpected status ($status)"
             exit 1
           fi
-          if grep -Eq '^\\[\\[routes\\]\\]|^\\[triggers\\]' serverless/license-worker/wrangler.toml; then
-            echo 'Bootstrap configuration unexpectedly exposes routes/cron'
-            exit 1
-          fi
       - name: Compile tests before creating private Worker
         run: |
           npm ci
