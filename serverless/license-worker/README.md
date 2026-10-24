@@ -1,5 +1,7 @@
 # LHM License Authority — Cloudflare Workers + D1 (không cần VPS riêng)
 
+**Đích tên miền đã cấu hình trong Wrangler:** `browser.lhmcrm.com` cho trang LHM Ads Browser tại `/` và API license tại `/v1/verify`. [Hướng dẫn triển khai tên miền và DNS Cloudflare](DEPLOY_BROWSER_LHMCRM.md). Cấu hình trong repo **không đồng nghĩa domain đã live**.
+
 **Mức hoàn thành: mã triển khai + bài thử tổng hợp, CHƯA DEPLOY production.**
 Không bật tính năng bán thuê thật hoặc đánh dấu Gate 3/4 PASS khi chưa chạy trọn checklist
 `docs/release/V58_REAL_RENTAL_ACCEPTANCE.md` từ một Windows độc lập.
