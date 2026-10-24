@@ -1,3 +1,15 @@
+# LHM Browser — Website quản trị key, gia hạn và đơn hàng
+
+**Trang chủ `https://browser.lhmcrm.com/` giờ là bảng quản trị nội bộ** (không phải trang quảng bá). Gồm khách hàng, đơn hàng, giá bằng VND, xác nhận thanh toán thủ công, cấp key và gia hạn. Mã nguồn `src/admin.mjs`, `src/adminClient.mjs`, `src/commerce.mjs`; schema bổ sung `migrations/0002_sales_orders.sql`. Cần chạy `wrangler d1 migrations apply lhm-license-db --remote` để thêm bảng. **Không có ngân hàng/payment gateway tích hợp**: chủ dự án phải kiểm tra tiền vào tài khoản ngân hàng **trước** khi bấm xác nhận, web không tự biết giao dịch nào đã thanh toán. Không lưu số thẻ hoặc thông tin tài khoản ngân hàng.
+
+Quy trình: thêm khách (tên/email) → lấy Installation ID từ phần mềm Windows → tạo đơn, chọn gói/số tháng/giá đã thỏa thuận → đối chiếu giao dịch bên ngân hàng → xác nhận kèm mã giao dịch → bấm cấp key → sao chép `lhmlic1` gửi khách. Gia hạn chọn đơn `Gia hạn`, nhập license ID cũ và đúng Installation ID, chỉ ký key mới sau khi xác nhận tiền. Giao diện dùng mật khẩu quản trị qua Bearer (Secret `LHM_LICENSE_ADMIN_TOKEN`); không lưu mật khẩu trong localStorage/cookie. Đăng nhập lại mỗi khi tải trang. **Bắt buộc dùng HTTPS, MFA tài khoản Cloudflare, Cloudflare Access/WAF hạn chế khu vực `/admin` và `/v1/admin/*`, rate limiting trước khi mở thật.** API không có quyền đọc email/đơn hàng nếu thiếu token quản trị.
+
+Key được ký Ed25519 trong Worker với secret có sự phê duyệt của owner; D1 chỉ giữ claims (không giữ raw token). Chức năng lấy lại key ký lại từ claims sau khi bấm "Xem lại key". Khách Windows vẫn dùng `POST /v1/verify` có chữ ký. Phiên bản này chưa có cổng tự thanh toán của khách, webhook ngân hàng hoặc tự gửi email key; không quảng cáo thanh toán tự động.
+
+**Mức nghiệm thu:** mới là mã nguồn + synthetic tests; **chưa có** Worker/D1 production, Secret production, merchant settlement evidence, Windows độc lập hay Gate 3/4. Bản EXE vẫn Preview.
+
+---
+
 # LHM License Authority — Cloudflare Workers + D1 (không cần VPS riêng)
 
 **Đích tên miền đã cấu hình trong Wrangler:** `browser.lhmcrm.com` cho trang LHM Ads Browser tại `/` và API license tại `/v1/verify`. [Hướng dẫn triển khai tên miền và DNS Cloudflare](DEPLOY_BROWSER_LHMCRM.md). Cấu hình trong repo **không đồng nghĩa domain đã live**.
