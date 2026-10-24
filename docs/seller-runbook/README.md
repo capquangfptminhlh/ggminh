@@ -150,6 +150,27 @@ tuyệt đối: quản trị viên có đặc quyền trên máy khách vẫn c�
 thiệp dữ liệu cục bộ, vì vậy mọi quyết định thương mại phải dựa thêm
 vào log và đối soát phía bán.
 
+### Không dùng VPS: Cloudflare Workers + D1 (chưa triển khai)
+
+Nếu anh không muốn chạy máy chủ Node riêng, repo có bản **Cloudflare Worker + D1**
+trong `serverless/license-worker/`. Đây là **một phương án thay thế**, không
+phải tự động chuyển đường Node local hiện tại sang Cloudflare và không thể
+chỉ trỏ GitHub Pages/Cloudflare Pages tĩnh rồi bán thuê.
+
+- Đọc `serverless/license-worker/README.md` để tạo D1, cấu hình Worker,
+  chuyển khóa issuer vào Cloudflare Secret **sau khi owner duyệt**,
+  đăng ký token vừa cấp bằng `tools/license-cloudflare-sync.js`
+  và cấu hình URL HTTPS ở máy khách.
+- Cloudflare Worker có **Cron quét license owner-sweep** và D1 giữ trạng thái
+  đăng ký/thu hồi bền vững. Máy bán tiếp tục giữ ledger/registry riêng;
+  mỗi lần issue/renew/revoke phải đồng bộ qua API admin đã bảo vệ.
+- Giới hạn 60 lượt/phút tại **Node authority bên dưới không tự tồn tại
+  trên Worker**: bắt buộc cấu hình WAF/rate limiting Cloudflare trước khi
+  cho nhiều khách vào.
+- Hiện chỉ có bài kiểm thử mô phỏng D1 với khóa tổng hợp. Đến khi có
+  **Worker+ D1 thật, HTTPS, Windows khách độc lập và Gate 3/4**, mục
+  thuê production vẫn là NOT_RUN.
+
 ### Dung lượng xác minh qua HTTPS reverse proxy
 
 Server license hiện chỉ lắng nghe `127.0.0.1` và phải được đặt **sau HTTPS proxy/WAF** do bên bán kiểm soát. GitHub Pages hoặc Cloudflare Pages tĩnh **không tự chạy** máy chủ Node này. Cần một dịch vụ thực thi có lưu trữ riêng và kết nối HTTPS thực tế trước khi cấp khách thuê.
