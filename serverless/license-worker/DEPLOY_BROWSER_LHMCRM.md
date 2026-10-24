@@ -4,7 +4,7 @@
 
 ## Kiến trúc đã chốt
 
-- `https://browser.lhmcrm.com/` — trang giới thiệu LHM Ads Browser, ghi rõ phần mềm Windows và chưa phát hành thương mại.
+- `https://browser.lhmcrm.com/` — **web quản trị** tạo đơn, cấp key, gia hạn và kiểm tra thanh toán thủ công; chưa tự thu tiền từ ngân hàng.
 - `https://browser.lhmcrm.com/health` — health của dịch vụ license; trả `{"status":"ok"}` **chỉ khi** D1 và cặp khóa issuer đã được thiết lập đúng.
 - `https://browser.lhmcrm.com/v1/verify` — endpoint POST từ bộ cài Windows, ký biên nhận Ed25519.
 - `/v1/admin/register`, `/v1/admin/revocation` — chỉ cho quản trị viên có Bearer secret, cần bảo vệ thêm tại Cloudflare WAF/Access phù hợp.
