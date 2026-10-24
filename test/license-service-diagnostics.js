@@ -24,7 +24,13 @@ assert(!output.includes('SECRET_DO_NOT_EXPOSE')&&!output.includes('INSTALLATION_
 assert(!output.includes('/v1/verify'),'Endpoint path is unnecessary for client display');
 assert.throws(()=>getLicenseServiceStatus(null,{status:()=>({})}),/unavailable/);
 assert.throws(()=>getLicenseServiceStatus({endpoint:'http://evil.invalid/v1/verify'},
- {status:()=>({active:true})}),/Unsafe/);
+ {status:()=>({active:true})}),/HTTPS/);
+for(const endpoint of ['https://alice:secret@browser.lhmcrm.com/v1/verify',
+ 'https://browser.lhmcrm.com/v1/verify?token=should-not-display',
+ 'https://browser.lhmcrm.com/secret']){
+ assert.throws(()=>getLicenseServiceStatus({endpoint},
+  {status:()=>({active:true})}),/HTTPS/);
+}
 const fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const main=fs.readFileSync(path.join(root,'main.js'),'utf8');
