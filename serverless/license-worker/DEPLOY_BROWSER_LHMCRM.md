@@ -22,6 +22,7 @@
      - `LHM_ISSUER_PRIVATE_PKCS8_B64` (khóa issuer Ed25519 đúng PKCS#8 DER base64)
      - `LHM_ISSUER_PUBLIC_SPKI_B64` (public SPKI DER base64 tương ứng và khớp EXE)
      - `LHM_LICENSE_ADMIN_TOKEN` (bí mật quản trị 32+ ký tự ngẫu nhiên)
+     - `LHM_ORDER_TOKEN_ENC_KEY_B64` (32 byte ngẫu nhiên dạng base64 dùng AES-GCM mã hóa key trong D1; backup riêng)
    - `npx wrangler deploy`
 5. Cloudflare **tự tạo DNS record và HTTPS certificate** cho Custom Domain khi deploy/attach thành công; không cần tạo thêm CNAME thủ công. Kiểm tra trong **Worker → Settings → Domains & Routes** phải có `browser.lhmcrm.com` trạng thái active và không có lỗi conflict. Nếu đã deploy từ Wrangler nhưng chưa attach, chọn **Add → Custom Domain → browser.lhmcrm.com** theo đúng Worker.
 6. Kiểm tra HTTPS:
