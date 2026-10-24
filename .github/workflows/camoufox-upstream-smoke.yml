@@ -36,6 +36,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
           npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund camoufox@0.5.8 playwright-core@1.62.0
           if ($LASTEXITCODE -ne 0) { throw 'Install pinned test-only Camoufox launcher failed' }
+      - name: Unit-test Stage-0 exact evidence gate (synthetic fixtures only)
+        shell: pwsh
+        run: |
+          node test/camoufox-stage0-ci-reports.js
+          if ($LASTEXITCODE -ne 0) { throw 'Stage-0 evidence gate regression failed' }
       - name: Download official pinned Windows x64 release and verify it
         shell: pwsh
         run: |
