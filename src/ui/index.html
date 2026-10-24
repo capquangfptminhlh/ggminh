@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="agencyHandoff.css">
   <link rel="stylesheet" href="customerHandoff.css">
   <link rel="stylesheet" href="neumorphicWorkspace.css">
+  <link rel="stylesheet" href="profileSignalCoverage.css">
 </head>
 <body data-view="profiles">
 
@@ -1016,7 +1017,7 @@
 
   <!-- Modal: Create / Edit Profile -->
   <div class="modal-overlay" id="modal-profile">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg lhm-profile-setup-dialog">
       <div class="modal-header">
         <h2 id="modal-title">Tạo Profile Mới</h2>
         <button class="btn-close" id="btn-close-modal">&times;</button>
@@ -1187,6 +1188,13 @@
             </label>
           </div>
           </div><!-- fingerprint-custom-fields -->
+          <details class="fp-signal-coverage" id="fp-signal-coverage" open>
+            <summary>Thông số nâng cao · Đối chiếu Hiến pháp v1.4</summary>
+            <p class="fp-signal-note">Thông số engine hoặc cấu hình đã ghim <strong>không phải</strong> phép đo giá trị lộ ra trên website. Các mục chưa đo không được coi là đã đạt, và không có cấu hình nào bảo đảm Google không liên kết tài khoản.</p>
+            <p class="fp-signal-summary" id="fp-signal-summary" role="status" aria-live="polite">Đang đọc cấu hình hồ sơ…</p>
+            <div class="fp-signal-groups" id="fp-signal-groups" aria-label="Danh sách nhóm tín hiệu và tình trạng theo cấu hình hồ sơ"></div>
+            <p class="fp-signal-note">Muốn xác minh cần phép đo riêng, đúng hồ sơ, engine và phiên chạy. Kiểm tra cấu hình bên dưới chỉ tìm mâu thuẫn, không đo tín hiệu từ máy chủ Google Ads.</p>
+          </details>
           <section class="fp-diagnostics">
             <div class="fp-audit-heading"><strong>Fingerprint Inspector</strong><button class="btn btn-sm btn-secondary" id="btn-fp-inspect" type="button">Kiểm tra cấu hình</button></div>
             <div id="fp-audit-results" role="status">Chưa kiểm tra. Báo cáo chỉ đánh giá cấu hình LHM, không đo tín hiệu Google.</div>
@@ -1768,6 +1776,7 @@ run();
   <script src="icons.js"></script>
   <script src="profilePagination.js"></script>
   <script src="profileStatusPoller.js"></script>
+  <script src="profileSignalCoverage.js"></script>
   <script src="renderer.js"></script>
   <script src="launchReadiness.js"></script>
   <script src="adsLaunchGuard.js"></script>
