@@ -103,6 +103,8 @@ jobs:
           path: |
             dist/workspace-*.png
             dist/packaged-ui/*.png
+            dist/ui-layout-debug.json
+            dist/packaged-ui/ui-layout-debug.json
           if-no-files-found: ignore
           retention-days: 14
       - name: Record installer SHA-256 and twelve real UI checks
