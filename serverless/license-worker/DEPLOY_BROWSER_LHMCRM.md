@@ -26,7 +26,7 @@
    - `npx wrangler deploy`
 5. Cloudflare **tự tạo DNS record và HTTPS certificate** cho Custom Domain khi deploy/attach thành công; không cần tạo thêm CNAME thủ công. Kiểm tra trong **Worker → Settings → Domains & Routes** phải có `browser.lhmcrm.com` trạng thái active và không có lỗi conflict. Nếu đã deploy từ Wrangler nhưng chưa attach, chọn **Add → Custom Domain → browser.lhmcrm.com** theo đúng Worker.
 6. Kiểm tra HTTPS:
-   - Mở `https://browser.lhmcrm.com/`: hiển thị trang LHM Ads Browser (Preview).
+   - Mở `https://browser.lhmcrm.com/`: hiển thị trang đăng nhập **LHM License Center**. Cần nhập Secret admin mới vào dashboard. Không có Secret thì không xem được đơn/key. Xem `ADMIN_PORTAL.md`.
    - Mở `https://browser.lhmcrm.com/health`: trả HTTP 200 + `status:ok` khi **D1 đã migrate và issuer keys đúng**. 503 là lỗi và chưa cho phép phục vụ khách.
    - `POST /v1/verify` với token hợp lệ **chưa được đăng ký** phải từ chối; sau `register` phải trả **biên nhận có chữ ký**, app Windows xác minh được. Không kiểm thử bằng token thật qua công cụ công khai.
    - Thử sai key, revoke, renew, offline, D1 down, thời hạn owner-sweep trên **Windows độc lập**.
