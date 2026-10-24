@@ -73,14 +73,23 @@ function identityExpectationResult(expectations,observed){
  * ------------------------------------------------------------------ */
 async function extendedProbe(){
  const out={};
+ // No optional browser capability is allowed to stall all release evidence.
+ // Timeout marks that point BLOCKED; it does NOT promote unmeasured data to PASS.
  const run=async(name,fn)=>{
-  try{const value=await fn();
+  let timeout;
+  try{
+   const value=await Promise.race([
+    Promise.resolve().then(fn),
+    new Promise((_,reject)=>{
+     timeout=setTimeout(()=>reject(Error('Extended capability probe timed out')),2500);
+    })
+   ]);
    out[name]=value===undefined?{status:'unsupported'}:{status:'measured',value};
   }catch(error){
    out[name]={status:'blocked',
     error:String((error&&error.name)||'Error')+': '+
      String((error&&error.message)||'').slice(0,120)};
-  }
+  }finally{clearTimeout(timeout)}
  };
  const fnv=(bytes)=>{
   let h=0x811c9dc5;
