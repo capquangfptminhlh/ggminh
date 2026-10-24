@@ -121,6 +121,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "resources/license-authority",
+        "to": "lhm-license-authority",
+        "filter": [
+          "**/*"
+        ]
       }
     ]
   },
