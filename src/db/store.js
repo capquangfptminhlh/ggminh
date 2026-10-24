@@ -199,6 +199,20 @@ class Store {
             delete fp.identity; // a save can never create a pin
           }
         }
+        // Editing an existing Camoufox profile must NOT discard its
+        // generated identity when the form submits only { mode:'native' }.
+        // This is not permission to import/swap identity: only the immutable
+        // existing pin for this same profile and same engine is kept.
+        if (type === 'camoufox' && old.engine_type === 'camoufox' &&
+            old.fingerprint?.identity && options.allowIdentity !== true) {
+          fp.identity = old.fingerprint.identity;
+          if (old.fingerprint.identityProvisioning !== undefined)
+            fp.identityProvisioning = old.fingerprint.identityProvisioning;
+          else delete fp.identityProvisioning;
+          if (old.fingerprint.identityProvisioningReason !== undefined)
+            fp.identityProvisioningReason = old.fingerprint.identityProvisioningReason;
+          else delete fp.identityProvisioningReason;
+        }
         return fp;
       })(),
       createdAt: old.createdAt || now, updatedAt: now
