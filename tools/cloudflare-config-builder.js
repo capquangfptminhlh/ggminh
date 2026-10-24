@@ -22,7 +22,7 @@ function build({mode='production',databaseId,template}={}){
   assert(original.includes(ROUTE),'Unexpected hostname routing template');
   assert(original.includes(TRIGGER),'Unexpected scheduled jobs template');
   let output=original.replace('REPLACE_WITH_D1_DATABASE_UUID',databaseId);
-  output=output.replace('workers_dev = false','workers_dev = false\npreview_urls = false');
+  assert(original.includes('preview_urls = false'),'Worker must not expose versioned Preview URLs');
   if(mode==='bootstrap'){
     output=output.replace(ROUTE,'').replace(TRIGGER,'');
     assert(!output.includes('[[routes]]')&&!output.includes('[triggers]'),'Bootstrap must not expose public route or cron');
