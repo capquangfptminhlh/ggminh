@@ -247,6 +247,24 @@ function createWindow() {
           // Use synthetic web addresses ONLY; never record license secrets.
           await mainWindow.webContents.executeJavaScript(
             "document.getElementById('engine-source-done').click()",true);
+          // Owner-requested profile Constitution inspector. Test the actual
+          // create-profile wizard in both unpacked and packaged Electron.
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('btn-create-profile').click()",true);
+          await new Promise(resolve=>setTimeout(resolve,850));
+          const profileOpen=await mainWindow.webContents.executeJavaScript(
+            "(() => { const dialog=document.getElementById('modal-profile'); document.querySelector('#modal-profile [data-tab=\\\"tab-fingerprint\\\"]').click(); const groups=dialog.querySelectorAll('.fp-signal-group'); const badges=dialog.querySelectorAll('.fp-signal-state'); const box=dialog.querySelector('.lhm-profile-setup-dialog').getBoundingClientRect(); const body=dialog.querySelector('.modal-body'); return {open:dialog.classList.contains('open'),tab:document.getElementById('tab-fingerprint').classList.contains('active'),groups:groups.length,rows:dialog.querySelectorAll('.fp-signal-row').length,unmeasured:[...badges].filter(b=>b.dataset.status==='unmeasured').length,native:[...badges].filter(b=>b.dataset.status==='native').length,width:box.width,right:box.right,viewport:innerWidth,scroll:getComputedStyle(body).overflowY,summary:document.getElementById('fp-signal-summary').textContent}; })()",true);
+          if(!profileOpen.open||!profileOpen.tab||profileOpen.groups!==4||
+             profileOpen.rows!==16||profileOpen.unmeasured<6||
+             profileOpen.native<1||profileOpen.right>profileOpen.viewport+1||
+             profileOpen.width<700||profileOpen.scroll!=='auto'||
+             !profileOpen.summary.includes('CHƯA ĐO'))
+            throw Error('Actual Constitution profile wizard layout/status failed: '+JSON.stringify(profileOpen));
+          await new Promise(resolve=>setTimeout(resolve,350));
+          writeCapture('workspace-profile-editor-preview.png',await mainWindow.webContents.capturePage());
+          console.log('[UI smoke] Verified Constitution wizard rendered with 16 truthful signals');
+          await mainWindow.webContents.executeJavaScript(
+            "document.getElementById('btn-cancel-modal').click()",true);
           const adsCheck=await mainWindow.webContents.executeJavaScript(
             "(() => { document.getElementById('btn-ads-launch-guard').click(); const modal=document.getElementById('modal-ads-launch-guard'); const url=document.getElementById('ads-guard-urls'); url.value='https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=ci-demo'; document.getElementById('ads-guard-inspect').click(); return {open:modal.classList.contains('open'),bg:getComputedStyle(modal.querySelector('.lhm-ads-guard-section')).backgroundColor,input:getComputedStyle(url).backgroundColor,scroll:getComputedStyle(modal.querySelector('.modal-body')).overflowY}; })()",true);
           if(!adsCheck.open||adsCheck.bg!=='rgb(245, 248, 254)'||
