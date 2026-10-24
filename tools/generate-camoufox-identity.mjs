@@ -15,9 +15,12 @@
 // which is the documented raw-config route for timezones. The uBlock addon
 // download is excluded so generation stays offline and launch-neutral.
 import fs from 'node:fs';
+import * as zlib from 'node:zlib';
 import {launchOptions} from 'camoufox';
 import {createRequire} from 'node:module';
 
+if(typeof zlib.zstdDecompressSync!=='function')
+ throw Error('Camoufox 0.5.8 identity generator requires Node >=22.15 with native zstd support');
 const require=createRequire(import.meta.url);
 const {parseCamouConfigEnv,summarizeIdentity}=
  require('../src/engine/camoufoxIdentity.js');
