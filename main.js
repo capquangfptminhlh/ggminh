@@ -188,6 +188,17 @@ function createWindow() {
           if(shown.ready!=='true'||shown.header!=='v'+release||
              shown.nav!=='v'+release||!shown.title.includes('v'+release))
             throw Error('UI screenshot version mismatch: '+JSON.stringify(shown));
+          // Real Electron acceptance: the prior light-theme screenshot showed
+          // white/dim AI text over a nearly-white panel. Ensure readable
+          // computed colors and that the rail fits the viewport.
+          const readability=await mainWindow.webContents.executeJavaScript(
+            "(() => { const panel=document.getElementById('lhm-profile-panel'); const title=panel.querySelector('.lhm-v6-assistant h3'); const sub=panel.querySelector('.lhm-v6-assistant h3 em'); const secondary=panel.querySelector('.lhm-v6-ai-button:not(.primary)'); const box=panel.getBoundingClientRect(); const metric=document.querySelector('.lhm-v6-metric'); return {heading:getComputedStyle(title).color,emphasis:getComputedStyle(sub).color,action:getComputedStyle(secondary).color,cardHeight:metric.getBoundingClientRect().height,railLeft:box.left,railRight:box.right,viewport:innerWidth}; })()",true);
+          if(readability.heading!=='rgb(32, 55, 81)'||
+             readability.emphasis!=='rgb(37, 107, 186)'||
+             readability.action!=='rgb(36, 73, 103)'||
+             readability.cardHeight>135||
+             readability.railLeft<0||readability.railRight>readability.viewport+1)
+            throw Error('Full-window AI panel contrast/layout regression: '+JSON.stringify(readability));
           const writeCapture = (name, png) => {
             if (png.isEmpty()) throw Error('Electron returned an empty UI capture: ' + name);
             const bytes = png.toPNG();
@@ -198,11 +209,20 @@ function createWindow() {
           fs.mkdirSync(captureDir, { recursive: true });
           writeCapture('workspace-preview.png', png);
           console.log('[UI smoke] Saved workspace preview');
-          const railCheck=await mainWindow.webContents.executeJavaScript(
-            "(() => { document.getElementById('lhm-v7-show-rail').click(); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded')}; })()",true);
-          if(!railCheck.collapsed||railCheck.aria!=='false')
-            throw Error('AI rail collapse failed: '+JSON.stringify(railCheck));
-          await new Promise(resolve=>setTimeout(resolve,450));
+          const railBefore=await mainWindow.webContents.executeJavaScript(
+            "(() => { const box=document.querySelector('.content-view .table-container'); const before=box.getBoundingClientRect().width; document.getElementById('lhm-v7-show-rail').click(); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded'),before}; })()",true);
+          // Wait for renderer layout/transition to settle before measuring.
+          // The click handler changes data attributes immediately; measuring
+          // synchronously in the same JS task returned stale 983px/983px.
+          await new Promise(resolve=>setTimeout(resolve,460));
+          const railAfter=await mainWindow.webContents.executeJavaScript(
+            "(() => { const box=document.querySelector('.content-view .table-container'); const panel=document.getElementById('lhm-profile-panel'); return {after:box.getBoundingClientRect().width,hidden:getComputedStyle(panel).display==='none'}; })()",true);
+          const railCheck={...railBefore,...railAfter};
+          fs.writeFileSync(path.join(captureDir,'ui-layout-debug.json'),
+            JSON.stringify({readability,railCheck},null,2)+'\n');
+          if(!railCheck.collapsed||railCheck.aria!=='false'||!railCheck.hidden||
+             railCheck.after<railCheck.before+150)
+            throw Error('Full-width workspace collapse failed: '+JSON.stringify(railCheck));
           const fullTable=await mainWindow.webContents.capturePage();
           writeCapture('workspace-expanded-preview.png', fullTable);
           const paletteCheck=await mainWindow.webContents.executeJavaScript(

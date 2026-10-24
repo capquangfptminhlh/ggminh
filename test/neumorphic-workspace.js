@@ -28,6 +28,23 @@ for(const id of [
 assert(html.includes('id="lhm-nm-license-activate-face" class="lhm-nm-license-face back" aria-label="Kích hoạt giấy phép" aria-hidden="true" inert'));
 assert(css.includes('#modal-ads-launch-guard #ads-guard-urls{background-color:#fff!important}'),
  'Component-specific Ads Guard input must retain existing release-verified white background');
+// Regression from inspected Windows screenshot: pale right rail previously
+// inherited white text, making its heading, KPIs and secondary action unreadable.
+for(const contract of [
+ '#lhm-profile-panel .lhm-v6-assistant h3{',
+ '#lhm-profile-panel .lhm-v6-assistant h3 em{',
+ '#lhm-profile-panel .lhm-v6-ai-health strong{',
+ '#lhm-profile-panel .lhm-v6-ai-button:not(.primary){',
+ '#lhm-profile-panel .lhm-v6-assistant small{',
+ 'body[data-view="profiles"] .lhm-v6-metric{',
+ '#modal-license-center .modal-body>.lhm-bulk-help{'
+])assert(css.includes(contract),'Full UI density/contrast contract missing: '+contract);
+const main=fs.readFileSync(path.join(base,'../../main.js'),'utf8');
+assert(main.includes('Full-window AI panel contrast/layout regression'),
+ 'Actual Windows Electron screenshot gate must measure sidebar contrast');
+assert(main.includes('Full-width workspace collapse failed'),
+ 'Actual Windows Electron screenshot gate must measure real full-width state');
+
 assert(!js.includes('fetch(')&&!js.includes('window.api')&&!js.includes('localStorage'),
  'Video motion must not introduce fake authentication or alter licensing');
 for(const signature of [
