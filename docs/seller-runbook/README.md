@@ -150,6 +150,15 @@ tuyệt đối: quản trị viên có đặc quyền trên máy khách vẫn c�
 thiệp dữ liệu cục bộ, vì vậy mọi quyết định thương mại phải dựa thêm
 vào log và đối soát phía bán.
 
+### Dung lượng xác minh qua HTTPS reverse proxy
+
+Server license hiện chỉ lắng nghe `127.0.0.1` và phải được đặt **sau HTTPS proxy/WAF** do bên bán kiểm soát. GitHub Pages hoặc Cloudflare Pages tĩnh **không tự chạy** máy chủ Node này. Cần một dịch vụ thực thi có lưu trữ riêng và kết nối HTTPS thực tế trước khi cấp khách thuê.
+
+- Giới hạn tại dịch vụ: tối đa **60 yêu cầu/phút trên từng license có chữ ký hợp lệ**; phần mềm trả HTTP 429 kèm `Retry-After: 60` nếu một license gửi quá nhiều. Không lấy IP từ `X-Forwarded-For` làm danh tính vì header có thể bị giả.
+- Chốt chặn tổng tại dịch vụ: **6.000 yêu cầu/phút** để giảm quá tải. Hãy thiết lập thêm giới hạn về băng thông, body size, số kết nối và chống bot tại lớp TLS proxy/WAF, đồng thời dự trù số khách xác minh cùng lúc.
+- `GET /health` (loopback; không xuất bản công khai nếu không có lớp giám sát/xác thực riêng) trả HTTP 503 khi lần quét owner-sweep bị lỗi. Nhân viên vận hành phải kiểm tra tình trạng này trước khi cấp license; tình trạng 200 trên localhost **không** chứng minh HTTPS từ máy khách đã hoạt động.
+- Các bài kiểm thử chạy trên runner dùng khóa và khách **giả lập**: `test/license-online.js`, `test/license-owner-sweep.js`, `test/license-shared-proxy-rate-limit.js`. Chỉ được đánh dấu cổng nghiệm thu thuê thương mại là PASS khi có bằng chứng end-to-end trên máy khách Windows và endpoint HTTPS thực do bên bán triển khai.
+
 License `owner-sweep` mới phải liên hệ thành công với endpoint ít nhất
 một lần để nhận biên nhận đăng ký có chữ ký. Thiếu URL xác minh hoặc
 chưa từng nhận biên nhận thì ứng dụng chặn thao tác mới với trạng thái

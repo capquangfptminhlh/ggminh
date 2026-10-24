@@ -51,7 +51,26 @@ function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>D
  const actual=crypto.createPublicKey(key).export({type:'spki',format:'pem'});
  const expected=crypto.createPublicKey(publicKey).export({type:'spki',format:'pem'});
  if(actual!==expected)throw Error('Authority signing key does not match app public key');
- const requests=new Map();
+ // Every TLS-terminated customer is seen as 127.0.0.1 here. Throttle
+ // *verified licenses* individually instead of blocking the 121st paying
+ // customer behind the same reverse proxy. Do NOT trust spoofable
+ // X-Forwarded-For headers. Bound aggregate work as a last-resort fuse.
+ const perLicense=new Map();
+ const WINDOW_MS=60_000,GLOBAL_PER_MINUTE=6000,LICENSE_PER_MINUTE=60;
+ let total={until:0,count:0};
+ function rateLimited(licenseId,now){
+  let record=perLicense.get(licenseId);
+  if(!record||now>=record.until){
+   if(!record&&perLicense.size>=10000){
+    for(const [id,item] of perLicense)if(now>=item.until)perLicense.delete(id);
+    if(perLicense.size>=10000)return true;
+   }
+   record={count:0,until:now+WINDOW_MS};
+   perLicense.set(licenseId,record);
+  }
+  record.count++;
+  return record.count>LICENSE_PER_MINUTE;
+ }
  return http.createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -64,13 +83,16 @@ function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>D
   if(req.method!=='POST'||req.url!=='/v1/verify')return reply(404,{error:'not_found'});
   if(!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type']||''))
    return reply(415,{error:'json_required'});
-  // Basic protective throttle, not a replacement for reverse-proxy rate limits.
-  const remote=req.socket.remoteAddress||'unknown',now=clock();
-  const previous=requests.get(remote)||{count:0,until:now+60000};
-  if(previous.until<now){previous.count=0;previous.until=now+60000;}
-  previous.count++;requests.set(remote,previous);
-  if(requests.size>5000)requests.clear();
-  if(previous.count>120)return reply(429,{error:'rate_limited'});
+  // Coarse circuit breaker counts all requests, regardless of origin. It
+  // avoids infinite signature-verification work if the TLS edge is attacked.
+  // The reverse proxy should enforce an additional network-layer limit.
+  const now=clock();
+  if(!Number.isSafeInteger(now)||now<0)return reply(503,{error:'clock_unavailable'});
+  if(now>=total.until)total={until:now+WINDOW_MS,count:0};
+  if(++total.count>GLOBAL_PER_MINUTE){
+   res.setHeader('Retry-After','60');
+   return reply(429,{error:'authority_overloaded'});
+  }
   let chunks=[],length=0;
   try{
    for await(const chunk of req){
@@ -84,6 +106,12 @@ function makeAuthority({privateKey,registryFile,publicKey=PUBLIC_KEY,clock=()=>D
       Object.keys(input).sort().join('|')!=='nonce|token|version')
     throw Error('invalid_request');
    const license=verifyLicense(input.token,publicKey);
+   // Limit a single signed license (rather than localhost / reverse proxy).
+   // Tokens are never stored; only a verified random license identifier.
+   if(rateLimited(license.licenseId,now)){
+    res.setHeader('Retry-After','60');
+    return reply(429,{error:'rate_limited'});
+   }
    const registry=readRegistry(registryFile);
    const ownerSweep=license.version===2&&license.enforcementMode==='owner_sweep';
    if(ownerSweep&&(!sweepHealth||sweepHealth.healthy!==true))
