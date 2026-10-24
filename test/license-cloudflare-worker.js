@@ -12,7 +12,7 @@ class D1Fixture {
  constructor(){this.records=new Map();}
  prepare(statement){
   const db=this;
-  return {bind(...args){
+  const prepared={bind(...args){
    return {
     async first(){
      if(statement.startsWith('SELECT 1 AS ready'))return db.records.size?{ready:1}:null;
@@ -52,6 +52,9 @@ class D1Fixture {
     }
    };
   }};
+  // Real Cloudflare D1 supports prepare(sql).first() with no bind.
+  prepared.first=()=>prepared.bind().first();
+  return prepared;
  }
 }
 (async()=>{
