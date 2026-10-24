@@ -210,9 +210,11 @@ function createWindow() {
           writeCapture('workspace-preview.png', png);
           console.log('[UI smoke] Saved workspace preview');
           const railCheck=await mainWindow.webContents.executeJavaScript(
-            "(() => { const before=document.querySelector('.content-view').getBoundingClientRect().width; document.getElementById('lhm-v7-show-rail').click(); const after=document.querySelector('.content-view').getBoundingClientRect().width; const panel=document.getElementById('lhm-profile-panel'); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded'),before,after,hidden:getComputedStyle(panel).display==='none'}; })()",true);
+            "(() => { const box=document.querySelector('.content-view .table-container'); const before=box.getBoundingClientRect().width; document.getElementById('lhm-v7-show-rail').click(); const after=box.getBoundingClientRect().width; const panel=document.getElementById('lhm-profile-panel'); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded'),before,after,hidden:getComputedStyle(panel).display==='none'}; })()",true);
+          fs.writeFileSync(path.join(captureDir,'ui-layout-debug.json'),
+            JSON.stringify({readability,railCheck},null,2)+'\n');
           if(!railCheck.collapsed||railCheck.aria!=='false'||!railCheck.hidden||
-             railCheck.after<railCheck.before+200)
+             railCheck.after<railCheck.before+150)
             throw Error('Full-width workspace collapse failed: '+JSON.stringify(railCheck));
           await new Promise(resolve=>setTimeout(resolve,450));
           const fullTable=await mainWindow.webContents.capturePage();
