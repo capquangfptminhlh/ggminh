@@ -99,6 +99,29 @@ jobs:
           node tools/release-artifact-preflight.js \
             release-assets "$evidence" release-assets/ui
 
+      - name: Attach exact-build Gate 3 offline acceptance helper (not approval)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.windows_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets/gate3
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name LHM-Gate3-Operator-Kit-Windows --dir release-assets/gate3
+          kit=release-assets/gate3/build-identity.json
+          [[ -s "$kit" && -s release-assets/gate3/Start-Gate3.ps1 &&
+             -s release-assets/gate3/collect-windows-gate3.ps1 ]] ||
+            { echo "Missing Windows Gate3 operator kit"; exit 1; }
+          jq -e --arg sha "$VERIFIED_MAIN_SHA" --arg run "$RUN_ID" \
+            --arg exe "$(basename release-assets/*.exe)" \
+            --arg expected "$(sha256sum release-assets/*.exe | awk '{print $1}')" \
+            '.schema == "lhm.gate3.operator-kit.v1" and
+             .commit == $sha and .runId == $run and .exe == $exe and
+             .sha256 == $expected and .authenticodeRequired == false and
+             .gate3 == "NOT_RUN" and .gate4 == "NOT_APPROVED"' "$kit" >/dev/null ||
+            { echo "Wrong Gate3 kit build identity"; exit 1; }
+          (cd release-assets/gate3 && zip -q -r ../Gate3-Operator-Kit.zip .)
       - name: Create draft-only release; never publish automatically
         shell: bash
         env:
@@ -120,6 +143,7 @@ jobs:
           EXE Authenticode signing is optional under LHM Constitution v1.4.
           EOF
           gh release create "v$RELEASE_VERSION" release-assets/*.exe \
-            release-assets/SHA256SUMS.txt release-assets/release-evidence.json --draft --title "LHM Ads Browser v$RELEASE_VERSION (DRAFT)" \
+            release-assets/SHA256SUMS.txt release-assets/release-evidence.json \
+            release-assets/Gate3-Operator-Kit.zip --draft --title "LHM Ads Browser v$RELEASE_VERSION (DRAFT)" \
             --target "$VERIFIED_MAIN_SHA" --notes-file release-notes.txt
           echo "DRAFT release created. Nothing was publicly published."
