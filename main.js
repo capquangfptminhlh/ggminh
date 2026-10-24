@@ -209,14 +209,20 @@ function createWindow() {
           fs.mkdirSync(captureDir, { recursive: true });
           writeCapture('workspace-preview.png', png);
           console.log('[UI smoke] Saved workspace preview');
-          const railCheck=await mainWindow.webContents.executeJavaScript(
-            "(() => { const box=document.querySelector('.content-view .table-container'); const before=box.getBoundingClientRect().width; document.getElementById('lhm-v7-show-rail').click(); const after=box.getBoundingClientRect().width; const panel=document.getElementById('lhm-profile-panel'); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded'),before,after,hidden:getComputedStyle(panel).display==='none'}; })()",true);
+          const railBefore=await mainWindow.webContents.executeJavaScript(
+            "(() => { const box=document.querySelector('.content-view .table-container'); const before=box.getBoundingClientRect().width; document.getElementById('lhm-v7-show-rail').click(); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded'),before}; })()",true);
+          // Wait for renderer layout/transition to settle before measuring.
+          // The click handler changes data attributes immediately; measuring
+          // synchronously in the same JS task returned stale 983px/983px.
+          await new Promise(resolve=>setTimeout(resolve,460));
+          const railAfter=await mainWindow.webContents.executeJavaScript(
+            "(() => { const box=document.querySelector('.content-view .table-container'); const panel=document.getElementById('lhm-profile-panel'); return {after:box.getBoundingClientRect().width,hidden:getComputedStyle(panel).display==='none'}; })()",true);
+          const railCheck={...railBefore,...railAfter};
           fs.writeFileSync(path.join(captureDir,'ui-layout-debug.json'),
             JSON.stringify({readability,railCheck},null,2)+'\n');
           if(!railCheck.collapsed||railCheck.aria!=='false'||!railCheck.hidden||
              railCheck.after<railCheck.before+150)
             throw Error('Full-width workspace collapse failed: '+JSON.stringify(railCheck));
-          await new Promise(resolve=>setTimeout(resolve,450));
           const fullTable=await mainWindow.webContents.capturePage();
           writeCapture('workspace-expanded-preview.png', fullTable);
           const paletteCheck=await mainWindow.webContents.executeJavaScript(
