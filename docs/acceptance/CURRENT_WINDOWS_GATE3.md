@@ -5,6 +5,30 @@ Các biên bản trước đó vẫn là lịch sử nhưng không chứng minh 
 Gate 3 là kiểm thử trên **Windows được cài bộ EXE thật**, không phải chỉ
 chạy unit test hoặc chụp màn hình trong GitHub Actions.
 
+## Cách nhanh hơn: Gate 3 Operator Kit gắn đúng một bản build
+
+Sau khi workflow Windows trên \`main\` PASS, tải **hai artifact từ cùng một lần chạy**:
+\`LHM-Ads-Browser-Windows-x64\` (EXE) và
+\`LHM-Gate3-Operator-Kit-Windows\` (công cụ + SHA-256 + commit/run ID).
+Giải nén bộ công cụ, chép file EXE chính xác vào **cùng thư mục** rồi
+trên máy Windows x64 độc lập mở PowerShell và chạy:
+
+\`\`\`powershell
+.\Start-Gate3.ps1
+\`\`\`
+
+Không cần tự gõ SHA, commit hay run ID. Script sẽ kiểm tra bytes EXE so
+với dữ liệu lấy từ cùng build và tạo biên bản JSON cục bộ. Nếu sai sẽ
+**từ chối trước khi cài**. Người vận hành vẫn phải kiểm tra GitHub run
+\`SUCCESS\`, commit thuộc \`main\` và khớp với \`build-identity.json\`;
+bộ kit offline không tự chứng thực API GitHub.
+
+**Kết quả này chỉ là preflight SHA-256.** Các bước thử ứng dụng,
+Cloudflare/license, proxy/DNS/WebRTC và phê duyệt thương mại đều vẫn
+\`NOT_RUN\`; không lấy phép đo CI thay cho nghiệm thu máy khách.
+
+---
+
 ## Bước 1. Lấy artifact mới nhất đúng `main`
 
 1. Mở workflow [Build Windows EXE](https://github.com/capquangfptminhlh/ggminh/actions/workflows/windows-exe.yml).
