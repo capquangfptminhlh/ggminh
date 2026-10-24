@@ -7,11 +7,11 @@
 - Đăng nhập bằng `LHM_LICENSE_ADMIN_TOKEN` qua HTTPS (chỉ nhớ trong RAM tab; không lưu localStorage). Nên thêm Cloudflare Access cho đường quản trị.
 - Bảng tổng quan: đơn hàng, chờ thanh toán, key đã cấp, giá trị đơn đã cấp.
 - Tạo đơn khách hàng mới hoặc gia hạn theo Installation ID trên máy Windows.
-- Gói **Starter 499.000 VND/tháng / 5 hồ sơ**; thời hạn 1, 3, 6, 12 tháng với **không áp chiết khấu**. Gói Pro/Business chưa chốt giá nên không tự mở bán.
+- Gói Starter tối đa 5 hồ sơ; **giá LHM Ads Browser chưa được chủ dự án chốt cố định**, quản trị viên phải nhập số tiền VND cho từng đơn (1, 3, 6, 12 tháng). Giá 499.000 VND từng được thảo luận cho sản phẩm LHM Ads AI **không tự áp sang LHM Ads Browser**. Gói Pro/Business chưa mở bán.
 - Xác nhận chuyển khoản **thủ công**: phải kiểm tra tiền vào tài khoản ngân hàng thực rồi mới bấm xác nhận và nhập mã giao dịch sao kê (mã không trùng).
 - Khi đơn đã thanh toán, nút **Cấp key** ký token Ed25519 tương thích với EXE, ghi đăng ký vào D1 theo transaction. Trước khi thanh toán, yêu cầu cấp key bị chặn.
 - Key đã ký được **mã hóa AES-256-GCM** trong D1 bằng Secret riêng, có thể chỉ người quản trị xem lại. Không lưu token thuần văn bản.
-- Gia hạn cho key hiện hữu khi còn hợp lệ, bảo toàn mã license và installation ID; token cũ sẽ không qua xác minh D1 sau khi cấp key mới.
+- Gia hạn cho key đã cấp từ chính web này, còn hợp lệ và khớp email người mua ban đầu; bảo toàn mã license và installation ID; token cũ sẽ không qua xác minh D1 sau khi cấp key mới.
 - Chưa có thanh toán qua cổng, webhook ngân hàng hay tự động gửi email/Zalo. Web không tự nhận tiền và không tự cấp key khi người mua tải ảnh chuyển khoản.
 
 ### Cần cấu hình trên Cloudflare trước khi chạy thật
