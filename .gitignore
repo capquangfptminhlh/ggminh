@@ -22,3 +22,10 @@ id_ed25519*
 *private*key*
 
 .agents/
+
+# Cloudflare Worker deployment config and local secrets. The versioned
+# wrangler.toml.example contains only placeholders and the public hostname.
+serverless/license-worker/wrangler.toml
+serverless/license-worker/.dev.vars
+serverless/license-worker/.dev.vars.*
+serverless/license-worker/.wrangler/
