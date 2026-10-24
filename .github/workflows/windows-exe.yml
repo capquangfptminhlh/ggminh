@@ -66,6 +66,8 @@ jobs:
               $file = Get-Item ("dist\" + $screen) -ErrorAction Stop
               if ($file.Length -lt 10000) { throw "Missing/undersized actual Electron screenshot: $screen" }
             }
+            $editor = Get-Item "dist\\workspace-profile-editor-preview.png" -ErrorAction Stop
+            if ($editor.Length -lt 10000) { throw "Missing profile editor visual smoke" }
           } finally {
             if (-not $proc.HasExited) {
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
@@ -90,6 +92,8 @@ jobs:
               $file = Get-Item (Join-Path $capture $screen) -ErrorAction Stop
               if ($file.Length -lt 10000) { throw "Missing/undersized packaged Electron screenshot: $screen" }
             }
+            $editor = Get-Item (Join-Path $capture "workspace-profile-editor-preview.png") -ErrorAction Stop
+            if ($editor.Length -lt 10000) { throw "Missing packaged profile editor visual smoke" }
           } finally {
             if (-not $proc.HasExited) {
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
