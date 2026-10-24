@@ -84,3 +84,25 @@ It is **not** a no-downtime cutover or encrypted database yet, and there
 is no plan to delete `db.json` immediately after a single successful
 comparison. A future cutover requires rollback strategy, backups,
 concurrent-access control, row parity, long-lived migrations and tests.
+
+
+## Restore onto main — 24 October 2026
+
+The original upstream smoke workflow was historically kept under
+`release/gate2-final/`, not in the active `.github/workflows/` on main.
+The restored `.github/workflows/camoufox-upstream-smoke.yml` is
+independent of the normal lightweight Windows installer CI.
+
+- Runs for a workflow-related pull request or manually with GitHub Actions.
+  The upstream ZIP is approximately **1.31 GB**, so this test is deliberately
+  not part of every unrelated source push.
+- Downloads the audited exact upstream asset, checks size and SHA-256 before
+  extraction, runs Windows browser/process, Playwright controller and synthetic
+  authenticated SOCKS5 failure tests. No upstream browser binary is distributed.
+- Records two Stage-0 reports from **the same checkout and Camoufox executable**.
+  `tools/verify-stage0-ci-reports.js` rejects mismatched checkout/EXE digests,
+  incomplete storage/identity results and missing temporary-profile cleanup.
+  It keeps untested public proxy, DNS, WebRTC and internet egress as `NOT_RUN`.
+- Independent publisher-signed engine distribution, real customer proxy/DNS/
+  WebRTC measurements, clean installed-Windows acceptance and signed updates
+  remain **separate commercial release blockers**, regardless of a CI PASS.
