@@ -1,0 +1,76 @@
+name: Bootstrap PRIVATE LHM License Worker (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      worker_confirmation:
+        description: 'Type lhm-license-authority to confirm the exact Cloudflare Worker name'
+        required: true
+        type: string
+      private_confirmation:
+        description: 'Type NO_PUBLIC_ROUTE (this only creates an unreachable Worker for owner-managed secret provisioning)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: lhm-license-center-production
+  cancel-in-progress: false
+jobs:
+  bootstrap-private-worker:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 25
+    env:
+      WORKER_CONFIRMATION: ${{ inputs.worker_confirmation }}
+      PRIVATE_CONFIRMATION: ${{ inputs.private_confirmation }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate explicit bootstrap intent and prepare private-only config
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LHM_D1_DATABASE_ID: ${{ secrets.LHM_D1_DATABASE_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WORKER_CONFIRMATION" = 'lhm-license-authority' || { echo 'Wrong Worker confirmation'; exit 1; }
+          test "$PRIVATE_CONFIRMATION" = 'NO_PUBLIC_ROUTE' || { echo 'Private-only confirmation required'; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare token'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing Cloudflare account ID'; exit 1; }
+          node test/cloudflare-bootstrap-config.js
+          node tools/cloudflare-config-builder.js bootstrap
+          # Refuse to update any existing Worker: this bootstrap is CREATE-ONLY.
+          status=$(curl --silent --show-error --output "$RUNNER_TEMP/lhm-worker-check.json" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/lhm-license-authority")
+          if [ "$status" != '404' ]; then
+            echo "Bootstrap refused: Worker exists, API permission denied, or unexpected status ($status)"
+            exit 1
+          fi
+          if grep -Eq '^\\[\\[routes\\]\\]|^\\[triggers\\]' serverless/license-worker/wrangler.toml; then
+            echo 'Bootstrap configuration unexpectedly exposes routes/cron'
+            exit 1
+          fi
+      - name: Compile tests before creating private Worker
+        run: |
+          npm ci
+          node test/license-cloudflare-worker.js
+          node test/license-admin-portal.js
+      - name: Create inaccessible Worker (no workers.dev, no preview, no domain)
+        working-directory: serverless/license-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.148.0 deploy
+      - name: Document the remaining owner-controlled setup
+        run: |
+          echo '### Private LHM License Worker bootstrap' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Worker skeleton created **without any public hostname or scheduled trigger**.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Configure four owner-held secrets securely in Cloudflare Dashboard, not in GitHub issues or chat.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Review D1 migrations and existing DNS, then run the separate production deployment workflow.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No live license verification, payment settlement or Windows acceptance was performed.' >> "$GITHUB_STEP_SUMMARY"
