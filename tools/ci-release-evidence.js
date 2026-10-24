@@ -31,6 +31,14 @@ function validateCaptureEvidence(build){
         throw Error('Invalid CI capture byte count or SHA-256');
     }
   }
+  // Agency Handoff is below Fleet Triage in one scrollable Control Tower.
+  // A hidden-but-present DOM node once produced two byte-identical screenshots.
+  const fleet=build.uiCaptures.find(x=>x.name==='workspace-fleet-triage-preview.png');
+  const agency=build.uiCaptures.find(x=>x.name==='workspace-agency-handoff-preview.png');
+  for(const place of ['source','packaged']){
+    if(fleet[place].sha256===agency[place].sha256)
+      throw Error('Duplicate Fleet/Agency UI screenshots: handoff must be visibly rendered ('+place+')');
+  }
   return true;
 }
 function captureDigest(filename){
