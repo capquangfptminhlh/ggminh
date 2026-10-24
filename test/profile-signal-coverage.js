@@ -18,6 +18,16 @@ for(const token of ['renderProfileSignalCoverage();','fieldProxyType','fieldBrow
 assert(css.includes('grid-template-columns:repeat(2,minmax(0,1fr))'));
 assert(css.includes('@media(max-width:780px)'));
 assert(css.includes('overflow-y:auto'));
+const qa=fs.readFileSync(path.join(root,'main.js'),'utf8');
+const workflow=fs.readFileSync(path.join(root,'.github/workflows/windows-exe.yml'),'utf8');
+assert(qa.includes('Actual Constitution profile wizard layout/status failed'),
+  'Real Electron profile inspector must enforce visibility and truthful statuses');
+assert(qa.includes("writeCapture('workspace-profile-editor-preview.png'"),
+  'The real create-profile wizard must be captured');
+assert(workflow.includes('Missing profile editor visual smoke') &&
+  workflow.includes('Missing packaged profile editor visual smoke'),
+  'Both source and packaged Windows Electron captures must be checked');
+
 const flatten=x=>x.flatMap(g=>g.items);
 const n=flatten(model({engine:'chromium',fingerprint:{mode:'native'}}));
 assert(n.length>=16);
