@@ -30,9 +30,25 @@
    - Mở `https://browser.lhmcrm.com/health`: trả HTTP 200 + `status:ok` khi **D1 đã migrate và issuer keys đúng**. 503 là lỗi và chưa cho phép phục vụ khách.
    - `POST /v1/verify` với token hợp lệ **chưa được đăng ký** phải từ chối; sau `register` phải trả **biên nhận có chữ ký**, app Windows xác minh được. Không kiểm thử bằng token thật qua công cụ công khai.
    - Thử sai key, revoke, renew, offline, D1 down, thời hạn owner-sweep trên **Windows độc lập**.
-7. Chỉ sau Gate 3 thành công mới cài vào cấu hình bản phát hành Windows:
-   `LHM_LICENSE_VERIFY_URL=https://browser.lhmcrm.com/v1/verify`.
-   Lưu ý: `main.js` hiện đọc **biến môi trường** `LHM_LICENSE_VERIFY_URL` lúc chạy; việc deploy Worker không tự thay giá trị trong EXE. Cần build/giao cấu hình khách đúng rồi kiểm thử.
+7. **Sau khi** Cloudflare production có bằng chứng PASS và owner duyệt
+   Gate 3, tạo commit phát hành mới với cấu hình URL PUBLIC ở
+   `resources/license-authority/authority.json`:
+
+   ```json
+   {"schema":"lhm.license-authority-config.v1","enabled":true,"endpoint":"https://browser.lhmcrm.com/v1/verify"}
+   ```
+
+   Build EXE mới từ đúng commit cấu hình đã duyệt; kiểm tra trong
+   `dist/win-unpacked/resources/lhm-license-authority/authority.json` và trên
+   máy Windows sạch. Không có môi trường, người mua không cần tạo biến
+   `LHM_LICENSE_VERIFY_URL`. Bản CI Preview thường chạy chế độ
+   `enabled:false` để ngăn công bố khi chưa nghiệm thu; không vô hiệu hóa
+   kiểm tra này để dùng EXE Preview làm bản thương mại.
+   Biến môi trường `LHM_LICENSE_VERIFY_URL` chỉ còn cho **chạy dev
+   unpackaged**. Không cho renderer, hồ sơ hoặc khách tùy chọn máy
+   chủ license để tránh gửi token tới địa chỉ lạ. Public key Ed25519
+   cấp license vẫn phải khớp private key do owner giữ trên Worker.
+
 8. Bảo mật sản xuất: bật WAF/rate limiting (nhất là `/v1/admin/*` và `/v1/verify`), MFA tài khoản Cloudflare, backup D1, phân quyền deploy, giám sát 5xx và hạn license. Không bật cookie/session telemetry Google Ads ở máy chủ license.
 9. Quản lý giấy phép: dùng công cụ `tools/license-admin.js` của bên bán và `tools/license-cloudflare-sync.js` để đăng ký/thu hồi token lên Worker; đối soát ledger local và D1. Không gửi token/private key vào chat/GitHub issue, không dùng license thử ở production.
 

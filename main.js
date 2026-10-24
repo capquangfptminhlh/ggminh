@@ -68,6 +68,7 @@ const {proposeWorkflow} = require('./src/ai/workflowDraft');
 const {LicenseManager} = require('./src/licensing/manager');
 const {LicensePolicy} = require('./src/licensing/enforcement');
 const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
+const {resolveLicenseEndpoint}=require('./src/licensing/authorityConfig');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -1239,7 +1240,11 @@ app.whenReady().then(async () => {
   licenseManager = new LicenseManager(storageDir);
   licensePolicy = new LicensePolicy(storageDir,licenseManager);
   onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
-    endpoint:process.env.LHM_LICENSE_VERIFY_URL||null
+    endpoint:resolveLicenseEndpoint({
+      packaged:app.isPackaged,
+      resourcesPath:process.resourcesPath,
+      developmentEndpoint:process.env.LHM_LICENSE_VERIFY_URL||null
+    })
   });
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;

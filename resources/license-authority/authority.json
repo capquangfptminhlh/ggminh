@@ -1,0 +1,5 @@
+{
+  "schema": "lhm.license-authority-config.v1",
+  "enabled": false,
+  "endpoint": null
+}

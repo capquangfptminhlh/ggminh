@@ -13,7 +13,10 @@ assert(preload.includes("verifyLicenseOnline: () => ipcRenderer.invoke('license-
 assert(main.includes("ipcMain.handle('license-center-verify-online'"));
 assert(main.includes('licensePolicy.onlineVerifier=onlineLicenseVerifier'));
 assert(main.includes('onlineLicenseVerifier.verifyNow()'));
-assert(main.includes("endpoint:process.env.LHM_LICENSE_VERIFY_URL||null"));
+assert(main.includes('resolveLicenseEndpoint({'));
+assert(main.includes('packaged:app.isPackaged'));
+assert(main.includes('resourcesPath:process.resourcesPath'));
+assert(main.includes('developmentEndpoint:process.env.LHM_LICENSE_VERIFY_URL||null'));
 assert(main.includes('const LICENSE_REFRESH_MS=15*60*1000'));
 assert(main.includes('},LICENSE_REFRESH_MS);'));
 assert(!script.includes('.innerHTML='));
