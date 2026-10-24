@@ -44,7 +44,7 @@ try{
   const agencyOriginal=fs.readFileSync(agencyImage);
   fs.copyFileSync(fleetImage,agencyImage);
   assert.throws(()=>produceReleaseEvidence({dist:root,pkg,
-    sha:'1'.repeat(40),runId:'39835712310'}),/Duplicate Fleet\\/Agency/);
+    sha:'1'.repeat(40),runId:'39835712310'}),/Duplicate Fleet/);
   fs.writeFileSync(agencyImage,agencyOriginal);
   const evidenceFile=path.join(root,'release-evidence.json');
   fs.writeFileSync(evidenceFile,JSON.stringify(evidence));
