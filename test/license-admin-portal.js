@@ -80,6 +80,14 @@ class D1Local {
  const confirmed=await call(prefix+'confirm-payment',{orderId:oid,paymentRef:'BANK-TRANSACTION-001'});
  assert.equal(confirmed.status,200,JSON.stringify(confirmed));
  assert.equal(confirmed.json.order.status,'paid');
+ const awaitingIssuance=await call(prefix+'summary');
+ assert.equal(awaitingIssuance.status,200);
+ assert.equal(awaitingIssuance.json.counts.paidValueVnd,350000,
+  'Paid but not yet issued bank-confirmed order must appear in confirmed amount');
+ assert.equal(awaitingIssuance.json.counts.paidAwaitingIssue,1);
+ assert.equal(awaitingIssuance.json.counts.issued,0);
+ assert.equal(awaitingIssuance.json.counts.scope,'all_orders');
+ assert.equal(awaitingIssuance.json.counts.paymentSource,'administrator_manual_confirmation');
  const issued=await call(prefix+'issue',{orderId:oid});
  assert.equal(issued.status,200,JSON.stringify(issued));
  const token=issued.json.token;
@@ -130,7 +138,29 @@ class D1Local {
  assert.equal(summary.status,200);
  assert.equal(summary.json.orders.length,3);
  assert.equal(summary.json.counts.issued,2);
+ assert.equal(summary.json.counts.paidAwaitingIssue,0);
+ assert.equal(summary.json.counts.paidValueVnd,1400000);
+ assert.equal(summary.json.counts.orders,3);
  assert.equal(summary.json.paymentAutomatic,false);
+ // UI lists 150 recent records but financial totals must include ALL D1
+ // orders; otherwise hundreds of paid customers make the dashboard lie.
+ const insertPending=db.sql.prepare(`INSERT INTO portal_orders
+   (order_id,customer_name,customer_email,installation_id,action,
+    plan,months,amount_vnd,status,created_at)
+   VALUES(?,?,?,?,?,'starter',1,?,'pending',?)`);
+ for(let i=0;i<151;i++){
+  insertPending.run('ord_'+(i+1000).toString(16).padStart(24,'0'),
+   'Load-test customer','load'+i+'@example.test',install,'new',100000,now-i-1);
+ }
+ const allOrders=await call(prefix+'summary');
+ assert.equal(allOrders.status,200);
+ assert.equal(allOrders.json.orders.length,150,'Recent rows are intentionally paged');
+ assert.equal(allOrders.json.counts.orders,154,'Count must include >150 total orders');
+ assert.equal(allOrders.json.counts.pending,152);
+ assert.equal(allOrders.json.counts.issued,2);
+ assert.equal(allOrders.json.counts.paidValueVnd,1400000,
+  'Unpaid orders must not affect bank-confirmed total');
+ assert.equal(allOrders.json.counts.scope,'all_orders');
  assert(!JSON.stringify(summary.json).includes(token),'Summary must not leak activation tokens');
  const wrongEnc={...env,LHM_ORDER_TOKEN_ENC_KEY_B64:crypto.randomBytes(32).toString('base64')};
  assert.equal((await call(prefix+'token',{orderId:oid},{envOverride:wrongEnc})).status,503,
