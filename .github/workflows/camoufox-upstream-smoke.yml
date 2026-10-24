@@ -40,6 +40,8 @@ jobs:
         shell: pwsh
         run: |
           node test/camoufox-stage0-ci-reports.js
+          if ($LASTEXITCODE -ne 0) { throw 'Stage-0 report evidence regression failed' }
+          node test/camoufox-stage0-timeouts.js
           if ($LASTEXITCODE -ne 0) { throw 'Stage-0 evidence gate regression failed' }
       - name: Download official pinned Windows x64 release and verify it
         shell: pwsh
@@ -98,7 +100,7 @@ jobs:
           }
       - name: Stage-0 two-profile real Camoufox local storage and restart measurement
         shell: pwsh
-        timeout-minutes: 12
+        timeout-minutes: 11
         run: |
           $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
           "LHM_CAMOUFOX_EXE_SHA256=$env:LHM_CAMOUFOX_EXE_SHA256" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
@@ -146,6 +148,7 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'Identity B generation failed'}
       - name: Measure two configured Camoufox profiles through the selective controller
         shell: pwsh
+        timeout-minutes: 11
         env:
           LHM_STAGE0_IDENTITY_A: ${{ runner.temp }}\identity-a.json
           LHM_STAGE0_IDENTITY_B: ${{ runner.temp }}\identity-b.json
