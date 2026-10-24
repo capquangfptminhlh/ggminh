@@ -4,7 +4,9 @@
  * Runs only over Cloudflare HTTPS; production keys are Worker secrets.
  * IMPORTANT: verify / sign use the EXACT lhmlic1 + lhmproof1 formats.
  */
-import { renderLanding } from './landing.mjs';
+import { adminHtml } from './admin.mjs';
+import { adminScript } from './adminClient.mjs';
+import { commerce } from './commerce.mjs';
 const LICENSE_ID=/^lic_[a-f0-9]{24}$/;
 const INSTALL_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const NONCE=/^[a-zA-Z0-9_-]{22}$/;
@@ -224,8 +226,12 @@ export function createAuthority({clock=()=>Date.now()}={}){
    const url=new URL(request.url);
    if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))
     return response(400,{error:'https_required'});
-   if(url.pathname==='/'&&['GET','HEAD'].includes(request.method))
-    return renderLanding(request);
+   // No payment/customer information in public HTML. Every sales API
+   // request requires the existing strong owner Bearer secret.
+   if((url.pathname==='/'||url.pathname==='/admin')&&['GET','HEAD'].includes(request.method))
+    return adminHtml(request);
+   if(url.pathname==='/admin/app.js'&&request.method==='GET')
+    return adminScript();
    if(url.pathname==='/health'&&request.method==='GET'){
     try{
      const database=db(env);
@@ -238,19 +244,25 @@ export function createAuthority({clock=()=>Date.now()}={}){
    const isVerify=url.pathname==='/v1/verify'&&request.method==='POST';
    const isRegister=url.pathname==='/v1/admin/register'&&request.method==='POST';
    const isRevoke=url.pathname==='/v1/admin/revocation'&&request.method==='POST';
-   if(!isVerify&&!isRegister&&!isRevoke)
+   const isCommerce=url.pathname==='/v1/admin/commerce'&&request.method==='POST';
+   if(!isVerify&&!isRegister&&!isRevoke&&!isCommerce)
     return response(404,{error:'not_found'});
    try{
     const database=db(env);
     const now=clock();
     if(!Number.isSafeInteger(now)||now<0)throw Error('clock_invalid');
     // Authenticate BEFORE reading an administrative request body.
-    if((isRegister||isRevoke)&&!await isAdmin(request,env))
+    if((isRegister||isRevoke||isCommerce)&&!await isAdmin(request,env))
      return response(401,{error:'unauthorized'});
     const parsed=await readJson(request);
     if(parsed.error)return parsed.error;
     const input=parsed.data;
     const keys=await issuerKeys(env);
+    if(isCommerce){
+     const result=await commerce(database,now,keys,stableClaims,input);
+     const {status,...body}=result;
+     return response(status,body);
+    }
     if(isRevoke){
      if(Object.keys(input).sort().join('|')!=='licenseId|revoked'||
         !LICENSE_ID.test(input.licenseId||'')||typeof input.revoked!=='boolean')
