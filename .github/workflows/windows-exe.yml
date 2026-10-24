@@ -21,6 +21,8 @@ jobs:
         run: npm ci
       - name: Run verification tests
         run: npm test
+      - name: Gate 3 exact-build operator packet regression (synthetic EXE only)
+        run: node test/gate3-operator-kit.js
       - name: Gate 3 Windows integrity collector regression (synthetic EXE only)
         shell: pwsh
         run: |
@@ -142,6 +144,15 @@ jobs:
           retention-days: 14
       - name: Record installer SHA-256 and twelve real UI checks
         run: node tools/ci-release-evidence.js dist dist/release-evidence.json
+      - name: Generate operator Gate 3 kit from the same EXE SHA and commit
+        run: node tools/create-gate3-operator-kit.js dist/release-evidence.json dist dist/gate3-operator-kit
+      - name: Upload privacy-minimal Gate 3 operator kit (NO EXE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Gate3-Operator-Kit-Windows
+          path: dist/gate3-operator-kit/
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload commercial preflight build evidence
         uses: actions/upload-artifact@v4
         with:
