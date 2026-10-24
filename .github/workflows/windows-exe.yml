@@ -21,6 +21,8 @@ jobs:
         run: npm ci
       - name: Run verification tests
         run: npm test
+      - name: Verify vendor-pinned license endpoint and safe Preview defaults
+        run: node test/license-packaged-authority.js
       - name: Gate 3 exact-build operator packet regression (synthetic EXE only)
         run: node test/gate3-operator-kit.js
       - name: Gate 3 Windows integrity collector regression (synthetic EXE only)
@@ -80,6 +82,18 @@ jobs:
                 throw "Unapproved engine release payload staged in $folder : $($forbidden.FullName -join ', ')"
               }
             }
+          }
+      - name: Verify packaged license authority is explicitly DISABLED in Preview
+        shell: pwsh
+        run: |
+          $file = ".\\dist\\win-unpacked\\resources\\lhm-license-authority\\authority.json"
+          if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+            throw 'Packaged license authority config missing from Windows installer'
+          }
+          $raw = Get-Content -LiteralPath $file -Raw | ConvertFrom-Json
+          if ($raw.schema -ne 'lhm.license-authority-config.v1' -or
+              $raw.enabled -ne $false -or $null -ne $raw.endpoint) {
+            throw 'Preview installer must NOT ship a live license authority before production approval'
           }
       - name: Capture actual Electron UI (sample data)
         shell: pwsh
