@@ -188,6 +188,17 @@ function createWindow() {
           if(shown.ready!=='true'||shown.header!=='v'+release||
              shown.nav!=='v'+release||!shown.title.includes('v'+release))
             throw Error('UI screenshot version mismatch: '+JSON.stringify(shown));
+          // Real Electron acceptance: the prior light-theme screenshot showed
+          // white/dim AI text over a nearly-white panel. Ensure readable
+          // computed colors and that the rail fits the viewport.
+          const readability=await mainWindow.webContents.executeJavaScript(
+            "(() => { const panel=document.getElementById('lhm-profile-panel'); const title=panel.querySelector('.lhm-v6-assistant h3'); const sub=panel.querySelector('.lhm-v6-assistant h3 em'); const secondary=panel.querySelector('.lhm-v6-ai-button:not(.primary)'); const box=panel.getBoundingClientRect(); const metric=document.querySelector('.lhm-v6-metric'); return {heading:getComputedStyle(title).color,emphasis:getComputedStyle(sub).color,action:getComputedStyle(secondary).color,cardHeight:metric.getBoundingClientRect().height,railLeft:box.left,railRight:box.right,viewport:innerWidth}; })()",true);
+          if(readability.heading!=='rgb(32, 55, 81)'||
+             readability.emphasis!=='rgb(37, 107, 186)'||
+             readability.action!=='rgb(36, 73, 103)'||
+             readability.cardHeight>135||
+             readability.railLeft<0||readability.railRight>readability.viewport+1)
+            throw Error('Full-window AI panel contrast/layout regression: '+JSON.stringify(readability));
           const writeCapture = (name, png) => {
             if (png.isEmpty()) throw Error('Electron returned an empty UI capture: ' + name);
             const bytes = png.toPNG();
@@ -199,9 +210,10 @@ function createWindow() {
           writeCapture('workspace-preview.png', png);
           console.log('[UI smoke] Saved workspace preview');
           const railCheck=await mainWindow.webContents.executeJavaScript(
-            "(() => { document.getElementById('lhm-v7-show-rail').click(); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded')}; })()",true);
-          if(!railCheck.collapsed||railCheck.aria!=='false')
-            throw Error('AI rail collapse failed: '+JSON.stringify(railCheck));
+            "(() => { const before=document.querySelector('.content-view').getBoundingClientRect().width; document.getElementById('lhm-v7-show-rail').click(); const after=document.querySelector('.content-view').getBoundingClientRect().width; const panel=document.getElementById('lhm-profile-panel'); return {collapsed:document.body.dataset.lhmRail==='closed',aria:document.getElementById('lhm-v7-show-rail').getAttribute('aria-expanded'),before,after,hidden:getComputedStyle(panel).display==='none'}; })()",true);
+          if(!railCheck.collapsed||railCheck.aria!=='false'||!railCheck.hidden||
+             railCheck.after<railCheck.before+200)
+            throw Error('Full-width workspace collapse failed: '+JSON.stringify(railCheck));
           await new Promise(resolve=>setTimeout(resolve,450));
           const fullTable=await mainWindow.webContents.capturePage();
           writeCapture('workspace-expanded-preview.png', fullTable);
