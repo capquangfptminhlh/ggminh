@@ -27,6 +27,7 @@ function startHardDeadline(ms=9*60*1000){
   console.error('[Stage-0] FAIL: process exceeded hard lab deadline; no PASS evidence permitted');
   process.exit(2);
  },ms);
+ timer.unref?.();
  return ()=>{completed=true;clearTimeout(timer);};
 }
 module.exports={runStage,startHardDeadline};
