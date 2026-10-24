@@ -42,25 +42,17 @@ jobs:
           test "$MIGRATION_CONFIRMATION" = 'BACKUP_AND_MIGRATIONS_REVIEWED' || { echo 'D1 backup and SQL review not confirmed'; exit 1; }
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN'; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID'; exit 1; }
-          node - <<'NODE'
-          const fs=require('node:fs');
-          const id=process.env.LHM_D1_DATABASE_ID||'';
-          if(!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(id)){
-            throw Error('Missing/invalid LHM_D1_DATABASE_ID');
-          }
-          const source=fs.readFileSync('serverless/license-worker/wrangler.toml.example','utf8');
-          if(!source.includes('REPLACE_WITH_D1_DATABASE_UUID')||
-            !source.includes('pattern = "browser.lhmcrm.com"')||
-            !source.includes('workers_dev = false'))throw Error('Unsafe Wrangler template');
-          fs.writeFileSync('serverless/license-worker/wrangler.toml',
-            source.replace('REPLACE_WITH_D1_DATABASE_UUID',id),{mode:0o600});
-          NODE
+          node test/cloudflare-bootstrap-config.js
+          node tools/cloudflare-config-builder.js production
       - name: Test license Worker and payment portal
         run: |
           npm ci
           node test/license-cloudflare-worker.js
           node test/license-admin-portal.js
-      - name: Check owner-provisioned Cloudflare Worker secrets (names only)
+      - name: Compile Worker without publishing or loading credentials
+        working-directory: serverless/license-worker
+        run: npx --yes wrangler@4.148.0 deploy --dry-run --outdir ./dist/cloudflare-preflight
+      - name: Check owner-provisioned Cloudflare Worker secrets (names only; requires private bootstrap first)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

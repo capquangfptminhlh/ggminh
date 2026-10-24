@@ -6,6 +6,8 @@ compatibility_date = "2026-10-24"
 # Production API and preview site must not be accessible from a second workers.dev
 # hostname that could circumvent hostname-specific WAF controls.
 workers_dev = false
+# Block public versioned preview URLs even if someone configured them before.
+preview_urls = false
 
 # Cloudflare creates the DNS record and SSL certificate for this hostname
 # when an authorized deploy succeeds. The existing lhmcrm.com site is untouched.
@@ -26,3 +28,4 @@ migrations_dir = "migrations"
 # LHM_ISSUER_PRIVATE_PKCS8_B64 (base64 DER raw PKCS#8 Ed25519 private key)
 # LHM_ISSUER_PUBLIC_SPKI_B64  (base64 DER raw SPKI Ed25519 public key)
 # LHM_LICENSE_ADMIN_TOKEN     (random 32+ char credential)
+# LHM_ORDER_TOKEN_ENC_KEY_B64 (base64 random 32 bytes, backed up separately)

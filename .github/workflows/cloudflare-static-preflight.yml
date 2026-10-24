@@ -1,0 +1,51 @@
+name: LHM Cloudflare Worker preflight (no production access)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/*browser-license*.yml'
+      - '.github/workflows/cloudflare-static-preflight.yml'
+      - 'serverless/license-worker/**'
+      - 'tools/cloudflare-config-builder.js'
+      - 'tools/browser-production-smoke.js'
+      - 'test/cloudflare-bootstrap-config.js'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/*browser-license*.yml'
+      - '.github/workflows/cloudflare-static-preflight.yml'
+      - 'serverless/license-worker/**'
+      - 'tools/cloudflare-config-builder.js'
+      - 'tools/browser-production-smoke.js'
+      - 'test/cloudflare-bootstrap-config.js'
+permissions:
+  contents: read
+jobs:
+  compile-private-and-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      # Explicitly synthetic UUID; dry-run only, never sent to production.
+      LHM_D1_DATABASE_ID: '12345678-1234-4123-8123-123456789abc'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install and run unit checks
+        run: |
+          npm ci
+          node test/cloudflare-bootstrap-config.js
+          node test/license-cloudflare-worker.js
+          node test/license-admin-portal.js
+      - name: Compile private bootstrap Worker without credentials
+        run: |
+          node tools/cloudflare-config-builder.js bootstrap
+          cd serverless/license-worker
+          npx --yes wrangler@4.148.0 deploy --dry-run --outdir ./dist/bootstrap-dry-run
+      - name: Compile public Worker without publishing
+        run: |
+          node tools/cloudflare-config-builder.js production
+          cd serverless/license-worker
+          npx --yes wrangler@4.148.0 deploy --dry-run --outdir ./dist/production-dry-run
