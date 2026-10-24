@@ -11,6 +11,18 @@ const path=require('node:path');
 const net=require('node:net');
 const {firefox}=require('playwright-core');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
+async function removeTemporaryProfile(root,{attempts=30,delayMs=500}={}){
+ const transient=new Set(['ENOTEMPTY','EBUSY','EPERM']);
+ for(let i=0;i<attempts;i++){
+  try{
+   fs.rmSync(root,{recursive:true,force:true,maxRetries:3,retryDelay:100});
+   return;
+  }catch(error){
+   if(!transient.has(error.code)||i===attempts-1)throw error;
+   await new Promise(resolve=>setTimeout(resolve,delayMs));
+  }
+ }
+}
 async function main(){
  if(process.platform!=='win32')throw Error('Real Windows runner required');
  const exe=process.env.LHM_CAMOUFOX_EXECUTABLE;
@@ -93,18 +105,31 @@ async function main(){
   assert(seen.auth>0,'Real browser never authenticated through the local SOCKS gateway');
   assert(seen.targets.some(x=>x==='example.com:443'),
    'Upstream SOCKS5 did not receive the expected hostname:443');
-  console.log(JSON.stringify({result:'PASS',runtime:process.versions.node,
-   test:'synthetic-authenticated-SOCKS5-rejected-CONNECT',
-   gatewayAuthenticated:true,
-   expectedHostnameForwarded:true,
-   webNavigationBlocked:true,
-   noDirectFallbackObserved:true,
-   realInternetProxy:'NOT_TESTED',dns:'NOT_TESTED',webrtc:'NOT_TESTED',
-   cleanWindowsInstaller:'NOT_TESTED'}));
  }finally{
-  try{await controller.stop(profile.id);}catch(_){}
+  // Firefox may still be releasing SQLite files after BrowserContext.close().
+  // Never conceal an unsuccessful close, and never report PASS until all
+  // temporary customer-like profile data has actually been removed.
+  let closeFailure=null,cleanupFailure=null;
+  try{
+   if(controller.contextFor(profile.id)){
+    const stopped=await controller.stop(profile.id);
+    if(stopped?.success!==true)throw Error('Browser context did not stop cleanly');
+   }
+  }catch(error){closeFailure=error;}
   await new Promise(resolve=>server.close(resolve));
-  fs.rmSync(root,{recursive:true,force:true,maxRetries:15,retryDelay:200});
+  try{await removeTemporaryProfile(root)}
+  catch(error){cleanupFailure=error;}
+  if(closeFailure||cleanupFailure)
+   throw Error('Synthetic SOCKS5 lab teardown failed: '+
+    (closeFailure?.code||closeFailure?.message||'')+' '+
+    (cleanupFailure?.code||cleanupFailure?.message||''));
  }
+ console.log(JSON.stringify({result:'PASS',runtime:process.versions.node,
+  test:'synthetic-authenticated-SOCKS5-rejected-CONNECT',
+  gatewayAuthenticated:true,expectedHostnameForwarded:true,
+  webNavigationBlocked:true,noDirectFallbackObserved:true,
+  localProfileCleanup:'PASS',
+  realInternetProxy:'NOT_TESTED',dns:'NOT_TESTED',webrtc:'NOT_TESTED',
+  cleanWindowsInstaller:'NOT_TESTED'}));
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
