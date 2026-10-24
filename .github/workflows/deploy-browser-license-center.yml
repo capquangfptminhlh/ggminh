@@ -68,7 +68,7 @@ jobs:
         working-directory: serverless/license-worker
         run: |
           set -euo pipefail
-          npx --yes wrangler@4.46.0 secret list --format json > worker-secrets-names.json
+          npx --yes wrangler@4.148.0 secret list --format json > worker-secrets-names.json
           node - <<'NODE'
           const fs=require('node:fs');
           const vars=JSON.parse(fs.readFileSync('worker-secrets-names.json','utf8'));
@@ -86,13 +86,13 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         working-directory: serverless/license-worker
-        run: npx --yes wrangler@4.46.0 d1 migrations apply lhm-license-db --remote
+        run: npx --yes wrangler@4.148.0 d1 migrations apply lhm-license-db --remote
       - name: Deploy to owner-confirmed Custom Domain
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         working-directory: serverless/license-worker
-        run: npx --yes wrangler@4.46.0 deploy
+        run: npx --yes wrangler@4.148.0 deploy
       - name: Read-only HTTPS, D1 and admin authentication smoke
         run: node tools/browser-production-smoke.js https://browser.lhmcrm.com
       - name: Record deployment provenance without credentials
