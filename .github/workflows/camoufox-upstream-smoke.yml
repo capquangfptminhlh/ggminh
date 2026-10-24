@@ -114,6 +114,15 @@ jobs:
           name: LHM-Stage0-Camoufox-Synthetic-Report
           path: stage0-measure-results/stage0-local-report.json
           if-no-files-found: ignore
+      - name: Switch to Node 22.16+ for official Camoufox fingerprint generator
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Assert zstd decompression available in generator runtime
+        shell: pwsh
+        run: |
+          node -e "if(typeof require('node:zlib').zstdDecompressSync!=='function')process.exit(2)"
+          if ($LASTEXITCODE -ne 0) { throw 'Camoufox fingerprint model requires Node >=22.15 with zstd' }
       - name: Generate two pinned identities with the official launcher
         shell: pwsh
         run: |
@@ -146,6 +155,10 @@ jobs:
            --os windows --locale vi-VN --timezone Asia/Ho_Chi_Minh `
            --out (Join-Path $env:RUNNER_TEMP 'identity-b.json')
           if($LASTEXITCODE -ne 0){throw 'Identity B generation failed'}
+      - name: Return to Electron 33-compatible Node 20 for in-process Playwright measurement
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Measure two configured Camoufox profiles through the selective controller
         shell: pwsh
         timeout-minutes: 11
