@@ -14,6 +14,11 @@ const DATE=/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
 const PLANS=new Set(['starter','pro','business']);
 const FEATURES=new Set(['profiles','automation','api','team']);
 const DAY=86_400_000;
+// PUBLIC Ed25519 SPKI embedded in the current Windows client (manager.js).
+// Worker health/issue/verify must fail closed if owner provisioned a different
+// valid issuer pair; only the exact client-trusted signer can be deployed.
+// This is a public trust anchor, NEVER a private key or admin credential.
+export const CLIENT_ISSUER_SPKI_B64='MCowBQYDK2VwAyEAQrZOTb8wh66eNTYWoegyBpiEgQUz7dlrXHJ8mHcBKR4=';
 const encoder=new TextEncoder();
 const decoder=new TextDecoder('utf-8',{fatal:true});
 
@@ -70,12 +75,13 @@ function stableClaims(value){
  if(v===2)claims.enforcementMode=mode;
  return JSON.stringify(claims);
 }
-async function issuerKeys(env){
+async function issuerKeys(env,expectedPublicSpkiB64=CLIENT_ISSUER_SPKI_B64){
  if(typeof env.LHM_ISSUER_PRIVATE_PKCS8_B64!=='string'||
     typeof env.LHM_ISSUER_PUBLIC_SPKI_B64!=='string')
   throw Error('missing_issuer_keys');
  const priv=bytesFromBase64(env.LHM_ISSUER_PRIVATE_PKCS8_B64,8192);
  const pub=bytesFromBase64(env.LHM_ISSUER_PUBLIC_SPKI_B64,8192);
+ if(base64(pub)!==expectedPublicSpkiB64)throw Error('issuer_client_trust_mismatch');
  const privateKey=await crypto.subtle.importKey('pkcs8',priv,
   {name:'Ed25519'},false,['sign']);
  const publicKey=await crypto.subtle.importKey('spki',pub,
@@ -84,7 +90,7 @@ async function issuerKeys(env){
  const signature=await crypto.subtle.sign('Ed25519',privateKey,check);
  if(!await crypto.subtle.verify('Ed25519',publicKey,signature,check))
   throw Error('issuer_key_pair_mismatch');
- return {privateKey,publicKey};
+ return {privateKey,publicKey,publicSpki:pub};
 }
 async function verifyToken(token,publicKey){
  if(typeof token!=='string'||token.length>11000)throw Error('invalid_license');
@@ -226,7 +232,13 @@ async function sweep(database,now){
   .bind(now,new Date(now).toISOString()).run();
  return {swept:Number(result?.meta?.changes||0)};
 }
-export function createAuthority({clock=()=>Date.now()}={}){
+export function createAuthority({
+ clock=()=>Date.now(),fixtureIssuerPublicSpkiB64=null
+}={}){
+ // Only test-harness instances explicitly supply a nonproduction issuer.
+ // The default Worker export below always enforces client trust anchor.
+ const expectedIssuerSpki=fixtureIssuerPublicSpkiB64||CLIENT_ISSUER_SPKI_B64;
+ const scopedIssuerKeys=(env)=>issuerKeys(env,expectedIssuerSpki);
  return {
   async fetch(request,env){
    const url=new URL(request.url);
@@ -239,10 +251,13 @@ export function createAuthority({clock=()=>Date.now()}={}){
    if(url.pathname==='/health'&&request.method==='GET'){
     try{
      const database=db(env);
-     const keys=await issuerKeys(env);
+     const keys=await scopedIssuerKeys(env);
      await database.prepare('SELECT 1 AS ready FROM licenses LIMIT 1').first();
      if(!keys)return response(503,{status:'degraded'});
-     return response(200,{status:'ok',service:'LHM D1 License Authority'});
+     const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',keys.publicSpki));
+     const issuerKeySha256=Array.from(digest,b=>b.toString(16).padStart(2,'0')).join('');
+     return response(200,{status:'ok',service:'LHM D1 License Authority',
+      issuerKeySha256});
     }catch(_){return response(503,{status:'degraded'});}
    }
    const isVerify=url.pathname==='/v1/verify'&&request.method==='POST';
@@ -268,13 +283,13 @@ export function createAuthority({clock=()=>Date.now()}={}){
      const action=url.pathname.split('/').pop();
      const input=action==='summary'?null:await readJson(request);
      if(input?.error)return input.error;
-     return await createPortalApi({database,now,env,issuerKeys,signToken})
+     return await createPortalApi({database,now,env,issuerKeys:scopedIssuerKeys,signToken})
        .handle(action,input?.data||null);
     }
     const parsed=await readJson(request);
     if(parsed.error)return parsed.error;
     const input=parsed.data;
-    const keys=await issuerKeys(env);
+    const keys=await scopedIssuerKeys(env);
     if(isRevoke){
      if(Object.keys(input).sort().join('|')!=='licenseId|revoked'||
         !LICENSE_ID.test(input.licenseId||'')||typeof input.revoked!=='boolean')
@@ -305,7 +320,7 @@ export function createAuthority({clock=()=>Date.now()}={}){
   async scheduled(_event,env){
    const now=clock();
    if(!Number.isSafeInteger(now)||now<0)throw Error('Invalid clock');
-   await issuerKeys(env); // fail-closed if the issuer is misconfigured
+   await scopedIssuerKeys(env); // fail-closed if the issuer is misconfigured
    return sweep(db(env),now);
   }
  };

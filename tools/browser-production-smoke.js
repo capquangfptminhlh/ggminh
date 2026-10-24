@@ -3,6 +3,18 @@
 // Usage: node tools/browser-production-smoke.js https://browser.lhmcrm.com
 const assert = require('node:assert/strict');
 const {URL}=require('node:url');
+const crypto=require('node:crypto');
+const {PUBLIC_KEY}=require('../src/licensing/manager');
+const WINDOWS_ISSUER_SPKI_SHA256=crypto.createHash('sha256').update(
+ crypto.createPublicKey(PUBLIC_KEY).export({format:'der',type:'spki'})
+).digest('hex');
+function assertIssuerMatch(health){
+ assert.equal(health?.status,'ok','Live D1/issuer readiness is degraded');
+ assert.equal(health.issuerKeySha256,WINDOWS_ISSUER_SPKI_SHA256,
+  'Cloudflare issuer is not the signing key trusted by installed Windows clients');
+ return true;
+}
+
 async function run(target=process.argv[2]||'https://browser.lhmcrm.com'){
   const base=new URL(target);
   assert.equal(base.protocol,'https:','Production URL must use HTTPS');
@@ -26,13 +38,13 @@ async function run(target=process.argv[2]||'https://browser.lhmcrm.com'){
   const health=await fetchSafe('/health');
   assert.equal(health.status,200,'Live D1/issuer readiness health must be 200');
   const healthResult=await health.json();
-  assert.equal(healthResult.status,'ok','Live D1/issuer readiness is degraded');
+  assertIssuerMatch(healthResult);
   const unauth=await fetchSafe('/v1/admin/portal/summary');
   assert.ok([401,403].includes(unauth.status),'Unauthenticated admin summary must be rejected');
   const verify=await fetchSafe('/v1/verify');
   assert.ok([404,405].includes(verify.status),'Verification API must not accept GET');
   console.log(JSON.stringify({origin:base.origin,home:home.status,health:health.status,anonymousAdmin:unauth.status,
-    verifyGet:verify.status,securityHeaders:'present',result:'PASS_READ_ONLY',note:'Does not verify D1, payments, signing, Cloudflare Access or Windows activation'}));
+    verifyGet:verify.status,securityHeaders:'present',issuerTrust:'MATCHES_WINDOWS_CLIENT',result:'PASS_READ_ONLY',note:'Health checks D1 readiness and configured issuer fingerprint; does NOT prove client activation, bank payments, Cloudflare Access or installed Windows'}));
 }
 if(require.main===module)run().catch(e=>{console.error('Production smoke failed:',e.message);process.exitCode=1;});
-module.exports={run};
+module.exports={run,assertIssuerMatch,WINDOWS_ISSUER_SPKI_SHA256};
