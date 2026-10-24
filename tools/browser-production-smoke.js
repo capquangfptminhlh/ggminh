@@ -23,11 +23,15 @@ async function run(target=process.argv[2]||'https://browser.lhmcrm.com'){
   assert.match(html,/LHM/i,'Expected application identification');
   assert.ok(home.headers.get('content-security-policy'),'Missing Content-Security-Policy');
   assert.equal(home.headers.get('access-control-allow-origin'),null,'Unexpected permissive CORS on portal');
+  const health=await fetchSafe('/health');
+  assert.equal(health.status,200,'Live D1/issuer readiness health must be 200');
+  const healthResult=await health.json();
+  assert.equal(healthResult.status,'ok','Live D1/issuer readiness is degraded');
   const unauth=await fetchSafe('/v1/admin/portal/summary');
   assert.ok([401,403].includes(unauth.status),'Unauthenticated admin summary must be rejected');
   const verify=await fetchSafe('/v1/verify');
   assert.ok([404,405].includes(verify.status),'Verification API must not accept GET');
-  console.log(JSON.stringify({origin:base.origin,home:home.status,anonymousAdmin:unauth.status,
+  console.log(JSON.stringify({origin:base.origin,home:home.status,health:health.status,anonymousAdmin:unauth.status,
     verifyGet:verify.status,securityHeaders:'present',result:'PASS_READ_ONLY',note:'Does not verify D1, payments, signing, Cloudflare Access or Windows activation'}));
 }
 if(require.main===module)run().catch(e=>{console.error('Production smoke failed:',e.message);process.exitCode=1;});
