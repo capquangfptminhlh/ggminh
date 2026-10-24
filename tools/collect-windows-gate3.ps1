@@ -18,7 +18,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-if (-not $IsWindows -and $PSVersionTable.PSEdition -eq 'Core') {
+if ($PSVersionTable.PSEdition -eq 'Core' -and -not $IsWindows) {
   throw 'This Gate 3 local preflight requires Windows'
 }
 if (-not [Environment]::Is64BitOperatingSystem) {
@@ -65,7 +65,7 @@ $checks = @(
  [ordered]@{ id='G3-01'; name='Exact downloaded EXE SHA-256 equals operator supplied CI digest'; status='PASS_LOCAL_HASH_MATCH'; evidence='Get-FileHash SHA256'; sourceAuthenticated=$false }
 )
 foreach ($item in $manual) {
-  $parts = $item.Split(' ',2)
+  $parts = $item -split ' ',2
   $checks += [ordered]@{ id=$parts[0]; name=$parts[1]; status='NOT_RUN'; evidence=$null }
 }
 $report = [ordered]@{
