@@ -47,8 +47,13 @@ Firefox/Gecko continues to use the installed Firefox engine.
 6. Install on clean Windows VMs, verify that System and Bundled select
    different installed executables as expected, then test update/rollback,
    crash recovery, permission handling and multiple profiles.
-7. Perform Authenticode signing of the installer and appropriate internal
-   binaries with normal publisher release procedures.
+7. **No Windows Authenticode code-signing certificate is required.**
+   The owner explicitly opts to ship the Windows installer unsigned.
+   The public download must instead include the exact EXE SHA-256,
+   official distribution URL, CI provenance and independent installed-
+   Windows acceptance. Do not disable Defender or SmartScreen.
+   This decision does **not** disable the Ed25519 integrity signatures
+   required for engine manifests or online update metadata.
 
 The verifier is for a **Chromium-compatible Windows exe named chrome.exe or
 msedge.exe**. Firefox is not part of this bundle. Do not assume a specific
@@ -73,7 +78,7 @@ https://www.electron.build/docs/contents/
 
 - A commercially licensed and tested engine binary, with actual Windows
   process smoke confirming it launches from the resource directory.
-- External code signing and distribution/license authority approval.
+- Third-party engine redistribution/license authority approval (separate from optional EXE Authenticode).
 - Separate engine signing trust root, updater with rollback, CI release
   provisioning, native C++ patch tests or a full security assessment.
 - SQLite migration: current per-profile storage remains the local JSON store.
