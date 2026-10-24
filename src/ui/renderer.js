@@ -79,6 +79,17 @@ const fpAuditResults = document.getElementById('fp-audit-results');
 const fieldFpCanvas = document.getElementById('field-fp-canvas');
 const fieldFpAudio = document.getElementById('field-fp-audio');
 const fieldFpWebrtc = document.getElementById('field-fp-webrtc');
+// Form preview uses only locally saved configuration, never a fabricated runtime measurement.
+let profileCoverageOriginalEngine = null;
+function renderProfileSignalCoverage() {
+  const engine = fieldBrowserEngine.value || 'chromium';
+  const fp = engine === 'camoufox' && profileCoverageOriginalEngine === 'camoufox'
+    ? (currentGeneratedFP || { mode: 'native' }) : selectedFingerprintConfig();
+  window.LHMProfileSignalCoverage?.render(document, {
+    engine, fingerprint: fp,
+    proxy: { type: fieldProxyType.value, host: fieldProxyHost.value, port: fieldProxyPort.value }
+  });
+}
 
 // First-run guidance for Camoufox identity provisioning. The main process
 // records the provisioning outcome on the saved profile
@@ -285,6 +296,7 @@ function setupEventListeners() {
     if (native) currentGeneratedFP = { mode: 'native' };
     else window.api.generateFingerprint({ os: fieldFpOs.value }).then(applyFingerprintToForm).catch(console.error);
     fpAuditResults.textContent = 'Cấu hình đã thay đổi. Nhấn Kiểm tra cấu hình để xem cảnh báo.';
+    renderProfileSignalCoverage();
   });
   document.getElementById('btn-fp-inspect').addEventListener('click', async () => {
     fpAuditResults.textContent = 'Đang chẩn đoán...';
@@ -317,7 +329,11 @@ function setupEventListeners() {
     if (gecko) setFingerprintMode('native');
     fieldFpMode.disabled = gecko;
     updateCamoufoxFormHint();
+    renderProfileSignalCoverage();
   });
+  for (const control of [fieldProxyType, fieldProxyHost, fieldProxyPort]) {
+    control.addEventListener('change', renderProfileSignalCoverage);
+  }
   document.getElementById('btn-behavior-alert').addEventListener('click', async () => {
     await refreshBehaviorAlerts();
     document.getElementById('behavior-inline-notice').hidden = true;
@@ -504,6 +520,8 @@ async function openProfileModal(existingProfile = null) {
   proxyTestResult.textContent = '';
   const settings = await window.api.getSettings();
   fieldGeckoPath.value = settings.geckoPath || '';
+  profileCoverageOriginalEngine = existingProfile
+    ? (existingProfile.engine_type === 'camoufox' ? 'camoufox' : existingProfile.engine === 'gecko' ? 'gecko' : 'chromium') : null;
   if (existingProfile) {
     document.getElementById('modal-title').textContent = 'Chỉnh sửa Profile';
     fieldId.value = existingProfile.id;
@@ -547,6 +565,7 @@ async function openProfileModal(existingProfile = null) {
   fieldFpMode.disabled = fieldBrowserEngine.value !== 'chromium';
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   updateCamoufoxFormHint();
+  renderProfileSignalCoverage();
   openModal(modalProfile);
 }
 
@@ -577,6 +596,7 @@ function setFingerprintMode(mode) {
   fieldFpMode.value = mode === 'native' ? 'native' : 'experimental';
   fpCustomFields.hidden = fieldFpMode.value === 'native';
   fpAuditResults.textContent = 'Nhấn Kiểm tra cấu hình để xem phân tích.';
+  renderProfileSignalCoverage();
 }
 
 function applyFingerprintToForm(fp) {
@@ -598,6 +618,7 @@ function applyFingerprintToForm(fp) {
   fieldFpCanvas.checked = (fp.canvasNoiseSeed !== 0);
   fieldFpAudio.checked = (fp.audioNoiseSeed !== 0);
   fieldFpWebrtc.checked = (fp.webrtc !== 'real');
+  renderProfileSignalCoverage();
 }
 
 async function loadProfiles() {
