@@ -6,7 +6,6 @@ const ID=/^ord_[0-9a-f]{24}$/;
 const LIC=/^lic_[0-9a-f]{24}$/;
 const INSTALL=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const MONTHS=new Set([1,3,6,12]);
-const PRICE=499000;
 const DAY=86400000;
 const enc=new TextEncoder(),dec=new TextDecoder();
 function json(status,data){
@@ -62,7 +61,7 @@ export function createPortalApi({database,now,env,issuerKeys,signToken}){
     database.prepare('SELECT license_id AS licenseId, installation_id AS installationId, expires_at AS expiresAt, enforcement_mode AS enforcementMode, revoked FROM licenses ORDER BY updated_at DESC LIMIT 150').all()
    ]);
    const rows=(orders.results||[]).map(orderPublic);
-   return json(200,{currency:'VND',starterMonthlyVnd:PRICE,
+   return json(200,{currency:'VND',priceMode:'manual_per_order',
     paymentMethod:'manual_bank_transfer',paymentAutomatic:false,
     orders:rows,licenses:licenses.results||[],
     counts:{orders:rows.length,pending:rows.filter(x=>x.status==='pending').length,
@@ -70,10 +69,11 @@ export function createPortalApi({database,now,env,issuerKeys,signToken}){
       paidValueVnd:rows.filter(x=>x.status==='issued').reduce((s,x)=>s+x.amountVnd,0)}});
   }
   if(path==='create'){
-   if(!input||Object.keys(input).sort().join('|')!=='action|customerEmail|customerName|installationId|licenseId|months')
+   if(!input||Object.keys(input).sort().join('|')!=='action|amountVnd|customerEmail|customerName|installationId|licenseId|months')
     return invalid('invalid_fields');
-   const {action,customerName,customerEmail,installationId,licenseId,months}=input;
+   const {action,customerName,customerEmail,installationId,licenseId,months,amountVnd}=input;
    if(!['new','renew'].includes(action)||!MONTHS.has(months)||
+      !Number.isSafeInteger(amountVnd)||amountVnd<1||amountVnd>1000000000||
       typeof customerName!=='string'||customerName.trim().length<2||customerName.length>120||
       typeof customerEmail!=='string'||customerEmail.length>180||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)||
@@ -84,13 +84,20 @@ export function createPortalApi({database,now,env,issuerKeys,signToken}){
     const existing=await database.prepare('SELECT license_id AS licenseId, installation_id AS installationId, revoked FROM licenses WHERE license_id = ?').bind(licenseId).first();
     if(!existing||existing.installationId.toLowerCase()!==installationId.toLowerCase()||existing.revoked===1)
      return json(409,{error:'renewal_license_unavailable'});
+    // Renewal must belong to the original customer, not simply anyone
+    // who knows a license ID and installation ID.
+    const owned=await database.prepare(`SELECT customer_email AS email FROM portal_orders
+      WHERE license_id=? AND action='new' AND status='issued'
+      ORDER BY issued_at ASC LIMIT 1`).bind(licenseId).first();
+    if(!owned||owned.email.toLowerCase()!==customerEmail.trim().toLowerCase())
+     return json(403,{error:'renewal_customer_mismatch'});
    }
    const orderId='ord_'+hex(12);
    await database.prepare(`INSERT INTO portal_orders
     (order_id,customer_name,customer_email,installation_id,action,plan,months,amount_vnd,status,
     license_id,created_at) VALUES (?,?,?,?,?,'starter',?,?,'pending',?,?)`)
     .bind(orderId,customerName.trim(),customerEmail.trim().toLowerCase(),
-      installationId,action,months,months*PRICE,licenseId,now).run();
+      installationId,action,months,amountVnd,licenseId,now).run();
    return json(201,{order:orderPublic(await getOrder(database,orderId)),
     warning:'Chưa thu tiền; không được cấp key trước khi xác minh giao dịch thực.'});
   }
