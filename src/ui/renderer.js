@@ -446,7 +446,12 @@ function setupEventListeners() {
         user: fieldProxyUser.value.trim(),
         pass: fieldProxyPass.value.trim()
       },
-      fingerprint: selectedFingerprintConfig()
+      // Keep a verified, pinned Camoufox identity on ordinary metadata edits.
+      // Never copy that identity when changing engines or creating a profile.
+      fingerprint: fieldBrowserEngine.value === 'camoufox' &&
+        profileCoverageOriginalEngine === 'camoufox' &&
+        currentGeneratedFP?.mode === 'native'
+        ? currentGeneratedFP : selectedFingerprintConfig()
     };
 
     const isCreate = !fieldId.value;
