@@ -119,8 +119,22 @@ async function readJson(request){
   return {error:response(413,{error:'request_too_large'})};
  let data;
  try{
-  const raw=new Uint8Array(await request.arrayBuffer());
-  if(raw.length>15000)throw Error('request_too_large');
+  // Bound the stream BEFORE allocating the complete request body.
+  const chunks=[];
+  let size=0;
+  const reader=request.body?.getReader();
+  if(!reader)throw Error('invalid_request');
+  try{
+   while(true){
+    const {value,done}=await reader.read();
+    if(done)break;
+    size+=value.length;
+    if(size>15000)throw Error('request_too_large');
+    chunks.push(value);
+   }
+  }finally{reader.releaseLock();}
+  const raw=new Uint8Array(size);let offset=0;
+  for(const chunk of chunks){raw.set(chunk,offset);offset+=chunk.length;}
   data=JSON.parse(decoder.decode(raw));
  }catch(e){return{error:response(e.message==='request_too_large'?413:400,{
   error:e.message==='request_too_large'?'request_too_large':'invalid_request'
