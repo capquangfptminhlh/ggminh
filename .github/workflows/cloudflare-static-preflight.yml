@@ -8,6 +8,8 @@ on:
       - 'tools/cloudflare-config-builder.js'
       - 'tools/browser-production-smoke.js'
       - 'test/cloudflare-bootstrap-config.js'
+      - 'test/license-issuer-trust-bridge.js'
+      - 'src/licensing/manager.js'
   push:
     branches: [main]
     paths:
@@ -17,6 +19,8 @@ on:
       - 'tools/cloudflare-config-builder.js'
       - 'tools/browser-production-smoke.js'
       - 'test/cloudflare-bootstrap-config.js'
+      - 'test/license-issuer-trust-bridge.js'
+      - 'src/licensing/manager.js'
 permissions:
   contents: read
 jobs:
@@ -39,6 +43,8 @@ jobs:
           node test/cloudflare-bootstrap-config.js
           node test/license-cloudflare-worker.js
           node test/license-admin-portal.js
+      - name: Verify Cloudflare issuer trust is exactly the Windows client issuer
+        run: node test/license-issuer-trust-bridge.js
       - name: Compile private bootstrap Worker without credentials
         run: |
           node tools/cloudflare-config-builder.js bootstrap
