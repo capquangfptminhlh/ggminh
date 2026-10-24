@@ -3,12 +3,13 @@ const assert=require('node:assert/strict');
 const crypto=require('node:crypto');
 const fs=require('node:fs');
 const path=require('node:path');
+const {pathToFileURL}=require('node:url');
 const {PUBLIC_KEY}=require('../src/licensing/manager');
 const {assertIssuerMatch,WINDOWS_ISSUER_SPKI_SHA256}=require('../tools/browser-production-smoke');
 async function check(){
  const pubDer=crypto.createPublicKey(PUBLIC_KEY).export({format:'der',type:'spki'});
  const expected=pubDer.toString('base64');
- const worker=await import('file://'+path.resolve(__dirname,'../serverless/license-worker/src/index.mjs').replace(/\\/g,'/'));
+ const worker=await import(pathToFileURL(path.resolve(__dirname,'../serverless/license-worker/src/index.mjs')).href);
  assert.equal(worker.CLIENT_ISSUER_SPKI_B64,expected,
   'Windows public key and pinned Worker issuer key cannot drift');
  assert.equal(WINDOWS_ISSUER_SPKI_SHA256,
