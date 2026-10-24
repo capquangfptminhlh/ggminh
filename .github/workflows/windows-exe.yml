@@ -50,6 +50,31 @@ jobs:
           if (-not (Test-Path ".\dist\win-unpacked\resources\app.asar.unpacked\src\ops\windowControl.ps1")) {
             throw "PowerShell helper missing from Electron unpacked bundle"
           }
+      - name: Validate packaged runtime and exclude unapproved engine payloads
+        shell: pwsh
+        run: |
+          $resources = Join-Path $PWD "dist\\win-unpacked\\resources"
+          $unpacked = Join-Path $resources "app.asar.unpacked"
+          foreach ($required in @(
+            "src\\ops\\windowControl.ps1",
+            "tools\\extract-signed-engine.ps1"
+          )) {
+            if (-not (Test-Path (Join-Path $unpacked $required) -PathType Leaf)) {
+              throw "Required unpacked runtime helper missing: $required"
+            }
+          }
+          # Preview releases must not accidentally ship an unapproved engine
+          # executable or manifest from a developer's staging directory.
+          foreach ($folder in @("lhm-camoufox", "lhm-engines")) {
+            $dir = Join-Path $resources $folder
+            if (Test-Path $dir) {
+              $forbidden = Get-ChildItem $dir -Recurse -File -ErrorAction Stop |
+                Where-Object { $_.Name -in @("camoufox.exe", "release.json", "publisher-ed25519.pub") }
+              if ($forbidden) {
+                throw "Unapproved engine release payload staged in $folder : $($forbidden.FullName -join ', ')"
+              }
+            }
+          }
       - name: Capture actual Electron UI (sample data)
         shell: pwsh
         env:

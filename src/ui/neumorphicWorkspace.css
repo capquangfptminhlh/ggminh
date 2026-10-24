@@ -315,3 +315,66 @@ body[data-view="profiles"] .profile-table .actions-cell button{min-height:32px}
     font-size:11px!important;
   }
 }
+
+
+/* 2026-10-24 Windows 1440x900 packaged screenshot review:
+   strengthen secondary-label legibility and keyboard focus without
+   changing workspace layout, API bindings or intentionally hidden controls. */
+body[data-view="profiles"] .profile-table th{
+  font-size:12px!important;color:#526784!important;letter-spacing:.01em
+}
+body[data-view="profiles"] .profile-table td{
+  font-size:13px!important;line-height:1.55;color:#28405e
+}
+body[data-view="profiles"] .profile-name-box .p-name{font-size:13px!important}
+body[data-view="profiles"] .profile-name-box .p-group{font-size:12px!important;color:#526987!important}
+body[data-view="profiles"] .lhm-v6-metric-label,
+body[data-view="profiles"] .lhm-v6-metric-bottom{font-size:12px!important;color:#536a86!important}
+body[data-view="profiles"] .lhm-page-subtitle,
+body[data-view="profiles"] .lhm-v6-title-sub{font-size:12px!important;color:#56708e!important}
+#lhm-profile-panel .lhm-v6-online,
+#lhm-profile-panel .lhm-v6-ai-eyebrow{font-size:11px!important}
+#lhm-profile-panel .lhm-v6-ai-desc,
+#lhm-profile-panel .lhm-v6-assistant small{font-size:11px!important;line-height:1.55!important}
+#lhm-profile-panel .lhm-v6-ai-health span{font-size:11px!important}
+#lhm-profile-panel .lhm-v6-ai-button{font-size:12px!important;min-height:38px}
+body[data-view="profiles"] .profile-table .actions-cell button{min-width:34px;min-height:34px}
+:where(.lhm-side-nav,.app-header,.content-view,#lhm-profile-panel) :is(button,a,input,select,textarea):focus-visible{
+  outline:2px solid #176be2!important;outline-offset:2px!important;
+}
+@media (max-width:950px){
+  body[data-view="profiles"] .profile-table td{font-size:12px!important}
+  body[data-view="profiles"] .profile-table th{font-size:11px!important}
+}
+
+
+/* Packaged Control Tower capture exposed dark-theme text on light neumorphic cards.
+   Contrast repair scoped to Control Tower: no global theme or modal behavior change. */
+#modal-control-tower .lhm-agency-panel,
+#modal-control-tower .lhm-triage-panel{
+  background:#f9fbfe!important;
+  border-color:#d2e0f0!important;
+}
+#modal-control-tower .lhm-agency-panel h3,
+#modal-control-tower .lhm-triage-panel .tower-panel-header h3{color:#193651!important}
+#modal-control-tower .lhm-agency-eyebrow{color:#146e73!important}
+#modal-control-tower .lhm-triage-eyebrow{color:#205f9e!important}
+#modal-control-tower .lhm-agency-help,
+#modal-control-tower .lhm-agency-fineprint,
+#modal-control-tower .lhm-agency-status,
+#modal-control-tower .lhm-triage-desc,
+#modal-control-tower .lhm-triage-status{
+  color:#425b77!important;
+  font-size:12px!important;
+  line-height:1.6!important;
+}
+#modal-control-tower .lhm-agency-fineprint strong{color:#263f58!important}
+#modal-control-tower .lhm-agency-fields label{color:#2a4662!important}
+#modal-control-tower .lhm-agency-fields input{
+  background:#fff!important;
+  color:#1d3b57!important;
+  border-color:#a6bbd5!important;
+}
+#modal-control-tower .lhm-agency-fields input::placeholder{color:#5d7693!important}
+#modal-control-tower .lhm-agency-status[data-state="error"]{color:#b42335!important}
+#modal-control-tower .tower-muted{color:#506a88!important}

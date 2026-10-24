@@ -22,9 +22,9 @@ const screenshotNames=[
 try{
   fs.writeFileSync(path.join(root,name),Buffer.alloc(1024*1024+1,0x2b));
   fs.mkdirSync(path.join(root,'packaged-ui'));
-  screenshotNames.forEach(file=>{
-    fs.writeFileSync(path.join(root,file),Buffer.alloc(10001,0x2b));
-    fs.writeFileSync(path.join(root,'packaged-ui',file),Buffer.alloc(10002,0x2c));
+  screenshotNames.forEach((file,index)=>{
+    fs.writeFileSync(path.join(root,file),Buffer.alloc(10001,0x2b+index));
+    fs.writeFileSync(path.join(root,'packaged-ui',file),Buffer.alloc(10002,0x2c+index));
   });
   const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,name))).digest('hex');
   const evidence=produceReleaseEvidence({dist:root,pkg,
@@ -37,6 +37,15 @@ try{
   assert.equal(evidence.build.uiCaptures.length,12);
   assert.equal(evidence.build.uiCaptures[0].source.bytes,10001);
   assert.equal(evidence.build.uiCaptures[0].packaged.bytes,10002);
+  // Catch the real regression: hiding an agency panel below the scroll fold
+  // must not be accepted as a distinct UI screenshot.
+  const fleetImage=path.join(root,'workspace-fleet-triage-preview.png');
+  const agencyImage=path.join(root,'workspace-agency-handoff-preview.png');
+  const agencyOriginal=fs.readFileSync(agencyImage);
+  fs.copyFileSync(fleetImage,agencyImage);
+  assert.throws(()=>produceReleaseEvidence({dist:root,pkg,
+    sha:'1'.repeat(40),runId:'39835712310'}),/Duplicate Fleet/);
+  fs.writeFileSync(agencyImage,agencyOriginal);
   const evidenceFile=path.join(root,'release-evidence.json');
   fs.writeFileSync(evidenceFile,JSON.stringify(evidence));
   const verifyArgs={assetsRoot:root,evidenceFile,uiRoot:root,
