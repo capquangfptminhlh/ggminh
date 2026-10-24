@@ -11,6 +11,7 @@ const {spawnSync}=require('node:child_process');
 const {safeOptions,stageStorageResult,digestFile,
  extendedProbe,summarizeProbe}=require('./core');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
+const {runStage,startHardDeadline}=require('./steps');
 
 function readValues(page){
  return page.evaluate(async()=>{
@@ -133,24 +134,27 @@ async function run(){
   signedReleaseAcceptance:'NOT_RUN',installedClientAcceptance:'NOT_RUN',
   caveat:'Isolation at a local origin does not prove websites cannot associate profiles'
  };
+ const stopDeadline=startHardDeadline();
  try{
-  const a=await controller.launch(profile('stage0_a'));
-  const b=await controller.launch(profile('stage0_b'));
-  const ap=await a.context.newPage(),bp=await b.context.newPage();
-  await Promise.all([ap.goto(server.url),bp.goto(server.url)]);
-  await writeValues(ap,tokens.a);
-  const beforeB=await readValues(bp);
-  await writeValues(bp,tokens.b);
-  const [afterA,afterB,exposedA,exposedB,extendedA,extendedB]=await Promise.all([
+  const a=await runStage('launch A',()=>controller.launch(profile('stage0_a')),65000);
+  const b=await runStage('launch B',()=>controller.launch(profile('stage0_b')),65000);
+  const ap=await runStage('new page A',()=>a.context.newPage(),25000);
+  const bp=await runStage('new page B',()=>b.context.newPage(),25000);
+  await runStage('navigate loopback',()=>Promise.all([ap.goto(server.url,{timeout:18000}),bp.goto(server.url,{timeout:18000})]),30000);
+  await runStage('write synthetic storage A',()=>writeValues(ap,tokens.a),30000);
+  const beforeB=await runStage('read fresh storage B',()=>readValues(bp),30000);
+  await runStage('write synthetic storage B',()=>writeValues(bp,tokens.b),30000);
+  const [afterA,afterB,exposedA,exposedB,extendedA,extendedB]=await runStage('capture environments and storage',()=>Promise.all([
    readValues(ap),readValues(bp),captureEnvironment(ap),captureEnvironment(bp),
    captureExtended(ap),captureExtended(bp)
-  ]);
-  await Promise.all([controller.stop('stage0_a'),controller.stop('stage0_b')]);
-  const ra=await controller.launch(profile('stage0_a'));
-  const rb=await controller.launch(profile('stage0_b'));
-  const rap=await ra.context.newPage(),rbp=await rb.context.newPage();
-  await Promise.all([rap.goto(server.url),rbp.goto(server.url)]);
-  const [restartA,restartB]=await Promise.all([readValues(rap),readValues(rbp)]);
+  ]),85000);
+  await runStage('stop both profiles',()=>Promise.all([controller.stop('stage0_a'),controller.stop('stage0_b')]),60000);
+  const ra=await runStage('restart A',()=>controller.launch(profile('stage0_a')),65000);
+  const rb=await runStage('restart B',()=>controller.launch(profile('stage0_b')),65000);
+  const rap=await runStage('new restart page A',()=>ra.context.newPage(),25000);
+  const rbp=await runStage('new restart page B',()=>rb.context.newPage(),25000);
+  await runStage('navigate restart loopback',()=>Promise.all([rap.goto(server.url,{timeout:18000}),rbp.goto(server.url,{timeout:18000})]),30000);
+  const [restartA,restartB]=await runStage('verify persisted storage',()=>Promise.all([readValues(rap),readValues(rbp)]),30000);
   const observations=stageStorageResult(beforeB,afterA,afterB,restartA,restartB,tokens);
   report.checks={status:observations.pass?'PASS':'FAIL',...observations};
   report.browserExposedValues={
@@ -164,10 +168,10 @@ async function run(){
    reason:String(error.message||error).slice(0,280)};
  }finally{
   for(const id of ['stage0_a','stage0_b']){
-   try{if(controller.contextFor(id))await controller.stop(id)}
+   try{if(controller.contextFor(id))await runStage('cleanup '+id,()=>controller.stop(id),15000)}
    catch(error){cleanupError=String(error.message).slice(0,100)}
   }
-  await server.close().catch(error=>{cleanupError=String(error.message).slice(0,100)});
+  await runStage('close loopback server',()=>server.close(),15000).catch(error=>{cleanupError=String(error.message).slice(0,100)});
   if(!cleanupError){
    try{fs.rmSync(root,{recursive:true,force:true,maxRetries:12,retryDelay:300})}
    catch(error){cleanupError=String(error.message).slice(0,100)}
@@ -179,6 +183,7 @@ async function run(){
   contexts:report.concurrentProfiles,exposure:report.browserExposedValues.status,
   proxy:report.network.proxy,dns:report.network.dns,webrtc:report.network.webrtc,
   cleanup:report.cleanup,report:output}));
+ stopDeadline();
  if(report.checks.status!=='PASS'||cleanupError)process.exitCode=2;
 }
 run().catch(error=>{console.error('[Stage-0]',String(error.message||error));process.exitCode=2});
