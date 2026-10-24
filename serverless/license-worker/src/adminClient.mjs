@@ -52,7 +52,7 @@ export const script=`'use strict';
     td(price(order.amountVnd)));
    const state=document.createElement('td');const badge=document.createElement('span');
    badge.className='tag '+order.state;badge.textContent={pending:'Chờ thanh toán',paid:'Đã nhận tiền',fulfilled:'Đã cấp'}[order.state]||order.state;
-   state.append(badge);if(order.paymentReference)state.append(document.createElement('div')).textContent=order.paymentReference;
+   state.append(badge);if(order.paymentReference){const ref=document.createElement('div');ref.textContent=order.paymentReference;state.append(ref);}
    row.append(state,td(order.licenseId||'—','code'));
    const action=document.createElement('td');const div=document.createElement('div');div.className='actions';div.style.margin='0';
    if(order.state==='pending'){
