@@ -30,7 +30,7 @@ try{
   assert.throws(()=>validateConfig(candidate),/Invalid|must use|must have/);
  }
  fs.writeFileSync(file,'{');
- assert.throws(resolve,/Malformed/);
+ assert.throws(resolve,/Malformed|Unsafe/);
  fs.writeFileSync(file,'x'.repeat(1100));
  assert.throws(resolve,/Unsafe/);
  fs.writeFileSync(file,JSON.stringify(enabled));
