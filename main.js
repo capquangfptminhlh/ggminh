@@ -344,6 +344,14 @@ function createWindow() {
           writeCapture('workspace-fleet-triage-preview.png',await mainWindow.webContents.capturePage());
           // Handoff UI smoke: secret input blank and action locked until
           // profile selection; never include real customer/private data.
+          // The agency panel is below the fleet panel in the same scrollable modal.
+          // The old CI wrote identical screenshots while only checking hidden DOM nodes.
+          const agencyViewport=await mainWindow.webContents.executeJavaScript(
+            "(() => { const p=document.querySelector('#modal-control-tower .lhm-agency-panel'); const v=document.querySelector('#modal-control-tower .tower-content'); if(!p||!v)throw Error('Agency panel missing'); p.scrollIntoView({block:'center',behavior:'instant'}); const pr=p.getBoundingClientRect(),vr=v.getBoundingClientRect(); return {top:pr.top,bottom:pr.bottom,viewTop:vr.top,viewBottom:vr.bottom}; })()",true);
+          if(agencyViewport.top>=agencyViewport.viewBottom||
+             agencyViewport.bottom<=agencyViewport.viewTop)
+            throw Error('Agency UI is not visible for its screenshot: '+JSON.stringify(agencyViewport));
+          await new Promise(resolve=>setTimeout(resolve,280));
           const handoffPanel=await mainWindow.webContents.executeJavaScript(
             "(() => { const password=document.getElementById('tower-agency-password'); const exportBtn=document.getElementById('tower-agency-export'); const preview=document.getElementById('tower-agency-preview'); const commit=document.getElementById('tower-agency-commit'); return {visible:!!password&&!!exportBtn&&!!preview&&!!commit,secure:password?.type==='password',empty:password?.value==='',importLocked:commit?.disabled===true,exportLocked:exportBtn?.disabled===true,theme:!!document.querySelector('link[href=\\\"agencyHandoff.css\\\"]')}; })()",true);
           if(!handoffPanel.visible||!handoffPanel.secure||!handoffPanel.empty||
