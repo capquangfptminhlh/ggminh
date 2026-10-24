@@ -1,0 +1,20 @@
+# Copy to wrangler.toml in your OWN deployment workspace; do not commit
+# a real database_id, account ID or deployment endpoint to this repo.
+name = "lhm-license-authority"
+main = "src/index.mjs"
+compatibility_date = "2026-10-24"
+workers_dev = true
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "LICENSE_DB"
+database_name = "lhm-license-db"
+database_id = "REPLACE_WITH_D1_DATABASE_UUID"
+migrations_dir = "migrations"
+
+# NEVER put these in [vars] or this file. Set as Wrangler secrets:
+# LHM_ISSUER_PRIVATE_PKCS8_B64 (base64 DER raw PKCS#8 Ed25519 private key)
+# LHM_ISSUER_PUBLIC_SPKI_B64  (base64 DER raw SPKI Ed25519 public key)
+# LHM_LICENSE_ADMIN_TOKEN     (random 32+ char credential)
