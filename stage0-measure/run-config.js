@@ -19,6 +19,7 @@ const {spawnSync}=require('node:child_process');
 const {safeOptions,stageStorageResult,digestFile,identityExpectationResult,
  extendedProbe,summarizeProbe,webglExpectationResult}=require('./core');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
+const {runStage,startHardDeadline}=require('./steps');
 const {validateStoredIdentity}=require('../src/engine/camoufoxIdentity');
 
 function readValues(page){
@@ -155,28 +156,31 @@ async function run(){
   signedReleaseAcceptance:'NOT_RUN',installedClientAcceptance:'NOT_RUN',
   caveat:'Matching a pinned identity at a local origin does not prove websites cannot associate profiles'
  };
+ const stopDeadline=startHardDeadline();
  try{
-  const a=await controller.launch(profile('stage0_cfg_a',idA.identity));
-  const b=await controller.launch(profile('stage0_cfg_b',idB.identity));
+  const a=await runStage('launch configured A',()=>controller.launch(profile('stage0_cfg_a',idA.identity)),65000);
+  const b=await runStage('launch configured B',()=>controller.launch(profile('stage0_cfg_b',idB.identity)),65000);
   assert.equal(a.info.identityApplied,true,'profile A identity was not applied');
   assert.equal(b.info.identityApplied,true,'profile B identity was not applied');
-  const ap=await a.context.newPage(),bp=await b.context.newPage();
-  await Promise.all([ap.goto(server.url),bp.goto(server.url)]);
-  await writeValues(ap,tokens.a);
-  const beforeB=await readValues(bp);
-  await writeValues(bp,tokens.b);
-  const [afterA,afterB,exposedA,exposedB,extendedA,extendedB]=await Promise.all([
+  const ap=await runStage('new page configured A',()=>a.context.newPage(),25000);
+  const bp=await runStage('new page configured B',()=>b.context.newPage(),25000);
+  await runStage('configured loopback navigation',()=>Promise.all([ap.goto(server.url,{timeout:18000}),bp.goto(server.url,{timeout:18000})]),30000);
+  await runStage('write configured storage A',()=>writeValues(ap,tokens.a),30000);
+  const beforeB=await runStage('read fresh configured B',()=>readValues(bp),30000);
+  await runStage('write configured storage B',()=>writeValues(bp,tokens.b),30000);
+  const [afterA,afterB,exposedA,exposedB,extendedA,extendedB]=await runStage('capture configured values',()=>Promise.all([
    readValues(ap),readValues(bp),captureEnvironment(ap),captureEnvironment(bp),
    captureExtended(ap),captureExtended(bp)
-  ]);
-  await Promise.all([controller.stop('stage0_cfg_a'),controller.stop('stage0_cfg_b')]);
-  const ra=await controller.launch(profile('stage0_cfg_a',idA.identity));
-  const rb=await controller.launch(profile('stage0_cfg_b',idB.identity));
-  const rap=await ra.context.newPage(),rbp=await rb.context.newPage();
-  await Promise.all([rap.goto(server.url),rbp.goto(server.url)]);
-  const [restartA,restartB,restartExposedA,restartExposedB]=await Promise.all([
+  ]),85000);
+  await runStage('stop configured profiles',()=>Promise.all([controller.stop('stage0_cfg_a'),controller.stop('stage0_cfg_b')]),60000);
+  const ra=await runStage('restart configured A',()=>controller.launch(profile('stage0_cfg_a',idA.identity)),65000);
+  const rb=await runStage('restart configured B',()=>controller.launch(profile('stage0_cfg_b',idB.identity)),65000);
+  const rap=await runStage('new restart configured A',()=>ra.context.newPage(),25000);
+  const rbp=await runStage('new restart configured B',()=>rb.context.newPage(),25000);
+  await runStage('configured restart navigation',()=>Promise.all([rap.goto(server.url,{timeout:18000}),rbp.goto(server.url,{timeout:18000})]),30000);
+  const [restartA,restartB,restartExposedA,restartExposedB]=await runStage('verify configured restart',()=>Promise.all([
    readValues(rap),readValues(rbp),captureEnvironment(rap),captureEnvironment(rbp)
-  ]);
+  ]),50000);
   const observations=stageStorageResult(beforeB,afterA,afterB,restartA,restartB,tokens);
   report.checks={status:observations.pass?'PASS':'FAIL',...observations};
   const matchA=identityExpectationResult(idA.expectations,exposedA);
@@ -212,10 +216,10 @@ async function run(){
   if(report.checks.status==='NOT_RUN')report.checks={status:'FAIL'};
  }finally{
   for(const id of ['stage0_cfg_a','stage0_cfg_b']){
-   try{if(controller.contextFor(id))await controller.stop(id)}
+   try{if(controller.contextFor(id))await runStage('cleanup '+id,()=>controller.stop(id),15000)}
    catch(error){cleanupError=String(error.message).slice(0,100)}
   }
-  await server.close().catch(error=>{cleanupError=String(error.message).slice(0,100)});
+  await runStage('close configured loopback',()=>server.close(),15000).catch(error=>{cleanupError=String(error.message).slice(0,100)});
   if(!cleanupError){
    try{fs.rmSync(root,{recursive:true,force:true,maxRetries:12,retryDelay:300})}
    catch(error){cleanupError=String(error.message).slice(0,100)}
@@ -229,5 +233,6 @@ async function run(){
   cleanup:report.cleanup,report:output}));
  if(report.identity.status!=='PASS'||report.checks.status!=='PASS'||cleanupError)
   process.exitCode=2;
+ stopDeadline();
 }
 run().catch(error=>{console.error('[Stage-0 config]',String(error.message||error));process.exitCode=2});
