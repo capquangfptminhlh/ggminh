@@ -47,7 +47,9 @@ class D1Local {
   LHM_ORDER_TOKEN_ENC_KEY_B64:encKey.toString('base64')
  };
  let now=Date.parse('2026-10-24T10:00:00.000Z');
- const worker=createAuthority({clock:()=>now}),origin='https://browser.lhmcrm.com';
+ const worker=createAuthority({clock:()=>now,
+  fixtureIssuerPublicSpkiB64:env.LHM_ISSUER_PUBLIC_SPKI_B64}),
+  origin='https://browser.lhmcrm.com';
  async function call(route,body,{admin=true,headers={},envOverride=env}={}){
   const response=await worker.fetch(new Request(origin+route,{
    method:body===undefined?'GET':'POST',
