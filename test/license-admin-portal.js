@@ -64,11 +64,16 @@ class D1Local {
  assert.equal((await call(prefix+'create',{},{headers:{Origin:'https://evil.example'}})).status,403);
  const install=crypto.randomUUID();
  const body={action:'new',customerName:'Khach hang Thu Nghiem',
-  customerEmail:'testing@example.com',installationId:install,licenseId:null,months:1};
+  customerEmail:'testing@example.com',installationId:install,licenseId:null,months:1,amountVnd:350000};
+ assert.equal((await call(prefix+'create',Object.fromEntries(
+  Object.entries(body).filter(([k])=>k!=='amountVnd')))).status,400,
+  'Price must be explicitly approved for Browser, not copied from another product');
+ assert.equal((await call(prefix+'create',{...body,amountVnd:0})).status,400,
+  'Do not allow free or zero-value accidental billing');
  const orderResult=await call(prefix+'create',body);
  assert.equal(orderResult.status,201,JSON.stringify(orderResult));
  const oid=orderResult.json.order.orderId;
- assert.equal(orderResult.json.order.amountVnd,499000);
+ assert.equal(orderResult.json.order.amountVnd,350000);
  assert.equal(orderResult.json.order.status,'pending');
  assert.equal((await call(prefix+'issue',{orderId:oid})).status,409,'Never issue before payment');
  assert.equal((await call(prefix+'confirm-payment',{orderId:oid,paymentRef:'bad'})).status,400);
@@ -101,10 +106,14 @@ class D1Local {
  assert.equal(duplicate.status,201);
  assert.equal((await call(prefix+'confirm-payment',{orderId:duplicate.json.order.orderId,paymentRef:'BANK-TRANSACTION-001'})).status,409,
   'Cannot reuse one bank reference to confirm multiple orders');
- const renewal=await call(prefix+'create',{...body,action:'renew',licenseId:claims.licenseId,months:3});
+ const crossCustomer=await call(prefix+'create',{...body,action:'renew',
+  customerEmail:'different@example.com',licenseId:claims.licenseId,months:3,amountVnd:1050000});
+ assert.equal(crossCustomer.status,403,'A different customer cannot renew the same installation/license');
+ const renewal=await call(prefix+'create',{...body,action:'renew',
+  licenseId:claims.licenseId,months:3,amountVnd:1050000});
  assert.equal(renewal.status,201);
  const rid=renewal.json.order.orderId;
- assert.equal(renewal.json.order.amountVnd,1497000);
+ assert.equal(renewal.json.order.amountVnd,1050000);
  await call(prefix+'confirm-payment',{orderId:rid,paymentRef:'BANK-TRANSACTION-002'});
  const renewed=await call(prefix+'issue',{orderId:rid});
  assert.equal(renewed.status,200,JSON.stringify(renewed));
