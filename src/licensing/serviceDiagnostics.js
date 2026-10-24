@@ -1,4 +1,5 @@
 'use strict';
+const {verifyEndpoint}=require('./onlineVerifier');
 /**
  * Public, read-only status for customer license screen. Does not initiate a
  * network request and must not expose a token, receipt, installation ID or key.
@@ -10,9 +11,10 @@ function getLicenseServiceStatus(verifier,manager){
  const isActive=Boolean(manager.status()?.active);
  let authorityHost=null;
  if(configured){
-  const url=new URL(verifier.endpoint);
-  if(url.protocol!=='https:'&&url.hostname!=='localhost'&&url.hostname!=='127.0.0.1')
-   throw Error('Unsafe license authority endpoint');
+  // The verifier already rejects untrusted URLs at construction. Recheck
+  // in this pure boundary so renderer diagnostics can never print a secret
+  // userinfo/query or a non-/v1/verify endpoint even under integration drift.
+  const url=new URL(verifyEndpoint(verifier.endpoint,{allowLocalhost:true}));
   authorityHost=url.host;
  }
  const state=!configured?'not-configured':
