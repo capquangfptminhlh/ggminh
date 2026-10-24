@@ -89,6 +89,7 @@ contextBridge.exposeInMainWorld('api', {
   getProfiles: () => ipcRenderer.invoke('get-profiles'),
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
   getLicenseStatus: () => ipcRenderer.invoke('license-center-status'),
+  getLicenseServiceStatus: () => ipcRenderer.invoke('license-center-service-status'),
   verifyLicenseOnline: () => ipcRenderer.invoke('license-center-verify-online'),
   activateLicense: token => ipcRenderer.invoke('license-center-activate',token),
   deactivateLicense: () => ipcRenderer.invoke('license-center-deactivate'),
