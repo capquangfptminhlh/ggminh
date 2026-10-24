@@ -214,3 +214,104 @@ body[data-lhm-motion="off"] .lhm-v6-overview,
 body[data-lhm-motion="off"] .lhm-v6-metric,
 body[data-lhm-motion="off"] .lhm-profiles-heading,
 body[data-lhm-motion="off"] .lhm-dashboard-heading{animation:none!important}
+
+
+/* UI acceptance pass: actual Electron captures exposed an inherited dark-theme
+   title painted white on a pale AI rail. Keep the entire assistant surface
+   legible, including its health counters, secondary actions and footnotes. */
+#lhm-profile-panel .lhm-v6-assistant{
+  background:linear-gradient(150deg,#f8fbff 0%,#e4effb 100%)!important;
+  border:1px solid #d3e2f4!important;
+  color:#223a59!important;
+  box-shadow:var(--nm-out-sm)!important;
+}
+#lhm-profile-panel .lhm-v6-assistant h3{
+  color:#203751!important;
+  text-shadow:none!important;
+}
+#lhm-profile-panel .lhm-v6-assistant h3 em{
+  color:#256bba!important;
+  font-weight:650;
+}
+#lhm-profile-panel .lhm-v6-ai-eyebrow,
+#lhm-profile-panel .lhm-v6-ai-mark{color:#2b78d4!important}
+#lhm-profile-panel .lhm-v6-online,
+#lhm-profile-panel .lhm-v6-ai-desc,
+#lhm-profile-panel .lhm-v6-assistant small{color:#536b87!important}
+#lhm-profile-panel .lhm-v6-ai-health>div{
+  background:#e5eef9!important;
+  border:1px solid #d3e2f3!important;
+  box-shadow:var(--nm-in)!important;
+}
+#lhm-profile-panel .lhm-v6-ai-health span{color:#526d89!important}
+#lhm-profile-panel .lhm-v6-ai-health strong{color:#1e3958!important}
+#lhm-profile-panel .lhm-v6-ai-button:not(.primary){
+  background:linear-gradient(145deg,#fff,#e8f0fc)!important;
+  color:#244967!important;
+  border:1px solid #cbdcf0!important;
+  box-shadow:var(--nm-out-sm)!important;
+}
+#lhm-profile-panel .lhm-v6-ai-button:not(.primary):hover{
+  background:linear-gradient(145deg,#fff,#dcecff)!important;
+  color:#165fbb!important;
+}
+#lhm-profile-panel .lhm-v6-ai-button.primary{
+  background:linear-gradient(135deg,#299cff,#0869de)!important;
+  border-color:#187dea!important;
+  color:#fff!important;
+  box-shadow:0 7px 16px #147eea5c!important;
+}
+#lhm-profile-panel .lhm-v6-ai-button.primary:hover{
+  background:linear-gradient(135deg,#3bacff,#0879e9)!important
+}
+
+/* More actual table visible on a 900 px Windows screen, without hiding
+   controls, compressing touch targets or narrowing the search/filter bar. */
+body[data-view="profiles"] .lhm-v6-overview{
+  padding-top:16px!important;
+}
+body[data-view="profiles"] .lhm-v6-intro{margin-bottom:11px!important}
+body[data-view="profiles"] .lhm-v6-metrics{gap:10px}
+body[data-view="profiles"] .lhm-v6-metric{
+  min-height:112px!important;
+  padding:12px 15px 11px!important;
+}
+body[data-view="profiles"] .lhm-v6-metric-icon{
+  width:27px;height:27px;margin-bottom:6px
+}
+body[data-view="profiles"] .lhm-v6-metric strong{font-size:24px!important}
+body[data-view="profiles"] .lhm-profiles-heading{
+  padding-top:15px!important;
+  padding-bottom:7px!important;
+}
+body[data-view="profiles"] .lhm-v6-shortcuts{margin-top:7px;margin-bottom:7px}
+body[data-view="profiles"] .profile-table td{
+  padding-top:11px!important;
+  padding-bottom:11px!important;
+}
+body[data-view="profiles"] .profile-table .actions-cell button{min-height:32px}
+
+/* The rental terms used to touch the dialog edges as an unstyled paragraph.
+   Keep these important disclosures readable within the real license window. */
+#modal-license-center .modal-body>.lhm-bulk-help{
+  max-width:850px;
+  margin:9px auto 14px!important;
+  padding:12px 16px!important;
+  border-left:3px solid #428bdf;
+  border-radius:9px;
+  background:#eaf3ff!important;
+  color:#425d7b!important;
+  font-size:11.5px!important;
+  line-height:1.6!important;
+  overflow-wrap:anywhere;
+}
+@media(max-width:1270px){
+  body[data-view="profiles"] .lhm-v6-overview{padding-right:20px!important}
+}
+@media(max-width:660px){
+  body[data-view="profiles"] .lhm-v6-metric{min-height:102px!important}
+  #modal-license-center .modal-body>.lhm-bulk-help{
+    margin:8px 12px 14px!important;
+    font-size:11px!important;
+  }
+}
