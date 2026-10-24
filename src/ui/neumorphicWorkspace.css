@@ -346,3 +346,35 @@ body[data-view="profiles"] .profile-table .actions-cell button{min-width:34px;mi
   body[data-view="profiles"] .profile-table td{font-size:12px!important}
   body[data-view="profiles"] .profile-table th{font-size:11px!important}
 }
+
+
+/* Packaged Control Tower capture exposed dark-theme text on light neumorphic cards.
+   Contrast repair scoped to Control Tower: no global theme or modal behavior change. */
+#modal-control-tower .lhm-agency-panel,
+#modal-control-tower .lhm-triage-panel{
+  background:#f9fbfe!important;
+  border-color:#d2e0f0!important;
+}
+#modal-control-tower .lhm-agency-panel h3,
+#modal-control-tower .lhm-triage-panel .tower-panel-header h3{color:#193651!important}
+#modal-control-tower .lhm-agency-eyebrow{color:#146e73!important}
+#modal-control-tower .lhm-triage-eyebrow{color:#205f9e!important}
+#modal-control-tower .lhm-agency-help,
+#modal-control-tower .lhm-agency-fineprint,
+#modal-control-tower .lhm-agency-status,
+#modal-control-tower .lhm-triage-desc,
+#modal-control-tower .lhm-triage-status{
+  color:#425b77!important;
+  font-size:12px!important;
+  line-height:1.6!important;
+}
+#modal-control-tower .lhm-agency-fineprint strong{color:#263f58!important}
+#modal-control-tower .lhm-agency-fields label{color:#2a4662!important}
+#modal-control-tower .lhm-agency-fields input{
+  background:#fff!important;
+  color:#1d3b57!important;
+  border-color:#a6bbd5!important;
+}
+#modal-control-tower .lhm-agency-fields input::placeholder{color:#5d7693!important}
+#modal-control-tower .lhm-agency-status[data-state="error"]{color:#b42335!important}
+#modal-control-tower .tower-muted{color:#506a88!important}
