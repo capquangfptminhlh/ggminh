@@ -77,10 +77,11 @@ class D1Fixture {
  assert.match(landing.headers.get('content-type'),/^text\/html/);
  assert.match(landing.headers.get('content-security-policy'),/default-src 'none'/);
  const html=await landing.text();
- assert(html.includes('LHM Ads Browser'));
- assert(html.includes('đang hoàn thiện')||html.includes('Đang hoàn thiện'));
- assert(html.includes('không phải bản chạy trong trình duyệt'));
- assert(!html.includes('<script')&&!html.includes('SECRET_KEY'));
+ assert(html.includes('LHM Ads Browser')||html.includes('LHM')&&html.includes('Browser License'));
+ assert(html.includes('Quản lý khách hàng'));
+ assert(html.includes('Chờ thanh toán')||html.includes('Thanh toán hiện'));
+ assert(html.includes('script src="/admin/app.js" defer'));
+ assert(!html.includes('LHM_LICENSE_ADMIN_TOKEN_VALUE'));
  const head=await worker.fetch(new Request('https://browser.lhmcrm.com/',{method:'HEAD'}),{});
  assert.equal(head.status,200);
  assert.equal(await head.text(),'');
