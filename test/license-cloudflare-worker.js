@@ -68,7 +68,14 @@ class D1Fixture {
   LHM_ISSUER_PRIVATE_PKCS8_B64:keys.privateKey.export({format:'der',type:'pkcs8'}).toString('base64'),
   LHM_ISSUER_PUBLIC_SPKI_B64:keys.publicKey.export({format:'der',type:'spki'}).toString('base64')
  };
- const worker=createAuthority({clock:()=>now});
+ // The real default Worker refuses a perfectly valid but WRONG issuer pair.
+ const productionWorker=createAuthority({clock:()=>now});
+ const healthForWrongIssuer=await productionWorker.fetch(
+  new Request('https://browser.lhmcrm.com/health'),env);
+ assert.equal(healthForWrongIssuer.status,503,
+  'Cloudflare health must not report ready with a different Windows issuer');
+ const worker=createAuthority({clock:()=>now,
+  fixtureIssuerPublicSpkiB64:env.LHM_ISSUER_PUBLIC_SPKI_B64});
  const base='https://license.example.test';
  // Custom Domain public root must be a real responsive product landing,
  // not a 404/JSON API reply or a false production release announcement.
@@ -114,7 +121,11 @@ class D1Fixture {
   return {claims,token:signLicense(claims,keys.privateKey)};
  }
  const initial=signed(),nonce=crypto.randomBytes(16).toString('base64url');
- assert.equal((await query('/health',null,{method:'GET'})).status,200);
+ const checked=await query('/health',null,{method:'GET'});
+ assert.equal(checked.status,200);
+ assert.equal(checked.data.issuerKeySha256,crypto.createHash('sha256')
+  .update(keys.publicKey.export({format:'der',type:'spki'})).digest('hex'),
+  'The health proof must bind to the Windows trusted issuer fingerprint');
  assert.equal((await query('/v1/verify',{version:1,token:initial.token,nonce})).status,403,
   'Never enroll a customer solely by presenting a signed token');
  assert.equal((await query('/v1/admin/register',{token:initial.token})).status,401,
