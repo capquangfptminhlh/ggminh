@@ -3,7 +3,15 @@
 name = "lhm-license-authority"
 main = "src/index.mjs"
 compatibility_date = "2026-10-24"
-workers_dev = true
+# Production API and preview site must not be accessible from a second workers.dev
+# hostname that could circumvent hostname-specific WAF controls.
+workers_dev = false
+
+# Cloudflare creates the DNS record and SSL certificate for this hostname
+# when an authorized deploy succeeds. The existing lhmcrm.com site is untouched.
+[[routes]]
+pattern = "browser.lhmcrm.com"
+custom_domain = true
 
 [triggers]
 crons = ["*/15 * * * *"]

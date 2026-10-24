@@ -70,6 +70,25 @@ class D1Fixture {
  };
  const worker=createAuthority({clock:()=>now});
  const base='https://license.example.test';
+ // Custom Domain public root must be a real responsive product landing,
+ // not a 404/JSON API reply or a false production release announcement.
+ const landing=await worker.fetch(new Request('https://browser.lhmcrm.com/'),{});
+ assert.equal(landing.status,200);
+ assert.match(landing.headers.get('content-type'),/^text\/html/);
+ assert.match(landing.headers.get('content-security-policy'),/default-src 'none'/);
+ const html=await landing.text();
+ assert(html.includes('LHM Ads Browser'));
+ assert(html.includes('đang hoàn thiện')||html.includes('Đang hoàn thiện'));
+ assert(html.includes('không phải bản chạy trong trình duyệt'));
+ assert(!html.includes('<script')&&!html.includes('SECRET_KEY'));
+ const head=await worker.fetch(new Request('https://browser.lhmcrm.com/',{method:'HEAD'}),{});
+ assert.equal(head.status,200);
+ assert.equal(await head.text(),'');
+ const wrongPath=await worker.fetch(new Request('https://browser.lhmcrm.com/not-found'),{});
+ assert.equal(wrongPath.status,404);
+ const workerSource=fs.readFileSync(path.join(__dirname,'../serverless/license-worker/src/index.mjs'),'utf8');
+ assert(workerSource.includes("url.pathname==='/'"));
+
  async function query(route,body,{auth=false,method='POST',overrideEnv=env,headers={}}={}){
   const response=await worker.fetch(new Request(base+route,{
    method,headers:{...(method==='POST'?{'content-type':'application/json'}:{}),
@@ -169,5 +188,10 @@ class D1Fixture {
  assert(migration.includes('CREATE TABLE IF NOT EXISTS licenses'));
  const docs=fs.readFileSync(path.join(__dirname,'../serverless/license-worker/wrangler.toml.example'),'utf8');
  assert(docs.includes('LICENSE_DB')&&docs.includes('crons'));
+ assert(docs.includes('pattern = "browser.lhmcrm.com"'));
+ assert(docs.includes('custom_domain = true'));
+ assert(docs.includes('workers_dev = false'));
+ assert(!docs.includes('PLACEHOLDER_PRIVATE_KEY'));
+
  console.log('Cloudflare D1 rental authority: Node client signed receipt parity, enrollment, revocation, strict/sweep expiry, admin CLI, key mismatch and HTTPS PASS');
 })().catch(e=>{console.error(e);process.exitCode=1;});

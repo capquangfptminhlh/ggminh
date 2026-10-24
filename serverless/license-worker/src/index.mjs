@@ -4,6 +4,7 @@
  * Runs only over Cloudflare HTTPS; production keys are Worker secrets.
  * IMPORTANT: verify / sign use the EXACT lhmlic1 + lhmproof1 formats.
  */
+import { renderLanding } from './landing.mjs';
 const LICENSE_ID=/^lic_[a-f0-9]{24}$/;
 const INSTALL_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const NONCE=/^[a-zA-Z0-9_-]{22}$/;
@@ -223,6 +224,8 @@ export function createAuthority({clock=()=>Date.now()}={}){
    const url=new URL(request.url);
    if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))
     return response(400,{error:'https_required'});
+   if(url.pathname==='/'&&['GET','HEAD'].includes(request.method))
+    return renderLanding(request);
    if(url.pathname==='/health'&&request.method==='GET'){
     try{
      const database=db(env);
