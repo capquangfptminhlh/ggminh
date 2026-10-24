@@ -8,6 +8,8 @@
 - Tạo D1 thật tên `lhm-license-db`, lấy đúng UUID từ Cloudflare. Không dùng UUID thử để triển khai.
 - Trong GitHub repo, tạo **Environment `production`** với required reviewer nếu có thể. Cấu hình ba Environment Secrets: `CLOUDFLARE_API_TOKEN` (quyền hạn tối thiểu cho Workers và D1), `CLOUDFLARE_ACCOUNT_ID`, `LHM_D1_DATABASE_ID`.
 - Khóa ký giấy phép production phải là khóa Ed25519 được chủ dự án quản lý, và public key phải **khớp** khóa mà ứng dụng Windows tin cậy. Không tạo cặp khóa tùy tiện hoặc thay thế cặp khóa hiện hữu.
+- Từ PR này, Worker mặc định kiểm tra **SPKI public key đã pin trong `src/licensing/manager.js`**. Dù private/public key trong Cloudflare khớp nhau, dùng **một cặp khác** vẫn trả `503` ở `/health` và từ chối tạo biên nhận/cấp mã. Không bật production bằng cách sửa bỏ kiểm tra hoặc dùng test-fixture override. Nếu owner muốn xoay cặp khóa, phải phát hành và nghiệm thu Windows EXE có trust anchor mới trước, theo quy trình đổi khóa riêng.
+- `tools/browser-production-smoke.js` từ chối `/health` thiếu `issuerKeySha256` hoặc có fingerprint khác với EXE. Đây là kiểm tra read-only không dùng customer token; không thay cho nghiệm thu kích hoạt trên Windows thật.
 - Không gửi bí mật qua GitHub issue, PR, Zalo, chat hoặc bản build ứng dụng.
 
 ## 1. Khởi tạo Worker lần đầu — PRIVATE
