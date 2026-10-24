@@ -69,6 +69,7 @@ const {LicenseManager} = require('./src/licensing/manager');
 const {LicensePolicy} = require('./src/licensing/enforcement');
 const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
 const {resolveLicenseEndpoint}=require('./src/licensing/authorityConfig');
+const {getLicenseServiceStatus}=require('./src/licensing/serviceDiagnostics');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
 
@@ -454,6 +455,8 @@ function initIPC() {
     packaged:app.isPackaged
   }));
   ipcMain.handle('license-center-status', () => licensePolicy.status());
+  ipcMain.handle('license-center-service-status', () =>
+    getLicenseServiceStatus(onlineLicenseVerifier,licenseManager));
   ipcMain.handle('license-center-verify-online', async () => {
     const result=await onlineLicenseVerifier.verifyNow();
     return {result,license:licensePolicy.status()};
