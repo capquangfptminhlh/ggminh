@@ -98,3 +98,16 @@ B01 legacy `/v1` + installer still work; B02 unpaid cannot start profile/API; B0
 **Owner decisions required before commercial enablement:** Personal plan's **maxProfiles/features**, fate of existing 10-day trial (legacy preserved by default), production Google OAuth client, verified bank config, terms/privacy/refund, staging test devices and explicit production go-ahead. Never transmit secrets in chat/Git.
 
 **Reporting:** every phase supplies commit, PR, CI test PASS/FAIL/NOT_RUN, staged deployment evidence, blockers. CI green is not a real Cloudflare/Windows commercial acceptance.
+
+## Implemented in PR #71 after original G0 (2026-10-25)
+
+**Code-level staging only — production rollout NOT approved.** The initial overview above described the project before G1 work began.
+
+- Added additive D1 customers/plans/orders/entitlements/pairings/grants/seats/reviews/audit schema; opt-in Google OIDC Authorization Code + PKCE and HMAC-protected customer sessions.
+- Added 499,000 VND purchase creation and manual verified-bank-reference D1 fulfillment with idempotent renewal; pilot plan is intentionally disabled until `max_profiles` is approved.
+- Added Google-approved 6-digit desktop pairing, one-use verifier claim, hashed client grants, server seat limit/heartbeat/explicit takeover, separate Ed25519 Browser lease issuance and CSP-constrained pairing + commerce pages.
+- Added optional **unwired** Electron main-process `GoogleBrowserDesktopClient` with Windows `safeStorage` encrypted state and pure Node signed lease verification.
+- Added CI automated unit/integration coverage for fake-Google JWKS/PKCE/OIDC, old D1 schema compatibility, payments, 3-seat contention, takeover, grant replay, 72h offline clock tests and Desktop encryption fixture.
+- **Still G1/G3 incomplete**: real Cloudflare deployment, production keys, real Google OAuth, bank reconciliation, cloud rate limits, Cloudflare Access, device-revoke workflows, tenant-specific Store wiring, main/IPC/Local API/automation enforcement, Win10/11 DPAPI acceptance and installed release with pinned signer.
+- An expiring offline lease cannot be revoked immediately: at most 72 hours of previously signed rights may remain if the client disconnects. Treat active two-device count as online concurrency only, not a cryptographic hard cap against a deliberately disconnected third device.
+- Do not reuse this staging Worker as the existing commercial endpoint. Never distribute a binary as "Google-only subscription enabled" while main.js still uses the legacy trial policy.
