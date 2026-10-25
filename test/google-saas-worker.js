@@ -271,6 +271,50 @@ result=await invoke('/v2/desktop/grant/revoke','POST',
 assert.equal(result.status,401,'desktop grant revoke cannot be replayed');
 assert.equal(db.prepare("SELECT COUNT(*) AS n FROM audit_events_v2 WHERE action IN ('device_revoked','grant_revoked')").get().n,2);
 
+// Full in-process desktop ↔ real SaaS Worker contract with D1 SQLite and
+// Google-session approval. No mocked pairing/seat/lease API responses.
+db.prepare("UPDATE entitlements_v2 SET revoked=0 WHERE customer_id=?")
+  .run(session.customer_id);
+const os=require('node:os'),path=require('node:path');
+const {GoogleBrowserDesktopClient}=require('../src/licensing/googleDesktopClient');
+const tenantTmp=fs.mkdtempSync(path.join(os.tmpdir(),'ggminh-e2e-'));
+const fakeDPAPI={
+ isEncryptionAvailable:()=>true,
+ encryptString:value=>Buffer.from('DPAPI-TEST:'+Buffer.from(value).toString('base64')),
+ decryptString:value=>{
+  const text=value.toString('utf8');
+  if(!text.startsWith('DPAPI-TEST:'))throw Error('DPAPI fixture mismatch');
+  return Buffer.from(text.slice('DPAPI-TEST:'.length),'base64').toString('utf8');
+ }
+};
+try{
+ const forward=(url,init)=>api(new Request(url,init),env,{adminAuth});
+ const customerDesktop=new GoogleBrowserDesktopClient({
+  root:tenantTmp,safeStorage:fakeDPAPI,apiOrigin:origin,
+  publicKey:issuer.publicKey,fetchImpl:forward,clock:()=>now
+ });
+ const begin=await customerDesktop.startPair({label:'Integrated Windows device'});
+ const id=new URL(begin.approvalUrl).searchParams.get('id');
+ let confirmation=await invoke('/v2/desktop/pair/approve','POST',
+  {pairing_id:id,comparison_code:begin.comparisonCode},authHeaders);
+ assert.equal(confirmation.status,200,'Google session authorizes live desktop pairing');
+ const identity=await customerDesktop.claimPair();
+ assert.equal(identity.customerId,session.customer_id);
+ assert.equal(identity.email,'verified@gmail.com');
+ assert.equal(customerDesktop.status().allowed,false,'Gmail alone is not an entitlement');
+ await customerDesktop.attach({label:'Integrated Windows device'});
+ assert.equal(customerDesktop.status().allowed,false,'server seat alone is not a signed lease');
+ const lease=await customerDesktop.refreshLease();
+ assert.equal(lease.maxProfiles,100);
+ assert.equal(customerDesktop.status().allowed,true,'signed SaaS Worker lease unlocks local profile');
+ const grantBeforeLogout=customerDesktop.state.grant;
+ assert.equal((await customerDesktop.logout()).revoked,true);
+ assert.equal(customerDesktop.status().allowed,false,'logout blocks future launches');
+ const revokeResult=await invoke('/v2/seats/list','POST',{},
+  {authorization:'Bearer '+grantBeforeLogout});
+ assert.equal(revokeResult.status,401,'server rejects retired Windows grant');
+}finally{fs.rmSync(tenantTmp,{recursive:true,force:true});}
+
 db.close();
-console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout');
+console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout, end-to-end desktop ↔ D1 Worker payment/license activation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
