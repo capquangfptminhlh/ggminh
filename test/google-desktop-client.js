@@ -13,7 +13,7 @@ const grant='bg1_'+crypto.randomBytes(32).toString('base64url');
 const pairId='11111111-1111-4111-a111-111111111111';
 const code='294617',seatId='seat_12345678901234567890';
 let verifierHash=null,expectedHash=null;
-let heartbeatFailed=false;
+let heartbeatFailed=false,grantRevoked=false;
 const replies=[];
 const mockSafeStorage={
  isEncryptionAvailable(){return true;},
@@ -58,7 +58,8 @@ async function fetchImpl(url,init){
  if(endpoint==='/v2/seats/attach')return reply(200,{seat_id:seatId});
  if(endpoint==='/v2/seats/list')return reply(200,{seat_limit:2,devices:[{seat_id:seatId,label:'PC one'}]});
  if(endpoint==='/v2/leases/issue')return reply(200,{lease:jwtLease(expectedHash)});
- if(endpoint==='/v2/seats/heartbeat')return heartbeatFailed?
+ if(endpoint==='/v2/seats/heartbeat')return grantRevoked?
+  reply(401,{error:'DESKTOP_GRANT_INVALID'}):heartbeatFailed?
   reply(409,{error:'SEAT_EXPIRED'}):reply(200,{status:'active'});
  return reply(404,{error:'not_found'});
 }
@@ -117,8 +118,16 @@ async function fetchImpl(url,init){
   // A direct online confirmation of a lost seat blocks immediately, even
   // while an earlier signed lease could otherwise still be within its TTL.
   desktop.fetch=fetchImpl;
+  const restored=await desktop.renewOnline({label:'PC one'});
+  assert.equal(restored.maxProfiles,100,'expired signed lease can be reissued if paid');
+  assert.equal(desktop.status().allowed,true);
   heartbeatFailed=true;
-  await assert.rejects(()=>desktop.heartbeat(),/SEAT_EXPIRED/);
+  const woke=await desktop.renewOnline({label:'PC one'});
+  assert.equal(woke.maxProfiles,100,'expired idle seat recovers without account re-pair');
+  assert.equal(desktop.status().allowed,true);
+  heartbeatFailed=false;
+  grantRevoked=true;
+  await assert.rejects(()=>desktop.heartbeat(),/DESKTOP_GRANT_INVALID/);
   assert.equal(desktop.status().allowed,false);
   assert.equal(desktop.status().reason,'SEAT_REPLACED');
   assert.throws(()=>desktop.forgetGrant(false),/CONFIRMATION_REQUIRED/);
