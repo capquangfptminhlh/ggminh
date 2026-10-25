@@ -122,7 +122,13 @@ window.addEventListener('DOMContentLoaded',async()=>{
  }));
  el('btn-license-center')?.addEventListener('click',()=>update().catch(e=>message(e.message)));
  await update();
- // Show Google sign-in on first launch rather than leaving an unusable,
- // unpaid browser workspace with no explanation.
+ // The main process now renews signed paid leases at boot. If the status
+ // changes after rendering, refresh the visible dialog without asking
+ // the customer to click a manual "activate" button first.
+ setInterval(()=>{
+   if(modal?.classList.contains('open')&&current?.paired)
+     void update().catch(error=>message(error.message));
+ },15000);
+ // Open onboarding for unpaired or unpaid users, with no legacy trial offer.
  if(!current?.allowed)el('btn-license-center')?.click();
 });
