@@ -29,6 +29,8 @@ on:
       - 'src/licensing/googleDesktopClient.js'
       - 'serverless/license-worker/src/googleSaas.mjs'
       - 'serverless/license-worker/src/googleDevice.mjs'
+      - 'serverless/license-worker/src/googleAdminAccess.mjs'
+      - 'test/google-admin-access.js'
       - 'serverless/license-worker/src/googlePortal.mjs'
       - 'serverless/license-worker/src/googlePairPortal.mjs'
       - 'serverless/license-worker/src/index.mjs'
@@ -52,6 +54,8 @@ jobs:
           node --check test/google-lease-contract.js
           node --check serverless/license-worker/src/googleSaas.mjs
           node --check serverless/license-worker/src/googleDevice.mjs
+          node --check serverless/license-worker/src/googleAdminAccess.mjs
+          node --check test/google-admin-access.js
           node --check serverless/license-worker/src/googlePortal.mjs
           node --check serverless/license-worker/src/googlePairPortal.mjs
           node --check serverless/license-worker/src/index.mjs
@@ -78,6 +82,8 @@ jobs:
         run: node --experimental-sqlite test/google-saas-worker.js
       - name: Separate packaged Gmail STAGING trust and safe Preview install identity
         run: node test/google-packaged-mode.js
+      - name: Cloudflare Access JWT protection for merchant activation
+        run: node test/google-admin-access.js
       - name: Main-process Windows DPAPI and lease policy test (safeStorage fixture)
         run: node test/google-desktop-client.js
       - name: Google account specific local tenant storage boundary
