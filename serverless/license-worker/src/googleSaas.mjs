@@ -1,3 +1,4 @@
+import { createGoogleDeviceApi } from './googleDevice.mjs';
 /* Google-only Browser commerce API, staging only. No profile/proxy/Ads data leaves Electron.
  * The v1 licensing authority remains independent. Never silently enable this route.
  */
@@ -165,6 +166,11 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
     if(!Number.isSafeInteger(now)||now<0)return error(503,'clock_invalid');
     try{
       const db=database(env);
+      if(path==='/v2/desktop/pair/start'||path==='/v2/desktop/pair/approve'||
+         path==='/v2/desktop/pair/claim'||path==='/v2/devices'||
+         path.startsWith('/v2/seats/')||path==='/v2/leases/issue')
+        return createGoogleDeviceApi({clock})(req,env,{db,
+          getUser:()=>identity(req,env,now),checkCsrf:u=>authorizedPost(req,url,u)});
       if(path==='/v2/plans'&&req.method==='GET'){
         const rows=await db.prepare(
           "SELECT plan_code,label,price_vnd,duration_days,seat_limit,max_profiles,features_json FROM plans_v2 WHERE product_code='ads-browser' AND enabled=1 AND max_profiles IS NOT NULL ORDER BY price_vnd")
