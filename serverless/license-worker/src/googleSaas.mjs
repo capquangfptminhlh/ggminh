@@ -253,8 +253,12 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
            Number.isSafeInteger(plan.max_profiles)&&plan.max_profiles>0&&
            plan.seat_limit===2&&plan.price_vnd===499000&&plan.duration_days===30&&
            plan.features_json==='["api","automation","profiles"]';
+         const accessConfig=typeof env.BROWSER_SAAS_ACCESS_TEAM_DOMAIN==='string'&&
+           /^[-a-z0-9]{1,63}\.cloudflareaccess\.com$/.test(env.BROWSER_SAAS_ACCESS_TEAM_DOMAIN)&&
+           typeof env.BROWSER_SAAS_ACCESS_AUD==='string'&&
+           /^[A-Za-z0-9_-]{20,128}$/.test(env.BROWSER_SAAS_ACCESS_AUD);
          const checks={d1_schema:schema,google_oidc:oauth,bank_transfer:payments,
-           ed25519_issuer:issuer,session_secret:secureSession,
+           ed25519_issuer:issuer,session_secret:secureSession,cloudflare_access:accessConfig,
            owner_approved_pilot_plan:approvedPlan};
          return respond(200,{product_code:PRODUCT,checks,
            issuer_public_spki_sha256:issuer?await googleLeasePublicFingerprint(env):null,
