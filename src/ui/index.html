@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="customerHandoff.css">
   <link rel="stylesheet" href="neumorphicWorkspace.css">
   <link rel="stylesheet" href="profileSignalCoverage.css">
+  <link rel="stylesheet" href="googleLicense.css">
 </head>
 <body data-view="profiles">
 
@@ -870,6 +871,35 @@
         <button type="button" class="btn-close" id="license-center-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
+        <section id="google-license-panel" class="lhm-google-account" hidden aria-label="Đăng nhập tài khoản Google">
+          <div class="lhm-google-head">
+            <span class="lhm-google-symbol" aria-hidden="true">G</span>
+            <div><p class="lhm-google-eyebrow">LHM ADS BROWSER · GMAIL</p>
+            <h3>Đăng nhập và quản lý gói</h3>
+            <p>Đăng nhập Google trong trình duyệt mặc định. Mọi hồ sơ và cookie chỉ lưu trên máy Windows này.</p></div>
+          </div>
+          <div class="lhm-google-plan">
+            <div><span>Gói dự kiến</span><strong>Personal · 499.000đ / 30 ngày</strong></div>
+            <div><span>Thiết bị</span><strong>2 phiên đồng thời</strong></div>
+          </div>
+          <p class="lhm-google-status" id="google-login-state" role="status" aria-live="polite">Đang kiểm tra tài khoản…</p>
+          <div class="lhm-google-code" id="google-login-code" hidden>
+            <span>Nhập mã này trên trang Google vừa mở</span>
+            <strong id="google-login-comparison">------</strong>
+            <small>Mã ghép máy chỉ có hiệu lực 10 phút. Không chia sẻ mã với người lạ.</small>
+          </div>
+          <div class="lhm-google-actions">
+            <button class="btn btn-primary" type="button" id="google-login-start">Đăng nhập bằng Google</button>
+            <button class="btn btn-secondary" type="button" id="google-login-claim" hidden>Đã xác nhận Gmail · Kết nối máy</button>
+            <button class="btn btn-secondary" type="button" id="google-open-plans">Xem gói và thanh toán VietQR</button>
+            <button class="btn btn-primary" type="button" id="google-activate" hidden>Kiểm tra và kích hoạt thuê bao</button>
+            <button class="btn btn-secondary" type="button" id="google-devices" hidden>Quản lý thiết bị</button>
+            <button class="btn btn-secondary" type="button" id="google-restart" hidden>Khởi động lại để chuyển Gmail</button>
+            <button class="btn btn-secondary" type="button" id="google-logout" hidden>Đăng xuất Gmail</button>
+          </div>
+          <div id="google-device-list" class="lhm-google-devices" aria-live="polite"></div>
+          <p class="lhm-google-footnote">Bản dùng thử Google SaaS dành cho kiểm thử kỹ thuật. Không có mã license thủ công và không chuyển dữ liệu giữa các tài khoản Gmail.</p>
+        </section>
         <div class="lhm-nm-license-stage">
           <span class="lhm-nm-orb one" aria-hidden="true"></span>
           <span class="lhm-nm-orb two" aria-hidden="true"></span>
