@@ -38,7 +38,16 @@ try{
  assert(main.includes('if(!googleDesktop && onlineLicenseVerifier.endpoint)'),
    'Google SaaS must not fall back to v1 lease service');
  assert(main.includes("if(googleDesktop)throw Error('Đăng nhập Google thay cho license thủ công')"));
- assert(main.includes("return client.refreshLease()"),'must verify server-issued lease');
+ assert(main.includes('return renewGooglePaidAccess()'),
+   'customer paid activation and boot-time renewal must use one flight');
+ assert(main.includes('return googleRenewInFlight'),
+   'parallel Gmail startup/activation renewals must coalesce');
+ assert(main.includes('if(googleDesktop.state.grant)'),
+   'only a previously paired Gmail device may auto-renew at boot');
+ assert(main.includes('setImmediate(()=>{void tryRenew();})'),
+   'paid lease must renew immediately after Windows starts');
+ assert(main.includes('googleDesktop.renewOnline('),
+   'signed Gmail leases may only be minted by the remote SaaS Worker');
  assert(main.includes('store.licensePolicy = licensePolicy'));
  assert(main.includes('launcher.licensePolicy = licensePolicy'));
  assert(main.includes('automationRunner.licensePolicy = licensePolicy'));
@@ -61,6 +70,16 @@ try{
  assert(js.includes('window.api.googleLicenseStart()'));
  assert(js.includes('window.api.googleLicenseClaim()'));
  assert(js.includes("window.api.googleLicenseReplace(device.seatId,'REPLACE')"));
+ assert(html.includes('id="license-legacy-explainer"'),
+   'Preview-only trial legal copy needs its own selector');
+ assert(js.includes("legacyHelp.hidden=true"),
+   'Gmail must not display Preview trial or license-code messaging');
+ assert(js.includes("legacyMessage.hidden=true"),
+   'Gmail should suppress old Preview license status text');
+ assert(js.includes("title.textContent='Tài khoản Google và bản quyền LHM Browser'"),
+   'Gmail modal must have a customer-appropriate title');
+ assert(js.includes("setInterval(()=>"),
+   'Gmail subscription dialog must refresh after automatic online activation');
  assert(!js.includes('innerHTML'),'Gmail UI should render only textContent');
  assert(css.includes('@media(max-width:600px)'));
  console.log('PASS: Gmail sign-in Electron IPC/renderer contract, opt-in trusted staging public key, fail-closed packaged mode, tenant-only data roots and no v1 fallback');
