@@ -269,3 +269,28 @@ D1 and custom-domain permissions. The worker and domain cannot
 be deployed from this PR alone: manual workflow dispatch requires
 a reviewed file on the default branch. Do not merge the whole
 unfinished commercial PR just to obtain deployment permissions.
+
+## Verified staging credentials and cross-channel update protection (2026-10-26)
+
+- **Real CI proof of blocker:** a read-only workflow was updated on the
+  `main` branch to check GitHub Environment `staging` (workflow run
+  `40223668470`). On its actual GitHub-hosted runner both
+  `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` were **empty**.
+  This was checked in addition to previous repository and
+  `production`-Environment probes. No Cloudflare API request,
+  deployment or migration occurred. The presence of token *references*
+  in YAML does not mean the GitHub secret values are configured. Confirm
+  the Environment and the two exact secret names, not their values; never
+  paste values into a chat or commit them.
+- **Google staging update safety:** the existing `UpdateCenter` points
+  to signed *Preview/stable* installers. The Gmail app now uses
+  `DisabledGmailUpdateCenter`: it reports a dedicated
+  `gmail-staging` update channel as unavailable, makes **no**
+  check/download network requests and rejects Preview installer
+  downloads. The Preview build retains its current signed online updater.
+  Signed Gmail-specific update manifests, trust anchor and release
+  procedures remain a future commercial release gate; do not silently
+  reuse Preview updates merely because the signature matches.
+- `test/google-staging-update-isolation.js` is a release regression
+  check in `google-lease-contract.yml`. No update to a production
+  customer's machine was attempted in this PR.
