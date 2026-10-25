@@ -168,6 +168,7 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
       const db=database(env);
       if(path==='/v2/desktop/pair/start'||path==='/v2/desktop/pair/approve'||
          path==='/v2/desktop/pair/claim'||path==='/v2/devices'||
+         path==='/v2/devices/revoke'||path==='/v2/desktop/grant/revoke'||
          path.startsWith('/v2/seats/')||path==='/v2/leases/issue')
         return createGoogleDeviceApi({clock})(req,env,{db,
           getUser:()=>identity(req,env,now),checkCsrf:u=>authorizedPost(req,url,u)});
