@@ -29,3 +29,9 @@ serverless/license-worker/wrangler.toml
 serverless/license-worker/.dev.vars
 serverless/license-worker/.dev.vars.*
 serverless/license-worker/.wrangler/
+
+# Generated ONLY inside the isolated Gmail staging packaging runner.
+# A normal Preview installer MUST NOT contain this module.
+src/licensing/googleStagingPackageTrust.generated.js
+build/google-staging-builder.generated.json
+dist-google-staging/
