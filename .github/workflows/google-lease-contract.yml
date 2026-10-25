@@ -6,6 +6,13 @@ on:
       - 'test/google-lease-contract.js'
       - 'test/google-saas-worker.js'
       - 'test/google-desktop-client.js'
+      - 'test/google-electron-wiring.js'
+      - 'src/licensing/googleStagingConfig.js'
+      - 'src/ui/googleLicense.css'
+      - 'src/ui/googleLicense.js'
+      - 'src/ui/index.html'
+      - 'preload.js'
+      - 'main.js'
       - 'test/google-tenant-storage.js'
       - 'src/licensing/googleTenantStorage.js'
       - 'src/licensing/googleDesktopClient.js'
@@ -40,6 +47,11 @@ jobs:
           node --check test/google-saas-worker.js
           node --check src/licensing/googleDesktopClient.js
           node --check test/google-desktop-client.js
+          node --check src/ui/googleLicense.js
+          node --check src/licensing/googleStagingConfig.js
+          node --check main.js
+          node --check preload.js
+          node --check test/google-electron-wiring.js
           node --check src/licensing/googleTenantStorage.js
           node --check test/google-tenant-storage.js
       - name: Verify Google SaaS Browser lease (no cloud/secrets)
@@ -50,6 +62,8 @@ jobs:
         run: node test/google-desktop-client.js
       - name: Google account specific local tenant storage boundary
         run: node test/google-tenant-storage.js
+      - name: Gmail Electron onboarding and account isolation integration
+        run: node test/google-electron-wiring.js
       - name: Regression legacy signature and entitlements
         run: |
           node test/license-enforcement.js
