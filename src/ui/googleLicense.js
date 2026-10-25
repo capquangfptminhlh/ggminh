@@ -26,7 +26,11 @@ window.addEventListener('DOMContentLoaded',async()=>{
    PAIR_PENDING:'Cần xác nhận mã ghép máy trong trình duyệt Google.',
    PAIR_ALREADY_CLAIMED:'Yêu cầu này đã ghép. Hãy kiểm tra trạng thái tài khoản.'
  };
- const message=(value)=>{el('google-login-state').textContent=labels[value]||value;};
+ const message=(value)=>{
+   const str=String(value??'');
+   const code=Object.keys(labels).find(key=>str===key||str.endsWith(': '+key));
+   el('google-login-state').textContent=code?labels[code]:str;
+ };
  const lock=async(id,callback)=>{
    const button=el(id);if(!button||button.disabled)return;
    button.disabled=true;
@@ -98,7 +102,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
      await window.api.googleLicenseActivate();
      await update();el('google-device-list').replaceChildren();
    }catch(e){
-     if(e?.message==='SEAT_LIMIT')await listDevices();
+     if(String(e?.message||'').includes('SEAT_LIMIT'))await listDevices();
      throw e;
    }
  }));
