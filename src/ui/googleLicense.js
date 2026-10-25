@@ -41,6 +41,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
  async function update(){
    const status=await window.api.googleLicenseStatus();
    current=status;
+   el('google-account-email').textContent=status.email?'Tài khoản Google: '+status.email:'';
    el('google-login-start').hidden=!!status.paired;
    el('google-login-claim').hidden=!status.pending||!!status.paired;
    el('google-login-code').hidden=!status.pending||!!status.paired;
