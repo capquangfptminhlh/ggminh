@@ -182,7 +182,11 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
     const outcome=await db.batch(operations);
     if(!Number(outcome[0]?.meta?.changes)||!Number(outcome[1]?.meta?.changes))
       return fail(409,'PAIR_ALREADY_CLAIMED');
-    return json(200,{grant:grantSecret,customer_id:row.customer_id,
+    const owner=await db.prepare(
+      "SELECT email FROM customers_v2 WHERE customer_id=? AND status='active'")
+      .bind(row.customer_id).first();
+    if(!owner||typeof owner.email!=='string')return fail(503,'OWNER_UNAVAILABLE');
+    return json(200,{grant:grantSecret,customer_id:row.customer_id,email:owner.email,
       client_hash:row.client_hash,notice:'Store grant encrypted with Windows DPAPI; it will not be returned again.'});
    }
    if(path==='/v2/devices'){
