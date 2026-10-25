@@ -25,6 +25,9 @@ BROWSER_GOOGLE_REDIRECT_URI = "https://browser-staging.lhmcrm.com/v2/auth/google
 # BROWSER_GOOGLE_CLIENT_ID (OAuth ID, non-secret but provision outside repo)
 # BROWSER_GOOGLE_CLIENT_SECRET
 # BROWSER_SESSION_SECRET (at least 32 unpredictable characters)
+# BROWSER_LEASE_PRIVATE_PKCS8_B64 (dedicated v2 Ed25519 private key, base64 PKCS#8)
+# BROWSER_LEASE_PUBLIC_SPKI_B64 (matching public key, base64 SPKI)
+# The Windows commercial build MUST pin the exact public SPKI.
 # BROWSER_BANK_BIN
 # BROWSER_BANK_ACCOUNT_NO
 # BROWSER_BANK_ACCOUNT_NAME
