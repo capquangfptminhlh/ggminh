@@ -6,9 +6,19 @@ const {DatabaseSync}=require('node:sqlite');
 
 (async()=>{
 const {createGoogleSaasApi}=await import('../serverless/license-worker/src/googleSaas.mjs');
+const {renderGooglePortal,renderGooglePortalScript}=await import('../serverless/license-worker/src/googlePortal.mjs');
+const page=renderGooglePortal();
+assert.equal(page.status,200);
+assert(page.headers.get('content-security-policy').includes("script-src 'self'"));
+assert((await page.text()).includes('/v2/portal.js'));
+assert.equal(renderGooglePortalScript().status,200);
 const sql=fs.readFileSync('serverless/license-worker/migrations/0003_google_saas_staging.sql','utf8');
 const db=new DatabaseSync(':memory:');
+db.exec(fs.readFileSync('serverless/license-worker/migrations/0001_licenses.sql','utf8'));
+db.exec(fs.readFileSync('serverless/license-worker/migrations/0002_billing_portal.sql','utf8'));
 db.exec(sql);
+assert(db.prepare("SELECT name FROM sqlite_master WHERE name='licenses'").get());
+assert(db.prepare("SELECT name FROM sqlite_master WHERE name='portal_orders'").get());
 const prepare=sql=>({
   query:sql,args:[],
   bind(...args){this.args=args;return this;},
@@ -83,6 +93,7 @@ result=await invoke('/v2/auth/google/callback?state='+
  encodeURIComponent(target.searchParams.get('state'))+'&code=mock-code','GET',null,
  {cookie:oauthCookie});
 assert.equal(result.status,302,'signed Google token must authenticate');
+assert.equal(result.headers.get('Location'),'/v2/portal');
 const sessionCookie=getCookie(result,'__Host-lhm-browser-session');
 result=await invoke('/v2/auth/session','GET',null,{cookie:sessionCookie});
 assert.equal(result.status,200);
