@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/google-saas-public-staging.yml'
       - 'tools/browser-saas-staging-public-preflight.mjs'
+      - 'test/browser-saas-staging-public-preflight.mjs'
       - 'tools/browser-saas-staging-config.js'
       - 'serverless/license-worker/src/googleAdminAccess.mjs'
   workflow_dispatch:
@@ -29,6 +30,8 @@ jobs:
       - name: Verify staging safety and Access signature test
         run: |
           node --check tools/browser-saas-staging-public-preflight.mjs
+          node --check test/browser-saas-staging-public-preflight.mjs
+          node test/browser-saas-staging-public-preflight.mjs
           node --check serverless/license-worker/src/googleAdminAccess.mjs
           node test/google-admin-access.js
           node test/browser-saas-staging-config.js
