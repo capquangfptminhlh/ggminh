@@ -460,6 +460,70 @@ function initIPC() {
     arch:process.arch,
     packaged:app.isPackaged
   }));
+  // Gmail pairing happens in the SYSTEM browser. Renderer receives only a
+  // six-digit comparison code, never the grant, refresh lease or OAuth tokens.
+  const requireGoogle=()=>{
+    if(!googleDesktop)throw Error('Kênh Google SaaS chưa được bật trên bản cài này');
+    return googleDesktop;
+  };
+  const tenantReady=()=>{
+    const client=requireGoogle();
+    const expected=googleTenantStorageRoot(
+      path.join(app.getPath('userData'),'storage'),client.state.customer_id);
+    if(!client.state.customer_id||store.baseDir!==expected)
+      throw Error('Khởi động lại phần mềm để chuyển sang dữ liệu tài khoản Gmail');
+    return client;
+  };
+  ipcMain.handle('google-license-status',()=>{
+    if(!googleDesktop)return {enabled:false};
+    const state=googleDesktop.status();
+    return {...state,enabled:true,paired:!!googleDesktop.state.customer_id,
+      pending:!!googleDesktop.state.pending,seatAttached:!!googleDesktop.state.seat_id,
+      tenantReady:!!googleDesktop.state.customer_id&&
+        store.baseDir===googleTenantStorageRoot(
+          path.join(app.getPath('userData'),'storage'),googleDesktop.state.customer_id)};
+  });
+  ipcMain.handle('google-license-start',async()=>{
+    const pair=await requireGoogle().startPair({
+      label:os.hostname().slice(0,50)||'Windows device'});
+    // startPair validates fixed origin, path and exact pairing id.
+    await shell.openExternal(pair.approvalUrl);
+    return {comparisonCode:pair.comparisonCode,expiresAt:pair.pairingExpiresAt};
+  });
+  ipcMain.handle('google-license-claim',async()=>{
+    const paired=await requireGoogle().claimPair();
+    return {...paired,restartRequired:true};
+  });
+  ipcMain.handle('google-license-restart',()=>{
+    requireGoogle();
+    if(launcher.listActive().length)throw Error('Đóng các profile đang chạy trước khi đổi tài khoản');
+    app.relaunch();app.quit();return true;
+  });
+  ipcMain.handle('google-license-plans',async()=>{
+    requireGoogle();
+    await shell.openExternal('https://browser-staging.lhmcrm.com/v2/portal');
+    return true;
+  });
+  ipcMain.handle('google-license-activate',async()=>{
+    const client=tenantReady();
+    if(!client.state.seat_id)await client.attach({label:os.hostname().slice(0,50)||'Windows device'});
+    return client.refreshLease();
+  });
+  ipcMain.handle('google-license-devices',()=>tenantReady().listSeats());
+  ipcMain.handle('google-license-replace',async(_,seatId,confirmation)=>{
+    const client=tenantReady();
+    await client.takeover(seatId,{confirmation,
+      label:os.hostname().slice(0,50)||'Windows device'});
+    return client.refreshLease();
+  });
+  ipcMain.handle('google-license-logout',()=>{
+    const client=requireGoogle();
+    if(launcher.listActive().length||automationRunner.status().status==='running'||
+       batchAutomation.status().active)
+      throw Error('Đóng profile và tác vụ trước khi đăng xuất Gmail');
+    client.forgetGrant(true);
+    return {restartRequired:true};
+  });
   ipcMain.handle('license-center-status', () => licensePolicy.status());
   ipcMain.handle('license-center-service-status', () =>
     getLicenseServiceStatus(onlineLicenseVerifier,licenseManager));
@@ -468,6 +532,7 @@ function initIPC() {
     return {result,license:licensePolicy.status()};
   });
   ipcMain.handle('license-center-activate', async (_,token) => {
+    if(googleDesktop)throw Error('Đăng nhập Google thay cho license thủ công');
     licenseManager.activate(token);
     if(onlineLicenseVerifier.endpoint){
       try{await onlineLicenseVerifier.verifyNow();}
@@ -476,6 +541,7 @@ function initIPC() {
     return licensePolicy.status();
   });
   ipcMain.handle('license-center-deactivate', () => {
+    if(googleDesktop)throw Error('Hãy đăng xuất Gmail từ quản lý tài khoản');
     licenseManager.deactivate();
     return licensePolicy.status();
   });
