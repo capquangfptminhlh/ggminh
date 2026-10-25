@@ -8,6 +8,7 @@ on:
       - 'serverless/license-worker/src/googleSaas.mjs'
       - 'serverless/license-worker/src/googleDevice.mjs'
       - 'serverless/license-worker/src/googlePortal.mjs'
+      - 'serverless/license-worker/src/googlePairPortal.mjs'
       - 'serverless/license-worker/src/index.mjs'
       - 'serverless/license-worker/migrations/0003_google_saas_staging.sql'
       - 'docs/GGMINH_GOOGLE_SAAS_MASTER_PLAN.md'
@@ -30,6 +31,7 @@ jobs:
           node --check serverless/license-worker/src/googleSaas.mjs
           node --check serverless/license-worker/src/googleDevice.mjs
           node --check serverless/license-worker/src/googlePortal.mjs
+          node --check serverless/license-worker/src/googlePairPortal.mjs
           node --check serverless/license-worker/src/index.mjs
           node --check test/google-saas-worker.js
       - name: Verify Google SaaS Browser lease (no cloud/secrets)
