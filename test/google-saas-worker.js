@@ -162,6 +162,15 @@ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM payment_reviews_v2").get().n,
 const issuer=crypto.generateKeyPairSync('ed25519');
 env.BROWSER_LEASE_PRIVATE_PKCS8_B64=issuer.privateKey.export({format:'der',type:'pkcs8'}).toString('base64');
 env.BROWSER_LEASE_PUBLIC_SPKI_B64=issuer.publicKey.export({format:'der',type:'spki'}).toString('base64');
+result=await invoke('/v2/admin/readiness');
+assert.equal(result.status,401,'only the operator can inspect staging configuration');
+result=await invoke('/v2/admin/readiness','GET',null,
+ {authorization:'Bearer verified-admin'});
+assert.equal(result.status,200);
+const health=await body(result);
+assert.equal(health.customer_registration_ready,true);
+assert(Object.values(health.checks).every(Boolean));
+assert(!JSON.stringify(health).includes(env.BROWSER_BANK_ACCOUNT_NO));
 const {verifyBrowserLease}=require('../src/licensing/googleLease');
 async function pair(clientChar,nick){
  const clientHash=clientChar.repeat(64),verifier=crypto.randomBytes(32).toString('base64url');
