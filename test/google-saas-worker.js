@@ -248,6 +248,27 @@ db.prepare("UPDATE entitlements_v2 SET revoked=1 WHERE customer_id=?").run(sessi
 result=await invoke('/v2/leases/issue','POST',{seat_id:seat3},auth(devices[2]));
 assert.equal(result.status,402,'revoked paid entitlement rejects new lease');
 
+// Revocation is allowed even after the entitlement expires or is revoked.
+// A signed-offline lease already granted remains bounded by its old expiry.
+result=await invoke('/v2/devices/revoke','POST',
+ {seat_id:seat3,confirmation:'REVOKE'},authHeaders);
+assert.equal(result.status,200,'Google owner can revoke device despite expired entitlement');
+assert.equal((await body(result)).status,'revoked');
+result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat3},auth(devices[2]));
+assert.equal(result.status,401,'owner-revoked grant must not heartbeat');
+result=await invoke('/v2/devices/revoke','POST',
+ {seat_id:seat2,confirmation:'REVOKE'},{cookie:sessionCookie,origin,'x-csrf-token':'invalid'});
+assert.equal(result.status,403,'device revocation requires CSRF token');
+result=await invoke('/v2/desktop/grant/revoke','POST',
+ {confirmation:'REVOKE'},auth(devices[1]));
+assert.equal(result.status,200,'unpaid desktop can securely revoke its own grant');
+result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat2},auth(devices[1]));
+assert.equal(result.status,401,'revoked desktop grant cannot heartbeat');
+result=await invoke('/v2/desktop/grant/revoke','POST',
+ {confirmation:'REVOKE'},auth(devices[1]));
+assert.equal(result.status,401,'desktop grant revoke cannot be replayed');
+assert.equal(db.prepare("SELECT COUNT(*) AS n FROM audit_events_v2 WHERE action IN ('device_revoked','grant_revoked')").get().n,2);
+
 db.close();
-console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease');
+console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout');
 })().catch(e=>{console.error(e);process.exitCode=1;});
