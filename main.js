@@ -508,17 +508,8 @@ function initIPC() {
     return true;
   });
   ipcMain.handle('google-license-activate',async()=>{
-    const client=tenantReady();
-    const label=os.hostname().slice(0,50)||'Windows device';
-    if(!client.state.seat_id)await client.attach({label});
-    try{return await client.refreshLease();}
-    catch(error){
-      // A previously expired 10-minute online seat must be re-attached;
-      // a revoked subscription must NEVER be silently reactivated.
-      if(error.code!=='SEAT_EXPIRED')throw error;
-      await client.attach({label});
-      return client.refreshLease();
-    }
+    tenantReady();
+    return googleDesktop.renewOnline({label:os.hostname().slice(0,50)||'Windows device'});
   });
   ipcMain.handle('google-license-devices',()=>tenantReady().listSeats());
   ipcMain.handle('google-license-replace',async(_,seatId,confirmation)=>{
@@ -1541,8 +1532,9 @@ app.whenReady().then(async () => {
     googleLeaseTimer=setInterval(async()=>{
       if(!googleDesktop.state.seat_id)return;
       try{
-        await googleDesktop.heartbeat();
-        if(googleDesktop.status().allowed)await googleDesktop.refreshLease();
+        // Always refresh after a valid online seat, even if the prior
+        // 72-hour offline lease itself has expired.
+        await googleDesktop.renewOnline({label:os.hostname().slice(0,50)||'Windows device'});
       }catch(error){
         if(error.code!=='NETWORK_UNAVAILABLE')
           console.warn('[Google SaaS] Renewal:',error.code||'service_unavailable');
