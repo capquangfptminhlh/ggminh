@@ -526,12 +526,12 @@ function initIPC() {
       label:os.hostname().slice(0,50)||'Windows device'});
     return client.refreshLease();
   });
-  ipcMain.handle('google-license-logout',()=>{
+  ipcMain.handle('google-license-logout',async()=>{
     const client=requireGoogle();
     if(launcher.listActive().length||automationRunner.status().status==='running'||
        batchAutomation.status().active)
       throw Error('Đóng profile và tác vụ trước khi đăng xuất Gmail');
-    client.forgetGrant(true);
+    await client.logout();
     // A previously signed-in customer's workspace must not remain visible
     // after logout; immediately tear down the in-memory Store on restart.
     setImmediate(()=>{app.relaunch();app.quit();});
