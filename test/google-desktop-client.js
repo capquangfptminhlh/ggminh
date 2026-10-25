@@ -51,7 +51,7 @@ async function fetchImpl(url,init){
  }
  if(endpoint==='/v2/desktop/pair/claim'){
   assert.equal(crypto.createHash('sha256').update(body.verifier).digest('hex'),verifierHash);
-  return reply(200,{grant,customer_id:customerId,client_hash:expectedHash});
+  return reply(200,{grant,customer_id:customerId,email:'verified@gmail.com',client_hash:expectedHash});
  }
  assert.equal(auth,'Bearer '+grant,'authenticated operation requires secret desktop grant');
  if(endpoint==='/v2/desktop/grant/revoke')return reply(200,{status:'revoked'});
@@ -80,6 +80,8 @@ async function fetchImpl(url,init){
   assert(pairing.approvalUrl.endsWith('/v2/desktop/pair/?id='+pairId));
   const paired=await desktop.claimPair();
   assert.equal(paired.customerId,customerId);
+  assert.equal(paired.email,'verified@gmail.com');
+  assert.equal(desktop.state.email,'verified@gmail.com');
   assert.equal(desktop.state.pending,null);
   assert.equal(desktop.status().allowed,false,'paired but unpaid seat cannot launch profiles');
   await desktop.attach({label:'PC one'});
@@ -123,6 +125,7 @@ async function fetchImpl(url,init){
   assert.deepEqual(await desktop.logout(),{revoked:true},'server must confirm grant revocation');
   assert(replies.includes('/v2/desktop/grant/revoke'));
   assert.equal(desktop.state.grant,null);
+  assert.equal(desktop.state.email,null,'logout removes locally cached email');
   assert.equal(desktop.status().allowed,false);
   assert.equal(fs.existsSync(path.join(root,'profiles')),false,
    'logout must never create/delete a profile workspace');
