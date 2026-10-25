@@ -86,7 +86,8 @@ class GoogleBrowserDesktopClient{
  }
  async request(endpoint,data,authenticated=false){
   const names=new Set(['/v2/desktop/pair/start','/v2/desktop/pair/claim',
-    '/v2/seats/attach','/v2/seats/heartbeat','/v2/seats/takeover','/v2/leases/issue']);
+    '/v2/seats/attach','/v2/seats/heartbeat','/v2/seats/takeover',
+    '/v2/seats/list','/v2/leases/issue']);
   if(!names.has(endpoint))throw Error('Unsupported desktop license endpoint');
   if(authenticated&&!TOKEN.test(this.state.grant||''))throw new BrowserSaasError('LOGIN_REQUIRED');
   const headers={'Content-Type':'application/json'};
@@ -155,6 +156,17 @@ class GoogleBrowserDesktopClient{
   this.state.seat_id=data.seat_id;this.state.lease=null;this.state.revoked_online=false;
   this.persist();
   return {seatId:data.seat_id,heartbeatSeconds:300};
+ }
+ async listSeats(){
+  this.seen();
+  const data=await this.request('/v2/seats/list',{},true);
+  if(!Array.isArray(data.devices)||!Number.isSafeInteger(data.seat_limit)||
+    data.seat_limit<1)throw new BrowserSaasError('INVALID_SEAT_LIST');
+  return {seatLimit:data.seat_limit,devices:data.devices.map(item=>{
+    if(!SEAT.test(item.seat_id||'')||typeof item.label!=='string')
+      throw new BrowserSaasError('INVALID_SEAT_LIST');
+    return {seatId:item.seat_id,label:item.label};
+  })};
  }
  async takeover(replaceSeatId,{confirmation,label='Windows device'}={}){
   this.seen();
