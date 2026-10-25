@@ -9,6 +9,7 @@ import { renderClientScript } from './adminClient.mjs';
 import { createPortalApi } from './adminPortal.mjs';
 import { createGoogleSaasApi } from './googleSaas.mjs';
 import { renderGooglePortal, renderGooglePortalScript } from './googlePortal.mjs';
+import { renderPairPortal, renderPairScript } from './googlePairPortal.mjs';
 const LICENSE_ID=/^lic_[a-f0-9]{24}$/;
 const INSTALL_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const NONCE=/^[a-zA-Z0-9_-]{22}$/;
@@ -251,6 +252,8 @@ export function createAuthority({
     if(env.BROWSER_SAAS_STAGING==='enabled'&&request.method==='GET'){
      if(url.pathname==='/v2/portal')return renderGooglePortal();
      if(url.pathname==='/v2/portal.js')return renderGooglePortalScript();
+     if(url.pathname==='/v2/desktop/pair/')return renderPairPortal();
+     if(url.pathname==='/v2/desktop/pair.js')return renderPairScript();
     }
     return createGoogleSaasApi({clock})(request,env,{adminAuth:isAdmin});
    }
