@@ -1,0 +1,34 @@
+# Example only; deploy on an isolated test hostname and a separate D1.
+# NEVER point this example at browser.lhmcrm.com or the live LICENSE_DB.
+# Copy locally to wrangler.staging.toml, replace the placeholders, and keep it untracked.
+name = "lhm-browser-commerce-staging"
+main = "src/index.mjs"
+compatibility_date = "2026-10-24"
+workers_dev = false
+preview_urls = false
+
+[[routes]]
+pattern = "browser-staging.lhmcrm.com"
+custom_domain = true
+
+[[d1_databases]]
+binding = "BROWSER_SAAS_DB"
+database_name = "lhm-browser-saas-staging"
+database_id = "REPLACE_WITH_SEPARATE_STAGING_D1_UUID"
+migrations_dir = "migrations"
+
+[vars]
+BROWSER_SAAS_STAGING = "enabled"
+BROWSER_GOOGLE_REDIRECT_URI = "https://browser-staging.lhmcrm.com/v2/auth/google/callback"
+
+# Configure as staging-specific Wrangler secrets:
+# BROWSER_GOOGLE_CLIENT_ID (OAuth ID, non-secret but provision outside repo)
+# BROWSER_GOOGLE_CLIENT_SECRET
+# BROWSER_SESSION_SECRET (at least 32 unpredictable characters)
+# BROWSER_BANK_BIN
+# BROWSER_BANK_ACCOUNT_NO
+# BROWSER_BANK_ACCOUNT_NAME
+# LHM_LICENSE_ADMIN_TOKEN (32+ chars; do NOT reuse production secret)
+#
+# Cloudflare Access MUST protect /v2/admin/* independently of the Bearer token.
+# Do NOT enable a payment plan until max_profiles/features and bank are approved.
