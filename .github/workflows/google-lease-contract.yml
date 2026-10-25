@@ -11,6 +11,13 @@ on:
       - 'test/google-desktop-client.js'
       - 'test/google-electron-wiring.js'
       - 'src/licensing/googleStagingConfig.js'
+      - 'test/google-packaged-mode.js'
+      - 'tools/prepare-google-staging-package.js'
+      - 'tools/assert-preview-build.js'
+      - 'tools/assert-google-staging-package.js'
+      - 'package.json'
+      - '.gitignore'
+      - '.github/workflows/google-staging-windows.yml'
       - 'src/ui/googleLicense.css'
       - 'src/ui/googleLicense.js'
       - 'src/ui/index.html'
@@ -55,6 +62,10 @@ jobs:
           node --check test/google-desktop-client.js
           node --check src/ui/googleLicense.js
           node --check src/licensing/googleStagingConfig.js
+          node --check tools/prepare-google-staging-package.js
+          node --check tools/assert-preview-build.js
+          node --check tools/assert-google-staging-package.js
+          node --check test/google-packaged-mode.js
           node --check main.js
           node --check preload.js
           node --check test/google-electron-wiring.js
@@ -64,6 +75,8 @@ jobs:
         run: node test/google-lease-contract.js
       - name: Exercise staging OAuth + commerce with SQLite
         run: node --experimental-sqlite test/google-saas-worker.js
+      - name: Separate packaged Gmail STAGING trust and safe Preview install identity
+        run: node test/google-packaged-mode.js
       - name: Main-process Windows DPAPI and lease policy test (safeStorage fixture)
         run: node test/google-desktop-client.js
       - name: Google account specific local tenant storage boundary
