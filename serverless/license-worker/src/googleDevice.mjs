@@ -196,6 +196,14 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
    const verified=await verifiedGrant(req,db,now);
    if(verified.error)return verified.error;
    const {grant,paid}=verified;
+   if(path==='/v2/seats/list'){
+    const rows=await db.prepare(
+      "SELECT seat_id,label,heartbeat_at_ms FROM license_seats_v2 WHERE customer_id=? AND product_code='ads-browser' AND expires_at_ms>? ORDER BY heartbeat_at_ms DESC")
+      .bind(grant.customer_id,now).all();
+    return json(200,{seat_limit:paid.seat_limit,
+      devices:(rows.results||[]).map(x=>({seat_id:x.seat_id,label:x.label,
+        last_seen_ms:x.heartbeat_at_ms}))});
+   }
    if(path==='/v2/seats/attach'){
     const data=await readBody(req);
     const nick=label(data.label);
