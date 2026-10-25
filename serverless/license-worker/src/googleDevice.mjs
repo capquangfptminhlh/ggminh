@@ -38,6 +38,12 @@ async function sha(value){
   const hashed=new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(value)));
   return Array.from(hashed,b=>b.toString(16).padStart(2,'0')).join('');
 }
+async function keyedEdgeScope(ip,secret){
+ const key=await crypto.subtle.importKey('raw',encoder.encode(secret),
+  {name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const data=new Uint8Array(await crypto.subtle.sign('HMAC',key,encoder.encode('pair-ip:'+ip)));
+ return Array.from(data,b=>b.toString(16).padStart(2,'0')).join('');
+}
 function constantEqual(a,b){
   if(typeof a!=='string'||typeof b!=='string')return false;
   let diff=a.length^b.length;
@@ -116,6 +122,23 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
     return fail(405,'method_not_allowed');
   try{
    if(path==='/v2/desktop/pair/start'){
+    // CF-Connecting-IP is supplied by Cloudflare edge, never by Electron.
+    // Do not trust X-Forwarded-For, and fail closed when the request bypasses
+    // the Cloudflare edge. HMAC hash prevents storage of raw IP addresses.
+    const edgeIp=req.headers.get('cf-connecting-ip');
+    if(typeof edgeIp!=='string'||edgeIp.length>45||
+       !/^[a-fA-F0-9:.]{2,45}$/.test(edgeIp))
+      return fail(503,'PAIR_EDGE_IDENTITY_MISSING');
+    const window10m=Math.floor(now/600000);
+    const scope=await keyedEdgeScope(edgeIp,env.BROWSER_SESSION_SECRET);
+    const limit=await db.prepare(
+      "INSERT INTO desktop_pair_limits_v2(scope_hash,interval_10m,attempts) VALUES(?,?,1) ON CONFLICT(scope_hash,interval_10m) DO UPDATE SET attempts=attempts+1 WHERE attempts<20")
+      .bind(scope,window10m).run();
+    if(!Number(limit?.meta?.changes))return fail(429,'PAIR_EDGE_RATE_LIMIT');
+    // Lazy retention cleanup. Do not retain stable cross-month activity
+    // metadata: buckets older than one day are no longer actionable.
+    await db.prepare("DELETE FROM desktop_pair_limits_v2 WHERE interval_10m<?")
+      .bind(window10m-144).run();
     const data=await readBody(req);
     if(!HASH.test(data.client_hash||'')||!HASH.test(data.verifier_hash||''))
       return fail(400,'INVALID_PAIRING');
