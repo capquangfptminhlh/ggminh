@@ -157,3 +157,53 @@ completeness, expiry rejection and redaction of secret tokens.
 - Once online again, successful heartbeat now refreshes the paid Ed25519 lease **even if the previous offline lease has expired**. The server remains the only issuer; no legacy-trial fallback and no extension of the old offline signature. A revoked or blocked grant still fails closed and clears the cached lease.
 - Staging tests verify a displaced machine receives `DESKTOP_GRANT_INVALID` (HTTP 401) for renewal, issue and reattach; desktop fixture tests verify 72-hour lease expiry, online subscription recovery, and sleep reattach without re-pairing.
 - This is tested via automated SQLite D1 + mock safeStorage: it has not been exercised with real Windows sleep/resume or live Cloudflare yet.
+
+## Isolated packaged Gmail Windows STAGING installer (manual-only)
+
+A real standalone Windows Gmail staging installer now has a separate
+build path. It does **not** replace the normal Preview, share Preview
+userData, or obtain license rights from the old `lhmlic1` trial:
+
+- `npm run build:win` checks that no Gmail generated trust or staging
+  builder config is present; standard Preview is therefore **unchanged**.
+- `tools/prepare-google-staging-package.js` takes only a **PUBLIC**
+  Ed25519 SPKI (DER/base64) and a separately approved SHA-256 fingerprint.
+  It generates the runtime trust module inside `app.asar` and an
+  Electron-builder config with distinct `appId`, product name and NSIS
+  artifact name. The private key stays in Cloudflare Worker secrets.
+- The packaged Gmail app uses its own
+  `%APPDATA%/LHM Ads Browser Gmail Staging` data root **before**
+  Electron acquires its single-instance lock. Google customer profile
+  subdirectories remain nested under this separate root. It never copies
+  Preview cookies, profiles, login or proxy files.
+- `npm run build:google-staging:win` is **not** run by the legacy
+  Windows job. Its manual GitHub Actions workflow
+  `.github/workflows/google-staging-windows.yml` is available only
+  on reviewed `main` and requires typed
+  `BUILD_GMAIL_STAGING_ONLY` confirmation. It uses the `staging`
+  GitHub Environment and checks private readiness plus the publicly
+  configured plan **before building**. It does not tag or publish a release.
+  The output EXE is retained for internal staging testers for 7 days.
+- Required GitHub staging configuration, values **never printed**:
+  `BROWSER_LEASE_PUBLIC_SPKI_B64` (public key only, GitHub secret),
+  `BROWSER_LEASE_PUBLIC_SPKI_SHA256` (GitHub Environment variable,
+  64-hex fingerprint), `BROWSER_SAAS_ADMIN_TOKEN` (private admin token);
+  optionally Cloudflare Access service credentials if admin is protected.
+  Live Worker / D1, configured OAuth credentials, real bank details and
+  owner-approved plan must already be verified.
+- The PR workflow `google-lease-contract.yml` now also builds an actual
+  Windows installer using **a disposable public test key** on the
+  GitHub Windows runner, checks the app.asar fingerprint, then destroys
+  the binary. **That EXE is never offered for download or sale.**
+  Live OAuth / bank / DPAPI / customer-paid transactions remain separate
+  acceptance requirements.
+
+The build-pinned public signing key is NOT Windows code signing. The owner
+previously opted out of Authenticode signatures. These are two distinct
+security concepts: the first validates Cloudflare-issued paid leases
+cryptographically; the second would establish the Windows publisher identity.
+
+**Current status: not deployed.** Previous read-only GitHub Actions tests
+found missing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in
+repository and `production` scopes; the `staging` Environment needs
+explicit configuration or grants. Nothing is published automatically.
