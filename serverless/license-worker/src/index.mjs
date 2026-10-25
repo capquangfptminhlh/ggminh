@@ -4,6 +4,7 @@
  * Runs only over Cloudflare HTTPS; production keys are Worker secrets.
  * IMPORTANT: verify / sign use the EXACT lhmlic1 + lhmproof1 formats.
  */
+import { verifySaasAdminAccess } from './googleAdminAccess.mjs';
 import { renderAdminPage } from './adminPage.mjs';
 import { renderClientScript } from './adminClient.mjs';
 import { createPortalApi } from './adminPortal.mjs';
@@ -177,6 +178,7 @@ async function isAdmin(req,env){
 }
 // Dedicated v2 staging admin credential. Never reuse the legacy v1 issuer/admin token.
 async function isGoogleAdmin(request,env){
+ if(!await verifySaasAdminAccess(request,env))return false;
  const expected=env?.BROWSER_SAAS_ADMIN_TOKEN;
  if(typeof expected!=='string'||expected.length<32)return false;
  const auth=request.headers.get('authorization')||'';
