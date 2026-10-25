@@ -1271,6 +1271,16 @@ app.on('second-instance', () => {
   }
 });
 app.whenReady().then(async () => {
+  // Resolve the packaged trust BEFORE the Electron single-instance lock and
+  // before reading any profile or license state. Gmail Staging must never
+  // share the Preview app's userData root, Chrome cookies or legacy license.
+  const googleConfig=loadGoogleStagingConfig({packaged:app.isPackaged});
+  if(googleConfig?.mode==='google-saas-packaged-staging'){
+    const isolatedUserData=path.join(app.getPath('appData'),
+      'LHM Ads Browser Gmail Staging');
+    fs.mkdirSync(isolatedUserData,{recursive:true,mode:0o700});
+    app.setPath('userData',isolatedUserData);
+  }
   if (process.env.LHM_CI_UI_CAPTURE === '1') {
     app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
   }
@@ -1290,7 +1300,6 @@ app.whenReady().then(async () => {
   }
   const storageDir = path.join(app.getPath('userData'), 'storage');
   const legacyDir = path.join(__dirname, 'data');
-  const googleConfig=loadGoogleStagingConfig({packaged:app.isPackaged});
   if (!googleConfig && !fs.existsSync(path.join(storageDir, 'db.json')) &&
       fs.existsSync(path.join(legacyDir, 'db.json'))) {
     fs.mkdirSync(path.dirname(storageDir), { recursive: true });
