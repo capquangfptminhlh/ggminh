@@ -47,13 +47,28 @@ async function runGoogleSaasBillingAdmin({args=[],env=process.env,
  if(!Array.isArray(args)||typeof fetchImpl!=='function'||typeof write!=='function')
   throw new ReviewError('INVALID_OPERATOR_ARGUMENTS');
  const [command,id,ref,confirmation]=args;
- if(command!=='list'&&command!=='approve')
-  throw new ReviewError('USAGE: list | approve <order-uuid> <bank-reference> BANK_STATEMENT_MATCHED');
+ if(command!=='list'&&command!=='approve'&&command!=='ready')
+  throw new ReviewError('USAGE: ready | list | approve <order-uuid> <bank-reference> BANK_STATEMENT_MATCHED');
  if(command==='approve'&&(!UUID.test(id||'')||!REF.test(ref||'')||
     confirmation!==CONFIRM||args.length!==4))
   throw new ReviewError('BANK_CONFIRMATION_REQUIRED');
- if(command==='list'&&args.length!==1)throw new ReviewError('INVALID_OPERATOR_ARGUMENTS');
+ if((command==='list'||command==='ready')&&args.length!==1)
+  throw new ReviewError('INVALID_OPERATOR_ARGUMENTS');
  const cfg=config(env);
+ if(command==='ready'){
+  const state=await apiCall(cfg,'/v2/admin/readiness',null,fetchImpl);
+  const flags=state.checks;
+  if(!flags||typeof flags!=='object'||Array.isArray(flags)||
+     Object.values(flags).some(value=>typeof value!=='boolean')||
+     typeof state.customer_registration_ready!=='boolean')
+    throw new ReviewError('STAGING_READINESS_INVALID');
+  write('LHM Browser SaaS | Isolated staging readiness (not proof of bank/OAuth live transactions)');
+  for(const key of Object.keys(flags).sort())
+   write(key+': '+(flags[key]?'CONFIGURED':'BLOCKED'));
+  write('Website registration: '+
+    (state.customer_registration_ready?'CONFIGURED_FOR_LIVE_ACCEPTANCE_TEST':'BLOCKED'));
+  return {status:state.customer_registration_ready?'configured':'blocked',checks:flags};
+ }
  const orders=(await apiCall(cfg,'/v2/admin/orders',null,fetchImpl)).orders;
  if(!Array.isArray(orders)||orders.length>100)
   throw new ReviewError('STAGING_ORDER_LIST_INVALID');
