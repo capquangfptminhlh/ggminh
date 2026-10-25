@@ -196,16 +196,30 @@ class GoogleBrowserDesktopClient{
   return {plan:claims.plan_code,maxProfiles:claims.max_profiles,
     validUntil:claims.valid_until,features:[...claims.features]};
  }
+ async renewOnline({label='Windows device'}={}){
+  // Windows sleep can expire the ten-minute server seat while a customer
+  // still has a paid subscription. A revoked grant will NOT reattach.
+  // Expiry of a previously signed offline lease alone is NOT a revoked plan.
+  this.seen();
+  if(!this.state.seat_id)await this.attach({label});
+  else{
+   try{await this.heartbeat();}
+   catch(error){
+    if(!(error instanceof BrowserSaasError)||error.code!=='SEAT_EXPIRED')throw error;
+    await this.attach({label});
+   }
+  }
+  return this.refreshLease();
+ }
  async heartbeat(){
   this.seen();
   if(!this.state.seat_id)throw new BrowserSaasError('SEAT_REQUIRED');
   try{return await this.request('/v2/seats/heartbeat',{seat_id:this.state.seat_id},true);}
   catch(e){
-   // A positive online answer that the seat was replaced must lock
-   // immediately. Transient connectivity loss does NOT invalidate an offline
-   // signed lease; its bounded expiry still applies.
+   // Only actual grant/paid-right revocation locks immediately. A seat
+   // timeout can recover by reattaching the same previously approved grant.
    if(e instanceof BrowserSaasError&&
-      ['SEAT_EXPIRED','SEAT_REPLACED','SUBSCRIPTION_REQUIRED','DESKTOP_GRANT_INVALID'].includes(e.code)){
+      ['SEAT_REPLACED','SUBSCRIPTION_REQUIRED','DESKTOP_GRANT_INVALID'].includes(e.code)){
       this.state.revoked_online=true;this.state.lease=null;this.persist();
    }
    throw e;
