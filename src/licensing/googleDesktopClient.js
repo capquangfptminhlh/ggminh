@@ -12,6 +12,7 @@ const {verifyBrowserLease}=require('./googleLease');
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HASH=/^[a-f0-9]{64}$/;
 const TOKEN=/^bg1_[A-Za-z0-9_-]{43}$/;
+const EMAIL=/^[^\s@]{1,64}@[^\s@]{1,190}$/;
 const SEAT=/^[A-Za-z0-9_-]{16,100}$/;
 const ALLOWED_HOSTS=new Set(['browser-staging.lhmcrm.com','browser.lhmcrm.com']);
 const FEATURES=new Set(['profiles','api','automation']);
@@ -54,11 +55,12 @@ class GoogleBrowserDesktopClient{
   }
   if(stored&&(!HASH.test(stored.client_hash||'')||stored.version!==1||
     (stored.customer_id&&!UUID.test(stored.customer_id))||
+    (stored.email&&(!EMAIL.test(stored.email)||stored.email.length>254))||
     (stored.grant&&!TOKEN.test(stored.grant))||
     (stored.seat_id&&!SEAT.test(stored.seat_id))))
     throw Error('Encrypted SaaS grant metadata invalid');
   this.state=stored||{version:1,client_hash:crypto.randomBytes(32).toString('hex'),
-    pending:null,customer_id:null,grant:null,seat_id:null,lease:null,
+    pending:null,customer_id:null,email:null,grant:null,seat_id:null,lease:null,
     revoked_online:false,highest_seen:0};
   if(!stored)this.persist();
  }
@@ -139,15 +141,16 @@ class GoogleBrowserDesktopClient{
   const claimed=await this.request('/v2/desktop/pair/claim',{
     pairing_id:pending.pairing_id,verifier:pending.verifier});
   if(!TOKEN.test(claimed.grant||'')||!UUID.test(claimed.customer_id||'')||
+     !EMAIL.test(claimed.email||'')||claimed.email.length>254||
      claimed.client_hash!==this.state.client_hash)
     throw new BrowserSaasError('INVALID_GRANT_RESPONSE');
   // A different Google account cannot inherit the previous local grant,
   // cached lease or tenant workspace; profile migration is NOT automatic.
   this.state={version:1,client_hash:this.state.client_hash,pending:null,
-    customer_id:claimed.customer_id,grant:claimed.grant,seat_id:null,lease:null,
+    customer_id:claimed.customer_id,email:claimed.email,grant:claimed.grant,seat_id:null,lease:null,
     revoked_online:false,highest_seen:this.state.highest_seen};
   this.persist();
-  return {customerId:claimed.customer_id,paired:true};
+  return {customerId:claimed.customer_id,email:claimed.email,paired:true};
  }
  async attach({label='Windows device'}={}){
   this.seen();
@@ -252,7 +255,8 @@ class GoogleBrowserDesktopClient{
  }
  forgetGrant(confirmed){
   if(confirmed!==true)throw new BrowserSaasError('CONFIRMATION_REQUIRED');
-  this.state.pending=null;this.state.customer_id=null;this.state.grant=null;
+  this.state.pending=null;this.state.customer_id=null;this.state.email=null;
+  this.state.grant=null;
   this.state.seat_id=null;this.state.lease=null;this.state.revoked_online=false;
   this.persist();
   // Does not remove customer browser profiles, cookies or backups.
