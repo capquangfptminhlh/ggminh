@@ -207,3 +207,19 @@ cryptographically; the second would establish the Windows publisher identity.
 found missing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in
 repository and `production` scopes; the `staging` Environment needs
 explicit configuration or grants. Nothing is published automatically.
+
+## Worker ↔ Windows signer fingerprint parity
+
+Authenticated `GET /v2/admin/readiness` returns the SHA-256 fingerprint of
+the **public** Ed25519 SPKI only after proving the Worker signing private/public
+pair matches. The private key is never returned. In merchant CLI
+`node tools/google-saas-admin.js ready`, setting
+`BROWSER_LEASE_PUBLIC_SPKI_SHA256` to the **independently approved**
+lowercase 64-hex fingerprint enforces exact equality with the live Worker
+fingerprint. A mismatch blocks the manual Windows Gmail build before the
+public key is embedded, preventing an installed app from accepting leases
+issued by a different staging signer.
+
+This readiness check is necessary but not sufficient for a customer launch:
+real Google OAuth, paid bank fulfillment, and Windows DPAPI/session tests
+must pass separately. Do not enable a paid plan by assumption.
