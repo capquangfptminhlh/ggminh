@@ -93,3 +93,34 @@ The application must fail closed when the public key is absent or invalid. A nor
 - Signed-in customers can revoke an individual active device in the web portal with explicit confirmation, valid session cookie, matching Origin and CSRF token. This marks the device's desktop grant revoked and expires its server seat in one D1 batch; audit events are recorded. Previously signed offline leases remain usable until their original expiry (up to 72h), so **immediate offline revocation is not guaranteed**.
 - Electron Gmail logout now requires the server to acknowledge grant revocation before clearing its locally encrypted identity; if the network fails, the grant stays encrypted and the UI reports failure, rather than implying a successful global logout.
 - The Node+SQLite full-path integration test now drives the actual Cloudflare Worker routing and SQL through the real `GoogleBrowserDesktopClient` (with a safeStorage test fixture), including Google browser approval, pairing, paid signed lease and server-acknowledged logout. It is an automated simulation, **not** evidence of live Google OAuth, actual cloud D1, Windows DPAPI or real bank funds.
+
+## Merchant bank reconciliation operator (staging only)
+
+A command-line review path is implemented in `tools/google-saas-admin.js` and
+`tools/google-saas-billing-core.js`. The `tools/**` package exclusion keeps it
+out of customer EXEs. It is pinned to **https://browser-staging.lhmcrm.com**
+and rejects the production hostname.
+
+Operators must independently match the *actual bank statement* to the
+server-frozen order amount, code and transfer reference before using the
+literal `BANK_STATEMENT_MATCHED` confirmation. Bank verification is not
+automatic. The API records idempotent fulfillment in D1.
+
+```powershell
+# Values are configured securely in the private operator environment,
+# not embedded in GitHub, Electron, screenshots or chat.
+$env:BROWSER_SAAS_ADMIN_ORIGIN = 'https://browser-staging.lhmcrm.com'
+node tools/google-saas-admin.js list
+node tools/google-saas-admin.js approve 11111111-1111-4111-8111-111111111111 BANK-STATEMENT-REFERENCE BANK_STATEMENT_MATCHED
+```
+
+The example UUID and reference are placeholders and do not activate anything
+unless they match an actual pending order. The operator host needs a dedicated
+`BROWSER_SAAS_ADMIN_TOKEN` (32+ chars), plus Cloudflare Access service-token
+environment values `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` when
+the `/v2/admin/*` Access rule is enabled. Never print, paste or commit credentials.
+Manual Access setup and real financial reconciliation are **still deployment blockers**.
+
+Synthetic regression `test/google-saas-billing-admin.js` checks disabled
+unconfirmed purchases, no production hostname fallback, Access credential
+completeness, expiry rejection and redaction of secret tokens.
