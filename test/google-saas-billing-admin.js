@@ -60,6 +60,14 @@ const fetchImpl=async(url,options)=>{
  const ready=await runGoogleSaasBillingAdmin({...opts,args:['ready']});
  assert.equal(ready.status,'configured');
  assert(ready.checks.google_oidc);
+ await assert.rejects(()=>runGoogleSaasBillingAdmin({...opts,
+   env:{...env,BROWSER_LEASE_PUBLIC_SPKI_SHA256:'b'.repeat(64)},
+   args:['ready']}),/STAGING_SIGNER_FINGERPRINT_MISMATCH/);
+ const matched=await runGoogleSaasBillingAdmin({...opts,
+   env:{...env,BROWSER_LEASE_PUBLIC_SPKI_SHA256:'a'.repeat(64)},
+   args:['ready']});
+ assert.equal(matched.status,'configured');
+
  assert(output.some(line=>line.includes('Website registration: CONFIGURED_FOR_LIVE_ACCEPTANCE_TEST')));
  assert(!output.join(' ').includes(env.BROWSER_SAAS_ADMIN_TOKEN));
  console.log('PASS: merchant staging-only host lock, real bank confirmation gate, bearer secrecy, read-only list, paid activation, expiry and Access credentials');
