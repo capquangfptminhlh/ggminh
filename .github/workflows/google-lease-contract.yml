@@ -1,0 +1,29 @@
+name: Google SaaS Browser lease contract (staging)
+on:
+  pull_request:
+    paths:
+      - 'src/licensing/googleLease.js'
+      - 'test/google-lease-contract.js'
+      - 'docs/GGMINH_GOOGLE_SAAS_MASTER_PLAN.md'
+      - '.github/workflows/google-lease-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verified-lease:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check src/licensing/googleLease.js
+          node --check test/google-lease-contract.js
+      - name: Verify Google SaaS Browser lease (no cloud/secrets)
+        run: node test/google-lease-contract.js
+      - name: Regression legacy signature and entitlements
+        run: |
+          node test/license-enforcement.js
+          node test/license-online.js
