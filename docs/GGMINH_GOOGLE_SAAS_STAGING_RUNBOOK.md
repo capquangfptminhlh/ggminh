@@ -32,9 +32,21 @@
 - Creating an order NEVER unlocks software. Only bank-verified admin fulfillment creates the entitlement.
 - Existing Preview/legacy trial remains unchanged, meaning **the Windows client is NOT yet in commercial Google-only mode**.
 
+## Implemented staged desktop authorization since PR #71 initial baseline
+
+- `googleDevice.mjs`: Windows initiates pairing with a SHA-256 verifier hash and random client identity, receives a six-digit comparison code, then customer confirms after Google OIDC through `/v2/desktop/pair/`. Incorrect codes have limited attempts. Claim rotates a unique grant (only its SHA-256 stored in D1); replay is rejected.
+- `/v2/seats/attach|list|heartbeat|takeover` enforces max two active server seats, ten-minute idle TTL and five-minute heartbeat. A third online device receives `409 SEAT_LIMIT`; takeover requires a selected seat and literal `REPLACE` confirmation. All seat queries scoped to the customer's grant or session.
+- `/v2/leases/issue` signs the canonical Ed25519 `ads-browser` lease with a **new** staging signer, configured in Worker secrets as `BROWSER_LEASE_PRIVATE_PKCS8_B64` and `BROWSER_LEASE_PUBLIC_SPKI_B64`; the latter key MUST be pinned into any distributed commercial Windows build. No signing private key enters Electron or public Git.
+- `src/licensing/googleDesktopClient.js` provides a **main-process only**, isolated optional Windows integration module. It uses Electron `safeStorage` (Windows DPAPI) and refuses operation if secure encryption is unavailable. Staging unit tests exercise a safeStorage fixture, clock rollback, encrypted grant persistence, fixed-host API calls, owner-selected takeover, profile capacity and 72-hour offline expiry. This module **is not yet wired into main.js/preload.js**; Preview keeps its existing enforcement.
+- `googlePairPortal.mjs` serves a CSP-protected, responsive pairing approval UI; Google callback can only return to the allowlisted pairing path. No browser profile/cookie/proxy data is uploaded.
+
+### Additional staging secrets
+
+Provision `BROWSER_LEASE_PRIVATE_PKCS8_B64` and `BROWSER_LEASE_PUBLIC_SPKI_B64` as a separately generated Ed25519 keypair in staging Worker secrets. Retain/rotate in controlled secrets management. Do not reuse the v1 license signer. The production Windows binary must pin the public SPKI exactly; a dynamic key supplied by the API/renderer is not a trustworthy anchor.
+
 ## Remaining release blockers
 
-- Desktop pairing, verified grants stored via Windows DPAPI, seat attach/heartbeat/takeover, signed lease issuer with separately pinned public key and 72-hour offline handling.
+- Deploy and test the now-implemented pairing, grant, seat and lease APIs against real isolated Cloudflare D1/Google OAuth. Electron main-process wiring, real safeStorage DPAPI and released-build pinned signer verification remain incomplete.
 - Wire a commercial-only main-process policy to gate EVERY profile/launcher/Local API/automation IPC operation; isolate local workspaces by Google customer. Avoid changing preview until tested.
 - Customer UI device-management and admin web controls for refunds, grant, revoke, audit, payment reconciliation; Cloudflare Access policy; owner-approved plans.
 - Real Google OAuth and VietQR/payment reconciliation against a real staging bank, D1 staging migrations with backup/rollback, Win10/11 and signed update acceptance, security review, commercial terms/privacy.
