@@ -54,6 +54,7 @@ async function fetchImpl(url,init){
   return reply(200,{grant,customer_id:customerId,client_hash:expectedHash});
  }
  assert.equal(auth,'Bearer '+grant,'authenticated operation requires secret desktop grant');
+ if(endpoint==='/v2/desktop/grant/revoke')return reply(200,{status:'revoked'});
  if(endpoint==='/v2/seats/attach')return reply(200,{seat_id:seatId});
  if(endpoint==='/v2/seats/list')return reply(200,{seat_limit:2,devices:[{seat_id:seatId,label:'PC one'}]});
  if(endpoint==='/v2/leases/issue')return reply(200,{lease:jwtLease(expectedHash)});
@@ -101,6 +102,8 @@ async function fetchImpl(url,init){
   desktop.fetch=async()=>{throw Error('Disconnected');};
   await assert.rejects(()=>desktop.heartbeat(),/NETWORK_UNAVAILABLE/);
   assert.equal(desktop.status().allowed,true);
+  await assert.rejects(()=>desktop.logout(),/NETWORK_UNAVAILABLE/);
+  assert.equal(desktop.state.grant,grant,'offline logout must not silently retain server grant');
   now+=72*3600000;
   assert.equal(desktop.status().allowed,false,'72h expiry blocks operation offline');
   assert.throws(()=>desktop.require('profiles'),/LEASE_INVALID_OR_EXPIRED/);
@@ -117,12 +120,13 @@ async function fetchImpl(url,init){
   assert.equal(desktop.status().allowed,false);
   assert.equal(desktop.status().reason,'SEAT_REPLACED');
   assert.throws(()=>desktop.forgetGrant(false),/CONFIRMATION_REQUIRED/);
-  desktop.forgetGrant(true);
+  assert.deepEqual(await desktop.logout(),{revoked:true},'server must confirm grant revocation');
+  assert(replies.includes('/v2/desktop/grant/revoke'));
   assert.equal(desktop.state.grant,null);
   assert.equal(desktop.status().allowed,false);
   assert.equal(fs.existsSync(path.join(root,'profiles')),false,
    'logout must never create/delete a profile workspace');
   assert(replies.includes('/v2/desktop/pair/start')&&replies.includes('/v2/leases/issue'));
-  console.log('PASS: Windows main-only pairing, pinning, encrypted grant and lease, profile capacity, restart recovery, 72h offline, clock rollback, online seat rejection');
+  console.log('PASS: Windows main-only pairing, pinning, encrypted grant and lease, profile capacity, restart recovery, 72h offline, clock rollback, online seat rejection and server-confirmed logout');
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
