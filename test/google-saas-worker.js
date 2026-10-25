@@ -322,6 +322,18 @@ try{
  const lease=await customerDesktop.refreshLease();
  assert.equal(lease.maxProfiles,100);
  assert.equal(customerDesktop.status().allowed,true,'signed SaaS Worker lease unlocks local profile');
+ const previousSeat=customerDesktop.state.seat_id;
+ now+=11*60000; // Server slot expires while Windows sleeps
+ const resumed=await customerDesktop.renewOnline({label:'Resumed Windows device'});
+ assert.equal(resumed.maxProfiles,100,'real D1 Worker renews paid seat after sleep');
+ assert.notEqual(customerDesktop.state.seat_id,previousSeat,
+   'paid Windows recovery attaches a fresh signed seat');
+ assert.equal(customerDesktop.status().allowed,true,
+   'real Ed25519 SaaS lease becomes valid after recovery');
+ result=await invoke('/v2/seats/heartbeat','POST',{seat_id:previousSeat},
+   {authorization:'Bearer '+customerDesktop.state.grant});
+ assert.equal(result.status,409,'old expired seat cannot be resurrected');
+
  const grantBeforeLogout=customerDesktop.state.grant;
  assert.equal((await customerDesktop.logout()).revoked,true);
  assert.equal(customerDesktop.status().allowed,false,'logout blocks future launches');
