@@ -124,3 +124,28 @@ Manual Access setup and real financial reconciliation are **still deployment blo
 Synthetic regression `test/google-saas-billing-admin.js` checks disabled
 unconfirmed purchases, no production hostname fallback, Access credential
 completeness, expiry rejection and redaction of secret tokens.
+
+## New staged production-readiness and pairing abuse guards (2026-10-25)
+
+1. The anonymous `/v2/desktop/pair/start` endpoint now needs a trusted
+   `CF-Connecting-IP` provided by the Cloudflare edge (no fallback to an
+   untrusted forwarded client header). Its per-IP/10-minute rate counter is
+   stored as an HMAC digest in `desktop_pair_limits_v2`; no raw IP is written.
+   Client-hash rotation cannot evade the 20-start quota. Keys older than one
+   day are removed lazily. Run staging behind Cloudflare and include the
+   current additive `0003_google_saas_staging.sql` migration.
+2. The authenticated `GET /v2/admin/readiness` reports only booleans for
+   D1 tables, Google OAuth configuration, bank transfer fields, signing-key
+   consistency, session secret and owner-approved pilot plan. It requires
+   `BROWSER_SAAS_ADMIN_TOKEN`; no underlying secret, account or D1 UUID is
+   returned. It is a **configuration check**, not evidence of a real Google
+   sign-in, real bank transfer, Cloudflare Access policy or Windows acceptance.
+3. Run `node tools/google-saas-admin.js ready` from the private merchant
+   workstation after configuring secret environment variables, to see which
+   gates remain blocked. A disabled plan will display not-ready until the
+   owner has approved the exact limits and enabled it; do not silently
+   enable or sell the plan.
+4. Electron warning-history initialization must pass
+   `{storageDir:customerStorageDir}` (a *named option*, not the similarly
+   named variable shorthand); this now preserves warning history in the
+   correct Gmail tenant workspace.
