@@ -149,3 +149,11 @@ completeness, expiry rejection and redaction of secret tokens.
    `{storageDir:customerStorageDir}` (a *named option*, not the similarly
    named variable shorthand); this now preserves warning history in the
    correct Gmail tenant workspace.
+
+## Windows sleep recovery and permanent explicit device replacement
+
+- Explicit device takeover now expires the chosen active seat **and revokes its old desktop grant in the same atomic D1 batch**. The replaced PC cannot later attach a free seat with that previously paired grant. The owner must approve a fresh 6-digit Gmail pairing to restore that computer. This closes a race in the earlier two-seat policy.
+- `GoogleBrowserDesktopClient.renewOnline()` restores a paid seat after a **normal 10-minute idle/Windows sleep timeout**, provided the original desktop grant has **not** been revoked and the customer's subscription remains valid. If no free online seat is available, the user must select a machine for explicit replacement; the client never bypasses the two-seat rule.
+- Once online again, successful heartbeat now refreshes the paid Ed25519 lease **even if the previous offline lease has expired**. The server remains the only issuer; no legacy-trial fallback and no extension of the old offline signature. A revoked or blocked grant still fails closed and clears the cached lease.
+- Staging tests verify a displaced machine receives `DESKTOP_GRANT_INVALID` (HTTP 401) for renewal, issue and reattach; desktop fixture tests verify 72-hour lease expiry, online subscription recovery, and sleep reattach without re-pairing.
+- This is tested via automated SQLite D1 + mock safeStorage: it has not been exercised with real Windows sleep/resume or live Cloudflare yet.
