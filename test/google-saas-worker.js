@@ -242,9 +242,14 @@ result=await invoke('/v2/seats/takeover','POST',
 assert.equal(result.status,200,'explicit takeover replaces chosen PC');
 const seat3=(await body(result)).seat_id;
 result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat1},auth(devices[0]));
-assert.equal(result.status,409,'evicted device cannot renew its old server seat');
+assert.equal(result.status,401,'explicit takeover revokes displaced desktop grant');
 result=await invoke('/v2/leases/issue','POST',{seat_id:seat1},auth(devices[0]));
-assert.equal(result.status,409,'evicted device cannot obtain new signed lease');
+assert.equal(result.status,401,'displaced desktop cannot obtain new signed lease');
+result=await invoke('/v2/seats/attach','POST',{label:'PC one again'},auth(devices[0]));
+assert.equal(result.status,401,'displaced grant cannot silently reclaim a freed seat');
+const revoked=db.prepare("SELECT revoked FROM desktop_grants_v2 WHERE customer_id=? AND client_hash=?")
+ .get(session.customer_id,devices[0].clientHash);
+assert.equal(revoked.revoked,1,'takeover must persist revocation in D1');
 result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat2},auth(devices[1]));
 assert.equal(result.status,200);
 result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat3},auth(devices[2]));
