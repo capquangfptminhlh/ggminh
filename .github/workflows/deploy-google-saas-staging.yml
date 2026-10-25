@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/deploy-google-saas-staging.yml'
       - 'tools/browser-saas-staging-config.js'
+      - 'test/browser-saas-staging-config.js'
       - 'tools/browser-saas-staging-d1.mjs'
   workflow_dispatch:
     inputs:
