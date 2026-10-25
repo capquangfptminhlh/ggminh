@@ -100,6 +100,14 @@ export async function isGoogleLeaseIssuerConfigured(env){
  try{await signer(env);return true;}
  catch(_){return false;}
 }
+// Returns only the SHA-256 of the matched public signer (not the key and
+// never the PKCS#8 secret). Used to stop mismatched Windows/Worker leases.
+export async function googleLeasePublicFingerprint(env){
+ if(!await isGoogleLeaseIssuerConfigured(env))return null;
+ const bytes=fromBase64(env.BROWSER_LEASE_PUBLIC_SPKI_B64);
+ const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+ return Array.from(digest,b=>b.toString(16).padStart(2,'0')).join('');
+}
 async function issueToken(claims,env){
   const sorted=['audience','client_hash','customer_id','features','issued_at',
     'max_profiles','plan_code','product_code','seat_id','seat_limit',
