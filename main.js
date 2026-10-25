@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage, shell } = require('electron');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -67,6 +67,9 @@ const {AIAdvisor} = require('./src/ai/advisor');
 const {proposeWorkflow} = require('./src/ai/workflowDraft');
 const {LicenseManager} = require('./src/licensing/manager');
 const {LicensePolicy} = require('./src/licensing/enforcement');
+const {GoogleBrowserDesktopClient} = require('./src/licensing/googleDesktopClient');
+const {googleTenantStorageRoot} = require('./src/licensing/googleTenantStorage');
+const {loadGoogleStagingConfig} = require('./src/licensing/googleStagingConfig');
 const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
 const {resolveLicenseEndpoint}=require('./src/licensing/authorityConfig');
 const {getLicenseServiceStatus}=require('./src/licensing/serviceDiagnostics');
@@ -110,6 +113,9 @@ let extensionManager = null;
 let aiAdvisor = null;
 let licenseManager = null;
 let licensePolicy = null;
+let googleDesktop = null;
+let googleTenantRoot = null;
+let googleLeaseTimer = null;
 let onlineLicenseVerifier = null;
 let licenseTimer = null;
 const LICENSE_REFRESH_MS=15*60*1000;
@@ -1212,12 +1218,20 @@ app.whenReady().then(async () => {
   }
   const storageDir = path.join(app.getPath('userData'), 'storage');
   const legacyDir = path.join(__dirname, 'data');
-  if (!fs.existsSync(path.join(storageDir, 'db.json')) &&
+  const googleConfig=loadGoogleStagingConfig({packaged:app.isPackaged});
+  if (!googleConfig && !fs.existsSync(path.join(storageDir, 'db.json')) &&
       fs.existsSync(path.join(legacyDir, 'db.json'))) {
     fs.mkdirSync(path.dirname(storageDir), { recursive: true });
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
-  store = new Store(storageDir);
+  if(googleConfig){
+    googleDesktop=new GoogleBrowserDesktopClient({
+      root:path.join(app.getPath('userData'),'google-saas-secure'),
+      safeStorage,apiOrigin:googleConfig.apiOrigin,publicKey:googleConfig.publicKey
+    });
+    googleTenantRoot=googleTenantStorageRoot(storageDir,googleDesktop.state.customer_id,{create:true});
+  }
+  store = new Store(googleTenantRoot||storageDir);
   try{localHealthDrift=new LocalHealthDrift(storageDir);}
   catch(error){
     console.warn('[HealthDrift] History unavailable:',error.message);
@@ -1250,6 +1264,18 @@ app.whenReady().then(async () => {
     })
   });
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
+  if(googleDesktop){
+    // Legacy trial/v1 signed keys never authorize commercial Gmail profiles.
+    licensePolicy={
+      status:()=>{const s=googleDesktop.status();return {...s,
+        access:s.allowed?'licensed':'blocked',status:s.allowed?'active':'inactive',
+        active:s.allowed,expiresAt:s.validUntil||null,plan:s.plan||null,
+        trial:false,reason:s.reason||null,remainingDays:s.allowed?
+          Math.ceil((Date.parse(s.validUntil)-Date.now())/86400000):0};},
+      require:feature=>googleDesktop.require(feature),
+      assertCapacity:(count,addition)=>googleDesktop.assertCapacity(count,addition)
+    };
+  }
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
   bundledEngine=new BundledEngineManager(app.isPackaged
@@ -1420,12 +1446,27 @@ app.whenReady().then(async () => {
     localScheduler.tick().catch(error => console.warn('[Scheduler]',error.message));
   }, 60000);
   schedulerTimer.unref?.();
-  if(onlineLicenseVerifier.endpoint){
+  if(!googleDesktop && onlineLicenseVerifier.endpoint){
     onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
     licenseTimer=setInterval(()=>{
       onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
     },LICENSE_REFRESH_MS);
     licenseTimer.unref?.();
+  }
+  if(googleDesktop){
+    // Renewal happens in Electron main; a failure to contact the server
+    // cannot extend a signed lease beyond its original 72-hour deadline.
+    googleLeaseTimer=setInterval(async()=>{
+      if(!googleDesktop.state.seat_id)return;
+      try{
+        await googleDesktop.heartbeat();
+        if(googleDesktop.status().allowed)await googleDesktop.refreshLease();
+      }catch(error){
+        if(error.code!=='NETWORK_UNAVAILABLE')
+          console.warn('[Google SaaS] Renewal:',error.code||'service_unavailable');
+      }
+    },5*60*1000);
+    googleLeaseTimer.unref?.();
   }
   recorderManager = new RecorderManager(store, createRecorderWindow);
   initIPC();
@@ -1448,6 +1489,7 @@ app.whenReady().then(async () => {
 app.on('before-quit', () => {
   if (schedulerTimer) clearInterval(schedulerTimer);
   if (licenseTimer) clearInterval(licenseTimer);
+  if (googleLeaseTimer) clearInterval(googleLeaseTimer);
   if (batchAutomation) batchAutomation.stop();
   if (automationRunner) automationRunner.stop();
   if (recorderManager?.status().state === 'recording') recorderManager.stop();
