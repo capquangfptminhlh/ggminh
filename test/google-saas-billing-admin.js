@@ -17,6 +17,12 @@ const fetchImpl=async(url,options)=>{
   {status:'paid',idempotent:false}),{status:200,headers:{'content-type':'application/json'}});
 };
 (async()=>{
+ const packageConfig=require('../package.json');
+ assert(packageConfig.build.files.includes('!tools/**'),
+   'merchant approval tools must not be shipped in customer EXE');
+ const desktopMain=require('node:fs').readFileSync('main.js','utf8');
+ assert(!desktopMain.includes('google-saas-billing-core'),
+   'merchant approval must not be callable from Electron main or preload');
  const output=[];
  const opts={env,fetchImpl,now,write:x=>output.push(x)};
  let result=await runGoogleSaasBillingAdmin({...opts,args:['list']});
