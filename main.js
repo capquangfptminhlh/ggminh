@@ -1462,7 +1462,7 @@ app.whenReady().then(async () => {
   // below: the store counts 'authoritative' because the seeded
   // service registry already carries the accumulated totals.
   try{
-    warningHistory=createWarningHistory({customerStorageDir,countMode:'authoritative'});
+    warningHistory=createWarningHistory({storageDir:customerStorageDir,countMode:'authoritative'});
     const loadedHistory=warningHistory.load();
     if(loadedHistory.status==='error')
       console.warn('[warning-history]',loadedHistory.reason);
