@@ -43,6 +43,12 @@ try{
  assert(main.includes('launcher.licensePolicy = licensePolicy'));
  assert(main.includes('automationRunner.licensePolicy = licensePolicy'));
  assert(main.includes("const googleConfig=loadGoogleStagingConfig({packaged:app.isPackaged})"));
+ assert(main.includes("app.setPath('userData',isolatedUserData)"));
+ assert(main.indexOf("app.setPath('userData',isolatedUserData)")<
+   main.indexOf("app.requestSingleInstanceLock()"),
+   'Packaged Gmail must partition userData before the single-instance lock');
+ assert(main.includes("'LHM Ads Browser Gmail Staging'"),
+   'Staging customer data cannot share the Preview installation root');
  for(const ctor of [
    'new ProxyCredentialVault(customerStorageDir',
    'new AIAdvisor(customerStorageDir',
