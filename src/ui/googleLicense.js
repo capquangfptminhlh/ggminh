@@ -12,9 +12,13 @@ window.addEventListener('DOMContentLoaded',async()=>{
  panel.hidden=false;
  const modal=el('modal-license-center');
  const old=modal?.querySelector('.lhm-nm-license-stage');
- if(old)old.style.display='none';
- const legacyHelp=modal?.querySelector('.modal-body > .lhm-bulk-help');
+ if(old)old.hidden=true;
+ const legacyMessage=el('license-message');
+ const legacyHelp=el('license-legacy-explainer');
  if(legacyHelp)legacyHelp.hidden=true;
+ if(legacyMessage)legacyMessage.hidden=true;
+ const title=el('license-center-title');
+ if(title)title.textContent='Tài khoản Google và bản quyền LHM Browser';
  const labels={
    SIGNIN_REQUIRED:'Chưa đăng nhập Gmail. Chọn Đăng nhập bằng Google.',
    LEASE_INVALID_OR_EXPIRED:'Thuê bao chưa có hiệu lực hoặc lease đã hết hạn. Hãy kiểm tra thanh toán.',
