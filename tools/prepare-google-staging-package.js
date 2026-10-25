@@ -11,7 +11,7 @@ const ORIGIN='https://browser-staging.lhmcrm.com';
 const TRUST='src/licensing/googleStagingPackageTrust.generated.js';
 const BUILDER='build/google-staging-builder.generated.json';
 const ALLOW='ISOLATED_GMAIL_STAGING_ONLY';
-function prepareGoogleStagingPackage({root,publicKeyB64,confirmation,packageBuild}={}){
+function prepareGoogleStagingPackage({root,publicKeyB64,confirmation,packageBuild,expectedSha256}={}){
  if(confirmation!==ALLOW)throw Error('Explicit staging package authorization required');
  if(typeof root!=='string'||!path.isAbsolute(root))throw Error('Invalid package root');
  if(typeof publicKeyB64!=='string'||publicKeyB64.length>300||
@@ -27,6 +27,9 @@ function prepareGoogleStagingPackage({root,publicKeyB64,confirmation,packageBuil
     !publicKey.export({format:'der',type:'spki'}).equals(der))
    throw Error('Only canonical Ed25519 public SPKI is permitted');
  const hash=crypto.createHash('sha256').update(der).digest('hex');
+ if(expectedSha256!==undefined&&
+    (typeof expectedSha256!=='string'||!/^[a-f0-9]{64}$/.test(expectedSha256)||
+     hash!==expectedSha256))throw Error('Staging Worker public signing-key fingerprint mismatch');
  const trust=Object.freeze({schema:'lhm-google-saas-staging-trust-v1',
    channel:'gmail-staging',apiOrigin:ORIGIN,
    publicSpkiB64:publicKeyB64,publicSpkiSha256:hash});
@@ -63,7 +66,8 @@ if(require.main===module){
    const result=prepareGoogleStagingPackage({
      root:path.resolve(__dirname,'..'),
      publicKeyB64:process.env.BROWSER_LEASE_PUBLIC_SPKI_B64,
-     confirmation:process.env.GOOGLE_STAGING_PACKAGE_CONFIRMATION});
+     confirmation:process.env.GOOGLE_STAGING_PACKAGE_CONFIRMATION,
+     expectedSha256:process.env.BROWSER_LEASE_PUBLIC_SPKI_SHA256});
    console.log('PASS: isolated Gmail STAGING build inputs prepared; public key SHA-256: '+
      result.publicSpkiSha256);
  }catch(e){
