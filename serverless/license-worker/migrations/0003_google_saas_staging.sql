@@ -83,6 +83,14 @@ CREATE TABLE IF NOT EXISTS desktop_pairings_v2 (
  created_at_ms INTEGER NOT NULL,
  expires_at_ms INTEGER NOT NULL
 );
+-- Store only a keyed digest of the trusted Cloudflare edge IP. Limit anonymous
+-- pairing floods without persisting raw IPs, client passwords, or cookies.
+CREATE TABLE IF NOT EXISTS desktop_pair_limits_v2 (
+ scope_hash TEXT NOT NULL,
+ interval_10m INTEGER NOT NULL,
+ attempts INTEGER NOT NULL CHECK(attempts BETWEEN 1 AND 20),
+ PRIMARY KEY(scope_hash,interval_10m)
+);
 CREATE TABLE IF NOT EXISTS desktop_grants_v2 (
  grant_id TEXT PRIMARY KEY NOT NULL,
  customer_id TEXT NOT NULL,
