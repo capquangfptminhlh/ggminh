@@ -210,7 +210,7 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
         if(!person||person.status!=='active')return error(403,'ACCOUNT_BLOCKED');
         const session=await seal(env,'session',{customer_id:person.customer_id,
           sub:google.sub,csrf:rand(24),exp:now+7*DAY});
-        const headers=new Headers({'Location':'/v2/auth/session','Cache-Control':'no-store',
+        const headers=new Headers({'Location':'/v2/portal','Cache-Control':'no-store',
           'Referrer-Policy':'no-referrer'});
         headers.append('Set-Cookie',clean);
         headers.append('Set-Cookie',setCookie(SESSION,session,7*86400));
