@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS license_seats_v2 (
  label TEXT NOT NULL,
  heartbeat_at_ms INTEGER NOT NULL,
  expires_at_ms INTEGER NOT NULL,
+ takeover_nonce TEXT,
  UNIQUE(customer_id,product_code,client_hash)
 );
 CREATE INDEX IF NOT EXISTS idx_seats_v2_customer ON license_seats_v2(customer_id,product_code);
@@ -73,6 +74,10 @@ CREATE TABLE IF NOT EXISTS desktop_pairings_v2 (
  pairing_id TEXT PRIMARY KEY NOT NULL,
  verifier_hash TEXT NOT NULL,
  comparison_code_hash TEXT NOT NULL,
+ client_hash TEXT NOT NULL,
+ label TEXT NOT NULL,
+ failed_attempts INTEGER NOT NULL DEFAULT 0,
+ claim_nonce TEXT,
  customer_id TEXT,
  status TEXT NOT NULL CHECK (status IN ('pending','approved','claimed','expired')),
  created_at_ms INTEGER NOT NULL,
