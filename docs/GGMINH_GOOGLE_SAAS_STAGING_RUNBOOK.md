@@ -223,3 +223,49 @@ issued by a different staging signer.
 This readiness check is necessary but not sufficient for a customer launch:
 real Google OAuth, paid bank fulfillment, and Windows DPAPI/session tests
 must pass separately. Do not enable a paid plan by assumption.
+
+## Public staging deployment — manually gated and NO sales (2026-10-26)
+
+The new `.github/workflows/google-saas-public-staging.yml` is designed
+for the NEXT operation after private bootstrap, and is **not** proof
+that browser-staging.lhmcrm.com is reachable now.
+
+- It runs `test/google-admin-access.js` and checks staged Worker/D1
+  **before** exposing a custom hostname.
+- `tools/browser-saas-staging-public-preflight.mjs` confirms the
+  separate `lhm-browser-saas-staging` D1 exists, differs from the
+  legacy LICENSE_DB, and still has the disabled `personal_30`
+  pilot (`enabled=0`, `max_profiles=NULL`). It also requires
+  the Worker to have 11 explicitly named required secrets;
+  no secret values are fetched, printed or committed.
+- The manual publish command uses the exact confirmation
+  `PUBLISH_PUBLIC_STAGING_NO_SALES` on reviewed `main`,
+  the `staging` environment, and deploys only
+  `browser-staging.lhmcrm.com`. It verifies live HTTPS,
+  public empty plans, denied unauthenticated admin access, portal
+  rendering and Google OAuth's start redirect.
+- **Admin hardening:** `/v2/admin/*` now requires *both*
+  a Bearer SaaS secret and an actual Cloudflare Access RS256 JWT
+  with a pinned Access team issuer and Application AUD. The
+  Worker verifies the JWT against the team's Access JWKS.
+  A missing Access policy, forged/mismatched JWT, invalid
+  issuer, stale assertion or incomplete Access config fails
+  closed. Add staging-only `BROWSER_SAAS_ACCESS_TEAM_DOMAIN`
+  and `BROWSER_SAAS_ACCESS_AUD` as Wrangler secrets.
+  Operators additionally configure `CF_ACCESS_CLIENT_ID`
+  and `CF_ACCESS_CLIENT_SECRET` as workstation/Actions-only
+  credentials to pass the Access gateway.
+- **No customer payment in this stage.** Do not change
+  `plans_v2.enabled` or `max_profiles` merely to satisfy a
+  build gate. Validate real Google OAuth, real Windows DPAPI
+  pairing and actual bank settlement before activating sales.
+
+**Current blocker:** GitHub Actions earlier reported empty
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+in repository and `production` contexts. Configure or grant the
+same exact secrets to the **staging** Environment, with the
+Cloudflare API token scoped to the correct account and Worker,
+D1 and custom-domain permissions. The worker and domain cannot
+be deployed from this PR alone: manual workflow dispatch requires
+a reviewed file on the default branch. Do not merge the whole
+unfinished commercial PR just to obtain deployment permissions.
