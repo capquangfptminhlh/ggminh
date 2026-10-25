@@ -541,6 +541,7 @@ function initIPC() {
   ipcMain.handle('license-center-service-status', () =>
     getLicenseServiceStatus(onlineLicenseVerifier,licenseManager));
   ipcMain.handle('license-center-verify-online', async () => {
+    if(googleDesktop)throw Error('Kênh Gmail chỉ xác minh lease Google; không dùng dịch vụ license cũ');
     const result=await onlineLicenseVerifier.verifyNow();
     return {result,license:licensePolicy.status()};
   });
