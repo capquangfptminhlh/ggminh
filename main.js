@@ -477,7 +477,8 @@ function initIPC() {
   ipcMain.handle('google-license-status',()=>{
     if(!googleDesktop)return {enabled:false};
     const state=googleDesktop.status();
-    return {...state,enabled:true,paired:!!googleDesktop.state.customer_id,
+    return {...state,enabled:true,email:googleDesktop.state.email||null,
+      paired:!!googleDesktop.state.customer_id,
       pending:!!googleDesktop.state.pending,seatAttached:!!googleDesktop.state.seat_id,
       tenantReady:!!googleDesktop.state.customer_id&&
         store.baseDir===googleTenantStorageRoot(
