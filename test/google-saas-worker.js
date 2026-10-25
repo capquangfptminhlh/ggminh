@@ -188,7 +188,9 @@ async function pair(clientChar,nick){
  assert.equal(r.status,403,'incorrect verifier rejected');
  r=await invoke('/v2/desktop/pair/claim','POST',{pairing_id:ticket.pairing_id,verifier});
  assert.equal(r.status,200,'one-time claim success');
- const grant=(await body(r)).grant;
+ const claimed=await body(r);
+ assert.equal(claimed.email,'verified@gmail.com','pairing returns Google-verified email');
+ const grant=claimed.grant;
  r=await invoke('/v2/desktop/pair/claim','POST',{pairing_id:ticket.pairing_id,verifier});
  assert.equal(r.status,409,'claimed pairing cannot replay');
  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM desktop_grants_v2 WHERE customer_id=?').get(session.customer_id).n>=1,true);
