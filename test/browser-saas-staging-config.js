@@ -1,0 +1,25 @@
+'use strict';
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const {spawnSync}=require('node:child_process');
+const script=path.resolve(__dirname,'../tools/browser-saas-staging-config.js');
+const uuid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+function run(mode,id){return spawnSync(process.execPath,[script,mode,id],{encoding:'utf8'});}
+let result=run('private',uuid);
+assert.equal(result.status,0,result.stderr);
+assert(result.stdout.includes('name = "lhm-browser-commerce-staging"'));
+assert(result.stdout.includes('binding = "BROWSER_SAAS_DB"'));
+assert(result.stdout.includes('database_id = "'+uuid+'"'));
+assert(result.stdout.includes('workers_dev = false'));
+assert(result.stdout.includes('preview_urls = false'));
+assert(!result.stdout.includes('[[routes]]'));
+assert(!result.stdout.includes('browser.lhmcrm.com'));
+assert(!result.stdout.includes('lhm-license-authority'));
+assert(!result.stdout.includes('lhm-license-db'));
+result=run('public',uuid);
+assert.equal(result.status,0,result.stderr);
+assert(result.stdout.includes('pattern = "browser-staging.lhmcrm.com"'));
+assert(!result.stdout.includes('pattern = "browser.lhmcrm.com"'));
+assert.notEqual(run('production',uuid).status,0);
+assert.notEqual(run('private','REPLACE_WITH_D1_DATABASE_UUID').status,0);
+console.log('PASS: staging private config has no external route; public route never touches production domain');
