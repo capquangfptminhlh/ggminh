@@ -1,0 +1,118 @@
+name: Browser Google SaaS public staging (NO sales)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/google-saas-public-staging.yml'
+      - 'tools/browser-saas-staging-public-preflight.mjs'
+      - 'tools/browser-saas-staging-config.js'
+      - 'serverless/license-worker/src/googleAdminAccess.mjs'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PUBLISH_PUBLIC_STAGING_NO_SALES to expose ONLY browser-staging.lhmcrm.com with paid plan disabled'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: lhm-browser-public-staging-no-sales
+  cancel-in-progress: false
+jobs:
+  lint-staging-publisher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify staging safety and Access signature test
+        run: |
+          node --check tools/browser-saas-staging-public-preflight.mjs
+          node --check serverless/license-worker/src/googleAdminAccess.mjs
+          node test/google-admin-access.js
+          node test/browser-saas-staging-config.js
+  publish-no-sales:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.confirmation == 'PUBLISH_PUBLIC_STAGING_NO_SALES'
+    needs: lint-staging-publisher
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 22
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LHM_D1_DATABASE_ID: ${{ secrets.LHM_D1_DATABASE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard against public sale, wrong D1, missing OAuth/admin secrets
+        run: node tools/browser-saas-staging-public-preflight.mjs
+      - name: Resolve ONLY existing staging D1, never create production
+        id: stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          response=$(curl --fail-with-body --silent --show-error \
+            --connect-timeout 8 --max-time 22 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database?per_page=100")
+          uuid=$(node -e '
+            const input=JSON.parse(process.argv[1]);if(input.success!==true)process.exit(1);
+            const found=input.result.filter(x=>x.name==="lhm-browser-saas-staging");
+            if(found.length!==1)process.exit(1);
+            process.stdout.write(found[0].uuid||found[0].id||"");
+          ' "$response")
+          if [[ ! "$uuid" =~ ^[0-9a-fA-F-]{36}$ ]] || [[ "$uuid" == "$LHM_D1_DATABASE_ID" ]]; then
+            echo "::error::Invalid isolated D1"; exit 1
+          fi
+          echo "id=$uuid" >> "$GITHUB_OUTPUT"
+      - name: Generate staging-only hostname config (NO production routes)
+        env:
+          STAGING_D1_ID: ${{ steps.stage.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/browser-saas-staging-config.js public "$STAGING_D1_ID" > serverless/license-worker/wrangler.saas-public.toml
+          grep -Fq 'pattern = "browser-staging.lhmcrm.com"' serverless/license-worker/wrangler.saas-public.toml
+          if grep -Fq 'pattern = "browser.lhmcrm.com"' serverless/license-worker/wrangler.saas-public.toml; then
+            echo "::error::Production route forbidden"; exit 1
+          fi
+      - name: Deploy ONLY browser-staging.lhmcrm.com with paid plan disabled
+        working-directory: serverless/license-worker
+        run: npx --yes wrangler@4.148.0 deploy --config wrangler.saas-public.toml
+      - name: Live HTTPS smoke (never buy, approve or create a customer)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          const origin='https://browser-staging.lhmcrm.com';
+          const request=async(p)=>fetch(origin+p,{redirect:'manual',signal:AbortSignal.timeout(15000)});
+          const plans=await request('/v2/plans');
+          if(plans.status!==200)throw Error('Live staging plans unreachable');
+          const body=await plans.json();
+          if(!Array.isArray(body.plans)||body.plans.length!==0)
+            throw Error('Unexpected payable plans exposed on staging');
+          const forbidden=await request('/v2/admin/readiness');
+          if(forbidden.status!==401)throw Error('Unprivileged merchant API not protected');
+          const portal=await request('/v2/portal');
+          if(portal.status!==200)throw Error('Staging portal unavailable');
+          const signin=await request('/v2/auth/google/start');
+          if(signin.status!==302||!signin.headers.get('location')?.startsWith(
+             'https://accounts.google.com/'))throw Error('Google OAuth redirect unavailable');
+          console.log('PASS: LIVE staging HTTPS, unpaid plan only, unauthorized admin denied and Google redirect configured');
+          JS
+      - name: Record staging deployment (NO customer release)
+        run: |
+          {
+            echo '### Browser SaaS isolated public staging — NO SALES'
+            echo '- Domain: browser-staging.lhmcrm.com (staging only)'
+            echo '- Dedicated D1, Worker & Access JWT verification; normal production route unchanged'
+            echo '- Payment plan remains DISABLED; no real transfers or entitlements allowed'
+            echo '- Live checks: HTTPS, empty plan list, admin denial, OAuth redirect'
+            echo '- Full Google browser login / Windows DPAPI pairing still require human acceptance'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Destroy generated config
+        if: always()
+        run: rm -f serverless/license-worker/wrangler.saas-public.toml
