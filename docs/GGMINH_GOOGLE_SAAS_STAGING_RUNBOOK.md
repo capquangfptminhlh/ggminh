@@ -294,3 +294,25 @@ unfinished commercial PR just to obtain deployment permissions.
 - `test/google-staging-update-isolation.js` is a release regression
   check in `google-lease-contract.yml`. No update to a production
   customer's machine was attempted in this PR.
+
+## Gmail first-run UX and paid reactivation (2026-10-26)
+
+- A Google-only installation no longer displays the old Preview trial
+  notice, manual `lhmlic1` entry card or v1 license errors inside its
+  Gmail account dialog. The modal title identifies the Google customer
+  account. Preview's existing license UI stays unchanged.
+- A verified paired Windows device tries `renewOnline()` **immediately
+  after application startup**, instead of waiting up to five minutes
+  for the first periodic renewal. Its renewal coalesces overlapping
+  login-screen activation and periodic ticks to prevent parallel D1
+  seat attach attempts. An offline/expired signature **never** becomes
+  valid merely because a renewal was requested: only the authenticated
+  Worker-issued new Ed25519 lease unlocks profiles.
+- The visible Gmail account dialog refreshes its subscription status
+  every 15 seconds after startup. This is for UX only; profile launch,
+  automation and API permissions continue to be checked synchronously
+  by the Electron main-process license policy.
+- `test/google-electron-wiring.js` now verifies the no-trial Gmail
+  presentation, automatic renewal wiring, tenant-only storage, and
+  Preview license/update isolation. Real Google OAuth, bank transfer,
+  live Cloudflare and Windows DPAPI acceptance remain required.
