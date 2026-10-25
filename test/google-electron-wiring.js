@@ -33,6 +33,8 @@ try{
  }
  assert(main.includes('googleTenantRoot=googleTenantStorageRoot(storageDir,googleDesktop.state.customer_id'));
  assert(main.includes('store = new Store(customerStorageDir)'));
+ assert(main.includes("createWarningHistory({storageDir:customerStorageDir,countMode:'authoritative'})"),
+   'Gmail warning history must use the storageDir named argument, not default to shared storage');
  assert(main.includes('if(!googleDesktop && onlineLicenseVerifier.endpoint)'),
    'Google SaaS must not fall back to v1 lease service');
  assert(main.includes("if(googleDesktop)throw Error('Đăng nhập Google thay cho license thủ công')"));
