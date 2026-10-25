@@ -5,6 +5,9 @@ on:
       - 'src/licensing/googleLease.js'
       - 'test/google-lease-contract.js'
       - 'test/google-saas-worker.js'
+      - 'test/google-saas-billing-admin.js'
+      - 'tools/google-saas-billing-core.js'
+      - 'tools/google-saas-admin.js'
       - 'test/google-desktop-client.js'
       - 'test/google-electron-wiring.js'
       - 'src/licensing/googleStagingConfig.js'
@@ -45,6 +48,9 @@ jobs:
           node --check serverless/license-worker/src/googlePairPortal.mjs
           node --check serverless/license-worker/src/index.mjs
           node --check test/google-saas-worker.js
+          node --check test/google-saas-billing-admin.js
+          node --check tools/google-saas-billing-core.js
+          node --check tools/google-saas-admin.js
           node --check src/licensing/googleDesktopClient.js
           node --check test/google-desktop-client.js
           node --check src/ui/googleLicense.js
@@ -64,6 +70,8 @@ jobs:
         run: node test/google-tenant-storage.js
       - name: Gmail Electron onboarding and account isolation integration
         run: node test/google-electron-wiring.js
+      - name: Merchant order review authorization and bank confirmation gates
+        run: node test/google-saas-billing-admin.js
       - name: Regression legacy signature and entitlements
         run: |
           node test/license-enforcement.js
