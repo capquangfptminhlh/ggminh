@@ -13,6 +13,7 @@ on:
       - 'src/licensing/googleStagingConfig.js'
       - 'test/google-packaged-mode.js'
       - 'tools/prepare-google-staging-package.js'
+      - 'tools/prepare-ephemeral-google-package-ci.js'
       - 'tools/assert-preview-build.js'
       - 'tools/assert-google-staging-package.js'
       - 'package.json'
@@ -89,3 +90,57 @@ jobs:
         run: |
           node test/license-enforcement.js
           node test/license-online.js
+
+  windows-ephemeral-gmail-package:
+    # Tests the ACTUAL isolated Windows EXE; never use real Cloudflare
+    # secrets, never publish, never upload test-signed executable artifacts.
+    if: github.event_name == 'pull_request'
+    needs: verified-lease
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Ensure normal Preview refuses any injected Gmail trust
+        run: |
+          node test/google-packaged-mode.js
+          node tools/assert-preview-build.js
+      - name: Generate throwaway PUBLIC key for isolated package test
+        id: throwaway
+        run: node tools/prepare-ephemeral-google-package-ci.js --ci-test-only
+      - name: Validate identity before build
+        run: node tools/assert-google-staging-package.js
+      - name: Build actual Gmail staging Windows installer (test-only)
+        run: npm run build:google-staging:win
+      - name: Inspect packaged public trust and installer identity
+        shell: pwsh
+        env:
+          PUBLIC_FINGERPRINT: ${{ steps.throwaway.outputs.public_fingerprint }}
+        run: |
+          $dir = 'dist-google-staging'
+          $files = @(Get-ChildItem -Path $dir -Filter 'LHM-Ads-Browser-Gmail-Staging-*-Setup-x64.exe' -File)
+          if ($files.Count -ne 1 -or $files[0].Length -lt 10000000) {
+            throw 'Gmail Staging NSIS build did not produce an isolated installer'
+          }
+          $asar = Join-Path $dir 'win-unpacked/resources/app.asar'
+          if (-not (Test-Path -LiteralPath $asar)) { throw 'Gmail app.asar missing' }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $asar))
+          $contents = [System.Text.Encoding]::ASCII.GetString($bytes)
+          if (-not $contents.Contains($env:PUBLIC_FINGERPRINT)) {
+            throw 'Actual Windows app.asar did not embed the throwaway public signer'
+          }
+          Write-Host 'PASS: isolated Gmail test EXE and embedded public SPKI fingerprint verified'
+      - name: Remove ephemeral package files (never upload installer)
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item -LiteralPath 'src/licensing/googleStagingPackageTrust.generated.js' -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath 'build/google-staging-builder.generated.json' -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath 'dist-google-staging' -Recurse -Force -ErrorAction SilentlyContinue
