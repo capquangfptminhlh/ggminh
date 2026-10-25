@@ -42,7 +42,9 @@ const env={BROWSER_SAAS_STAGING:'enabled',BROWSER_SAAS_DB:d1,
  BROWSER_GOOGLE_CLIENT_SECRET:'staging-test-client-secret',
  BROWSER_GOOGLE_REDIRECT_URI:origin+'/v2/auth/google/callback',
  BROWSER_BANK_BIN:'970436',BROWSER_BANK_ACCOUNT_NO:'123456789012',
- BROWSER_BANK_ACCOUNT_NAME:'LHM STAGING TEST'};
+ BROWSER_BANK_ACCOUNT_NAME:'LHM STAGING TEST',
+ BROWSER_SAAS_ACCESS_TEAM_DOMAIN:'test-admin.cloudflareaccess.com',
+ BROWSER_SAAS_ACCESS_AUD:'a'.repeat(64)};
 let now=Date.parse('2026-10-25T10:00:00.000Z');
 const rsa=crypto.generateKeyPairSync('rsa',{modulusLength:2048});
 const jwk=rsa.publicKey.export({format:'jwk'});
