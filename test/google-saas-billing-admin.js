@@ -14,7 +14,7 @@ const fetchImpl=async(url,options)=>{
  assert.equal(options.redirect,'error');
  calls.push({url,method:options.method,body:options.body});
  return new Response(JSON.stringify(url.endsWith('/readiness')?
-  {customer_registration_ready:true,checks:{d1_schema:true,google_oidc:true,ed25519_issuer:true,bank_transfer:true}}:
+  {customer_registration_ready:true,issuer_public_spki_sha256:'a'.repeat(64),checks:{d1_schema:true,google_oidc:true,ed25519_issuer:true,bank_transfer:true}}:
   url.endsWith('/orders')?{orders:[entry]}:{status:'paid',idempotent:false}),{status:200,headers:{'content-type':'application/json'}});
 };
 (async()=>{
