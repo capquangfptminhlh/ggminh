@@ -38,7 +38,7 @@ function prepareGoogleStagingPackage({root,publicKeyB64,confirmation,packageBuil
  build.productName='LHM Ads Browser Gmail Staging';
  build.directories={...build.directories,output:'dist-google-staging'};
  build.nsis={...build.nsis,
-   artifactName:'LHM-Ads-Browser-Gmail-Staging-\${version}-Setup-\${arch}.\${ext}'};
+   artifactName:'LHM-Ads-Browser-Gmail-Staging-${version}-Setup-${arch}.${ext}'};
  const trustFile=path.join(root,TRUST);
  const builderFile=path.join(root,BUILDER);
  if(fs.existsSync(trustFile)||fs.existsSync(builderFile))
