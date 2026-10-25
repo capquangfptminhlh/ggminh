@@ -1,0 +1,20 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {DisabledGmailUpdateCenter}=require('../src/update/googleStagingUpdater');
+const source=fs.readFileSync('main.js','utf8');
+const center=new DisabledGmailUpdateCenter('5.8.0');
+assert.equal(center.status().channel,'gmail-staging');
+assert.equal(center.status().configured,false);
+assert.equal(center.status().canDownload,false);
+assert.equal(center.lastOffer,null);
+assert.equal(center.busy,false);
+assert(source.includes('googleDesktop\n    ?new DisabledGmailUpdateCenter(app.getVersion())'));
+assert(source.includes(':new UpdateCenter({'),'Preview update route must be preserved');
+(async()=>{
+ assert.equal((await center.check()).status,'not-configured');
+ assert.equal(center.lastOffer,null,'no signed Preview offer may leak into Gmail state');
+ await assert.rejects(()=>center.download('/tmp/preview-installer.exe'),/không được tải bộ cài Preview/);
+ assert.equal(center.status().canDownload,false);
+ console.log('PASS: isolated Gmail app never checks or downloads Preview release feed, Preview maintains signed updater');
+})().catch(e=>{console.error(e);process.exitCode=1});
