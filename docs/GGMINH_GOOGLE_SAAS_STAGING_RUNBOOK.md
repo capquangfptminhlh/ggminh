@@ -86,3 +86,10 @@ npm start
 ```
 
 The application must fail closed when the public key is absent or invalid. A normal packaged EXE does **not** switch to Google mode based on environment variables.
+
+## Gmail account and device revocation (staging implementation)
+
+- The verified Google email is returned **only** when a desktop proves the one-time pairing verifier after browser approval. Windows stores the email alongside its grant/lease in Electron safeStorage and shows it in License Center; it is erased on logout. No customer email is used for the profile data-directory key (stable Google sub-backed UUID instead).
+- Signed-in customers can revoke an individual active device in the web portal with explicit confirmation, valid session cookie, matching Origin and CSRF token. This marks the device's desktop grant revoked and expires its server seat in one D1 batch; audit events are recorded. Previously signed offline leases remain usable until their original expiry (up to 72h), so **immediate offline revocation is not guaranteed**.
+- Electron Gmail logout now requires the server to acknowledge grant revocation before clearing its locally encrypted identity; if the network fails, the grant stays encrypted and the UI reports failure, rather than implying a successful global logout.
+- The Node+SQLite full-path integration test now drives the actual Cloudflare Worker routing and SQL through the real `GoogleBrowserDesktopClient` (with a safeStorage test fixture), including Google browser approval, pairing, paid signed lease and server-acknowledged logout. It is an automated simulation, **not** evidence of live Google OAuth, actual cloud D1, Windows DPAPI or real bank funds.
