@@ -522,6 +522,9 @@ function initIPC() {
        batchAutomation.status().active)
       throw Error('Đóng profile và tác vụ trước khi đăng xuất Gmail');
     client.forgetGrant(true);
+    // A previously signed-in customer's workspace must not remain visible
+    // after logout; immediately tear down the in-memory Store on restart.
+    setImmediate(()=>{app.relaunch();app.quit();});
     return {restartRequired:true};
   });
   ipcMain.handle('license-center-status', () => licensePolicy.status());
@@ -1297,13 +1300,14 @@ app.whenReady().then(async () => {
     });
     googleTenantRoot=googleTenantStorageRoot(storageDir,googleDesktop.state.customer_id,{create:true});
   }
-  store = new Store(googleTenantRoot||storageDir);
-  try{localHealthDrift=new LocalHealthDrift(storageDir);}
+  const customerStorageDir=googleTenantRoot||storageDir;
+  store = new Store(customerStorageDir);
+  try{localHealthDrift=new LocalHealthDrift(customerStorageDir);}
   catch(error){
     console.warn('[HealthDrift] History unavailable:',error.message);
     localHealthDrift=null; // Preserve corrupted history for manual recovery.
   }
-  runtimeRegistry = new RuntimeRegistry(storageDir);
+  runtimeRegistry = new RuntimeRegistry(customerStorageDir);
   try { store.purgeExpiredTrashedProfiles(); }
   catch(error) { console.warn('[ProfileTrash] startup cleanup deferred:',error.message); }
   if (process.env.LHM_CI_UI_CAPTURE === '1') {
@@ -1318,8 +1322,8 @@ app.whenReady().then(async () => {
         fingerprint:{mode:'native'},proxy:{type:'direct'}});
     }
   }
-  proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
-  aiAdvisor = new AIAdvisor(storageDir,safeStorage);
+  proxyVault = new ProxyCredentialVault(customerStorageDir, safeStorage);
+  aiAdvisor = new AIAdvisor(customerStorageDir,safeStorage);
   licenseManager = new LicenseManager(storageDir);
   licensePolicy = new LicensePolicy(storageDir,licenseManager);
   onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
@@ -1403,7 +1407,7 @@ app.whenReady().then(async () => {
       return camoufoxInstall.verifier().resolve(engine);
     }
   };
-  camoufoxAdapter=new CamoufoxAdapter(storageDir,{
+  camoufoxAdapter=new CamoufoxAdapter(customerStorageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,
     // Explicit operator-only opt-in. Production defaults fail closed until
     // independently verified proxy/DNS/WebRTC lab acceptance.
@@ -1412,7 +1416,7 @@ app.whenReady().then(async () => {
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the
   // packaged app until signed distribution and network lab release gates pass.
-  launcher.camoufoxPlaywrightController=new CamoufoxPlaywrightController(storageDir,{
+  launcher.camoufoxPlaywrightController=new CamoufoxPlaywrightController(customerStorageDir,{
     verifier:verifiedProviders,store,proxyVault,
     enabled:!app.isPackaged&&process.env.LHM_CAMOUFOX_PLAYWRIGHT_LAB==='1',
     labApproved:!app.isPackaged&&
@@ -1424,10 +1428,10 @@ app.whenReady().then(async () => {
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
-  behaviorMonitor = new BehaviorMonitor(storageDir);
-  try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
+  behaviorMonitor = new BehaviorMonitor(customerStorageDir);
+  try{ipObservationStore=new ExitIpObservationStore(customerStorageDir);}catch(_){}
   try{
-    measurementRecordStore=new MeasurementRecordStore(storageDir);
+    measurementRecordStore=new MeasurementRecordStore(customerStorageDir);
     const loadedRecords=measurementRecordStore.status();
     if(loadedRecords.load.status==='error')
       console.warn('[measurement-records]',loadedRecords.load.reason);
@@ -1446,14 +1450,14 @@ app.whenReady().then(async () => {
   // below: the store counts 'authoritative' because the seeded
   // service registry already carries the accumulated totals.
   try{
-    warningHistory=createWarningHistory({storageDir,countMode:'authoritative'});
+    warningHistory=createWarningHistory({customerStorageDir,countMode:'authoritative'});
     const loadedHistory=warningHistory.load();
     if(loadedHistory.status==='error')
       console.warn('[warning-history]',loadedHistory.reason);
   }catch(_){ warningHistory=null; }
   warningService = createWarningService({seed:warningHistory?warningHistory.seedRecords():null});
   camoufoxExecutableResolver = () => verifiedProviders.resolve('camoufox');
-  workflowStore = new WorkflowStore(storageDir);
+  workflowStore = new WorkflowStore(customerStorageDir);
   // Permanent-deletion completeness (findings F3/F4 — proposal pending
   // owner decision): when a profile is purged for good, sweep the
   // automation workflows bound to it so no dangling profileId remains,
@@ -1499,13 +1503,13 @@ app.whenReady().then(async () => {
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
   automationRunner.licensePolicy = licensePolicy;
-  batchAutomation = new BatchAutomation(storageDir, workflowStore, store, automationRunner);
+  batchAutomation = new BatchAutomation(customerStorageDir, workflowStore, store, automationRunner);
   sessionSnapshots = new SessionSnapshots(store,launcher,{inUse:id=>
     (automationRunner.status().status==='running'&&automationRunner.status().profileId===id)||
     (batchAutomation.status().active&&batchAutomation.status().batch?.tasks.some(t=>t.profileId===id))||
     (recorderManager?.status().state==='recording'&&recorderManager.status().profileId===id)
   });
-  localScheduler = new LocalScheduler(storageDir, workflowStore, automationRunner);
+  localScheduler = new LocalScheduler(customerStorageDir, workflowStore, automationRunner);
   // In-app polling only, never a Windows background service.
   schedulerTimer = setInterval(() => {
     if (recorderManager?.status().state === 'recording') return;
