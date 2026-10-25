@@ -9,7 +9,9 @@ for(const id of ['studio-schedule-at','studio-schedule-interval','studio-schedul
 }
 for(const op of ['studioScheduleList','studioScheduleAdd','studioScheduleEnable','studioScheduleDelete'])
  assert(preload.includes(op)&&client.includes(op),'IPC/client wiring missing '+op);
-assert(main.includes('new LocalScheduler(storageDir, workflowStore, automationRunner)'));
+assert(main.includes('new LocalScheduler(customerStorageDir, workflowStore, automationRunner)'));
+assert(main.includes('const customerStorageDir=googleTenantRoot||storageDir'),
+ 'Scheduler must use the isolated Gmail customer root while legacy stays unchanged');
 assert(main.includes('schedulerTimer = setInterval('));
 assert(main.includes('if (schedulerTimer) clearInterval(schedulerTimer)'));
 assert(html.includes('Chỉ chạy quy trình chỉ đọc'));
