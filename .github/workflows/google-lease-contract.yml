@@ -6,6 +6,8 @@ on:
       - 'test/google-lease-contract.js'
       - 'test/google-saas-worker.js'
       - 'test/google-desktop-client.js'
+      - 'test/google-tenant-storage.js'
+      - 'src/licensing/googleTenantStorage.js'
       - 'src/licensing/googleDesktopClient.js'
       - 'serverless/license-worker/src/googleSaas.mjs'
       - 'serverless/license-worker/src/googleDevice.mjs'
@@ -38,12 +40,16 @@ jobs:
           node --check test/google-saas-worker.js
           node --check src/licensing/googleDesktopClient.js
           node --check test/google-desktop-client.js
+          node --check src/licensing/googleTenantStorage.js
+          node --check test/google-tenant-storage.js
       - name: Verify Google SaaS Browser lease (no cloud/secrets)
         run: node test/google-lease-contract.js
       - name: Exercise staging OAuth + commerce with SQLite
         run: node --experimental-sqlite test/google-saas-worker.js
       - name: Main-process Windows DPAPI and lease policy test (safeStorage fixture)
         run: node test/google-desktop-client.js
+      - name: Google account specific local tenant storage boundary
+        run: node test/google-tenant-storage.js
       - name: Regression legacy signature and entitlements
         run: |
           node test/license-enforcement.js
