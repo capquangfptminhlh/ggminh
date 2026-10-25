@@ -184,7 +184,11 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
       if(path==='/v2/auth/google/start'&&req.method==='GET'){
         const config=googleConfig(env,url),verifier=rand(32),state=rand(24),nonce=rand(24);
         const challenge=encode(new Uint8Array(await sha(verifier)));
-        const ticket=await seal(env,'oauth',{verifier,state,nonce,exp:now+600000});
+        const requestedReturn=url.searchParams.get('return_to');
+        const returnTo=typeof requestedReturn==='string'&&
+          /^\/v2\/desktop\/pair\/\?id=[0-9a-f-]{36}$/i.test(requestedReturn)
+          ?requestedReturn:'/v2/portal';
+        const ticket=await seal(env,'oauth',{verifier,state,nonce,returnTo,exp:now+600000});
         const destination=new URL('https://accounts.google.com/o/oauth2/v2/auth');
         for(const [k,v] of Object.entries({client_id:config.client,redirect_uri:config.redirect,
           response_type:'code',scope:'openid email profile',code_challenge:challenge,
@@ -216,7 +220,7 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
         if(!person||person.status!=='active')return error(403,'ACCOUNT_BLOCKED');
         const session=await seal(env,'session',{customer_id:person.customer_id,
           sub:google.sub,csrf:rand(24),exp:now+7*DAY});
-        const headers=new Headers({'Location':'/v2/portal','Cache-Control':'no-store',
+        const headers=new Headers({'Location':ticket.returnTo||'/v2/portal','Cache-Control':'no-store',
           'Referrer-Policy':'no-referrer'});
         headers.append('Set-Cookie',clean);
         headers.append('Set-Cookie',setCookie(SESSION,session,7*86400));
