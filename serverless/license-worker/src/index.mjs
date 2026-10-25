@@ -8,6 +8,7 @@ import { renderAdminPage } from './adminPage.mjs';
 import { renderClientScript } from './adminClient.mjs';
 import { createPortalApi } from './adminPortal.mjs';
 import { createGoogleSaasApi } from './googleSaas.mjs';
+import { renderGooglePortal, renderGooglePortalScript } from './googlePortal.mjs';
 const LICENSE_ID=/^lic_[a-f0-9]{24}$/;
 const INSTALL_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const NONCE=/^[a-zA-Z0-9_-]{22}$/;
@@ -246,8 +247,13 @@ export function createAuthority({
    if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))
     return response(400,{error:'https_required'});
    // v2 uses isolated staging D1; without an explicit flag it returns 404.
-   if(url.pathname.startsWith('/v2/'))
+   if(url.pathname.startsWith('/v2/')){
+    if(env.BROWSER_SAAS_STAGING==='enabled'&&request.method==='GET'){
+     if(url.pathname==='/v2/portal')return renderGooglePortal();
+     if(url.pathname==='/v2/portal.js')return renderGooglePortalScript();
+    }
     return createGoogleSaasApi({clock})(request,env,{adminAuth:isAdmin});
+   }
    if(url.pathname==='/'&&['GET','HEAD'].includes(request.method))
     return renderAdminPage(request);
    if(url.pathname==='/admin.js'&&request.method==='GET')
