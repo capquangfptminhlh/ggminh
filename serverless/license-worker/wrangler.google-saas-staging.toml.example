@@ -32,6 +32,9 @@ BROWSER_GOOGLE_REDIRECT_URI = "https://browser-staging.lhmcrm.com/v2/auth/google
 # BROWSER_BANK_ACCOUNT_NO
 # BROWSER_BANK_ACCOUNT_NAME
 # BROWSER_SAAS_ADMIN_TOKEN (32+ chars; NEVER reuse the v1 license admin secret)
+# BROWSER_SAAS_ACCESS_TEAM_DOMAIN (e.g. <team>.cloudflareaccess.com)
+# BROWSER_SAAS_ACCESS_AUD (Cloudflare Access Application AUD tag)
+# Admin endpoints enforce signed Cloudflare Access JWT AND a dedicated v2 Bearer token.
 #
 # Cloudflare Access MUST protect /v2/admin/* independently of the Bearer token.
 # Do NOT enable a payment plan until max_profiles/features and bank are approved.
