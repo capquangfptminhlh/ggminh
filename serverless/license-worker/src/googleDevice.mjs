@@ -309,6 +309,10 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
     const op=[
       db.prepare("UPDATE license_seats_v2 SET expires_at_ms=?,takeover_nonce=? WHERE seat_id=? AND customer_id=? AND product_code='ads-browser' AND client_hash<>? AND expires_at_ms>?")
         .bind(now,nonce,data.replace_seat_id,grant.customer_id,grant.client_hash,now),
+      // Durable security decision: the selected older machine cannot
+      // silently grab another seat with its previously approved grant.
+      db.prepare("UPDATE desktop_grants_v2 SET revoked=1 WHERE customer_id=? AND client_hash=(SELECT client_hash FROM license_seats_v2 WHERE seat_id=? AND takeover_nonce=?) AND revoked=0")
+        .bind(grant.customer_id,data.replace_seat_id,nonce),
       db.prepare(
        "INSERT INTO license_seats_v2(seat_id,customer_id,product_code,client_hash,label,heartbeat_at_ms,expires_at_ms) SELECT ?,?,'ads-browser',?,?,?,? WHERE EXISTS(SELECT 1 FROM license_seats_v2 WHERE seat_id=? AND customer_id=? AND takeover_nonce=?) AND (SELECT COUNT(*) FROM license_seats_v2 WHERE customer_id=? AND product_code='ads-browser' AND client_hash<>? AND expires_at_ms>?)<? ON CONFLICT(customer_id,product_code,client_hash) DO UPDATE SET seat_id=excluded.seat_id,label=excluded.label,heartbeat_at_ms=excluded.heartbeat_at_ms,expires_at_ms=excluded.expires_at_ms,takeover_nonce=NULL")
         .bind(newSeatId,grant.customer_id,grant.client_hash,nick,now,now+600000,
@@ -316,7 +320,7 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
           grant.customer_id,grant.client_hash,now,paid.seat_limit)
     ];
     const results=await db.batch(op);
-    if(!Number(results[0]?.meta?.changes)||!Number(results[1]?.meta?.changes))
+    if(!Number(results[0]?.meta?.changes)||!Number(results[2]?.meta?.changes))
       return fail(409,'TARGET_SEAT_NOT_REPLACED');
     return json(200,{seat_id:newSeatId,replaced_seat_id:data.replace_seat_id,
       heartbeat_interval_seconds:300,seat_ttl_seconds:600});
