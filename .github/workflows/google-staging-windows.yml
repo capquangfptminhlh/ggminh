@@ -29,7 +29,6 @@ jobs:
           BROWSER_LEASE_PUBLIC_SPKI_B64: ${{ secrets.BROWSER_LEASE_PUBLIC_SPKI_B64 }}
           BROWSER_LEASE_PUBLIC_SPKI_SHA256: ${{ vars.BROWSER_LEASE_PUBLIC_SPKI_SHA256 }}
           BROWSER_SAAS_ADMIN_TOKEN: ${{ secrets.BROWSER_SAAS_ADMIN_TOKEN }}
-          BROWSER_LEASE_PUBLIC_SPKI_SHA256: ${{ vars.BROWSER_LEASE_PUBLIC_SPKI_SHA256 }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
@@ -55,6 +54,7 @@ jobs:
       - name: Require live staging Worker configuration readiness (private admin endpoint)
         shell: pwsh
         env:
+          BROWSER_LEASE_PUBLIC_SPKI_SHA256: ${{ vars.BROWSER_LEASE_PUBLIC_SPKI_SHA256 }}
           BROWSER_SAAS_ADMIN_TOKEN: ${{ secrets.BROWSER_SAAS_ADMIN_TOKEN }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
