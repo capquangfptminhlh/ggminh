@@ -1,4 +1,4 @@
-import { createGoogleDeviceApi,isGoogleLeaseIssuerConfigured } from './googleDevice.mjs';
+import { createGoogleDeviceApi,isGoogleLeaseIssuerConfigured,googleLeasePublicFingerprint } from './googleDevice.mjs';
 /* Google-only Browser commerce API, staging only. No profile/proxy/Ads data leaves Electron.
  * The v1 licensing authority remains independent. Never silently enable this route.
  */
@@ -257,6 +257,7 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
            ed25519_issuer:issuer,session_secret:secureSession,
            owner_approved_pilot_plan:approvedPlan};
          return respond(200,{product_code:PRODUCT,checks,
+           issuer_public_spki_sha256:issuer?await googleLeasePublicFingerprint(env):null,
            customer_registration_ready:Object.values(checks).every(Boolean),
            note:'Readiness checks configuration and D1 only; real Google OAuth, bank payment, Windows DPAPI and Cloudflare Access need independent acceptance.'});
        }
