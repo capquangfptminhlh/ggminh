@@ -118,9 +118,18 @@ let googleDesktop = null;
 let googleTenantRoot = null;
 let googleLeaseTimer = null;
 let googleRenewInFlight = null;
+function isGoogleTenantReady(){
+  if(!googleDesktop?.state.customer_id||!store?.baseDir)return false;
+  try{
+    return store.baseDir===googleTenantStorageRoot(
+      path.join(app.getPath('userData'),'storage'),googleDesktop.state.customer_id);
+  }catch(_){return false;}
+}
 function renewGooglePaidAccess(){
   if(!googleDesktop||!googleDesktop.state.customer_id||!googleDesktop.state.grant)
     return Promise.reject(Error('Google account pairing is required'));
+  if(!isGoogleTenantReady())
+    return Promise.reject(Error('TENANT_RESTART_REQUIRED'));
   // Coalesce activation, boot renewal and periodic refresh. Otherwise two
   // concurrent requests could compete to attach a limited server seat.
   if(googleRenewInFlight)return googleRenewInFlight;
@@ -487,21 +496,17 @@ function initIPC() {
   };
   const tenantReady=()=>{
     const client=requireGoogle();
-    const expected=googleTenantStorageRoot(
-      path.join(app.getPath('userData'),'storage'),client.state.customer_id);
-    if(!client.state.customer_id||store.baseDir!==expected)
+    if(!isGoogleTenantReady())
       throw Error('Khởi động lại phần mềm để chuyển sang dữ liệu tài khoản Gmail');
     return client;
   };
   ipcMain.handle('google-license-status',()=>{
     if(!googleDesktop)return {enabled:false};
-    const state=googleDesktop.status();
+    const state=licensePolicy.status();
     return {...state,enabled:true,email:googleDesktop.state.email||null,
       paired:!!googleDesktop.state.customer_id,
       pending:!!googleDesktop.state.pending,seatAttached:!!googleDesktop.state.seat_id,
-      tenantReady:!!googleDesktop.state.customer_id&&
-        store.baseDir===googleTenantStorageRoot(
-          path.join(app.getPath('userData'),'storage'),googleDesktop.state.customer_id)};
+      tenantReady:isGoogleTenantReady()};
   });
   ipcMain.handle('google-license-start',async()=>{
     const client=requireGoogle();
@@ -1368,13 +1373,25 @@ app.whenReady().then(async () => {
   if(googleDesktop){
     // Legacy trial/v1 signed keys never authorize commercial Gmail profiles.
     licensePolicy={
-      status:()=>{const s=googleDesktop.status();return {...s,
-        access:s.allowed?'licensed':'blocked',status:s.allowed?'active':'inactive',
-        active:s.allowed,expiresAt:s.validUntil||null,plan:s.plan||null,
-        trial:false,reason:s.reason||null,remainingDays:s.allowed?
-          Math.ceil((Date.parse(s.validUntil)-Date.now())/86400000):0};},
-      require:feature=>googleDesktop.require(feature),
-      assertCapacity:(count,addition)=>googleDesktop.assertCapacity(count,addition)
+      status:()=>{
+        const raw=googleDesktop.status();
+        const mismatch=!!googleDesktop.state.customer_id&&!isGoogleTenantReady();
+        const s=mismatch?{...raw,allowed:false,reason:'TENANT_RESTART_REQUIRED',
+          features:[],maxProfiles:null}:raw;
+        return {...s,access:s.allowed?'licensed':'blocked',
+          status:s.allowed?'active':'inactive',active:s.allowed,
+          expiresAt:s.allowed?s.validUntil:null,plan:s.plan||null,
+          trial:false,remainingDays:s.allowed?
+            Math.ceil((Date.parse(s.validUntil)-Date.now())/86400000):0};
+      },
+      require:feature=>{
+        if(!isGoogleTenantReady())throw Error('TENANT_RESTART_REQUIRED');
+        return googleDesktop.require(feature);
+      },
+      assertCapacity:(count,addition)=>{
+        if(!isGoogleTenantReady())throw Error('TENANT_RESTART_REQUIRED');
+        return googleDesktop.assertCapacity(count,addition);
+      }
     };
   }
   store.licensePolicy = licensePolicy;
