@@ -148,6 +148,94 @@ assert.equal(result.status,200);
 assert.equal(db.prepare("SELECT expires_at_ms FROM entitlements_v2").get().expires_at_ms,
  expiry+30*86400000,'renewal must extend exactly once');
 assert.equal(db.prepare("SELECT COUNT(*) AS n FROM payment_reviews_v2").get().n,2);
+// Signed pairing protocol: unauthenticated Windows initiation, Google approval,
+// one-time verifier claim, grant auth, server 2-seat limit and 72h offline lease.
+const issuer=crypto.generateKeyPairSync('ed25519');
+env.BROWSER_LEASE_PRIVATE_PKCS8_B64=issuer.privateKey.export({format:'der',type:'pkcs8'}).toString('base64');
+env.BROWSER_LEASE_PUBLIC_SPKI_B64=issuer.publicKey.export({format:'der',type:'spki'}).toString('base64');
+const {verifyBrowserLease}=require('../src/licensing/googleLease');
+async function pair(clientChar,nick){
+ const clientHash=clientChar.repeat(64),verifier=crypto.randomBytes(32).toString('base64url');
+ const verifierHash=crypto.createHash('sha256').update(verifier).digest('hex');
+ let r=await invoke('/v2/desktop/pair/start','POST',
+  {client_hash:clientHash,verifier_hash:verifierHash,label:nick});
+ assert.equal(r.status,201,'desktop start pairing');
+ const ticket=await body(r);
+ assert(ticket.approval_url.includes('/v2/desktop/pair/?id='));
+ r=await invoke('/v2/desktop/pair/claim','POST',
+  {pairing_id:ticket.pairing_id,verifier});
+ assert.equal(r.status,409,'claim before Google approval forbidden');
+ r=await invoke('/v2/desktop/pair/approve','POST',
+  {pairing_id:ticket.pairing_id,comparison_code:ticket.comparison_code});
+ assert.equal(r.status,401,'browser approval must have Google session');
+ r=await invoke('/v2/desktop/pair/approve','POST',
+  {pairing_id:ticket.pairing_id,comparison_code:'111111'===ticket.comparison_code?'222222':'111111'},authHeaders);
+ assert.equal(r.status,403,'incorrect comparison code rejected');
+ r=await invoke('/v2/desktop/pair/approve','POST',
+  {pairing_id:ticket.pairing_id,comparison_code:ticket.comparison_code},authHeaders);
+ assert.equal(r.status,200,'authenticated Gmail owner can approve');
+ r=await invoke('/v2/desktop/pair/claim','POST',
+  {pairing_id:ticket.pairing_id,verifier:'z'.repeat(43)});
+ assert.equal(r.status,403,'incorrect verifier rejected');
+ r=await invoke('/v2/desktop/pair/claim','POST',{pairing_id:ticket.pairing_id,verifier});
+ assert.equal(r.status,200,'one-time claim success');
+ const grant=(await body(r)).grant;
+ r=await invoke('/v2/desktop/pair/claim','POST',{pairing_id:ticket.pairing_id,verifier});
+ assert.equal(r.status,409,'claimed pairing cannot replay');
+ assert.equal(db.prepare('SELECT COUNT(*) AS n FROM desktop_grants_v2 WHERE customer_id=?').get(session.customer_id).n>=1,true);
+ return {grant,clientHash,nick};
+}
+const devices=[];
+for(const [ch,nick] of [['a','PC one'],['b','PC two'],['c','PC three']]){
+ devices.push(await pair(ch,nick));
+}
+const auth=d=>({authorization:'Bearer '+d.grant});
+result=await invoke('/v2/seats/attach','POST',{label:devices[0].nick},auth(devices[0]));
+assert.equal(result.status,200);
+const seat1=(await body(result)).seat_id;
+result=await invoke('/v2/seats/attach','POST',{label:devices[1].nick},auth(devices[1]));
+assert.equal(result.status,200);
+const seat2=(await body(result)).seat_id;
+result=await invoke('/v2/seats/attach','POST',{label:devices[2].nick},auth(devices[2]));
+assert.equal(result.status,409,'third simultaneous device forbidden');
+assert.equal((await body(result)).error,'SEAT_LIMIT');
+result=await invoke('/v2/devices','GET',null,{cookie:sessionCookie});
+assert.equal((await body(result)).devices.length,2);
+result=await invoke('/v2/leases/issue','POST',{seat_id:seat1},auth(devices[0]));
+assert.equal(result.status,200,'valid paid seat receives Ed25519 lease');
+const signed=(await body(result)).lease;
+const verified=verifyBrowserLease(signed,{
+ publicKey:issuer.publicKey,
+ expectedCustomerId:session.customer_id,
+ expectedClientHash:devices[0].clientHash,now});
+assert.equal(verified.product_code,'ads-browser');
+assert.equal(verified.seat_limit,2);
+assert.equal(verified.remaining_ms,72*3600000);
+result=await invoke('/v2/seats/takeover','POST',
+ {replace_seat_id:seat1,confirmation:'wrong',label:'PC three'},auth(devices[2]));
+assert.equal(result.status,400,'explicit takeover confirmation required');
+result=await invoke('/v2/seats/takeover','POST',
+ {replace_seat_id:seat1,confirmation:'REPLACE',label:'PC three'},auth(devices[2]));
+assert.equal(result.status,200,'explicit takeover replaces chosen PC');
+const seat3=(await body(result)).seat_id;
+result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat1},auth(devices[0]));
+assert.equal(result.status,409,'evicted device cannot renew its old server seat');
+result=await invoke('/v2/leases/issue','POST',{seat_id:seat1},auth(devices[0]));
+assert.equal(result.status,409,'evicted device cannot obtain new signed lease');
+result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat2},auth(devices[1]));
+assert.equal(result.status,200);
+result=await invoke('/v2/seats/heartbeat','POST',{seat_id:seat3},auth(devices[2]));
+assert.equal(result.status,200);
+result=await invoke('/v2/leases/issue','POST',{seat_id:seat3},
+ {authorization:'Bearer bg1_'+'x'.repeat(43)});
+assert.equal(result.status,401,'unauthenticated desktop cannot issue lease');
+assert.throws(()=>verifyBrowserLease(signed,{
+ publicKey:issuer.publicKey,expectedCustomerId:session.customer_id,
+ expectedClientHash:devices[0].clientHash,now:now+72*3600000}),/expired/);
+db.prepare("UPDATE entitlements_v2 SET revoked=1 WHERE customer_id=?").run(session.customer_id);
+result=await invoke('/v2/leases/issue','POST',{seat_id:seat3},auth(devices[2]));
+assert.equal(result.status,402,'revoked paid entitlement rejects new lease');
+
 db.close();
-console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal');
+console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease');
 })().catch(e=>{console.error(e);process.exitCode=1;});
