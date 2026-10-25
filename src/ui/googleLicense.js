@@ -28,7 +28,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
    SUBSCRIPTION_REQUIRED:'Chưa có thuê bao đang hiệu lực. Chọn gói và thanh toán VietQR.',
    SEAT_LIMIT:'Gói đã sử dụng hết phiên thiết bị. Chọn máy cần thay thế.',
    PAIR_PENDING:'Cần xác nhận mã ghép máy trong trình duyệt Google.',
-   PAIR_ALREADY_CLAIMED:'Yêu cầu này đã ghép. Hãy kiểm tra trạng thái tài khoản.'
+   PAIR_ALREADY_CLAIMED:'Yêu cầu này đã ghép. Hãy kiểm tra trạng thái tài khoản.',
+   TENANT_RESTART_REQUIRED:'Đã ghép Gmail. Khởi động lại để mở đúng vùng dữ liệu của tài khoản.'
  };
  const message=(value)=>{
    const str=String(value??'');
