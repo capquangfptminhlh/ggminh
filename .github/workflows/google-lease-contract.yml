@@ -4,6 +4,10 @@ on:
     paths:
       - 'src/licensing/googleLease.js'
       - 'test/google-lease-contract.js'
+      - 'test/google-saas-worker.js'
+      - 'serverless/license-worker/src/googleSaas.mjs'
+      - 'serverless/license-worker/src/index.mjs'
+      - 'serverless/license-worker/migrations/0003_google_saas_staging.sql'
       - 'docs/GGMINH_GOOGLE_SAAS_MASTER_PLAN.md'
       - '.github/workflows/google-lease-contract.yml'
   workflow_dispatch:
@@ -21,8 +25,13 @@ jobs:
         run: |
           node --check src/licensing/googleLease.js
           node --check test/google-lease-contract.js
+          node --check serverless/license-worker/src/googleSaas.mjs
+          node --check serverless/license-worker/src/index.mjs
+          node --check test/google-saas-worker.js
       - name: Verify Google SaaS Browser lease (no cloud/secrets)
         run: node test/google-lease-contract.js
+      - name: Exercise staging OAuth + commerce with SQLite
+        run: node --experimental-sqlite test/google-saas-worker.js
       - name: Regression legacy signature and entitlements
         run: |
           node test/license-enforcement.js
