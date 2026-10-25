@@ -11,6 +11,8 @@ on:
       - 'test/google-desktop-client.js'
       - 'test/google-electron-wiring.js'
       - 'src/licensing/googleStagingConfig.js'
+      - 'src/update/googleStagingUpdater.js'
+      - 'test/google-staging-update-isolation.js'
       - 'test/google-packaged-mode.js'
       - 'tools/prepare-google-staging-package.js'
       - 'tools/prepare-ephemeral-google-package-ci.js'
@@ -67,6 +69,8 @@ jobs:
           node --check test/google-desktop-client.js
           node --check src/ui/googleLicense.js
           node --check src/licensing/googleStagingConfig.js
+          node --check src/update/googleStagingUpdater.js
+          node --check test/google-staging-update-isolation.js
           node --check tools/prepare-google-staging-package.js
           node --check tools/assert-preview-build.js
           node --check tools/assert-google-staging-package.js
@@ -88,6 +92,8 @@ jobs:
         run: node test/google-desktop-client.js
       - name: Google account specific local tenant storage boundary
         run: node test/google-tenant-storage.js
+      - name: Disallow Preview update offers inside Gmail staging
+        run: node test/google-staging-update-isolation.js
       - name: Gmail Electron onboarding and account isolation integration
         run: node test/google-electron-wiring.js
       - name: Merchant order review authorization and bank confirmation gates
