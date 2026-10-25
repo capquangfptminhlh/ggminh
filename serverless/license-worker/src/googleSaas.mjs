@@ -1,4 +1,4 @@
-import { createGoogleDeviceApi } from './googleDevice.mjs';
+import { createGoogleDeviceApi,isGoogleLeaseIssuerConfigured } from './googleDevice.mjs';
 /* Google-only Browser commerce API, staging only. No profile/proxy/Ads data leaves Electron.
  * The v1 licensing authority remains independent. Never silently enable this route.
  */
@@ -229,7 +229,38 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
       }
       if(path.startsWith('/v2/admin/')){
         if(!await adminAuth(req,env))return error(401,'unauthorized');
-        if(path==='/v2/admin/orders'&&req.method==='GET'){
+        if(path==='/v2/admin/readiness'&&req.method==='GET'){
+         // Never return credential contents, bank numbers, Google client IDs,
+         // database names or customer details. A privileged operator sees
+         // only which production gates are ready for activation.
+         const names=['customers_v2','plans_v2','orders_v2','entitlements_v2',
+           'license_seats_v2','desktop_pairings_v2','desktop_grants_v2',
+           'desktop_pair_limits_v2','payment_reviews_v2','audit_events_v2'];
+         const found=await db.prepare(
+           "SELECT name FROM sqlite_master WHERE type='table' AND name IN ("+
+              names.map(()=>'?').join(',')+")").bind(...names).all();
+         const schema=names.every(name=>(found.results||[]).some(t=>t.name===name));
+         let oauth=false,payments=false;
+         try{googleConfig(env,url);oauth=true;}catch(_){/* missing or mismatched redirect */}
+         try{bank(env);payments=true;}catch(_){/* staging bank config missing */}
+         const issuer=await isGoogleLeaseIssuerConfigured(env);
+         const secureSession=typeof env.BROWSER_SESSION_SECRET==='string'&&
+           env.BROWSER_SESSION_SECRET.length>=32;
+         const plan=await db.prepare(
+           "SELECT enabled,max_profiles,seat_limit,price_vnd,duration_days,features_json FROM plans_v2 WHERE plan_code='personal_30'")
+           .first();
+         const approvedPlan=!!plan&&plan.enabled===1&&
+           Number.isSafeInteger(plan.max_profiles)&&plan.max_profiles>0&&
+           plan.seat_limit===2&&plan.price_vnd===499000&&plan.duration_days===30&&
+           plan.features_json==='["api","automation","profiles"]';
+         const checks={d1_schema:schema,google_oidc:oauth,bank_transfer:payments,
+           ed25519_issuer:issuer,session_secret:secureSession,
+           owner_approved_pilot_plan:approvedPlan};
+         return respond(200,{product_code:PRODUCT,checks,
+           customer_registration_ready:Object.values(checks).every(Boolean),
+           note:'Readiness checks configuration and D1 only; real Google OAuth, bank payment, Windows DPAPI and Cloudflare Access need independent acceptance.'});
+       }
+       if(path==='/v2/admin/orders'&&req.method==='GET'){
           const rows=await db.prepare(
             "SELECT order_id,plan_code,amount_vnd,payment_code,status,created_at_ms,expires_at_ms FROM orders_v2 ORDER BY created_at_ms DESC LIMIT 100").all();
           return respond(200,{orders:rows.results||[]});
