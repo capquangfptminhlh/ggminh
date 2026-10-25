@@ -7,6 +7,10 @@ const {DatabaseSync}=require('node:sqlite');
 (async()=>{
 const {createGoogleSaasApi}=await import('../serverless/license-worker/src/googleSaas.mjs');
 const {renderGooglePortal,renderGooglePortalScript}=await import('../serverless/license-worker/src/googlePortal.mjs');
+const {renderPairPortal,renderPairScript}=await import('../serverless/license-worker/src/googlePairPortal.mjs');
+assert.equal(renderPairPortal().status,200);
+assert.equal(renderPairScript().status,200);
+
 const page=renderGooglePortal();
 assert.equal(page.status,200);
 assert(page.headers.get('content-security-policy').includes("script-src 'self'"));
@@ -86,6 +90,11 @@ assert.equal(target.host,'accounts.google.com');
 assert.equal(target.searchParams.get('code_challenge_method'),'S256');
 nonce=target.searchParams.get('nonce');
 const oauthCookie=getCookie(result,'__Host-lhm-browser-oauth');
+const pairReturn='/v2/desktop/pair/?id=aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+const pairStart=await invoke('/v2/auth/google/start?return_to='+encodeURIComponent(pairReturn));
+assert.equal(pairStart.status,302);
+assert(new URL(pairStart.headers.get('Location')).searchParams.has('state'));
+
 result=await invoke('/v2/auth/google/callback?state=wrong&code=mock-code','GET',null,
  {cookie:oauthCookie});
 assert.equal(result.status,401,'OAuth state mismatch must reject');
