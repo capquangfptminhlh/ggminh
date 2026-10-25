@@ -55,6 +55,7 @@ async function fetchImpl(url,init){
  }
  assert.equal(auth,'Bearer '+grant,'authenticated operation requires secret desktop grant');
  if(endpoint==='/v2/seats/attach')return reply(200,{seat_id:seatId});
+ if(endpoint==='/v2/seats/list')return reply(200,{seat_limit:2,devices:[{seat_id:seatId,label:'PC one'}]});
  if(endpoint==='/v2/leases/issue')return reply(200,{lease:jwtLease(expectedHash)});
  if(endpoint==='/v2/seats/heartbeat')return heartbeatFailed?
   reply(409,{error:'SEAT_EXPIRED'}):reply(200,{status:'active'});
@@ -81,6 +82,7 @@ async function fetchImpl(url,init){
   assert.equal(desktop.state.pending,null);
   assert.equal(desktop.status().allowed,false,'paired but unpaid seat cannot launch profiles');
   await desktop.attach({label:'PC one'});
+  assert.equal((await desktop.listSeats()).devices[0].seatId,seatId);
   assert.equal(desktop.status().allowed,false,'seat alone does not authorize launch');
   const activated=await desktop.refreshLease();
   assert.equal(activated.maxProfiles,100);
