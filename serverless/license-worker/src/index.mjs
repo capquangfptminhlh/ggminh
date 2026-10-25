@@ -257,6 +257,9 @@ export function createAuthority({
     }
     return createGoogleSaasApi({clock})(request,env,{adminAuth:isAdmin});
    }
+   // Only the isolated staging hostname uses the customer commerce homepage.
+   if(env.BROWSER_SAAS_STAGING==='enabled'&&url.pathname==='/'&&
+      ['GET','HEAD'].includes(request.method))return renderGooglePortal();
    if(url.pathname==='/'&&['GET','HEAD'].includes(request.method))
     return renderAdminPage(request);
    if(url.pathname==='/admin.js'&&request.method==='GET')
