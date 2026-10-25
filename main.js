@@ -39,6 +39,7 @@ const {buildFleetTriage}=require('./src/ops/fleetTriage');
 const {MAX_FILE_BYTES,exportSelectedTemplates,previewTemplates,importTemplates}=require('./src/ops/agencyTemplateHandoff');
 const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {UpdateCenter}=require('./src/update/updateCenter');
+const {DisabledGmailUpdateCenter}=require('./src/update/googleStagingUpdater');
 const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const {buildCustomerHandoff}=require('./src/ops/customerHandoff');
@@ -404,11 +405,16 @@ function initIPC() {
   const updatePublicKeyFile=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
     :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
-  const onlineUpdates=new UpdateCenter({
-    currentVersion:app.getVersion(),
-    publicKeyFile:updatePublicKeyFile,
-    licenseKey:LICENSE_PUBLIC_KEY
-  });
+  // Gmail Staging has a separate appId and storage root. It must never
+  // offer the existing signed Preview installer as an upgrade, even if
+  // the Preview publisher signature is valid for the original product.
+  const onlineUpdates=googleDesktop
+    ?new DisabledGmailUpdateCenter(app.getVersion())
+    :new UpdateCenter({
+      currentVersion:app.getVersion(),
+      publicKeyFile:updatePublicKeyFile,
+      licenseKey:LICENSE_PUBLIC_KEY
+    });
   let lastVerifiedInstallerPath=null;
   const inspectCurrentUpgrade=()=>inspectUpgradeSafety({
     storageDir:store.baseDir,store,workflowStore,proxyVault,launcher
