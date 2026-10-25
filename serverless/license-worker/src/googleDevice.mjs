@@ -95,6 +95,11 @@ async function signer(env){
     throw Error('issuer_unconfigured');
   return priv;
 }
+// Privileged readiness uses the same sign/verify self-test as the issuer.
+export async function isGoogleLeaseIssuerConfigured(env){
+ try{await signer(env);return true;}
+ catch(_){return false;}
+}
 async function issueToken(claims,env){
   const sorted=['audience','client_hash','customer_id','features','issued_at',
     'max_profiles','plan_code','product_code','seat_id','seat_limit',
