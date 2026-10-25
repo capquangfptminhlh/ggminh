@@ -67,7 +67,7 @@ const fetcher=async url=>{
 const api=createGoogleSaasApi({clock:()=>now,fetcher});
 const adminAuth=async r=>r.headers.get('authorization')==='Bearer verified-admin';
 const request=(path,method='GET',data=null,headers={})=>
-  new Request(origin+path,{method,headers:{...(data?{'content-type':'application/json'}:{}),
+  new Request(origin+path,{method,headers:{'cf-connecting-ip':'203.0.113.4',...(data?{'content-type':'application/json'}:{}),
     ...headers},body:data?JSON.stringify(data):undefined});
 const invoke=(path,method,data,headers,appEnv=env)=>
   api(request(path,method,data,headers),appEnv,{adminAuth});
@@ -288,7 +288,8 @@ const fakeDPAPI={
  }
 };
 try{
- const forward=(url,init)=>api(new Request(url,init),env,{adminAuth});
+ const forward=(url,init)=>api(new Request(url,{...init,
+  headers:{'cf-connecting-ip':'203.0.113.4',...init.headers}}),env,{adminAuth});
  const customerDesktop=new GoogleBrowserDesktopClient({
   root:tenantTmp,safeStorage:fakeDPAPI,apiOrigin:origin,
   publicKey:issuer.publicKey,fetchImpl:forward,clock:()=>now
@@ -315,6 +316,24 @@ try{
  assert.equal(revokeResult.status,401,'server rejects retired Windows grant');
 }finally{fs.rmSync(tenantTmp,{recursive:true,force:true});}
 
+// Abuse resistance: client-hash cycling must not bypass per-edge-IP quota.
+// The D1 audit stores only HMAC digests of the Cloudflare edge IP.
+for(let i=0;i<21;i++){
+ const candidate=i.toString(16).padStart(64,'0');
+ result=await invoke('/v2/desktop/pair/start','POST',{
+  client_hash:candidate,verifier_hash:'f'.repeat(64),label:'Rate tester'
+ },{'cf-connecting-ip':'198.51.100.17'});
+ assert.equal(result.status,i<20?201:429,'rate limited even with rotating client hash');
+}
+result=await invoke('/v2/desktop/pair/start','POST',{
+ client_hash:'e'.repeat(64),verifier_hash:'f'.repeat(64)
+},{'cf-connecting-ip':'not-a-cloudflare-ip'});
+assert.equal(result.status,503,'pair requests missing trusted edge identity fail closed');
+assert.equal(db.prepare("SELECT COUNT(*) AS n FROM desktop_pair_limits_v2 WHERE scope_hash LIKE '%198.51.100.17%'").get().n,0,
+ 'raw Cloudflare IP is never persisted');
+const edgeCount=db.prepare("SELECT attempts FROM desktop_pair_limits_v2 ORDER BY attempts DESC LIMIT 1").get();
+assert.equal(edgeCount.attempts,20,'edge quota never exceeds 20 per 10-minute bucket');
+
 db.close();
-console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout, end-to-end desktop ↔ D1 Worker payment/license activation');
+console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout, end-to-end desktop ↔ D1 Worker payment/license activation, edge-rate limits and hashed IP isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
