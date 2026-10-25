@@ -484,7 +484,9 @@ function initIPC() {
           path.join(app.getPath('userData'),'storage'),googleDesktop.state.customer_id)};
   });
   ipcMain.handle('google-license-start',async()=>{
-    const pair=await requireGoogle().startPair({
+    const client=requireGoogle();
+    if(client.state.customer_id)throw Error('Đăng xuất trước khi đổi tài khoản Gmail');
+    const pair=await client.startPair({
       label:os.hostname().slice(0,50)||'Windows device'});
     // startPair validates fixed origin, path and exact pairing id.
     await shell.openExternal(pair.approvalUrl);
@@ -506,8 +508,16 @@ function initIPC() {
   });
   ipcMain.handle('google-license-activate',async()=>{
     const client=tenantReady();
-    if(!client.state.seat_id)await client.attach({label:os.hostname().slice(0,50)||'Windows device'});
-    return client.refreshLease();
+    const label=os.hostname().slice(0,50)||'Windows device';
+    if(!client.state.seat_id)await client.attach({label});
+    try{return await client.refreshLease();}
+    catch(error){
+      // A previously expired 10-minute online seat must be re-attached;
+      // a revoked subscription must NEVER be silently reactivated.
+      if(error.code!=='SEAT_EXPIRED')throw error;
+      await client.attach({label});
+      return client.refreshLease();
+    }
   });
   ipcMain.handle('google-license-devices',()=>tenantReady().listSeats());
   ipcMain.handle('google-license-replace',async(_,seatId,confirmation)=>{
