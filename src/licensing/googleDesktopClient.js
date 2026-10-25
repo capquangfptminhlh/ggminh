@@ -87,7 +87,7 @@ class GoogleBrowserDesktopClient{
  async request(endpoint,data,authenticated=false){
   const names=new Set(['/v2/desktop/pair/start','/v2/desktop/pair/claim',
     '/v2/seats/attach','/v2/seats/heartbeat','/v2/seats/takeover',
-    '/v2/seats/list','/v2/leases/issue']);
+    '/v2/seats/list','/v2/leases/issue','/v2/desktop/grant/revoke']);
   if(!names.has(endpoint))throw Error('Unsupported desktop license endpoint');
   if(authenticated&&!TOKEN.test(this.state.grant||''))throw new BrowserSaasError('LOGIN_REQUIRED');
   const headers={'Content-Type':'application/json'};
@@ -238,6 +238,17 @@ class GoogleBrowserDesktopClient{
      !Number.isSafeInteger(addition)||addition<1)throw Error('Invalid profile count');
   if(current+addition>s.maxProfiles)throw new BrowserSaasError('PROFILE_LIMIT');
   return s;
+ }
+ async logout(){
+  // A local-only forget cannot invalidate a stolen grant on the server.
+  // Require an acknowledged online revocation before clearing it from DPAPI.
+  this.seen();
+  if(!TOKEN.test(this.state.grant||''))throw new BrowserSaasError('LOGIN_REQUIRED');
+  const response=await this.request('/v2/desktop/grant/revoke',
+    {confirmation:'REVOKE'},true);
+  if(response.status!=='revoked')throw new BrowserSaasError('REVOKE_NOT_CONFIRMED');
+  this.forgetGrant(true);
+  return {revoked:true};
  }
  forgetGrant(confirmed){
   if(confirmed!==true)throw new BrowserSaasError('CONFIRMATION_REQUIRED');
