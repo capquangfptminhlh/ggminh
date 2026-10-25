@@ -316,3 +316,26 @@ unfinished commercial PR just to obtain deployment permissions.
   presentation, automatic renewal wiring, tenant-only storage, and
   Preview license/update isolation. Real Google OAuth, bank transfer,
   live Cloudflare and Windows DPAPI acceptance remain required.
+
+## Cross-Gmail isolation during pairing/restart (2026-10-26)
+
+The GUI pairs a Gmail identity in the system browser, then **requires a
+desktop restart** to mount `storage/google-v2-tenants/<customer_uuid>`.
+Until this restart is complete, `isGoogleTenantReady()` now fails closed
+in three independent paths:
+
+1. The visible Google-only license status reports
+   `TENANT_RESTART_REQUIRED` rather than erroneously showing paid access.
+2. The Electron main-process `require()` / `assertCapacity()` gates
+   reject profile launches/creates, Local API and automation regardless
+   of any locally cached signed lease.
+3. Both the boot-time and recurring online lease renewal refuse to
+   attach or refresh a seat before the mounted `Store.baseDir` equals
+   the verified Google UUID's tenant directory.
+
+This prevents a newly paired customer's license from accidentally
+unlocking the initial `_unpaired` temporary workspace or a previous
+customer's profiles while the app is still running.
+The UI shows a restart-required explanation. Regression checks are
+part of `test/google-electron-wiring.js`. It has not been confirmed
+against a live Windows OAuth session yet.
