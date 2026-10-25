@@ -13,8 +13,9 @@ const fetchImpl=async(url,options)=>{
  assert.equal(options.headers.authorization,'Bearer '+env.BROWSER_SAAS_ADMIN_TOKEN);
  assert.equal(options.redirect,'error');
  calls.push({url,method:options.method,body:options.body});
- return new Response(JSON.stringify(url.endsWith('/orders')?{orders:[entry]}:
-  {status:'paid',idempotent:false}),{status:200,headers:{'content-type':'application/json'}});
+ return new Response(JSON.stringify(url.endsWith('/readiness')?
+  {customer_registration_ready:true,checks:{d1_schema:true,google_oidc:true,ed25519_issuer:true,bank_transfer:true}}:
+  url.endsWith('/orders')?{orders:[entry]}:{status:'paid',idempotent:false}),{status:200,headers:{'content-type':'application/json'}});
 };
 (async()=>{
  const packageConfig=require('../package.json');
@@ -56,5 +57,10 @@ const fetchImpl=async(url,options)=>{
   fetchImpl:async()=>{attempted++;return new Response(JSON.stringify({orders:[expired]}),{status:200});},
   args:['approve',uuid,'BANK-REF-1000','BANK_STATEMENT_MATCHED']}),/ORDER_NOT_PENDING/);
  assert.equal(attempted,1,'expired order must never trigger write');
+ const ready=await runGoogleSaasBillingAdmin({...opts,args:['ready']});
+ assert.equal(ready.status,'configured');
+ assert(ready.checks.google_oidc);
+ assert(output.some(line=>line.includes('Website registration: CONFIGURED_FOR_LIVE_ACCEPTANCE_TEST')));
+ assert(!output.join(' ').includes(env.BROWSER_SAAS_ADMIN_TOKEN));
  console.log('PASS: merchant staging-only host lock, real bank confirmation gate, bearer secrecy, read-only list, paid activation, expiry and Access credentials');
 })().catch(e=>{console.error(e);process.exitCode=1;});
