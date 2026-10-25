@@ -33,6 +33,17 @@ try{
  }
  assert(main.includes('googleTenantRoot=googleTenantStorageRoot(storageDir,googleDesktop.state.customer_id'));
  assert(main.includes('store = new Store(customerStorageDir)'));
+ assert(main.includes('function isGoogleTenantReady()'),
+   'Tenant guard must compare the verified Google customer UUID and current on-disk Store');
+ assert(main.includes("const mismatch=!!googleDesktop.state.customer_id&&!isGoogleTenantReady()"),
+   'Paired Gmail account with a stale pre-restart Store must never show paid access');
+ assert(main.includes("if(!isGoogleTenantReady())throw Error('TENANT_RESTART_REQUIRED')"),
+   'Launch/create/automation/API policy must require a matching Google workspace');
+ assert(main.includes("return Promise.reject(Error('TENANT_RESTART_REQUIRED'))"),
+   'The renewal timer must not attach a paid seat until data isolation is activated');
+ assert(js.includes('TENANT_RESTART_REQUIRED:'),
+   'Gmail customer must be told to restart when account switching is blocked');
+
  assert(main.includes("createWarningHistory({storageDir:customerStorageDir,countMode:'authoritative'})"),
    'Gmail warning history must use the storageDir named argument, not default to shared storage');
  assert(main.includes('if(!googleDesktop && onlineLicenseVerifier.endpoint)'),
