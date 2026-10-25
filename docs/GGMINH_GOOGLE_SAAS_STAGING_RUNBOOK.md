@@ -57,3 +57,11 @@ Provision `BROWSER_LEASE_PRIVATE_PKCS8_B64` and `BROWSER_LEASE_PUBLIC_SPKI_B64` 
 ## Rollback
 
 Disable BROWSER_SAAS_STAGING on staging (all new v2 endpoints return 404), revoke test credentials and retain staging D1 for audit. No profile/cookie migration or legacy /v1 rollback should be necessary because this branch changes neither existing customer data nor the legacy license contract.
+
+## Real Cloudflare GitHub credentials audit (2026-10-25)
+
+- Added `.github/workflows/cloudflare-credential-audit.yml` on main; its first two read-only executions (repository-only and environment `production`) **FAILED at secret-presence guard**. Both `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` resolved as empty to GitHub Actions; therefore no Cloudflare API request was attempted and no Worker/D1 changes occurred. This does **not** prove the user lacks a token elsewhere: it is not exposed under these exact secret names/scopes.
+- New `deploy-google-saas-staging.yml` is a manual **PRIVATE** bootstrap only: it requires staging environment access, `PRIVATE_STAGING_ONLY` confirmation, two Cloudflare credentials, provisions a D1 called `lhm-browser-saas-staging`, runs the new schema only, and deploys an unreachable Worker named `lhm-browser-commerce-staging` with workers.dev/preview/routes disabled. It never modifies production `lhm-license-authority`, `LICENSE_DB` or `browser.lhmcrm.com`.
+- Workflow currently lives only in PR #71. GitHub `workflow_dispatch` on this file requires placement on default branch after review. Do not merge entire unfinished commercial PR solely to gain access to secrets; isolate/review the workflow as needed.
+- A separate **public staging activation workflow** with verified OAuth and Cloudflare Access guard has not been built; private bootstrap is not a public website.
+- In GitHub Settings → Secrets and variables → Actions, provision/authorize the token and account ID in **Environment `staging`** using the exact existing names. The diagnostic jobs deliberately do not expose secret values; never paste tokens into chat or commit them.
