@@ -117,4 +117,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
  }));
  el('btn-license-center')?.addEventListener('click',()=>update().catch(e=>message(e.message)));
  await update();
+ // Show Google sign-in on first launch rather than leaving an unusable,
+ // unpaid browser workspace with no explanation.
+ if(!current?.allowed)el('btn-license-center')?.click();
 });
