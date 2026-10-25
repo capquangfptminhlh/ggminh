@@ -110,6 +110,8 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
  return async function dispatch(req,env,{db,getUser,checkCsrf}){
   const path=new URL(req.url).pathname,now=clock();
   if(!Number.isSafeInteger(now)||now<0)return fail(503,'service_unavailable');
+  if(typeof env.BROWSER_SESSION_SECRET!=='string'||env.BROWSER_SESSION_SECRET.length<32)
+    return fail(503,'service_unconfigured');
   if(req.method!=='POST'&&!(path==='/v2/devices'&&req.method==='GET'))
     return fail(405,'method_not_allowed');
   try{
