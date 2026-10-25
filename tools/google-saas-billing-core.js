@@ -62,9 +62,18 @@ async function runGoogleSaasBillingAdmin({args=[],env=process.env,
      Object.values(flags).some(value=>typeof value!=='boolean')||
      typeof state.customer_registration_ready!=='boolean')
     throw new ReviewError('STAGING_READINESS_INVALID');
+  const publicSha=state.issuer_public_spki_sha256;
+  if(flags.ed25519_issuer&&
+     (typeof publicSha!=='string'||!/^[a-f0-9]{64}$/.test(publicSha)))
+    throw new ReviewError('STAGING_SIGNER_IDENTITY_INVALID');
+  const approvedSha=env.BROWSER_LEASE_PUBLIC_SPKI_SHA256;
+  if(approvedSha!==undefined&&
+     (!/^[a-f0-9]{64}$/.test(approvedSha)||publicSha!==approvedSha))
+    throw new ReviewError('STAGING_SIGNER_FINGERPRINT_MISMATCH');
   write('LHM Browser SaaS | Isolated staging readiness (not proof of bank/OAuth live transactions)');
   for(const key of Object.keys(flags).sort())
    write(key+': '+(flags[key]?'CONFIGURED':'BLOCKED'));
+  if(publicSha)write('Worker lease public SPKI SHA-256: '+publicSha);
   write('Website registration: '+
     (state.customer_registration_ready?'CONFIGURED_FOR_LIVE_ACCEPTANCE_TEST':'BLOCKED'));
   return {status:state.customer_registration_ready?'configured':'blocked',checks:flags};
