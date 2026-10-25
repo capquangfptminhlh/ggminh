@@ -175,6 +175,21 @@ async function isAdmin(req,env){
  let diff=0;for(let i=0;i<x.length;i++)diff|=x[i]^y[i];
  return diff===0;
 }
+// Dedicated v2 staging admin credential. Never reuse the legacy v1 issuer/admin token.
+async function isGoogleAdmin(request,env){
+ const expected=env?.BROWSER_SAAS_ADMIN_TOKEN;
+ if(typeof expected!=='string'||expected.length<32)return false;
+ const auth=request.headers.get('authorization')||'';
+ if(!/^Bearer [A-Za-z0-9._~+/-]{32,256}$/.test(auth))return false;
+ const [left,right]=await Promise.all([
+  crypto.subtle.digest('SHA-256',encoder.encode(auth.slice(7))),
+  crypto.subtle.digest('SHA-256',encoder.encode(expected))
+ ]);
+ const x=new Uint8Array(left),y=new Uint8Array(right);
+ let difference=0;
+ for(let i=0;i<x.length;i++)difference|=x[i]^y[i];
+ return difference===0;
+}
 function db(env){
  if(!env.LICENSE_DB||typeof env.LICENSE_DB.prepare!=='function')
   throw Error('d1_not_configured');
@@ -255,7 +270,7 @@ export function createAuthority({
      if(url.pathname==='/v2/desktop/pair/')return renderPairPortal();
      if(url.pathname==='/v2/desktop/pair.js')return renderPairScript();
     }
-    return createGoogleSaasApi({clock})(request,env,{adminAuth:isAdmin});
+    return createGoogleSaasApi({clock})(request,env,{adminAuth:isGoogleAdmin});
    }
    // Only the isolated staging hostname uses the customer commerce homepage.
    if(env?.BROWSER_SAAS_STAGING==='enabled'&&url.pathname==='/'&&
