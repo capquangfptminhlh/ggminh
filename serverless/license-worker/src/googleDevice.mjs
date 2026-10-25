@@ -193,6 +193,51 @@ export function createGoogleDeviceApi({clock=()=>Date.now()}={}){
       .bind(user.customer_id,now).all();
     return json(200,{devices:rows.results||[]});
    }
+   // Self-service revoke is intentionally available even when the paid term
+   // has ended. A Google owner may revoke a selected active seat without
+   // knowing or receiving the Windows grant secret.
+   if(path==='/v2/devices/revoke'){
+    const user=await getUser();
+    if(!user)return fail(401,'SIGNIN_REQUIRED');
+    if(!checkCsrf(user))return fail(403,'CSRF_REJECTED');
+    const data=await readBody(req);
+    if(!SEAT.test(data.seat_id||'')||data.confirmation!=='REVOKE')
+      return fail(400,'REVOKE_CONFIRMATION_REQUIRED');
+    const selected=await db.prepare(
+      "SELECT client_hash FROM license_seats_v2 WHERE seat_id=? AND customer_id=? AND product_code='ads-browser' AND expires_at_ms>?")
+      .bind(data.seat_id,user.customer_id,now).first();
+    if(!selected)return fail(409,'DEVICE_NOT_ACTIVE');
+    const operations=[
+      db.prepare("UPDATE desktop_grants_v2 SET revoked=1 WHERE customer_id=? AND client_hash=? AND revoked=0")
+        .bind(user.customer_id,selected.client_hash),
+      db.prepare("UPDATE license_seats_v2 SET expires_at_ms=? WHERE customer_id=? AND client_hash=? AND product_code='ads-browser' AND expires_at_ms>?")
+        .bind(now,user.customer_id,selected.client_hash,now),
+      db.prepare("INSERT INTO audit_events_v2(event_id,actor,action,object_id,created_at_ms) VALUES (?,?,'device_revoked',?,?)")
+        .bind(crypto.randomUUID(),user.customer_id,data.seat_id,now)
+    ];
+    const result=await db.batch(operations);
+    if(!Number(result[1]?.meta?.changes))return fail(409,'DEVICE_NOT_ACTIVE');
+    return json(200,{status:'revoked',seat_id:data.seat_id,
+      notice:'Existing offline signed leases can remain valid until their original 72h deadline.'});
+   }
+   // Main-process-only logout. Never expose this Bearer route to renderer.
+   // Revocation does not depend on current subscription status.
+   if(path==='/v2/desktop/grant/revoke'){
+    const grant=await lookupGrant(req,db);
+    if(!grant||grant.revoked)return fail(401,'DESKTOP_GRANT_INVALID');
+    const data=await readBody(req);
+    if(data.confirmation!=='REVOKE')return fail(400,'REVOKE_CONFIRMATION_REQUIRED');
+    const outcome=await db.batch([
+      db.prepare("UPDATE desktop_grants_v2 SET revoked=1 WHERE grant_id=? AND customer_id=? AND revoked=0")
+        .bind(grant.grant_id,grant.customer_id),
+      db.prepare("UPDATE license_seats_v2 SET expires_at_ms=? WHERE customer_id=? AND client_hash=? AND product_code='ads-browser' AND expires_at_ms>?")
+        .bind(now,grant.customer_id,grant.client_hash,now),
+      db.prepare("INSERT INTO audit_events_v2(event_id,actor,action,object_id,created_at_ms) VALUES (?,?,'grant_revoked',?,?)")
+        .bind(crypto.randomUUID(),grant.customer_id,grant.grant_id,now)
+    ]);
+    if(!Number(outcome[0]?.meta?.changes))return fail(409,'GRANT_ALREADY_REVOKED');
+    return json(200,{status:'revoked'});
+   }
    const verified=await verifiedGrant(req,db,now);
    if(verified.error)return verified.error;
    const {grant,paid}=verified;
