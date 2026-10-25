@@ -74,7 +74,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
      button.type='button';button.className='btn btn-secondary';
      button.textContent='Thay thế máy này';
      button.addEventListener('click',()=>lock('google-devices',async()=>{
-       if(!window.confirm('Thay thế phiên của '+device.label+'? Thiết bị cũ sẽ không thể gia hạn lease online.'))return;
+       if(!window.confirm('Thay thế phiên của '+device.label+'? Thiết bị cũ sẽ bị thu hồi quyền ghép trước đó và phải xác nhận Gmail lại nếu muốn sử dụng.'))return;
        await window.api.googleLicenseReplace(device.seatId,'REPLACE');
        message('Đã thay phiên thiết bị và cập nhật bản quyền.');
        await update();list.replaceChildren();
