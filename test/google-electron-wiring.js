@@ -25,7 +25,7 @@ try{
  for(const id of ['google-license-panel','google-login-start','google-login-claim',
    'google-open-plans','google-activate','google-devices','google-restart',
    'google-logout','google-login-state','google-login-code','google-login-comparison',
-   'google-device-list'])assert(html.includes('id="'+id+'"'),'missing Gmail control '+id);
+   'google-device-list','google-account-email'])assert(html.includes('id="'+id+'"'),'missing Gmail control '+id);
  assert(html.includes('<script src="googleLicense.js"></script>'));
  assert(html.includes('href="googleLicense.css"'));
  for(const name of ['Status','Start','Claim','Plans','Activate','Devices','Replace','Logout','Restart']){
