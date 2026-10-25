@@ -117,6 +117,19 @@ let licensePolicy = null;
 let googleDesktop = null;
 let googleTenantRoot = null;
 let googleLeaseTimer = null;
+let googleRenewInFlight = null;
+function renewGooglePaidAccess(){
+  if(!googleDesktop||!googleDesktop.state.customer_id||!googleDesktop.state.grant)
+    return Promise.reject(Error('Google account pairing is required'));
+  // Coalesce activation, boot renewal and periodic refresh. Otherwise two
+  // concurrent requests could compete to attach a limited server seat.
+  if(googleRenewInFlight)return googleRenewInFlight;
+  const task=Promise.resolve().then(()=>googleDesktop.renewOnline({
+    label:os.hostname().slice(0,50)||'Windows device'
+  }));
+  googleRenewInFlight=task.finally(()=>{googleRenewInFlight=null;});
+  return googleRenewInFlight;
+}
 let onlineLicenseVerifier = null;
 let licenseTimer = null;
 const LICENSE_REFRESH_MS=15*60*1000;
@@ -515,7 +528,7 @@ function initIPC() {
   });
   ipcMain.handle('google-license-activate',async()=>{
     tenantReady();
-    return googleDesktop.renewOnline({label:os.hostname().slice(0,50)||'Windows device'});
+    return renewGooglePaidAccess();
   });
   ipcMain.handle('google-license-devices',()=>tenantReady().listSeats());
   ipcMain.handle('google-license-replace',async(_,seatId,confirmation)=>{
@@ -1542,18 +1555,16 @@ app.whenReady().then(async () => {
     licenseTimer.unref?.();
   }
   if(googleDesktop){
-    // Renewal happens in Electron main; a failure to contact the server
-    // cannot extend a signed lease beyond its original 72-hour deadline.
-    googleLeaseTimer=setInterval(async()=>{
-      if(!googleDesktop.state.seat_id)return;
-      try{
-        // Always refresh after a valid online seat, even if the prior
-        // 72-hour offline lease itself has expired.
-        await googleDesktop.renewOnline({label:os.hostname().slice(0,50)||'Windows device'});
-      }catch(error){
-        if(error.code!=='NETWORK_UNAVAILABLE')
-          console.warn('[Google SaaS] Renewal:',error.code||'service_unavailable');
-      }
+    // Try immediately after opening the desktop. An expired offline lease
+    // stays expired unless the actual SaaS issuer issues a fresh signed one.
+    const tryRenew=()=>renewGooglePaidAccess().catch(error=>{
+      if(!['NETWORK_UNAVAILABLE','SUBSCRIPTION_REQUIRED'].includes(error.code))
+        console.warn('[Google SaaS] Renewal:',error.code||'service_unavailable');
+    });
+    if(googleDesktop.state.grant)
+      setImmediate(()=>{void tryRenew();});
+    googleLeaseTimer=setInterval(()=>{
+      if(googleDesktop.state.grant)void tryRenew();
     },5*60*1000);
     googleLeaseTimer.unref?.();
   }
