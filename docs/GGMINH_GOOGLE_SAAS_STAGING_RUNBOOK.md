@@ -65,3 +65,24 @@ Disable BROWSER_SAAS_STAGING on staging (all new v2 endpoints return 404), revok
 - Workflow currently lives only in PR #71. GitHub `workflow_dispatch` on this file requires placement on default branch after review. Do not merge entire unfinished commercial PR solely to gain access to secrets; isolate/review the workflow as needed.
 - A separate **public staging activation workflow** with verified OAuth and Cloudflare Access guard has not been built; private bootstrap is not a public website.
 - In GitHub Settings → Secrets and variables → Actions, provision/authorize the token and account ID in **Environment `staging`** using the exact existing names. The diagnostic jobs deliberately do not expose secret values; never paste tokens into chat or commit them.
+
+## Electron Gmail login wired (2026-10-25 update)
+
+- `main.js` now has **opt-in development** `LHM_GOOGLE_BROWSER_STAGING=1` with a separately provisioned Ed25519 **public key file** `LHM_GOOGLE_BROWSER_STAGING_PUBLIC_KEY_FILE`. It is never read from renderer or fetched from an untrusted API, and **packaged Windows releases remain legacy by design** until a build-pinned trust key and full staging acceptance are approved.
+- The renderer's existing License Center displays the Gmail panel in developer staging, allowing **Start Pair → system browser Google sign-in/6-digit approval → Claim → restart into account-specific tenant root → choose/pay → attach paid seat/refresh lease → launch profile**. Main IPC never exposes the grant or signed lease. The payment UI on the staging hostname is not yet live; this is fully wired local code, **NOT** confirmation that customers can sign up on the real site today.
+- In a Gmail account, main-process `licensePolicy` blocks profile launch, profile creation, automation, Local API and background jobs unless a valid signed `ads-browser` lease permits the operation. Legacy `lhmlic1` or the 10-day trial cannot unlock Google-only workspaces.
+- In development Gmail mode, `Store`, proxy credentials, automation workflows, Camoufox profile state, health and warning history use `storage/google-v2-tenants/<verified customer UUID>/`, **not** the original `storage/db.json`. Logging out clears the DPAPI grant and restarts so an earlier customer's data is not left open. Existing Preview customers have no change.
+- Automated Google Electron wiring test checks trusted mode, all IPC and UI contracts, account partitioning, paid policy, and packaged-build legacy default. The already-added signed lease / pairing tests remain mandatory.
+- Actual customer release gates **NOT MET:** GitHub secret audit has demonstrated missing Cloudflare token/account access in both repository and `production` environment scopes. Real Google OAuth credentials, standalone staging Worker/D1, bank approval, fixed packaged public-key anchor, and live Windows cross-Gmail acceptance are still required. No claim of production sign-in, real payment or signed installer.
+
+### Developer smoke command (no real bank/OAuth proof)
+
+Provision the matching **public** SPKI of your separate staging Worker signer on a trusted local development machine (never the private key). Run Electron source with these **developer-only** variables set:
+
+```powershell
+$env:LHM_GOOGLE_BROWSER_STAGING = '1'
+$env:LHM_GOOGLE_BROWSER_STAGING_PUBLIC_KEY_FILE = 'C:\\secure\\lhm-browser-staging-public.pem'
+npm start
+```
+
+The application must fail closed when the public key is absent or invalid. A normal packaged EXE does **not** switch to Google mode based on environment variables.
