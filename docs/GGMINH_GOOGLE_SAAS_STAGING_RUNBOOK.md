@@ -339,3 +339,10 @@ customer's profiles while the app is still running.
 The UI shows a restart-required explanation. Regression checks are
 part of `test/google-electron-wiring.js`. It has not been confirmed
 against a live Windows OAuth session yet.
+
+## Windows pairing fallback and bounded license networking (2026-10-26)
+
+- The Windows Gmail License Center now bypasses **all Preview/v1 online license reads** while displaying its Google subscription panel. The Preview path remains unchanged.
+- If `shell.openExternal()` fails because Windows has no default browser association, the pairing URL has already been validated by `GoogleBrowserDesktopClient.startPair()` against the fixed trusted staging origin. Electron copies that URL to the clipboard and returns the 6-digit code and a `linkCopied` status to the renderer, which explains how the customer can paste it into a browser. It **never** exposes the encrypted grant, refresh credentials or lease token.
+- Desktop-to-Worker license requests use a 15-second AbortSignal timeout and reject JSON payloads over 64 KiB or malformed replies, preventing unbounded activation/loading UI. A timeout/network failure cannot extend the current cryptographically signed offline lease.
+- Static UI integration and desktop-client tests now assert legacy panel suppression, pairing browser fallback and bounded provider response handling. Actual Windows fallback and public Cloudflare OAuth still require real-machine acceptance.
