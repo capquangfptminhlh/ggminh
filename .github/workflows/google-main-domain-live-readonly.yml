@@ -1,0 +1,20 @@
+name: Browser MAIN domain LIVE read-only acceptance
+on:
+  pull_request:
+    paths:
+      - 'test/google-main-domain-live-readonly.mjs'
+      - '.github/workflows/google-main-domain-live-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  homepage-and-v2-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Non-mutating probe of owner's main domain
+        run: node test/google-main-domain-live-readonly.mjs
