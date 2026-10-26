@@ -43,7 +43,17 @@ window.addEventListener('DOMContentLoaded',()=>{
  }
  async function show(){
   modal.classList.add('open');msg.textContent='';
-  try{await refresh();}catch(error){msg.textContent='Không đọc được trạng thái: '+error.message;}
+  // The same modal serves two strictly separate products. Never invoke v1
+  // license status/verification while opening a Google-only subscription:
+  // that path can display an irrelevant Preview trial/installation ID.
+  try{
+   const google=window.api.googleLicenseStatus
+    ?await window.api.googleLicenseStatus():null;
+   if(google?.enabled)return;
+   await refresh();
+  }catch(error){
+   msg.textContent='Không đọc được trạng thái: '+error.message;
+  }
  }
  el('btn-license-center').addEventListener('click',show);
  function close(){code.value='';modal.classList.remove('open');}
