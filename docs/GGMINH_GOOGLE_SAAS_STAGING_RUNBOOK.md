@@ -346,3 +346,43 @@ against a live Windows OAuth session yet.
 - If `shell.openExternal()` fails because Windows has no default browser association, the pairing URL has already been validated by `GoogleBrowserDesktopClient.startPair()` against the fixed trusted staging origin. Electron copies that URL to the clipboard and returns the 6-digit code and a `linkCopied` status to the renderer, which explains how the customer can paste it into a browser. It **never** exposes the encrypted grant, refresh credentials or lease token.
 - Desktop-to-Worker license requests use a 15-second AbortSignal timeout and reject JSON payloads over 64 KiB or malformed replies, preventing unbounded activation/loading UI. A timeout/network failure cannot extend the current cryptographically signed offline lease.
 - Static UI integration and desktop-client tests now assert legacy panel suppression, pairing browser fallback and bounded provider response handling. Actual Windows fallback and public Cloudflare OAuth still require real-machine acceptance.
+
+## Verified Cloudflare credential location (2026-10-26)
+
+A real read-only diagnostic was added on reviewed `main`:
+`.github/workflows/cloudflare-staging-secret-discovery.yml`, run
+`40277398829`. Its staging job evaluated presence **as booleans only**;
+it did not load Cloudflare credential strings at all.
+
+**All tested names were absent** from GitHub Actions' merged repository +
+Environment `staging` scope:
+- Secret names: `CLOUDFLARE_API_TOKEN`, `CF_API_TOKEN`, `CF_TOKEN`,
+  `CLOUDFLARE_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CF_ACCOUNT_ID`,
+  `LHM_D1_DATABASE_ID`.
+- Variable names: `CLOUDFLARE_ACCOUNT_ID`, `CF_ACCOUNT_ID`,
+  `LHM_D1_DATABASE_ID`.
+
+This does **not** mean the owner has not already created a valid token
+in Cloudflare. Tokens created in Cloudflare or stored in another repo,
+shell or service do not automatically become GitHub Actions secrets.
+
+To authorize staging without creating a new Cloudflare token:
+1. Open `https://github.com/capquangfptminhlh/ggminh/settings/environments`
+   → `staging` → Environment secrets. Set the existing token under the
+   exact key `CLOUDFLARE_API_TOKEN` **within GitHub's secure editor**;
+   never paste it into a chat, issue, code or console log.
+2. Set the Cloudflare account's 32-hex ID under
+   `CLOUDFLARE_ACCOUNT_ID`. This may now be either an Environment
+   **secret or variable** (both accepted by the private bootstrap,
+   public staging workflow and read-only audit).
+3. From Actions, dispatch `Cloudflare credential audit (read-only)`
+   on reviewed `main`. This proves token activation and Workers/D1
+   read privileges, not write/deploy permissions.
+4. Before a cloud mutation, independently confirm the token is restricted
+   to the intended Cloudflare account and that `staging` Environment
+   deployment protections require review.
+
+The staging private/public workflows remain deliberate manual actions.
+Do not merge an unfinished commercial PR or enable paid plans just to
+obtain a Cloudflare token. No worker/D1 or DNS was changed by the
+diagnostic jobs.
