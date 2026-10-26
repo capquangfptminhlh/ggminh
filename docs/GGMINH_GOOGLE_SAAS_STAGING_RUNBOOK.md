@@ -386,3 +386,24 @@ The staging private/public workflows remain deliberate manual actions.
 Do not merge an unfinished commercial PR or enable paid plans just to
 obtain a Cloudflare token. No worker/D1 or DNS was changed by the
 diagnostic jobs.
+
+## Tenant-scoped legacy helpers and bounded public request bodies
+
+- The packaged Gmail app retains the legacy license manager and online
+  verifier solely for compatibility with older Preview status/report code.
+  Their local files now live under `customerStorageDir` (the verified
+  Gmail UUID's workspace), not under the shared `storageDir`.
+  The old `/v1/verify` endpoint is explicitly disabled when the Google
+  SaaS client is active. These legacy objects **never** authorize Gmail
+  features: the main-process policy still checks only verified Ed25519
+  Google leases and a matching tenant mount.
+- Both public D1 handlers `googleDevice.mjs` and `googleSaas.mjs`
+  now cap JSON request bodies at 4096 bytes **while reading the stream**.
+  Previously the code called `req.text()` before checking the size, which
+  could buffer a large chunked request into memory. The new limit works
+  even when clients omit the `Content-Length` header. Existing format,
+  CSRF, device grants and paid-entitlement checks are unchanged.
+- The synthetic Node/SQLite worker integration now checks oversized
+  requests to device pairing and customer orders are rejected.
+  Live Cloudflare WAF, billing, Google OAuth and Windows tests remain
+  necessary before a commercial release.
