@@ -14,7 +14,7 @@ const HASH=/^[a-f0-9]{64}$/;
 const TOKEN=/^bg1_[A-Za-z0-9_-]{43}$/;
 const EMAIL=/^[^\s@]{1,64}@[^\s@]{1,190}$/;
 const SEAT=/^[A-Za-z0-9_-]{16,100}$/;
-const ALLOWED_HOSTS=new Set(['browser-staging.lhmcrm.com','browser.lhmcrm.com']);
+const ALLOWED_HOSTS=new Set(['browser.lhmcrm.com','browser.lhmcrm.com']);
 const FEATURES=new Set(['profiles','api','automation']);
 const iso=v=>new Date(v).toISOString();
 function atomic(file,data){
