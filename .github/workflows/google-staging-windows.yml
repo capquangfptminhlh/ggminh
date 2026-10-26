@@ -58,7 +58,7 @@ jobs:
           BROWSER_SAAS_ADMIN_TOKEN: ${{ secrets.BROWSER_SAAS_ADMIN_TOKEN }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          BROWSER_SAAS_ADMIN_ORIGIN: https://browser-staging.lhmcrm.com
+          BROWSER_SAAS_ADMIN_ORIGIN: https://browser.lhmcrm.com
         run: |
           node tools/google-saas-admin.js ready
           if ($LASTEXITCODE -ne 0) { throw 'Staging not ready: no EXE should be produced' }
@@ -73,7 +73,7 @@ jobs:
             $headers['CF-Access-Client-Id'] = $env:CF_ACCESS_CLIENT_ID
             $headers['CF-Access-Client-Secret'] = $env:CF_ACCESS_CLIENT_SECRET
           }
-          $res = Invoke-RestMethod -Uri 'https://browser-staging.lhmcrm.com/v2/plans' -Headers $headers -TimeoutSec 20
+          $res = Invoke-RestMethod -Uri 'https://browser.lhmcrm.com/v2/plans' -Headers $headers -TimeoutSec 20
           $plan = @($res.plans | Where-Object { $_.plan_code -eq 'personal_30' })
           if ($plan.Count -ne 1 -or $plan[0].price_vnd -ne 499000 -or
               $plan[0].duration_days -ne 30 -or $plan[0].seat_limit -ne 2 -or
