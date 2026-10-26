@@ -21,6 +21,7 @@ const db=new DatabaseSync(':memory:');
 db.exec(fs.readFileSync('serverless/license-worker/migrations/0001_licenses.sql','utf8'));
 db.exec(fs.readFileSync('serverless/license-worker/migrations/0002_billing_portal.sql','utf8'));
 db.exec(sql);
+db.exec(fs.readFileSync('serverless/license-worker/migrations/0004_google_web_session_revocation.sql','utf8'));
 assert(db.prepare("SELECT name FROM sqlite_master WHERE name='licenses'").get());
 assert(db.prepare("SELECT name FROM sqlite_master WHERE name='portal_orders'").get());
 const prepare=sql=>({
@@ -374,6 +375,22 @@ const oversizedOrder=await invoke('/v2/orders','POST',{
 },authHeaders);
 assert.equal(oversizedOrder.status,400,'oversized order rejected before allocation');
 assert.equal((await body(oversizedOrder)).error,'invalid_request');
+
+// Session logout revokes the persistent D1 record, not only the user's
+// local cookie. An intercepted previously valid cookie cannot be replayed.
+const csrfFail=await invoke('/v2/auth/logout','POST',{},{
+ cookie:sessionCookie,origin,'x-csrf-token':'wrong'});
+assert.equal(csrfFail.status,403,'Google logout requires valid CSRF');
+result=await invoke('/v2/auth/session','GET',null,{cookie:sessionCookie});
+assert.equal(result.status,200,'failed CSRF must not revoke the web session');
+result=await invoke('/v2/auth/logout','POST',{},authHeaders);
+assert.equal(result.status,200,'user signs out and invalidates D1 web session');
+result=await invoke('/v2/auth/session','GET',null,{cookie:sessionCookie});
+assert.equal(result.status,401,'previously valid signed cookie must be rejected after logout');
+result=await invoke('/v2/orders/current','GET',null,{cookie:sessionCookie});
+assert.equal(result.status,401,'revoked session cannot read its old order data');
+assert.equal(db.prepare('SELECT COUNT(*) AS n FROM google_web_sessions_v2 WHERE revoked_at_ms IS NOT NULL').get().n,1,
+ 'logout must mark the actual persisted web session as revoked');
 
 db.close();
 console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout, end-to-end desktop ↔ D1 Worker payment/license activation, edge-rate limits and hashed IP isolation');
