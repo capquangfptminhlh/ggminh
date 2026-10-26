@@ -7,7 +7,7 @@
  * bank number or merchant token belongs in a customer installer.
  */
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const ORIGIN='https://browser-staging.lhmcrm.com';
+const ORIGIN='https://browser.lhmcrm.com';
 const TRUST='src/licensing/googleStagingPackageTrust.generated.js';
 const BUILDER='build/google-staging-builder.generated.json';
 const ALLOW='ISOLATED_GMAIL_STAGING_ONLY';
