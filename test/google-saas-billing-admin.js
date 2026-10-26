@@ -5,11 +5,11 @@ const uuid='11111111-1111-4111-8111-111111111111';
 const entry={order_id:uuid,status:'pending',amount_vnd:499000,
  payment_code:'LHMAB1234',expires_at_ms:Date.parse('2026-11-01T00:00:00Z')};
 const env={BROWSER_SAAS_ADMIN_TOKEN:'x'.repeat(64),
- BROWSER_SAAS_ADMIN_ORIGIN:'https://browser-staging.lhmcrm.com'};
+ BROWSER_SAAS_ADMIN_ORIGIN:'https://browser.lhmcrm.com'};
 const now=Date.parse('2026-10-25T11:00:00Z');
 let calls=[];
 const fetchImpl=async(url,options)=>{
- assert(url.startsWith('https://browser-staging.lhmcrm.com/v2/admin/'));
+ assert(url.startsWith('https://browser.lhmcrm.com/v2/admin/'));
  assert.equal(options.headers.authorization,'Bearer '+env.BROWSER_SAAS_ADMIN_TOKEN);
  assert.equal(options.redirect,'error');
  calls.push({url,method:options.method,body:options.body});
@@ -34,7 +34,7 @@ const fetchImpl=async(url,options)=>{
   args:['approve',uuid,'BANK-REF-1000']}),/BANK_CONFIRMATION_REQUIRED/);
  assert.equal(calls.length,1,'no bank confirmation should cause no API calls');
  await assert.rejects(()=>runGoogleSaasBillingAdmin({...opts,
-  env:{...env,BROWSER_SAAS_ADMIN_ORIGIN:'https://browser.lhmcrm.com'},args:['list']}),
+  env:{...env,BROWSER_SAAS_ADMIN_ORIGIN:'https://browser-staging.lhmcrm.com'},args:['list']}),
   /INVALID_STAGING_ORIGIN/);
  assert.equal(calls.length,1,'never contact production from staging operator');
  result=await runGoogleSaasBillingAdmin({...opts,args:[
