@@ -368,6 +368,13 @@ const oversized=await invoke('/v2/desktop/pair/start','POST',largeJson,
  {'cf-connecting-ip':'198.51.100.121'});
 assert.equal(oversized.status,400,'oversized JSON rejected even with no length header');
 
+// Order/merchant JSON accepts no unbounded chunked payloads.
+const oversizedOrder=await invoke('/v2/orders','POST',{
+ plan_code:'personal_30',extra:'b'.repeat(4200)
+},authHeaders);
+assert.equal(oversizedOrder.status,400,'oversized order rejected before allocation');
+assert.equal((await body(oversizedOrder)).error,'invalid_request');
+
 db.close();
 console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout, end-to-end desktop ↔ D1 Worker payment/license activation, edge-rate limits and hashed IP isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
