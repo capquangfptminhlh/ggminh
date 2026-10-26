@@ -92,7 +92,11 @@ window.addEventListener('DOMContentLoaded',async()=>{
    el('google-login-comparison').textContent=result.comparisonCode;
    el('google-login-code').hidden=false;
    el('google-login-claim').hidden=false;
-   message('Đã mở trình duyệt mặc định. Đăng nhập Gmail và nhập mã 6 số đang hiển thị ở đây.');
+   message(result.browserOpened
+     ?'Đã mở trình duyệt. Đăng nhập Google và nhập mã 6 số đang hiển thị ở đây.'
+     :result.linkCopied
+       ?'Windows không mở được trình duyệt. Đường dẫn ghép máy an toàn đã được sao chép; dán vào thanh địa chỉ trình duyệt của bạn, rồi nhập mã 6 số.'
+       :'Không mở được trình duyệt. Vui lòng kiểm tra trình duyệt mặc định của Windows.');
  }));
  el('google-login-claim').addEventListener('click',()=>lock('google-login-claim',async()=>{
    const result=await window.api.googleLicenseClaim();
