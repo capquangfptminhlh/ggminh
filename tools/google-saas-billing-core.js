@@ -1,7 +1,8 @@
 'use strict';
 // Operator-only v2 commerce tool. NEVER ship this in the Electron customer app.
 // A receipt reference is NOT proof of funds: operator must inspect bank ledger.
-const ORIGIN='https://browser-staging.lhmcrm.com';
+// Staging-only merchant API namespace on owner-approved primary domain.
+const ORIGIN='https://browser.lhmcrm.com';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REF=/^[A-Za-z0-9_.:/-]{6,100}$/;
 const CONFIRM='BANK_STATEMENT_MATCHED';
