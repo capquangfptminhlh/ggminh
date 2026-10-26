@@ -362,6 +362,12 @@ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM desktop_pair_limits_v2 WHERE 
 const edgeCount=db.prepare("SELECT attempts FROM desktop_pair_limits_v2 ORDER BY attempts DESC LIMIT 1").get();
 assert.equal(edgeCount.attempts,20,'edge quota never exceeds 20 per 10-minute bucket');
 
+// Node Request does not add Content-Length here. Enforce byte limit during reading.
+const largeJson={note:'a'.repeat(4200)};
+const oversized=await invoke('/v2/desktop/pair/start','POST',largeJson,
+ {'cf-connecting-ip':'198.51.100.121'});
+assert.equal(oversized.status,400,'oversized JSON rejected even with no length header');
+
 db.close();
 console.log('PASS: staging migration, default-off flag, Google OIDC PKCE/state, cookie session, CSRF, unapproved plan lock, 499k VietQR, manual/idempotent approval, no duplicate renewal, one-time pairing, 2-seat takeover, signed 72h lease, Gmail seat revocation and server-acknowledged desktop logout, end-to-end desktop ↔ D1 Worker payment/license activation, edge-rate limits and hashed IP isolation');
 })().catch(e=>{console.error(e);process.exitCode=1;});
