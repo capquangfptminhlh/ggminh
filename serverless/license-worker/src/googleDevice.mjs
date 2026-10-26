@@ -55,9 +55,27 @@ async function readBody(req){
   if(!/^application\/json(?:\s*;|$)/i.test(req.headers.get('content-type')||''))
     throw Error('invalid_body');
   if(Number(req.headers.get('content-length')||0)>4096)throw Error('invalid_body');
-  const raw=await req.text();
-  if(raw.length>4096)throw Error('invalid_body');
-  const value=JSON.parse(raw);
+  // Cloudflare edge POSTs may use chunked transfer without Content-Length.
+  // Bound bytes while reading, never await req.text() on an untrusted
+  // unbounded body before checking its length.
+  if(!req.body)throw Error('invalid_body');
+  const reader=req.body.getReader();
+  const chunks=[];let total=0;
+  try{
+   while(true){
+    const {value,done}=await reader.read();
+    if(done)break;
+    total+=value.byteLength;
+    if(total>4096)throw Error('invalid_body');
+    chunks.push(value);
+   }
+  }finally{
+   if(total>4096)await reader.cancel().catch(()=>{});
+   reader.releaseLock();
+  }
+  const raw=new Uint8Array(total);let offset=0;
+  for(const chunk of chunks){raw.set(chunk,offset);offset+=chunk.byteLength;}
+  const value=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(raw));
   if(!value||Array.isArray(value)||typeof value!=='object')throw Error('invalid_body');
   return value;
 }
