@@ -513,9 +513,17 @@ function initIPC() {
     if(client.state.customer_id)throw Error('Đăng xuất trước khi đổi tài khoản Gmail');
     const pair=await client.startPair({
       label:os.hostname().slice(0,50)||'Windows device'});
-    // startPair validates fixed origin, path and exact pairing id.
-    await shell.openExternal(pair.approvalUrl);
-    return {comparisonCode:pair.comparisonCode,expiresAt:pair.pairingExpiresAt};
+    // startPair checks the URL against the fixed Cloudflare staging origin.
+    // A missing Windows default-browser association must not lose the
+    // one-time pairing or hide its code. Copy the already-validated URL.
+    let browserOpened=false,linkCopied=false;
+    try{await shell.openExternal(pair.approvalUrl);browserOpened=true;}
+    catch(_){
+      clipboard.writeText(pair.approvalUrl);
+      linkCopied=true;
+    }
+    return {comparisonCode:pair.comparisonCode,expiresAt:pair.pairingExpiresAt,
+      browserOpened,linkCopied};
   });
   ipcMain.handle('google-license-claim',async()=>{
     const paired=await requireGoogle().claimPair();
