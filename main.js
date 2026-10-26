@@ -536,7 +536,7 @@ function initIPC() {
   });
   ipcMain.handle('google-license-plans',async()=>{
     requireGoogle();
-    await shell.openExternal('https://browser-staging.lhmcrm.com/v2/portal');
+    await shell.openExternal('https://browser.lhmcrm.com/v2/portal');
     return true;
   });
   ipcMain.handle('google-license-activate',async()=>{
