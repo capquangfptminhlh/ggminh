@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Two disjoint channels:
+ * Two disjoint licensing channels, with the Gmail staging API isolated under /v2/:
  * - Unpackaged, explicit dev-only Google preview using a local public PEM.
  * - Packaged, isolated Gmail staging build whose signing PUBLIC SPKI is
  *   embedded into app.asar at build time; never supplied by the customer.
@@ -8,7 +8,7 @@
  * A standard Preview installer includes no generated trust and remains v1.
  */
 const fs=require('node:fs'),crypto=require('node:crypto');
-const STAGING_ORIGIN='https://browser-staging.lhmcrm.com';
+const STAGING_ORIGIN='https://browser.lhmcrm.com';
 const TRUST_SCHEMA='lhm-google-saas-staging-trust-v1';
 function packagedTrust(){
  let record;
