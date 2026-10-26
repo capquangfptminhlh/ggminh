@@ -18,6 +18,25 @@ async function check(path){
 const r=await Promise.allSettled([dns.resolve4(host),dns.resolve6(host)]);
 const dnsReady=r.some(x=>x.status==='fulfilled'&&x.value.length>0);
 console.log('Production homepage DNS: '+(dnsReady?'RESOLVES':'NO A/AAAA RECORD'));
+// Independent public DNS-over-HTTPS checks distinguish a missing hostname
+// from a GitHub runner-specific resolver outage; never log any credentials.
+for(const [provider,url] of [
+ ['Google public DNS','https://dns.google/resolve?name='+host+'&type=A'],
+ ['Cloudflare public DNS','https://cloudflare-dns.com/dns-query?name='+host+'&type=A']
+]){
+ try{
+  const response=await fetch(url,{headers:{accept:'application/dns-json'},
+   signal:AbortSignal.timeout(9000)});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const data=await response.json();
+  console.log(provider+': status='+data.Status+', answers='+
+    (Array.isArray(data.Answer)?data.Answer.length:0));
+ }catch(error){console.log(provider+': UNAVAILABLE '+(error?.message||'network')); }
+}
+try{
+ const control=await dns.resolve4('github.com');
+ console.log('Runner DNS control github.com: '+(control.length?'RESOLVES':'EMPTY'));
+}catch(_){console.log('Runner DNS control github.com: FAILED');}
 if(!dnsReady){process.exitCode=1;console.error('MAIN_DOMAIN_DNS_UNAVAILABLE');}
 else{
  const home=await check('/');
