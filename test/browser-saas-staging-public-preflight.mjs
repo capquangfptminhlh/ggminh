@@ -13,7 +13,7 @@ process.env.CLOUDFLARE_ACCOUNT_ID='a'.repeat(32);
 process.env.LHM_D1_DATABASE_ID=prod;
 const makeResponse=result=>new Response(JSON.stringify({success:true,result}),{
  status:200,headers:{'content-type':'application/json'}});
-async function scenario(caseName,{dbId=stage,enabled=0,profiles=null,missing=null}={}){
+async function scenario(caseName,{dbId=stage,enabled=0,profiles=null,missing=null,sessionTable=true}={}){
  const old=globalThis.fetch;
  globalThis.fetch=async(url,options)=>{
   assert(options.headers.Authorization.startsWith('Bearer test-token'));
@@ -21,6 +21,9 @@ async function scenario(caseName,{dbId=stage,enabled=0,profiles=null,missing=nul
    return makeResponse([{name:'lhm-browser-saas-staging',uuid:dbId}]);
   if(url.endsWith('/d1/database/'+dbId+'/query')){
    assert.equal(options.method,'POST');
+   const statement=JSON.parse(options.body).sql;
+   if(statement.includes("google_web_sessions_v2"))
+    return makeResponse([{results:sessionTable?[{name:'google_web_sessions_v2'}]:[]}]);
    return makeResponse([{results:[{
     enabled,max_profiles:profiles,seat_limit:2,price_vnd:499000
    }]}]);
@@ -38,6 +41,7 @@ try{
  await assert.rejects(()=>scenario('wrong-db',{dbId:prod}),/Refusing live legacy/);
  await assert.rejects(()=>scenario('enabled',{enabled:1,profiles:100}),/refuses active/);
  await assert.rejects(()=>scenario('secret',{missing:'BROWSER_SAAS_ACCESS_AUD'}),/lacks required secret names/);
+ await assert.rejects(()=>scenario('no-session-table',{sessionTable:false}),/revocation migration missing/);
  console.log('PASS: public staging preflight rejects production DB, live paid plans and missing Cloudflare Access secrets');
 }finally{
  for(const key of ['CLOUDFLARE_API_TOKEN','CLOUDFLARE_ACCOUNT_ID','LHM_D1_DATABASE_ID']){
