@@ -2,7 +2,8 @@
 // creates an order, triggers payment, performs account login or writes D1.
 // The CI job is intentionally RED until the real staging hostname is live.
 import dns from 'node:dns/promises';
-const host='browser-staging.lhmcrm.com',origin='https://'+host;
+// Customer-approved hostname. The smoke check is read-only and cannot deploy.
+const host='browser.lhmcrm.com',origin='https://'+host;
 function fail(kind,detail){
  console.error('LIVE_STAGING_'+kind+': '+detail);
  process.exitCode=1;
@@ -19,6 +20,9 @@ try{
    throw Error('Public DNS A/AAAA for '+host+' not resolvable');
   console.log('PASS: real public staging hostname resolves in DNS');
  }catch(e){fail('DNS_NOT_READY',e.message);process.exit();}
+ const home=await probe('/');
+ if(home.status>=500)throw Error('Existing browser.lhmcrm.com homepage HTTP '+home.status);
+ console.log('PASS: existing primary browser host responds (HTTP '+home.status+')');
  const plans=await probe('/v2/plans');
  if(plans.status!==200)throw Error('/v2/plans HTTP '+plans.status);
  const data=await plans.json();
