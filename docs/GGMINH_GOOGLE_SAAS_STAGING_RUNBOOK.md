@@ -478,3 +478,33 @@ customer hostname** by this decision; existing staging-only tests and
 hardcoded package trust still target it and must be explicitly migrated
 before any real release. The PR remains Draft and deliberately does
 not rewrite production DNS/routes.
+
+## Customer-selected primary hostname, isolated Gmail v2 path (2026-10-26)
+
+The customer chose **`https://browser.lhmcrm.com`**; the additional
+`browser-staging.lhmcrm.com` hostname is no longer required.
+Do **not** transfer the whole hostname to the Google staging Worker:
+it could overwrite the pre-existing browser site and legacy license API.
+Instead, an isolated `lhm-browser-commerce-staging` Worker with
+separate D1 is generated with a strictly path-scoped Cloudflare Route
+`browser.lhmcrm.com/v2/*` in zone `lhmcrm.com` (no `custom_domain = true`).
+The main hostname, `/`, `/admin.js`, `/health` and `/v1/*`
+continue to be owned by the existing site. Preserve these before and
+after route deployment and do not overwrite its DNS/Worker binding.
+
+The packaged Gmail public-key trust, portal link, Google OAuth redirect
+URI and read-only live acceptance probe now target `browser.lhmcrm.com`.
+The Worker still requires the private staging D1, Cloudflare Access
+verification, disabled paid plan, signed lease issuer and operator review.
+**None of these code changes installs a Worker or creates a DNS record.**
+
+Real DNS acceptance from GitHub-hosted Linux run `40310511757`
+reported `MAIN_DOMAIN_DNS_UNAVAILABLE`: no A/AAAA records,
+both Google and Cloudflare public DNS resolvers returned NXDOMAIN
+(status 3) while the runner's `github.com` resolver worked. The
+Cloudflare account owner must restore/create the *correct* proxied
+DNS for `browser.lhmcrm.com` based on its true existing origin.
+Do not invent a dummy IP or blindly repoint the hostname.
+GitHub Environment `staging` must separately receive the existing
+Cloudflare token and Account ID. Rerun read-only DNS/HTTPS smoke,
+then review route ownership before dispatching any public deployment.
