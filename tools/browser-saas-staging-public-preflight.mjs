@@ -33,6 +33,14 @@ if(!Array.isArray(rows)||!Array.isArray(rows[0]?.results)||rows[0].results.lengt
 const p=rows[0].results[0];
 if(p.enabled!==0||p.max_profiles!==null||p.seat_limit!==2||p.price_vnd!==499000)
  throw Error('Public staging refuses active or unauthorized paid plan; disable it first');
+const webSessionTable=await api('/d1/database/'+id+'/query',{
+ method:'POST',
+ body:JSON.stringify({sql:"SELECT name FROM sqlite_master WHERE type='table' AND name='google_web_sessions_v2'"})
+});
+if(!Array.isArray(webSessionTable)||!Array.isArray(webSessionTable[0]?.results)||
+   webSessionTable[0].results.length!==1||
+   webSessionTable[0].results[0].name!=='google_web_sessions_v2')
+ throw Error('Staging D1 web-session revocation migration missing; refusing public deployment');
 const secrets=await api('/workers/scripts/'+script+'/secrets');
 if(!Array.isArray(secrets))throw Error('Private staging Worker not initialized with secrets');
 const present=new Set(secrets.map(row=>row.name));
