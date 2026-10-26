@@ -1,5 +1,5 @@
-# Example only; deploy on an isolated test hostname and a separate D1.
-# NEVER point this example at browser.lhmcrm.com or the live LICENSE_DB.
+# Example only: customer-approved hostname, isolated /v2/* route and separate D1.
+# NEVER attach to the whole browser.lhmcrm.com hostname or live LICENSE_DB.
 # Copy locally to wrangler.staging.toml, replace the placeholders, and keep it untracked.
 name = "lhm-browser-commerce-staging"
 main = "src/index.mjs"
@@ -8,8 +8,8 @@ workers_dev = false
 preview_urls = false
 
 [[routes]]
-pattern = "browser-staging.lhmcrm.com"
-custom_domain = true
+pattern = "browser.lhmcrm.com/v2/*"
+zone_name = "lhmcrm.com"
 
 [[d1_databases]]
 binding = "BROWSER_SAAS_DB"
@@ -19,7 +19,7 @@ migrations_dir = "migrations"
 
 [vars]
 BROWSER_SAAS_STAGING = "enabled"
-BROWSER_GOOGLE_REDIRECT_URI = "https://browser-staging.lhmcrm.com/v2/auth/google/callback"
+BROWSER_GOOGLE_REDIRECT_URI = "https://browser.lhmcrm.com/v2/auth/google/callback"
 
 # Configure as staging-specific Wrangler secrets:
 # BROWSER_GOOGLE_CLIENT_ID (OAuth ID, non-secret but provision outside repo)
