@@ -1368,10 +1368,14 @@ app.whenReady().then(async () => {
   }
   proxyVault = new ProxyCredentialVault(customerStorageDir, safeStorage);
   aiAdvisor = new AIAdvisor(customerStorageDir,safeStorage);
-  licenseManager = new LicenseManager(storageDir);
-  licensePolicy = new LicensePolicy(storageDir,licenseManager);
-  onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
-    endpoint:resolveLicenseEndpoint({
+  // The Gmail app uses a completely separate signed lease, never v1.
+  // Legacy helper objects are retained only for compatibility with Preview
+  // report/UI code, but their incidental state must be isolated by tenant.
+  const legacyLicenseRoot=googleDesktop?customerStorageDir:storageDir;
+  licenseManager = new LicenseManager(legacyLicenseRoot);
+  licensePolicy = new LicensePolicy(legacyLicenseRoot,licenseManager);
+  onlineLicenseVerifier = new OnlineLicenseVerifier(legacyLicenseRoot,licenseManager,{
+    endpoint:googleDesktop?null:resolveLicenseEndpoint({
       packaged:app.isPackaged,
       resourcesPath:process.resourcesPath,
       developmentEndpoint:process.env.LHM_LICENSE_VERIFY_URL||null
