@@ -101,6 +101,15 @@ async function fetchImpl(url,init){
   desktop=new GoogleBrowserDesktopClient({root,safeStorage:mockSafeStorage,
    apiOrigin:origin,publicKey:privatePair.publicKey,fetchImpl,clock:()=>now});
   assert.equal(desktop.status().allowed,true);
+  // Slow or oversized Cloudflare responses must fail quickly/closed and
+  // must not silently unlock any new right or renew a cached lease.
+  desktop.fetch=async(url,init)=>{
+   assert.equal(init.signal?.aborted,false);
+   assert(init.signal,'SaaS requests must carry a bounded abort signal');
+   return new Response(JSON.stringify({junk:'X'.repeat(66000)}),{status:200});
+  };
+  await assert.rejects(()=>desktop.listSeats(),/INVALID_SERVER_RESPONSE/);
+  assert.equal(desktop.status().allowed,true,'invalid server reply cannot revoke a still-valid signed offline lease');
   // Connectivity interruption never extends the 72h cryptographic lease.
   desktop.fetch=async()=>{throw Error('Disconnected');};
   await assert.rejects(()=>desktop.heartbeat(),/NETWORK_UNAVAILABLE/);
