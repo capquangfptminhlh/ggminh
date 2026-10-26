@@ -431,3 +431,50 @@ diagnostic jobs.
   local DPAPI secrets are unaffected. Signed **offline Windows
   leases** remain subject to their previously declared validity
   window; web logout alone is not Windows device revocation.
+
+## Owner-selected customer hostname: browser.lhmcrm.com
+
+The owner chose `https://browser.lhmcrm.com` as the **customer-facing**
+hostname. This selection does **not** authorize overwriting an existing
+Cloudflare production Worker, Pages deployment, D1 database, or DNS route.
+The new Google SaaS code and ephemeral test packages are deliberately
+isolated until the existing Cloudflare resources can be inspected.
+
+Read-only GitHub-hosted check:
+`Browser MAIN domain LIVE read-only acceptance`,
+run `40310105255` on 2026-10-26:
+- GitHub runner's system DNS found **no A or AAAA** record for
+  `browser.lhmcrm.com`;
+- Google Public DNS returned `Status=3` (NXDOMAIN), no answers;
+- Cloudflare Public DNS returned `Status=3` (NXDOMAIN), no answers;
+- control lookup `github.com` resolved successfully.
+
+**LIVE customer hostname is not configured yet.** Passing the local
+Electron build or mocked D1 tests must not be reported as a working
+customer login site. Independent no-credential probe:
+`test/google-main-domain-live-readonly.mjs`; it does not change DNS,
+call sensitive admin APIs, execute customer purchases, or deploy.
+
+Before adopting this hostname for paid SaaS, the operator must:
+1. Confirm whether another existing Cloudflare Worker or Pages app
+   owns `browser.lhmcrm.com`, and preserve all existing paths.
+2. Supply the existing restricted Cloudflare API token under GitHub
+   Environment `staging` as secret `CLOUDFLARE_API_TOKEN`.
+   The read-only GitHub audit currently sees
+   `CLOUDFLARE_ACCOUNT_ID` present, but the API token absent.
+   Never paste the token into an issue/chat/commit.
+3. Approve an isolated path/domain migration plan after inspecting the
+   real Worker/DNS zone; configure HTTPS DNS only via the appropriate
+   production-safe reviewed deployment.
+4. Align the Worker Google OAuth redirect URI, Google authorized redirect
+   settings, customer portal, desktop packaged public-key pin and public
+   API origin; do not replace the existing Preview release or reuse
+   its signing identity.
+5. Rerun read-only live smoke, then Windows OAuth/DPAPI, two-seat and
+   manual VietQR acceptance before changing the commercial sale gate.
+
+The old `browser-staging.lhmcrm.com` is **not required as a public
+customer hostname** by this decision; existing staging-only tests and
+hardcoded package trust still target it and must be explicitly migrated
+before any real release. The PR remains Draft and deliberately does
+not rewrite production DNS/routes.
