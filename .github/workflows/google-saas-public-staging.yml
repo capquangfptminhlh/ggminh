@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Type PUBLISH_PUBLIC_STAGING_NO_SALES to expose ONLY browser-staging.lhmcrm.com with paid plan disabled'
+        description: 'Type PUBLISH_PUBLIC_STAGING_NO_SALES to attach ONLY browser.lhmcrm.com/v2/*; preserve the existing site and keep sales disabled'
         required: true
         type: string
 permissions:
@@ -71,18 +71,20 @@ jobs:
             echo "::error::Invalid isolated D1"; exit 1
           fi
           echo "id=$uuid" >> "$GITHUB_OUTPUT"
-      - name: Generate staging-only hostname config (NO production routes)
+      - name: Generate isolated /v2/* route; NEVER overwrite root or legacy routes
         env:
           STAGING_D1_ID: ${{ steps.stage.outputs.id }}
         shell: bash
         run: |
           set -euo pipefail
           node tools/browser-saas-staging-config.js public "$STAGING_D1_ID" > serverless/license-worker/wrangler.saas-public.toml
-          grep -Fq 'pattern = "browser-staging.lhmcrm.com"' serverless/license-worker/wrangler.saas-public.toml
-          if grep -Fq 'pattern = "browser.lhmcrm.com"' serverless/license-worker/wrangler.saas-public.toml; then
-            echo "::error::Production route forbidden"; exit 1
+          grep -Fxq 'pattern = "browser.lhmcrm.com/v2/*"' serverless/license-worker/wrangler.saas-public.toml
+          grep -Fxq 'zone_name = "lhmcrm.com"' serverless/license-worker/wrangler.saas-public.toml
+          if grep -Fxq 'pattern = "browser.lhmcrm.com"' serverless/license-worker/wrangler.saas-public.toml ||
+             grep -Fq 'custom_domain = true' serverless/license-worker/wrangler.saas-public.toml; then
+            echo "::error::Refusing takeover of existing site hostname"; exit 1
           fi
-      - name: Deploy ONLY browser-staging.lhmcrm.com with paid plan disabled
+      - name: Deploy isolated /v2/* Worker (preserve browser.lhmcrm.com root/v1)
         working-directory: serverless/license-worker
         run: npx --yes wrangler@4.148.0 deploy --config wrangler.saas-public.toml
       - name: Live HTTPS smoke (never buy, approve or create a customer)
@@ -90,7 +92,7 @@ jobs:
         run: |
           set -euo pipefail
           node --input-type=module <<'JS'
-          const origin='https://browser-staging.lhmcrm.com';
+          const origin='https://browser.lhmcrm.com';
           const request=async(p)=>fetch(origin+p,{redirect:'manual',signal:AbortSignal.timeout(15000)});
           const plans=await request('/v2/plans');
           if(plans.status!==200)throw Error('Live staging plans unreachable');
@@ -110,8 +112,8 @@ jobs:
         run: |
           {
             echo '### Browser SaaS isolated public staging — NO SALES'
-            echo '- Domain: browser-staging.lhmcrm.com (staging only)'
-            echo '- Dedicated D1, Worker & Access JWT verification; normal production route unchanged'
+            echo '- Hostname: browser.lhmcrm.com; ONLY /v2/* route (no root/legacy takeover)'
+            echo '- Dedicated D1, Worker & Access JWT verification; existing root and v1 routes unchanged'
             echo '- Payment plan remains DISABLED; no real transfers or entitlements allowed'
             echo '- Live checks: HTTPS, empty plan list, admin denial, OAuth redirect'
             echo '- Full Google browser login / Windows DPAPI pairing still require human acceptance'
