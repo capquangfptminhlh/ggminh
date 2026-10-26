@@ -67,9 +67,27 @@ async function unseal(env,kind,value,now){
 async function bodyJson(req) {
   if(!/^application\/json(?:\s*;|$)/i.test(req.headers.get('content-type')||''))
     throw Error('json_required');
-  const value=await req.text();
-  if(value.length>4096)throw Error('request_too_large');
-  const parsed=JSON.parse(value);
+  if(Number(req.headers.get('content-length')||0)>4096)
+    throw Error('request_too_large');
+  if(!req.body)throw Error('invalid_body');
+  // Protect OAuth-linked orders and merchant activation against chunked
+  // requests with no Content-Length: stop before buffering beyond 4 KiB.
+  const reader=req.body.getReader();const parts=[];let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      total+=value.byteLength;
+      if(total>4096)throw Error('request_too_large');
+      parts.push(value);
+    }
+  }finally{
+    if(total>4096)await reader.cancel().catch(()=>{});
+    reader.releaseLock();
+  }
+  const bytes=new Uint8Array(total);let offset=0;
+  for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
+  const parsed=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('invalid_body');
   return parsed;
 }
