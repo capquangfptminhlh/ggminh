@@ -6,6 +6,7 @@ on:
       - 'tools/browser-saas-staging-config.js'
       - 'test/browser-saas-staging-config.js'
       - 'tools/browser-saas-staging-d1.mjs'
+      - 'serverless/license-worker/migrations/0004_google_web_session_revocation.sql'
   workflow_dispatch:
     inputs:
       confirmation:
@@ -77,6 +78,7 @@ jobs:
         working-directory: serverless/license-worker
         run: |
           npx --yes wrangler@4.148.0 d1 execute lhm-browser-saas-staging --remote --file ./migrations/0003_google_saas_staging.sql --config wrangler.saas-private.toml
+          npx --yes wrangler@4.148.0 d1 execute lhm-browser-saas-staging --remote --file ./migrations/0004_google_web_session_revocation.sql --config wrangler.saas-private.toml
       - name: Publish a PRIVATE staging Worker (no DNS routes)
         working-directory: serverless/license-worker
         run: npx --yes wrangler@4.148.0 deploy --config wrangler.saas-private.toml
