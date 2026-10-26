@@ -97,11 +97,17 @@ class GoogleBrowserDesktopClient{
   let response;
   try{
    response=await this.fetch(this.origin+endpoint,{
-     method:'POST',headers,body:JSON.stringify(data),redirect:'error'});
+     method:'POST',headers,body:JSON.stringify(data),redirect:'error',
+    // Avoid frozen activation buttons and singleflight renewals when the
+    // provider or network stalls. A timeout never extends an old lease.
+    signal:AbortSignal.timeout(15000)});
   }catch(_){throw new BrowserSaasError('NETWORK_UNAVAILABLE');}
   let body;
-  try{body=await response.json();}
-  catch(_){throw new BrowserSaasError('INVALID_SERVER_RESPONSE',response.status);}
+  try{
+   const raw=await response.text();
+   if(raw.length>65536)throw Error('SaaS response exceeds maximum size');
+   body=JSON.parse(raw);
+  }catch(_){throw new BrowserSaasError('INVALID_SERVER_RESPONSE',response.status);}
   if(!response.ok){
     const code=typeof body?.error==='string'&&/^[A-Z0-9_]{3,60}$/.test(body.error)
       ?body.error:'SERVER_REJECTED';
