@@ -62,6 +62,10 @@ try{
    'paid lease must renew immediately after Windows starts');
  assert(main.includes('googleDesktop.renewOnline('),
    'signed Gmail leases may only be minted by the remote SaaS Worker');
+ assert(main.includes('const legacyLicenseRoot=googleDesktop?customerStorageDir:storageDir'),
+   'Compatibility license identities/trial metadata must never cross Gmail UUIDs');
+ assert(main.includes('endpoint:googleDesktop?null:resolveLicenseEndpoint('),
+   'Gmail SaaS must not initialize the Preview v1 online license endpoint');
  assert(main.includes('store.licensePolicy = licensePolicy'));
  assert(main.includes('launcher.licensePolicy = licensePolicy'));
  assert(main.includes('automationRunner.licensePolicy = licensePolicy'));
