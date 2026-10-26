@@ -1,0 +1,20 @@
+name: Browser Gmail LIVE staging acceptance (read-only)
+on:
+  pull_request:
+    paths:
+      - 'test/google-live-staging-smoke.mjs'
+      - '.github/workflows/google-live-staging-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-http-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe real DNS, HTTPS, NO SALES, login redirect and admin protection
+        run: node test/google-live-staging-smoke.mjs
