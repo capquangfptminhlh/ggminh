@@ -407,3 +407,27 @@ diagnostic jobs.
   requests to device pairing and customer orders are rejected.
   Live Cloudflare WAF, billing, Google OAuth and Windows tests remain
   necessary before a commercial release.
+
+## Server-side Google web session revocation
+
+- Previous Google web logouts only cleared the browser's signed HMAC
+  cookie. This did not invalidate a copied cookie until its natural
+  seven-day expiry. The new isolated staging migration
+  `0004_google_web_session_revocation.sql` adds a server-managed web
+  session ID, expiry and `revoked_at_ms` to D1. OAuth login stores a
+  fresh session ID. Every authenticated request verifies both the HMAC
+  and the live D1 row. Logging out invalidates the row **before**
+  clearing the browser cookie, so the old cookie cannot be replayed to
+  view orders, approve pairing or generate a new payment.
+- Staging private bootstrap executes migrations `0003` and `0004`
+  only on its separately named SaaS D1. The public staging preflight
+  refuses publication if the new server-side session table is absent.
+  The admin readiness check reports the table's presence without
+  returning session identifiers.
+- Node/SQLite integration tests validate that an invalid CSRF token
+  cannot log a user out and that a previously valid cookie is rejected
+  for account and order reads after successful logout.
+- Existing legacy Preview licenses, customer browser profiles and
+  local DPAPI secrets are unaffected. Signed **offline Windows
+  leases** remain subject to their previously declared validity
+  window; web logout alone is not Windows device revocation.
