@@ -5,7 +5,7 @@ const crypto=require('node:crypto');
 const {GoogleBrowserDesktopClient,BrowserSaasError}=
  require('../src/licensing/googleDesktopClient');
 const {canonicalClaims,PREFIX}=require('../src/licensing/googleLease');
-const origin='https://browser-staging.lhmcrm.com';
+const origin='https://browser.lhmcrm.com';
 const privatePair=crypto.generateKeyPairSync('ed25519');
 const customerId='e02ab0e4-c2b0-4a23-99a1-acd430b37fea';
 let now=Date.parse('2026-10-25T10:00:00.000Z');
