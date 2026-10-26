@@ -112,11 +112,16 @@ async function identity(req,env,now) {
   const current=await unseal(env,'session',cookie(req,SESSION),now);
   if(!current||!UUID.test(current.customer_id||'')||
      !/^\d{8,30}$/.test(current.sub||'')||
-     typeof current.csrf!=='string')return null;
+     typeof current.csrf!=='string'||
+     !/^[A-Za-z0-9_-]{32}$/.test(current.session_id||''))return null;
+  const session=await database(env).prepare(
+    'SELECT session_id FROM google_web_sessions_v2 WHERE session_id=? AND customer_id=? AND expires_at_ms>? AND revoked_at_ms IS NULL')
+    .bind(current.session_id,current.customer_id,now).first();
+  if(!session)return null;
   const row=await database(env).prepare(
     'SELECT customer_id,email,status FROM customers_v2 WHERE customer_id=? AND google_sub=?')
     .bind(current.customer_id,current.sub).first();
-  return row&&row.status==='active'?{...row,csrf:current.csrf}:null;
+  return row&&row.status==='active'?{...row,csrf:current.csrf,session_id:current.session_id}:null;
 }
 function authorizedPost(req,url,user) {
   return requireOrigin(req,url)&&req.headers.get('x-csrf-token')===user.csrf;
@@ -237,8 +242,12 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
         const person=await db.prepare('SELECT customer_id,status FROM customers_v2 WHERE google_sub=?')
           .bind(google.sub).first();
         if(!person||person.status!=='active')return error(403,'ACCOUNT_BLOCKED');
+        const sessionId=rand(24);
+        await db.prepare(
+          'INSERT INTO google_web_sessions_v2(session_id,customer_id,created_at_ms,expires_at_ms) VALUES (?,?,?,?)')
+          .bind(sessionId,person.customer_id,now,now+7*DAY).run();
         const session=await seal(env,'session',{customer_id:person.customer_id,
-          sub:google.sub,csrf:rand(24),exp:now+7*DAY});
+          session_id:sessionId,sub:google.sub,csrf:rand(24),exp:now+7*DAY});
         const headers=new Headers({'Location':ticket.returnTo||'/v2/portal','Cache-Control':'no-store',
           'Referrer-Policy':'no-referrer'});
         headers.append('Set-Cookie',clean);
@@ -253,7 +262,8 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
          // only which production gates are ready for activation.
          const names=['customers_v2','plans_v2','orders_v2','entitlements_v2',
            'license_seats_v2','desktop_pairings_v2','desktop_grants_v2',
-           'desktop_pair_limits_v2','payment_reviews_v2','audit_events_v2'];
+           'desktop_pair_limits_v2','payment_reviews_v2','audit_events_v2',
+           'google_web_sessions_v2'];
          const found=await db.prepare(
            "SELECT name FROM sqlite_master WHERE type='table' AND name IN ("+
               names.map(()=>'?').join(',')+")").bind(...names).all();
@@ -330,6 +340,10 @@ export function createGoogleSaasApi({clock=()=>Date.now(),fetcher=fetch}={}){
       }
       if(path==='/v2/auth/logout'&&req.method==='POST'){
         if(!authorizedPost(req,url,user))return error(403,'CSRF_REJECTED');
+        const ended=await db.prepare(
+          'UPDATE google_web_sessions_v2 SET revoked_at_ms=? WHERE session_id=? AND customer_id=? AND revoked_at_ms IS NULL')
+          .bind(now,user.session_id,user.customer_id).run();
+        if(!Number(ended?.meta?.changes))return error(401,'SIGNIN_REQUIRED');
         return respond(200,{ok:true},{'Set-Cookie':setCookie(SESSION,'',0)});
       }
       if(path==='/v2/orders/current'&&req.method==='GET'){
