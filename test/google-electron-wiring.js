@@ -21,6 +21,7 @@ try{
  const preload=fs.readFileSync('preload.js','utf8');
  const html=fs.readFileSync('src/ui/index.html','utf8');
  const js=fs.readFileSync('src/ui/googleLicense.js','utf8');
+ const legacyCenter=fs.readFileSync('src/ui/licenseCenter.js','utf8');
  const css=fs.readFileSync('src/ui/googleLicense.css','utf8');
  for(const id of ['google-license-panel','google-login-start','google-login-claim',
    'google-open-plans','google-activate','google-devices','google-restart',
@@ -43,6 +44,8 @@ try{
    'The renewal timer must not attach a paid seat until data isolation is activated');
  assert(js.includes('TENANT_RESTART_REQUIRED:'),
    'Gmail customer must be told to restart when account switching is blocked');
+ assert(legacyCenter.includes("if(google?.enabled)return;"),
+   'Opening Gmail dialog must not trigger Preview trial or legacy license status queries');
 
  assert(main.includes("createWarningHistory({storageDir:customerStorageDir,countMode:'authoritative'})"),
    'Gmail warning history must use the storageDir named argument, not default to shared storage');
