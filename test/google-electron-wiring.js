@@ -80,6 +80,12 @@ try{
  ])assert(main.includes(ctor),'cross-Gmail component storage not isolated: '+ctor);
  assert(js.includes('window.api.googleLicenseStart()'));
  assert(js.includes('window.api.googleLicenseClaim()'));
+ assert(main.includes("clipboard.writeText(pair.approvalUrl)"),
+   'Windows browser failures must copy the already-validated Gmail pairing URL');
+ assert(main.includes('browserOpened,linkCopied'),
+   'Renderer must be notified how Google device pairing link was delivered');
+ assert(js.includes('result.linkCopied'),
+   'Gmail onboarding must explain paste-link fallback if default browser fails');
  assert(js.includes("window.api.googleLicenseReplace(device.seatId,'REPLACE')"));
  assert(html.includes('id="license-legacy-explainer"'),
    'Preview-only trial legal copy needs its own selector');
