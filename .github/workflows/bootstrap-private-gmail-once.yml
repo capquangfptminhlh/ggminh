@@ -1,0 +1,81 @@
+name: Private Gmail SaaS bootstrap (isolated Cloudflare, no public route)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-private-gmail-once.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lhm-browser-saas-isolated-private-bootstrap
+  cancel-in-progress: false
+jobs:
+  bootstrap:
+    if: github.repository == 'capquangfptminhlh/ggminh' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
+      LHM_D1_DATABASE_ID: ${{ secrets.LHM_D1_DATABASE_ID }}
+    steps:
+      - name: Checkout immutable reviewed Gmail SaaS source, never production main
+        uses: actions/checkout@v4
+        with:
+          ref: 4d28fc712c48bce46be66f7faa4cfccd45a889c7
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify credentials and private-only configuration (no print of secrets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[a-fA-F0-9]{32}$ ]]
+          node test/browser-saas-staging-config.js
+          node --check tools/browser-saas-staging-d1.mjs
+          node --experimental-sqlite test/google-saas-worker.js
+          node test/google-lease-contract.js
+          node test/google-desktop-client.js
+      - name: Resolve or create ONLY separate staging D1
+        id: d1
+        run: node tools/browser-saas-staging-d1.mjs
+      - name: Generate UNROUTED private Worker config
+        shell: bash
+        env:
+          STAGING_D1_ID: ${{ steps.d1.outputs.d1_id }}
+        run: |
+          set -euo pipefail
+          node tools/browser-saas-staging-config.js private "$STAGING_D1_ID" > serverless/license-worker/wrangler.saas-private.toml
+          grep -Fxq 'name = "lhm-browser-commerce-staging"' serverless/license-worker/wrangler.saas-private.toml
+          grep -Fxq 'workers_dev = false' serverless/license-worker/wrangler.saas-private.toml
+          grep -Fxq 'preview_urls = false' serverless/license-worker/wrangler.saas-private.toml
+          if grep -Eq '^\[\[routes\]\]|^route\s*=|custom_domain\s*=\s*true' serverless/license-worker/wrangler.saas-private.toml; then
+            echo "::error::A private Worker must not have an internet route"; exit 1
+          fi
+      - name: Apply ONLY isolated Gmail SaaS D1 migrations
+        working-directory: serverless/license-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.148.0 d1 execute lhm-browser-saas-staging --remote --file ./migrations/0003_google_saas_staging.sql --config wrangler.saas-private.toml
+          npx --yes wrangler@4.148.0 d1 execute lhm-browser-saas-staging --remote --file ./migrations/0004_google_web_session_revocation.sql --config wrangler.saas-private.toml
+      - name: Deploy isolated PRIVATE Worker (no public domain, no workers.dev)
+        working-directory: serverless/license-worker
+        run: npx --yes wrangler@4.148.0 deploy --config wrangler.saas-private.toml
+      - name: Confirm ONLY private staging was provisioned
+        run: |
+          {
+            echo '### Private Gmail Cloudflare SaaS bootstrap'
+            echo '- Worker: lhm-browser-commerce-staging, NO public DNS/route'
+            echo '- D1: lhm-browser-saas-staging; migration 0003 + 0004'
+            echo '- Production Worker, DNS and legacy D1: NOT MODIFIED'
+            echo '- OAuth, bank and signed-lease secrets still require readiness acceptance'
+            echo '- No paid plans or customer registration enabled'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Always delete generated Worker config
+        if: always()
+        run: rm -f serverless/license-worker/wrangler.saas-private.toml
