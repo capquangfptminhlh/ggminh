@@ -1,0 +1,24 @@
+name: LHM Full Dependency Security Gate (including Electron)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dependency-full-audit.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  all-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install the exact lockfile
+        run: npm ci --no-audit
+      - name: Audit ALL packages including Electron and build tooling
+        run: npm audit --audit-level=high
