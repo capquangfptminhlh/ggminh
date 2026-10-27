@@ -50,8 +50,44 @@ jobs:
           }
       - name: Smoke real Chrome or Edge profile and active tab
         run: node test/real-chromium-smoke.js
+      - name: Capture actual Electron UI (sample data)
+        shell: pwsh
+        env:
+          LHM_CI_UI_CAPTURE: '1'
+          LHM_CI_UI_CAPTURE_DIR: 'qa-unpackaged-ui'
+        run: |
+          $capture = Join-Path $PWD 'qa-unpackaged-ui'
+          New-Item -ItemType Directory -Force -Path $capture | Out-Null
+          $proc = Start-Process -FilePath ".\\node_modules\\electron\\dist\\electron.exe" -ArgumentList "." -PassThru
+          try {
+            if (-not $proc.WaitForExit(45000)) {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+              throw "Electron UI capture timed out"
+            }
+            if ($proc.ExitCode -ne 0) { throw "Electron UI capture exited $($proc.ExitCode)" }
+            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png", "workspace-profile-paging-preview.png")) {
+              $file = Get-Item (Join-Path $capture $screen) -ErrorAction Stop
+              if ($file.Length -lt 10000) { throw "Missing/undersized actual Electron screenshot: $screen" }
+            }
+            $editor = Get-Item (Join-Path $capture "workspace-profile-editor-preview.png") -ErrorAction Stop
+            if ($editor.Length -lt 10000) { throw "Missing profile editor visual smoke" }
+          } finally {
+            if (-not $proc.HasExited) {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
+          }
       - name: Build Windows installer
         run: npm run build:win
+      - name: Preserve separately captured unpackaged UI evidence
+        shell: pwsh
+        run: |
+          $source = Join-Path $PWD 'qa-unpackaged-ui'
+          if (-not (Test-Path -LiteralPath $source)) { throw 'Missing pre-build unpackaged UI evidence' }
+          Copy-Item -Path (Join-Path $source '*.png') -Destination (Join-Path $PWD 'dist') -Force
+          $layout = Join-Path $source 'ui-layout-debug.json'
+          if (Test-Path -LiteralPath $layout) {
+            Copy-Item -LiteralPath $layout -Destination (Join-Path $PWD 'dist') -Force
+          }
       - name: Verify packaged Win32 helper is unpacked
         shell: pwsh
         run: |
@@ -94,29 +130,6 @@ jobs:
           if ($raw.schema -ne 'lhm.license-authority-config.v1' -or
               $raw.enabled -ne $false -or $null -ne $raw.endpoint) {
             throw 'Preview installer must NOT ship a live license authority before production approval'
-          }
-      - name: Capture actual Electron UI (sample data)
-        shell: pwsh
-        env:
-          LHM_CI_UI_CAPTURE: '1'
-        run: |
-          $proc = Start-Process -FilePath ".\node_modules\electron\dist\electron.exe" -ArgumentList "." -PassThru
-          try {
-            if (-not $proc.WaitForExit(45000)) {
-              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-              throw "Electron UI capture timed out"
-            }
-            if ($proc.ExitCode -ne 0) { throw "Electron UI capture exited $($proc.ExitCode)" }
-            foreach ($screen in @("workspace-preview.png", "workspace-expanded-preview.png", "workspace-command-preview.png", "workspace-engine-provider-preview.png", "workspace-ads-guard-preview.png", "workspace-performance-lab-preview.png", "workspace-about-update-preview.png", "workspace-customer-handoff-preview.png", "workspace-license-preview.png", "workspace-fleet-triage-preview.png", "workspace-agency-handoff-preview.png", "workspace-profile-paging-preview.png")) {
-              $file = Get-Item ("dist\" + $screen) -ErrorAction Stop
-              if ($file.Length -lt 10000) { throw "Missing/undersized actual Electron screenshot: $screen" }
-            }
-            $editor = Get-Item "dist\\workspace-profile-editor-preview.png" -ErrorAction Stop
-            if ($editor.Length -lt 10000) { throw "Missing profile editor visual smoke" }
-          } finally {
-            if (-not $proc.HasExited) {
-              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-            }
           }
       - name: Capture packaged Electron UI
         shell: pwsh
