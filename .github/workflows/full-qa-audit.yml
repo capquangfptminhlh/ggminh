@@ -34,8 +34,85 @@ jobs:
           cache: npm
       - name: Reproducible dependency install
         run: npm ci --no-audit
-      - name: All 270 canonical regression steps (no short-circuit)
+      - name: All 270 canonical regression steps on Windows
+        if: runner.os == 'Windows'
         run: npm test
+      - name: All portable regression steps on Linux (two Win32-only cases verified on Windows)
+        if: runner.os == 'Linux'
+        run: node test/run-all.js --filter '^(?!.*test/(browser-diagnostics|runtime-registry)\\.js).*
+      - name: Verify no skipped step masquerades as success
+        run: node test/run-all-selftest.js
+      - name: Exercise extra staging + security + deployment test coverage
+        run: |
+          node test/browser-saas-staging-config.js
+          node test/browser-saas-staging-public-preflight.mjs
+          node test/cloudflare-bootstrap-config.js
+          node test/google-lease-contract.js
+          node --experimental-sqlite test/google-saas-worker.js
+          node test/google-admin-access.js
+          node test/google-desktop-client.js
+          node test/google-electron-wiring.js
+          node test/google-packaged-mode.js
+          node test/google-saas-billing-admin.js
+          node test/google-staging-update-isolation.js
+          node test/google-tenant-storage.js
+          node test/camoufox-stage0-ci-reports.js
+          node test/camoufox-stage0-timeouts.js
+          node test/gate3-operator-kit.js
+      - name: Verify code parsing for protected Google SaaS and Worker modules
+        run: |
+          node --check main.js
+          node --check preload.js
+          node --check src/licensing/googleDesktopClient.js
+          node --check src/licensing/googleStagingConfig.js
+          node --check serverless/license-worker/src/googleSaas.mjs
+          node --check serverless/license-worker/src/googleDevice.mjs
+          node --check serverless/license-worker/src/googleAdminAccess.mjs
+          node --check tools/browser-saas-staging-config.js
+          node --check tools/browser-saas-staging-public-preflight.mjs
+      - name: Report evidence limits accurately
+        shell: bash
+        run: |
+          {
+            echo '### Full automated QA on ${{ matrix.os }}'
+            echo '- Canonical regression: all steps from npm test, regardless of failures'
+            echo '- Additional Gmail/Cloudflare/billing/security regression suite'
+            echo '- Real Google OAuth, payment, DNS/HTTPS deployment: NOT exercised here'
+            echo '- Real external Camoufox binary, authenticated proxies, installed customer Windows Gate 3: NOT exercised here'
+            echo '- This is NOT a claim of 100% commercial acceptance'
+          } >> "$GITHUB_STEP_SUMMARY"
+  dependency-vulnerability-audit:
+    name: Runtime dependencies - npm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exact locked packages
+        run: npm ci --no-audit
+      - name: Audit production/runtime dependencies (HIGH/CRITICAL fail)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Diagnose exact proposed lockfile fix without publishing anything
+        if: failure()
+        shell: bash
+        run: |
+          npm audit fix --package-lock-only --ignore-scripts --no-fund
+          node - <<'JS'
+          const fs=require('fs');
+          const cp=require('child_process');
+          const orig=JSON.parse(cp.execFileSync('git',['show','HEAD:package-lock.json'],{encoding:'utf8'}));
+          const next=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          for(const key of new Set([...Object.keys(orig.packages||{}),...Object.keys(next.packages||{})])){
+            if(JSON.stringify(orig.packages[key])!==JSON.stringify(next.packages[key]))
+              console.log('LOCK_PATCH '+key+' '+JSON.stringify(next.packages[key]||null));
+          }
+          JS
+          npm audit --omit=dev --audit-level=high
+
+
       - name: Verify no skipped step masquerades as success
         run: node test/run-all-selftest.js
       - name: Exercise extra staging + security + deployment test coverage
