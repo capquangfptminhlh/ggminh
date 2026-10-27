@@ -1,0 +1,80 @@
+name: Gmail SaaS staging readiness (read-only, no secrets output)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/google-saas-private-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readiness:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 7
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect isolated SaaS D1, Worker secrets and customer-host DNS (GET only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          const token=process.env.CLOUDFLARE_API_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID;
+          if(!token||!/^[a-fA-F0-9]{32}$/.test(account||''))throw Error('MISSING_STAGING_CREDENTIALS');
+          const base='https://api.cloudflare.com/client/v4';
+          const get=async(p)=>{
+            const r=await fetch(base+p,{headers:{authorization:'Bearer '+token,accept:'application/json'},
+              redirect:'error',signal:AbortSignal.timeout(16000)});
+            if(!r.ok)return {ok:false,status:r.status};
+            const v=await r.json();
+            return {ok:v?.success===true,result:v?.result,status:r.status};
+          };
+          const d=await get('/accounts/'+account+'/d1/database?per_page=100');
+          if(!d.ok||!Array.isArray(d.result))throw Error('D1_LIST_ACCESS_FAILED');
+          const db=d.result.find(x=>x.name==='lhm-browser-saas-staging');
+          const worker='lhm-browser-commerce-staging';
+          const w=await get('/accounts/'+account+'/workers/scripts/'+worker+'/secrets');
+          const required=['BROWSER_GOOGLE_CLIENT_ID','BROWSER_GOOGLE_CLIENT_SECRET',
+            'BROWSER_SESSION_SECRET','BROWSER_LEASE_PRIVATE_PKCS8_B64',
+            'BROWSER_LEASE_PUBLIC_SPKI_B64','BROWSER_BANK_BIN',
+            'BROWSER_BANK_ACCOUNT_NO','BROWSER_BANK_ACCOUNT_NAME',
+            'BROWSER_SAAS_ADMIN_TOKEN','BROWSER_SAAS_ACCESS_TEAM_DOMAIN',
+            'BROWSER_SAAS_ACCESS_AUD'];
+          const found=w.ok&&Array.isArray(w.result)?new Set(w.result.map(x=>x.name)):null;
+          const missing=found?required.filter(x=>!found.has(x)):[];
+          const zones=await get('/zones?name=lhmcrm.com&per_page=5');
+          const zone=zones.ok&&Array.isArray(zones.result)?zones.result[0]:null;
+          const dns=zone?await get('/zones/'+encodeURIComponent(zone.id)+
+            '/dns_records?name=browser.lhmcrm.com&per_page=10'):{ok:false};
+          const dnsExists=dns.ok&&Array.isArray(dns.result)&&dns.result.length>0;
+          let plan='NOT_VERIFIED';
+          if(db){
+            const r=await fetch(base+'/accounts/'+account+'/d1/database/'+(db.uuid||db.id)+'/query',{
+              method:'POST',headers:{authorization:'Bearer '+token,'content-type':'application/json'},
+              body:JSON.stringify({sql:"SELECT enabled,max_profiles FROM plans_v2 WHERE plan_code='personal_30'"}),
+              redirect:'error',signal:AbortSignal.timeout(16000)});
+            if(r.ok){const j=await r.json();const row=j.result?.[0]?.results?.[0];
+              plan=row?.enabled===0&&row.max_profiles===null?'DISABLED_SAFE':
+                row?'OTHER_CHECK_REQUIRED':'NOT_VERIFIED';
+            }
+          }
+          const report=[
+            'Dedicated Gmail staging D1: '+(db?'EXISTS':'MISSING'),
+            'Private Gmail staging Worker secret metadata: '+(w.ok?'READABLE':'NOT_READABLE_HTTP_'+w.status),
+            'Required SaaS Worker secret names present: '+(found?required.length-missing.length:'UNKNOWN')+'/'+required.length,
+            'Missing secret names: '+(found?(missing.join(', ')||'NONE'):'NOT_VERIFIED'),
+            'Pilot paid plan: '+plan,
+            'browser.lhmcrm.com DNS: '+(dnsExists?'EXISTS':'NOT_PRESENT_OR_NOT_READABLE'),
+            'Web hostname not published or modified by this audit'
+          ];
+          for(const line of report)console.log(line);
+          const fs=await import('node:fs');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            '### Gmail SaaS staging readiness (read only)\n'+report.map(x=>'- '+x).join('\n')+'\n');
+          JS
