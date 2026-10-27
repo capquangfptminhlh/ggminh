@@ -1,0 +1,93 @@
+name: LHM Full QA Audit (Windows + Linux, no production)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/full-qa-audit.yml'
+      - 'test/**'
+      - 'src/**'
+      - 'serverless/license-worker/**'
+      - 'tools/**'
+      - 'main.js'
+      - 'preload.js'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  complete-test-matrix:
+    name: Full automated regression / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      CI: 'true'
+      LHM_D1_DATABASE_ID: '12345678-1234-4123-8123-123456789abc'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Reproducible dependency install
+        run: npm ci --no-audit
+      - name: All 270 canonical regression steps (no short-circuit)
+        run: npm test
+      - name: Verify no skipped step masquerades as success
+        run: node test/run-all-selftest.js
+      - name: Exercise extra staging + security + deployment test coverage
+        run: |
+          node test/browser-saas-staging-config.js
+          node test/browser-saas-staging-public-preflight.mjs
+          node test/cloudflare-bootstrap-config.js
+          node test/google-lease-contract.js
+          node --experimental-sqlite test/google-saas-worker.js
+          node test/google-admin-access.js
+          node test/google-desktop-client.js
+          node test/google-electron-wiring.js
+          node test/google-packaged-mode.js
+          node test/google-saas-billing-admin.js
+          node test/google-staging-update-isolation.js
+          node test/google-tenant-storage.js
+          node test/camoufox-stage0-ci-reports.js
+          node test/camoufox-stage0-timeouts.js
+          node test/gate3-operator-kit.js
+      - name: Verify code parsing for protected Google SaaS and Worker modules
+        run: |
+          node --check main.js
+          node --check preload.js
+          node --check src/licensing/googleDesktopClient.js
+          node --check src/licensing/googleStagingConfig.js
+          node --check serverless/license-worker/src/googleSaas.mjs
+          node --check serverless/license-worker/src/googleDevice.mjs
+          node --check serverless/license-worker/src/googleAdminAccess.mjs
+          node --check tools/browser-saas-staging-config.js
+          node --check tools/browser-saas-staging-public-preflight.mjs
+      - name: Report evidence limits accurately
+        shell: bash
+        run: |
+          {
+            echo '### Full automated QA on ${{ matrix.os }}'
+            echo '- Canonical regression: all steps from npm test, regardless of failures'
+            echo '- Additional Gmail/Cloudflare/billing/security regression suite'
+            echo '- Real Google OAuth, payment, DNS/HTTPS deployment: NOT exercised here'
+            echo '- Real external Camoufox binary, authenticated proxies, installed customer Windows Gate 3: NOT exercised here'
+            echo '- This is NOT a claim of 100% commercial acceptance'
+          } >> "$GITHUB_STEP_SUMMARY"
+  dependency-vulnerability-audit:
+    name: Runtime dependencies - npm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exact locked packages
+        run: npm ci --no-audit
+      - name: Audit production/runtime dependencies (HIGH/CRITICAL fail)
+        run: npm audit --omit=dev --audit-level=high
