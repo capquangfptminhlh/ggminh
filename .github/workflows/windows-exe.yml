@@ -54,11 +54,11 @@ jobs:
         shell: pwsh
         env:
           LHM_CI_UI_CAPTURE: '1'
-          LHM_CI_UI_CAPTURE_DIR: 'qa-unpackaged-ui'
         run: |
           $capture = Join-Path $PWD 'qa-unpackaged-ui'
           New-Item -ItemType Directory -Force -Path $capture | Out-Null
-          $proc = Start-Process -FilePath ".\\node_modules\\electron\\dist\\electron.exe" -ArgumentList "." -PassThru
+          $env:LHM_CI_UI_CAPTURE_DIR = $capture
+          $proc = Start-Process -FilePath ".\node_modules\electron\dist\electron.exe" -ArgumentList "." -PassThru
           try {
             if (-not $proc.WaitForExit(45000)) {
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
