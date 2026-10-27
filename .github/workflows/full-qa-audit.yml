@@ -34,12 +34,12 @@ jobs:
           cache: npm
       - name: Reproducible dependency install
         run: npm ci --no-audit
-      - name: Complete 270-step Windows regression
+      - name: Complete all canonical Windows regression steps
         if: runner.os == 'Windows'
         run: npm test
-      - name: Portable 268-step Linux regression (Win32-only paths verified on Windows)
+      - name: Portable Linux regression (exclude only 2 Win32-specific files)
         if: runner.os == 'Linux'
-        run: node test/run-all.js --filter '^(?!.*(browser-diagnostics|runtime-registry)).*'
+        run: node test/run-all.js --filter '^(?!(node test/browser-diagnostics\\.js|node test/runtime-registry\\.js)$).*'
       - name: Verify no skipped step masquerades as success
         run: node test/run-all-selftest.js
       - name: Extra staging, license, safety and billing regression
@@ -75,7 +75,7 @@ jobs:
         run: |
           {
             echo '### Full automated QA on ${{ matrix.os }}'
-            echo '- Windows: 270 canonical steps. Linux: 268 portable steps, 2 Win32-only exercised on Windows'
+            echo '- Windows: full canonical test chain; Linux: full chain excluding 2 Windows-only file tests'
             echo '- Additional Google SaaS and Cloudflare unit/integration checks'
             echo '- Real Google OAuth, actual bank transactions, production DNS/HTTPS: NOT_RUN'
             echo '- External Camoufox executable and real Windows customer Gate 3: NOT_RUN'
