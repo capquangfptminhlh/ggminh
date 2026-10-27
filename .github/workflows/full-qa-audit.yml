@@ -43,7 +43,9 @@ jobs:
       - name: Verify no skipped step masquerades as success
         run: node test/run-all-selftest.js
       - name: Extra staging, license, safety and billing regression
+        shell: bash
         run: |
+          set -euo pipefail
           node test/browser-saas-staging-config.js
           node test/browser-saas-staging-public-preflight.mjs
           node test/cloudflare-bootstrap-config.js
@@ -60,7 +62,9 @@ jobs:
           node test/camoufox-stage0-timeouts.js
           node test/gate3-operator-kit.js
       - name: Parse protected Cloudflare and Electron modules
+        shell: bash
         run: |
+          set -euo pipefail
           node --check main.js
           node --check preload.js
           node --check src/licensing/googleDesktopClient.js
