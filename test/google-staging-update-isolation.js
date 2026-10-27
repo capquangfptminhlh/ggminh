@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {DisabledGmailUpdateCenter}=require('../src/update/googleStagingUpdater');
-const source=fs.readFileSync('main.js','utf8');
+const source=fs.readFileSync('main.js','utf8').replace(/\r\n/g,'\n');
 const center=new DisabledGmailUpdateCenter('5.8.0');
 assert.equal(center.status().channel,'gmail-staging');
 assert.equal(center.status().configured,false);
