@@ -39,7 +39,7 @@ jobs:
         run: npm test
       - name: Portable Linux regression (exclude only 2 Win32-specific files)
         if: runner.os == 'Linux'
-        run: node test/run-all.js --filter '^(?!(node test/browser-diagnostics\\.js|node test/runtime-registry\\.js)$).*'
+        run: node test/run-all.js --filter '^(?!(node test/browser-diagnostics[.]js|node test/runtime-registry[.]js)$).*'
       - name: Verify no skipped step masquerades as success
         run: node test/run-all-selftest.js
       - name: Extra staging, license, safety and billing regression
