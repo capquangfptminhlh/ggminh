@@ -50,6 +50,19 @@ jobs:
           }
       - name: Smoke real Chrome or Edge profile and active tab
         run: node test/real-chromium-smoke.js
+      - name: Ensure actual Electron runtime binary exists for UI smoke
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'node_modules/electron/dist/electron.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            Write-Host 'Electron runtime not present after dependency install; fetching exact pinned binary'
+            node node_modules/electron/install.js
+            if ($LASTEXITCODE -ne 0) { throw 'Pinned Electron runtime installation failed' }
+          }
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            throw 'Pinned Electron runtime executable still missing; cannot claim UI acceptance'
+          }
+          Write-Host 'PASS: pinned Electron binary ready for real unpackaged UI smoke'
       - name: Capture actual Electron UI (sample data)
         shell: pwsh
         env:
