@@ -19,7 +19,8 @@
     "license:revoke": "node tools/license-registry.js",
     "license:admin": "node tools/license-admin.js",
     "license:dashboard": "node tools/license-dashboard.js",
-    "stage0:test": "node stage0-measure/test.js && node --check stage0-measure/run.js && node --check stage0-measure/run-config.js && node --check stage0-measure/core.js && node --check tools/generate-camoufox-identity.mjs && node stage0-measure/test-isolation.js && node --check stage0-measure/run-isolation.js && node --check stage0-measure/run-runtime-egress.js && node --check stage0-measure/backup-restore-isolation.js"
+    "stage0:test": "node stage0-measure/test.js && node --check stage0-measure/run.js && node --check stage0-measure/run-config.js && node --check stage0-measure/core.js && node --check tools/generate-camoufox-identity.mjs && node stage0-measure/test-isolation.js && node --check stage0-measure/run-isolation.js && node --check stage0-measure/run-runtime-egress.js && node --check stage0-measure/backup-restore-isolation.js",
+    "test:security": "npm audit --audit-level=high"
   },
   "keywords": [
     "browser-automation",
