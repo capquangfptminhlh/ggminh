@@ -15,12 +15,16 @@ function safeWebUrls(values) {
   if (new Set(urls).size !== urls.length) throw new Error('Duplicate startup URLs');
   return urls;
 }
-function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, proxy = {}, extensionDir = null, extensionDirs = [], port = null }) {
+function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, proxy = {}, extensionDir = null, extensionDirs = [], port = null, platform = process.platform }) {
   if (!path.isAbsolute(profileDir)) throw new Error('Profile directory must be absolute');
   const startUrls = safeWebUrls(urls === undefined ? [url] : urls);
   if (engine === 'gecko') {
     if (port) throw new Error('Gecko does not support Chromium CDP endpoints');
-    return ['--no-remote', '--profile', profileDir, '--new-window', startUrls[0],
+    // Windows firefox.exe is a launcher process: it starts the real browser
+    // and exits at once (code 0), so the tracked PID "closes" while Firefox
+    // keeps running. --wait-for-browser keeps it alive until the browser exits.
+    return ['--no-remote', '--profile', profileDir,
+      ...(platform === 'win32' ? ['--wait-for-browser'] : []), '--new-window', startUrls[0],
       ...startUrls.slice(1).flatMap(item => ['--new-tab', item])];
   }
   if (engine !== 'chromium') throw new Error('Unsupported browser engine');
