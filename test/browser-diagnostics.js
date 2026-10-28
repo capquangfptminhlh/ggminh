@@ -37,5 +37,37 @@ const { diagnoseBrowsers, parseVersion, optionsFor } = require('../src/engine/br
   });
   assert.strictEqual(failures.engines[0].status,'error');
   assert(!failures.engines[0].message.includes('undefined'));
+
+  // Firefox from the Microsoft Store / winget (MSIX): only an app execution
+  // alias exists (existsSync false), and launching it loses the real browser.
+  // It must be named as unsupported, never reported as "not installed" and
+  // never launched — even when the alias path is configured explicitly.
+  const { msixFirefoxPath, MSIX_FIREFOX_MESSAGE } = require('../src/engine/browserDiagnostics');
+  const BrowserLauncher = require('../src/engine/browserLauncher');
+  const { checkProfile } = require('../src/health/profileHealth');
+  const env = { LOCALAPPDATA: isWin ? 'C:\\Users\\qa\\AppData\\Local' : '/home/qa/AppData/Local' };
+  const aliasOk = { lstatSync: () => ({}), env };
+  const aliasNone = { lstatSync: () => { throw Object.assign(Error('ENOENT'), { code: 'ENOENT' }); }, env };
+  assert(msixFirefoxPath({}, aliasOk).endsWith('firefox.exe'));
+  assert.strictEqual(msixFirefoxPath({}, aliasNone), null);
+  const storeAlias = 'C:\\Users\\qa\\AppData\\Local\\Microsoft\\WindowsApps\\firefox.exe';
+  assert.strictEqual(msixFirefoxPath({ geckoPath: storeAlias }, aliasNone), storeAlias);
+  const none = () => false;
+  const msix = await diagnoseBrowsers({}, { existsSync: none, command: () => assert.fail('no --version'), ...aliasOk });
+  assert.strictEqual(msix.engines[2].status, 'error');
+  assert.strictEqual(msix.engines[2].message, MSIX_FIREFOX_MESSAGE);
+  const absent = await diagnoseBrowsers({}, { existsSync: none, ...aliasNone });
+  assert.strictEqual(absent.engines[2].status, 'missing');
+  // A WindowsApps path that does look present is still never launched.
+  const configured = await diagnoseBrowsers({ geckoPath: storeAlias },
+    { existsSync: p => p === storeAlias, command: (f, a, o, done) => done(null, 'Google Chrome 154.0.1.0', ''), ...aliasNone });
+  assert.strictEqual(configured.engines[2].status, 'error');
+  assert.strictEqual(configured.engines[2].message, MSIX_FIREFOX_MESSAGE);
+  const launcher = new BrowserLauncher({ baseDir: '.', getSettings: () => ({ geckoPath: storeAlias }) });
+  assert.throws(() => launcher.findBrowserBinary('gecko'), e => e.message === MSIX_FIREFOX_MESSAGE);
+  const health = checkProfile({ name: 'QA', engine: 'gecko', startUrl: 'https://example.com/',
+    proxy: { type: 'direct' } }, { settings: {}, pathExists: none, msixProbe: aliasOk });
+  const missing = health.issues.find(x => x.code === 'browser_missing');
+  assert(missing && missing.message === MSIX_FIREFOX_MESSAGE, JSON.stringify(health.issues));
   console.log('Browser engine real-binary version diagnostics tests passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

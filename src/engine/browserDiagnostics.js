@@ -24,6 +24,19 @@ function optionsFor(settings = {}) {
     ] }
   ];
 }
+// Firefox from the Microsoft Store / winget is an MSIX package. Its only
+// launchable path is an app execution alias (stat() -> EACCES, so existsSync
+// is false) that starts the real firefox.exe and exits at once: the launcher
+// would track the stub, report the profile as closed and lose a running browser.
+const MSIX_FIREFOX_MESSAGE = 'Firefox bản Microsoft Store/winget (MSIX) chưa được hỗ trợ: ' +
+  'ứng dụng không theo dõi được cửa sổ của bản này. Hãy cài Firefox từ mozilla.org (bản cài thường) rồi thử lại.';
+const isWindowsAppsPath = p => typeof p === 'string' && /[\\/]WindowsApps[\\/]/i.test(p);
+function msixFirefoxPath(settings = {}, { lstatSync = fs.lstatSync, env = process.env } = {}) {
+  if (isWindowsAppsPath(settings.geckoPath)) return settings.geckoPath;
+  if (!env.LOCALAPPDATA) return null;
+  const alias = path.join(env.LOCALAPPDATA, 'Microsoft', 'WindowsApps', 'firefox.exe');
+  try { lstatSync(alias); return alias; } catch (_) { return null; }
+}
 function parseVersion(output) {
   const text = String(output || '').slice(0, 1000);
   const match = text.match(/(?:Chrome|Chromium|Edge|Firefox)\s+(?:version\s+)?(\d+(?:\.\d+){1,3})/i)
@@ -41,11 +54,15 @@ function execVersion(executable, command = execFile) {
     });
   });
 }
-async function diagnoseBrowsers(settings = {}, { existsSync = fs.existsSync, command = execFile } = {}) {
+async function diagnoseBrowsers(settings = {}, { existsSync = fs.existsSync, command = execFile,
+  lstatSync = fs.lstatSync, env = process.env } = {}) {
   const result = await Promise.all(optionsFor(settings).map(async option => {
     const bin = option.candidates.filter(Boolean).find(p => {
-      try { return path.isAbsolute(p) && existsSync(p); } catch (_) { return false; }
+      try { return path.isAbsolute(p) && !isWindowsAppsPath(p) && existsSync(p); } catch (_) { return false; }
     });
+    if (!bin && option.id === 'firefox' && msixFirefoxPath(settings, { lstatSync, env }))
+      return { id: option.id, name: option.name, status: 'error', installed: true, path: null, version: null,
+        message: MSIX_FIREFOX_MESSAGE };
     if (!bin) return { id: option.id, name: option.name, status: 'missing', installed: false, path: null, version: null, message: 'Không tìm thấy. Hãy kiểm tra thư mục cài đặt.' };
     const found = await execVersion(bin, command);
     if (found.error) return { id: option.id, name: option.name, path: bin, installed: true, version: null,
@@ -64,4 +81,5 @@ async function diagnoseBrowsers(settings = {}, { existsSync = fs.existsSync, com
     note: 'LHM đang sử dụng engine cài trên máy. Công cụ không kiểm tra CVE, cập nhật mới nhất hoặc mức độ bị Google nhận diện.'
   };
 }
-module.exports = { diagnoseBrowsers, optionsFor, parseVersion, execVersion };
+module.exports = { diagnoseBrowsers, optionsFor, parseVersion, execVersion,
+  msixFirefoxPath, isWindowsAppsPath, MSIX_FIREFOX_MESSAGE };
