@@ -4,7 +4,8 @@ const { execFile } = require('child_process');
 
 /**
  * Diagnoses the actual installed browsers, not a fictional "LHM-owned engine".
- * Only a user click triggers --version process execution; no websites opened.
+ * Only a user click triggers a version check; no websites opened. On Windows
+ * the version is read from the executable's VERSIONINFO, never by running it.
  */
 function optionsFor(settings = {}) {
   return [
@@ -54,8 +55,33 @@ function execVersion(executable, command = execFile) {
     });
   });
 }
+// Windows Chrome/Edge do not print a version for --version: Chrome starts a
+// browser process and logs to stderr (reported as an error), Edge prints
+// nothing (reported as a warning). Read the PE VERSIONINFO String table entry
+// instead: header wLength, wValueLength (UTF-16 units), wType=1 (text), then
+// the key, padded to 32 bits from the entry start, then the value.
+const PRODUCT_VERSION_KEY = Buffer.from('ProductVersion\0', 'utf16le');
+function peProductVersion(buffer) {
+  for (let at = buffer.indexOf(PRODUCT_VERSION_KEY); at >= 6;
+       at = buffer.indexOf(PRODUCT_VERSION_KEY, at + 2)) {
+    const valueLength = buffer.readUInt16LE(at - 4), type = buffer.readUInt16LE(at - 2);
+    if (type !== 1 || !valueLength || valueLength > 64) continue;
+    let start = at + PRODUCT_VERSION_KEY.length;
+    start += (start - (at - 6)) % 4;
+    const value = buffer.toString('utf16le', start, Math.min(buffer.length, start + 2 * valueLength))
+      .replace(/\0[\s\S]*$/, '').trim();
+    if (/^\d+(?:\.\d+){1,3}$/.test(value)) return value;
+  }
+  return null;
+}
+function readWindowsVersion(executable, readFile = fs.promises.readFile) {
+  return readFile(executable).then(
+    buffer => ({ error: null, version: peProductVersion(buffer) }),
+    error => ({ error: String(error.code || error.message || error).slice(0, 180), version: null }));
+}
 async function diagnoseBrowsers(settings = {}, { existsSync = fs.existsSync, command = execFile,
-  lstatSync = fs.lstatSync, env = process.env } = {}) {
+  lstatSync = fs.lstatSync, env = process.env, platform = process.platform,
+  readFile = fs.promises.readFile } = {}) {
   const result = await Promise.all(optionsFor(settings).map(async option => {
     const bin = option.candidates.filter(Boolean).find(p => {
       try { return path.isAbsolute(p) && !isWindowsAppsPath(p) && existsSync(p); } catch (_) { return false; }
@@ -64,11 +90,13 @@ async function diagnoseBrowsers(settings = {}, { existsSync = fs.existsSync, com
       return { id: option.id, name: option.name, status: 'error', installed: true, path: null, version: null,
         message: MSIX_FIREFOX_MESSAGE };
     if (!bin) return { id: option.id, name: option.name, status: 'missing', installed: false, path: null, version: null, message: 'Không tìm thấy. Hãy kiểm tra thư mục cài đặt.' };
-    const found = await execVersion(bin, command);
+    const windows = platform === 'win32';
+    const found = windows ? await readWindowsVersion(bin, readFile) : await execVersion(bin, command);
     if (found.error) return { id: option.id, name: option.name, path: bin, installed: true, version: null,
       status: 'error', message: 'Đã tìm thấy tệp nhưng không đọc được phiên bản: ' + found.error };
     if (!found.version) return { id: option.id, name: option.name, path: bin, installed: true, version: null,
-      status: 'warning', message: 'Không đọc được phiên bản từ lệnh --version; cần kiểm tra thủ công.' };
+      status: 'warning', message: (windows ? 'Không đọc được phiên bản trong tệp chương trình'
+        : 'Không đọc được phiên bản từ lệnh --version') + '; cần kiểm tra thủ công.' };
     const major = Number(found.version.split('.')[0]);
     const old = major < 140; // Advisory threshold only; Firefox ESR versions can differ.
     return { id: option.id, name: option.name, path: bin, installed: true, version: found.version,
@@ -81,5 +109,5 @@ async function diagnoseBrowsers(settings = {}, { existsSync = fs.existsSync, com
     note: 'LHM đang sử dụng engine cài trên máy. Công cụ không kiểm tra CVE, cập nhật mới nhất hoặc mức độ bị Google nhận diện.'
   };
 }
-module.exports = { diagnoseBrowsers, optionsFor, parseVersion, execVersion,
+module.exports = { diagnoseBrowsers, optionsFor, parseVersion, execVersion, peProductVersion,
   msixFirefoxPath, isWindowsAppsPath, MSIX_FIREFOX_MESSAGE };

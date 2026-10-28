@@ -17,8 +17,9 @@ const { diagnoseBrowsers, parseVersion, optionsFor } = require('../src/engine/br
   const supplied={chromePath,geckoPath};
   assert(optionsFor(supplied)[0].candidates.includes(supplied.chromePath));
   const commands=[];
+  // --version path (non-Windows); Windows reads VERSIONINFO, tested below.
   const probe = await diagnoseBrowsers(supplied, {
-    existsSync: inTestDir,
+    existsSync: inTestDir, platform: 'linux',
     command: (file, args, options, callback) => {
       commands.push({file,args,options});
       if (file.endsWith('firefox.exe')) return callback(null,'Mozilla Firefox 139.0','');
@@ -32,7 +33,7 @@ const { diagnoseBrowsers, parseVersion, optionsFor } = require('../src/engine/br
   assert.strictEqual(commands.length,2);
   assert(commands.every(x=>x.options.shell === false && x.args[0] === '--version'));
   const failures=await diagnoseBrowsers(supplied,{
-    existsSync:inTestDir,
+    existsSync:inTestDir,platform:'linux',
     command:(_f,_a,_o,done)=>done(new Error('blocked'),null,null)
   });
   assert.strictEqual(failures.engines[0].status,'error');
@@ -69,5 +70,40 @@ const { diagnoseBrowsers, parseVersion, optionsFor } = require('../src/engine/br
     proxy: { type: 'direct' } }, { settings: {}, pathExists: none, msixProbe: aliasOk });
   const missing = health.issues.find(x => x.code === 'browser_missing');
   assert(missing && missing.message === MSIX_FIREFOX_MESSAGE, JSON.stringify(health.issues));
+
+  // Windows: Chrome/Edge print no version for --version (Chrome even starts a
+  // browser), so the version comes from the PE VERSIONINFO and nothing runs.
+  const { peProductVersion } = require('../src/engine/browserDiagnostics');
+  const entry = (key, value, type = 1) => {
+    const k = Buffer.from(key + '\0', 'utf16le'), v = Buffer.from(value + '\0', 'utf16le');
+    const pad = Buffer.alloc((6 + k.length) % 4), head = Buffer.alloc(6);
+    head.writeUInt16LE(6 + k.length + pad.length + v.length, 0);
+    head.writeUInt16LE(value.length + 1, 2); head.writeUInt16LE(type, 4);
+    return Buffer.concat([head, k, pad, v]);
+  };
+  const pe = Buffer.concat([Buffer.from('MZ junk'), entry('ProductVersion', 'Official Build', 1),
+    entry('ProductVersion', 'x', 0), entry('FileVersion', '1.2.3.4'), entry('ProductVersion', '156.0.8078.73')]);
+  assert.strictEqual(peProductVersion(pe), '156.0.8078.73', 'skips decoys, reads the real entry');
+  assert.strictEqual(peProductVersion(Buffer.from('no version table')), null);
+  const winRead = await diagnoseBrowsers(supplied, { existsSync: inTestDir, platform: 'win32',
+    command: () => assert.fail('Windows must not execute the browser'),
+    readFile: async file => file.endsWith('firefox.exe') ? Buffer.from('MZ') : pe });
+  assert.strictEqual(winRead.engines[0].status, 'ready');
+  assert.strictEqual(winRead.engines[0].version, '156.0.8078.73');
+  assert.strictEqual(winRead.engines[2].status, 'warning');
+  assert(!winRead.engines[2].message.includes('--version'), winRead.engines[2].message);
+  const winDenied = await diagnoseBrowsers(supplied, { existsSync: inTestDir, platform: 'win32',
+    readFile: async () => { throw Object.assign(Error('denied'), { code: 'EACCES' }); } });
+  assert.strictEqual(winDenied.engines[0].status, 'error');
+  assert(winDenied.engines[0].message.endsWith(': EACCES'), winDenied.engines[0].message);
+  if (isWin) {
+    // Real installed browsers on the Windows runner, when present.
+    const fs = require('fs');
+    for (const real of ['C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'].filter(f => fs.existsSync(f))) {
+      const version = peProductVersion(fs.readFileSync(real));
+      assert(/^1\d\d\.\d+\.\d+\.\d+$/.test(version || ''), real + ' VERSIONINFO: ' + version);
+    }
+  }
   console.log('Browser engine real-binary version diagnostics tests passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});
