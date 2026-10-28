@@ -201,10 +201,17 @@ function createWindow() {
              readability.cardHeight>135||
              readability.railLeft<0||readability.railRight>readability.viewport+1)
             throw Error('Full-window AI panel contrast/layout regression: '+JSON.stringify(readability));
+          // A capture taken before the next paint returns the previous frame,
+          // silently re-saving an earlier screen under a new evidence name.
+          const capturedFrames = new Map();
           const writeCapture = (name, png) => {
             if (png.isEmpty()) throw Error('Electron returned an empty UI capture: ' + name);
             const bytes = png.toPNG();
             if (!bytes.length) throw Error('Electron encoded an empty UI capture: ' + name);
+            const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+            if (capturedFrames.has(digest))
+              throw Error('UI capture ' + name + ' is identical to ' + capturedFrames.get(digest) + ' (stale frame)');
+            capturedFrames.set(digest, name);
             fs.writeFileSync(path.join(captureDir, name), bytes);
           };
           const png = await mainWindow.webContents.capturePage();
@@ -376,6 +383,16 @@ function createWindow() {
              pagerQa.hundred.rows!==100||pagerQa.hundred.selected!==51||
              !pagerQa.hundred.label.includes('1000'))
             throw Error('Real Electron 1000-profile pager regression: '+JSON.stringify(pagerQa));
+          // Control Tower closes and the table re-renders only on a later paint;
+          // capturing at once re-saved the agency handoff frame as this screenshot.
+          await new Promise(resolve=>setTimeout(resolve,280));
+          // Rows fade in after re-render; wait for finite animations (bounded).
+          await mainWindow.webContents.executeJavaScript(
+            "Promise.race([Promise.all(document.getAnimations().filter(a=>a.effect&&Number.isFinite(a.effect.getComputedTiming().endTime)).map(a=>a.finished.catch(()=>null))),new Promise(r=>setTimeout(r,3000))]).then(()=>true)",true);
+          const pagerView=await mainWindow.webContents.executeJavaScript(
+            "(() => { const body=document.getElementById('profile-list-body'); return {towerOpen:document.getElementById('modal-control-tower').classList.contains('open'),rows:body.querySelectorAll('tr').length,first:body.querySelector('tr')?.dataset.profileId||''}; })()",true);
+          if(pagerView.towerOpen||pagerView.rows!==100||!pagerView.first.startsWith('qa_'))
+            throw Error('Pager screenshot would not show the 1000-profile table: '+JSON.stringify(pagerView));
           writeCapture('workspace-profile-paging-preview.png',await mainWindow.webContents.capturePage());
           console.log('[UI smoke] 1000 synthetic metadata profiles: bounded rows, cross-page selection, full-dataset search and 100/page PASS');
 

@@ -48,6 +48,20 @@ assert.equal(broken.status,'blocked');
 const configError=mk({local:{items:[{key:'vault',status:'error',detail:privateMarker}],counts:{
   ...local.counts,errors:1}}});
 assert.equal(configError.status,'blocked');
+// One missing browser fails both "profiles" and "browser": name the checks,
+// never report "2 groups" next to a single config error.
+const missingBrowser=mk({local:{items:[
+  {key:'profiles',status:'error',detail:privateMarker},
+  {key:'browser',status:'error',detail:privateMarker},
+  {key:'network',status:'warning',detail:privateMarker}],counts:{...local.counts,errors:1}}});
+const healthNote=missingBrowser.checks.find(x=>x.code==='profile-health').note;
+assert.equal(healthNote,'Mục kiểm tra bị lỗi: cấu hình hồ sơ, browser engine.');
+assert(!/\d+ nhóm/.test(healthNote),'profile-health must not count check groups: '+healthNote);
+assert.equal(missingBrowser.counts.configErrors,1);
+const reviewOnly=mk({local:{items:[{key:'network',status:'warning',detail:privateMarker},
+  {key:'zzz',status:'odd',detail:privateMarker}],counts:local.counts}});
+assert.equal(reviewOnly.checks.find(x=>x.code==='profile-health').note,
+  'Mục cần rà soát: xác minh IP thoát, mục khác.');
 const dev=mk({appInfo:{packaged:false}});
 assert(dev.checks.some(x=>x.code==='package'&&x.state==='warning'));
 assert.throws(()=>buildCustomerHandoff({}),/Incomplete/);
