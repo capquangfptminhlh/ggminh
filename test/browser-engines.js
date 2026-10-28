@@ -20,6 +20,13 @@ try {
   assert.deepStrictEqual(args.slice(0, 2), ['--no-remote', '--profile']);
   assert(args.includes('--new-window'));
   assert(!args.some(x => x.includes('--load-extension') || x.includes('--remote-debugging')));
+  // Windows firefox.exe is a launcher that exits at once unless told to wait:
+  // without the flag the app tracks a dead PID and loses the running browser.
+  const winArgs = createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', platform: 'win32' });
+  assert(winArgs.indexOf('--wait-for-browser') > winArgs.indexOf('--profile'), JSON.stringify(winArgs));
+  assert(winArgs.indexOf('--wait-for-browser') < winArgs.indexOf('--new-window'));
+  assert(!createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', platform: 'linux' })
+    .includes('--wait-for-browser'));
   assert.throws(() => createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', port: 9222 }), /CDP/);
   assert(createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', proxy: { type: 'http', host: '127.0.0.1', port: '8080' } }).includes('--profile'));
   assert.throws(() => safeWebUrl('file:///etc/passwd'), /http/);
