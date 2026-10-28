@@ -1,0 +1,27 @@
+/* Customer Gmail license UX — contained inside License Center modal. */
+#google-license-panel[hidden],#google-login-code[hidden],
+#google-license-panel [hidden]{display:none!important}
+#google-license-panel{color:var(--text-primary,#f2f6ff);padding:8px 4px 16px}
+.lhm-google-head{display:flex;align-items:flex-start;gap:18px;padding:17px 20px;border-radius:18px;background:linear-gradient(130deg,rgba(44,91,170,.34),rgba(18,37,72,.08));border:1px solid rgba(143,180,247,.2)}
+.lhm-google-symbol{flex:0 0 52px;height:52px;border-radius:15px;display:grid;place-items:center;font:800 27px/1 system-ui;background:#eaf1ff;color:#4285f4;box-shadow:0 5px 22px #17345c66}
+.lhm-google-head h3{font-size:23px;margin:5px 0 6px;line-height:1.23}
+.lhm-google-head p{margin:0;color:var(--text-secondary,#b7c8e4);line-height:1.55;font-size:13px}
+.lhm-google-eyebrow{font-size:10px!important;letter-spacing:.1em;font-weight:800;color:#9bd6ff!important}
+.lhm-google-plan{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
+.lhm-google-plan>div{min-width:0;padding:14px 16px;border:1px solid rgba(157,186,222,.24);border-radius:13px;background:rgba(24,45,80,.24)}
+.lhm-google-plan span{display:block;color:var(--text-secondary,#afc2dc);font-size:12px;margin-bottom:7px}
+.lhm-google-plan strong{display:block;overflow-wrap:anywhere;font-size:14px}
+.lhm-google-status{border:1px solid rgba(112,177,244,.36);background:rgba(50,95,154,.16);color:var(--text-primary,#ebf4ff);padding:13px 15px;border-radius:12px;font-size:13px;line-height:1.6;min-height:43px}
+.lhm-google-code{text-align:center;padding:18px 15px;border:1px dashed #76b5ff;background:rgba(36,83,141,.19);border-radius:14px;margin:16px 0}
+.lhm-google-code span,.lhm-google-code small{display:block;color:var(--text-secondary,#afc5e0)}
+.lhm-google-code strong{display:block;font:800 clamp(28px,5vw,40px)/1.5 system-ui;letter-spacing:.28em;margin:8px 0;color:#91deff;font-variant-numeric:tabular-nums}
+.lhm-google-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.lhm-google-actions button{min-height:44px;white-space:normal;line-height:1.3}
+.lhm-google-actions button:first-child{grid-column:1/-1}
+.lhm-google-actions button:disabled{opacity:.6;cursor:wait}
+.lhm-google-devices{display:grid;gap:9px;margin:12px 0}
+.lhm-google-device-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(150,181,224,.25);background:rgba(18,37,72,.24);padding:12px;border-radius:11px}
+.lhm-google-device-item strong{font-size:13px}
+.lhm-google-device-item button{flex:0 0 auto}
+.lhm-google-footnote{font-size:12px;color:var(--text-secondary,#afc3dd);line-height:1.55;margin:20px 0 0}
+@media(max-width:600px){.lhm-google-head{padding:14px;gap:10px}.lhm-google-symbol{flex-basis:42px;height:42px}.lhm-google-plan,.lhm-google-actions{grid-template-columns:1fr}.lhm-google-head h3{font-size:20px}.lhm-google-device-item{align-items:flex-start;flex-direction:column}}

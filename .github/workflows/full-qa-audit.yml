@@ -1,0 +1,107 @@
+name: LHM Full QA Audit (Windows + Linux, no production)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/full-qa-audit.yml'
+      - 'test/**'
+      - 'src/**'
+      - 'serverless/license-worker/**'
+      - 'tools/**'
+      - 'main.js'
+      - 'preload.js'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  complete-test-matrix:
+    name: Full automated regression / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      CI: 'true'
+      LHM_D1_DATABASE_ID: '12345678-1234-4123-8123-123456789abc'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Reproducible dependency install
+        run: npm ci --no-audit
+      - name: Complete all canonical Windows regression steps
+        if: runner.os == 'Windows'
+        run: npm test
+      - name: Portable Linux regression (exclude only 2 Win32-specific files)
+        if: runner.os == 'Linux'
+        run: node test/run-all.js --filter '^(?!(node test/browser-diagnostics[.]js|node test/runtime-registry[.]js)$).*'
+      - name: Verify no skipped step masquerades as success
+        run: node test/run-all-selftest.js
+      - name: Extra staging, license, safety and billing regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node test/browser-saas-staging-config.js
+          node test/browser-saas-staging-public-preflight.mjs
+          node test/cloudflare-bootstrap-config.js
+          node test/google-lease-contract.js
+          node --experimental-sqlite test/google-saas-worker.js
+          node test/google-admin-access.js
+          node test/google-desktop-client.js
+          node test/google-electron-wiring.js
+          node test/google-packaged-mode.js
+          node test/google-saas-billing-admin.js
+          node test/google-staging-update-isolation.js
+          node test/google-tenant-storage.js
+          node test/camoufox-stage0-ci-reports.js
+          node test/camoufox-stage0-timeouts.js
+          node test/gate3-operator-kit.js
+      - name: Parse protected Cloudflare and Electron modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check main.js
+          node --check preload.js
+          node --check src/licensing/googleDesktopClient.js
+          node --check src/licensing/googleStagingConfig.js
+          node --check serverless/license-worker/src/googleSaas.mjs
+          node --check serverless/license-worker/src/googleDevice.mjs
+          node --check serverless/license-worker/src/googleAdminAccess.mjs
+          node --check tools/browser-saas-staging-config.js
+          node --check tools/browser-saas-staging-public-preflight.mjs
+      - name: Record exact QA evidence boundaries
+        shell: bash
+        run: |
+          {
+            echo '### Full automated QA on ${{ matrix.os }}'
+            echo '- Windows: full canonical test chain; Linux: full chain excluding 2 Windows-only file tests'
+            echo '- Additional Google SaaS and Cloudflare unit/integration checks'
+            echo '- Real Google OAuth, actual bank transactions, production DNS/HTTPS: NOT_RUN'
+            echo '- External Camoufox executable and real Windows customer Gate 3: NOT_RUN'
+            echo '- Automated PASS never proves 100% release-readiness'
+          } >> "$GITHUB_STEP_SUMMARY"
+  dependency-vulnerability-audit:
+    name: Runtime dependencies - npm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exact locked packages
+        run: npm ci --no-audit
+      - name: Audit runtime dependencies for HIGH / CRITICAL
+        run: npm audit --omit=dev --audit-level=high
+      - name: Show safe proposed npm lockfile remediation
+        if: failure()
+        shell: bash
+        run: |
+          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
+          node -e "const cp=require('child_process');const old=JSON.parse(cp.execFileSync('git',['show','HEAD:package-lock.json'],{encoding:'utf8'}));const next=require('./package-lock.json');for(const [k,v] of Object.entries(next.packages||{})){if(JSON.stringify(old.packages[k])!==JSON.stringify(v))console.log('LOCK_PATCH '+k+' '+JSON.stringify(v));}"

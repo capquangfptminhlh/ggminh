@@ -1,0 +1,158 @@
+name: Google SaaS Browser lease contract (staging)
+on:
+  pull_request:
+    paths:
+      - 'src/licensing/googleLease.js'
+      - 'test/google-lease-contract.js'
+      - 'test/google-saas-worker.js'
+      - 'test/google-saas-billing-admin.js'
+      - 'tools/google-saas-billing-core.js'
+      - 'tools/google-saas-admin.js'
+      - 'test/google-desktop-client.js'
+      - 'test/google-electron-wiring.js'
+      - 'src/licensing/googleStagingConfig.js'
+      - 'src/update/googleStagingUpdater.js'
+      - 'test/google-staging-update-isolation.js'
+      - 'test/google-packaged-mode.js'
+      - 'tools/prepare-google-staging-package.js'
+      - 'tools/prepare-ephemeral-google-package-ci.js'
+      - 'tools/assert-preview-build.js'
+      - 'tools/assert-google-staging-package.js'
+      - 'package.json'
+      - '.gitignore'
+      - '.github/workflows/google-staging-windows.yml'
+      - 'src/ui/googleLicense.css'
+      - 'src/ui/googleLicense.js'
+      - 'src/ui/index.html'
+      - 'preload.js'
+      - 'main.js'
+      - 'test/google-tenant-storage.js'
+      - 'src/licensing/googleTenantStorage.js'
+      - 'src/licensing/googleDesktopClient.js'
+      - 'serverless/license-worker/src/googleSaas.mjs'
+      - 'serverless/license-worker/src/googleDevice.mjs'
+      - 'serverless/license-worker/src/googleAdminAccess.mjs'
+      - 'test/google-admin-access.js'
+      - 'serverless/license-worker/src/googlePortal.mjs'
+      - 'serverless/license-worker/src/googlePairPortal.mjs'
+      - 'serverless/license-worker/src/index.mjs'
+      - 'serverless/license-worker/migrations/0003_google_saas_staging.sql'
+      - 'docs/GGMINH_GOOGLE_SAAS_MASTER_PLAN.md'
+      - '.github/workflows/google-lease-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verified-lease:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check src/licensing/googleLease.js
+          node --check test/google-lease-contract.js
+          node --check serverless/license-worker/src/googleSaas.mjs
+          node --check serverless/license-worker/src/googleDevice.mjs
+          node --check serverless/license-worker/src/googleAdminAccess.mjs
+          node --check test/google-admin-access.js
+          node --check serverless/license-worker/src/googlePortal.mjs
+          node --check serverless/license-worker/src/googlePairPortal.mjs
+          node --check serverless/license-worker/src/index.mjs
+          node --check test/google-saas-worker.js
+          node --check test/google-saas-billing-admin.js
+          node --check tools/google-saas-billing-core.js
+          node --check tools/google-saas-admin.js
+          node --check src/licensing/googleDesktopClient.js
+          node --check test/google-desktop-client.js
+          node --check src/ui/googleLicense.js
+          node --check src/licensing/googleStagingConfig.js
+          node --check src/update/googleStagingUpdater.js
+          node --check test/google-staging-update-isolation.js
+          node --check tools/prepare-google-staging-package.js
+          node --check tools/assert-preview-build.js
+          node --check tools/assert-google-staging-package.js
+          node --check test/google-packaged-mode.js
+          node --check main.js
+          node --check preload.js
+          node --check test/google-electron-wiring.js
+          node --check src/licensing/googleTenantStorage.js
+          node --check test/google-tenant-storage.js
+      - name: Verify Google SaaS Browser lease (no cloud/secrets)
+        run: node test/google-lease-contract.js
+      - name: Exercise staging OAuth + commerce with SQLite
+        run: node --experimental-sqlite test/google-saas-worker.js
+      - name: Separate packaged Gmail STAGING trust and safe Preview install identity
+        run: node test/google-packaged-mode.js
+      - name: Cloudflare Access JWT protection for merchant activation
+        run: node test/google-admin-access.js
+      - name: Main-process Windows DPAPI and lease policy test (safeStorage fixture)
+        run: node test/google-desktop-client.js
+      - name: Google account specific local tenant storage boundary
+        run: node test/google-tenant-storage.js
+      - name: Disallow Preview update offers inside Gmail staging
+        run: node test/google-staging-update-isolation.js
+      - name: Gmail Electron onboarding and account isolation integration
+        run: node test/google-electron-wiring.js
+      - name: Merchant order review authorization and bank confirmation gates
+        run: node test/google-saas-billing-admin.js
+      - name: Regression legacy signature and entitlements
+        run: |
+          node test/license-enforcement.js
+          node test/license-online.js
+
+  windows-ephemeral-gmail-package:
+    # Tests the ACTUAL isolated Windows EXE; never use real Cloudflare
+    # secrets, never publish, never upload test-signed executable artifacts.
+    if: github.event_name == 'pull_request'
+    needs: verified-lease
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Ensure normal Preview refuses any injected Gmail trust
+        run: |
+          node test/google-packaged-mode.js
+          node tools/assert-preview-build.js
+      - name: Generate throwaway PUBLIC key for isolated package test
+        id: throwaway
+        run: node tools/prepare-ephemeral-google-package-ci.js --ci-test-only
+      - name: Validate identity before build
+        run: node tools/assert-google-staging-package.js
+      - name: Build actual Gmail staging Windows installer (test-only)
+        run: npm run build:google-staging:win
+      - name: Inspect packaged public trust and installer identity
+        shell: pwsh
+        env:
+          PUBLIC_FINGERPRINT: ${{ steps.throwaway.outputs.public_fingerprint }}
+        run: |
+          $dir = 'dist-google-staging'
+          $files = @(Get-ChildItem -Path $dir -Filter 'LHM-Ads-Browser-Gmail-Staging-*-Setup-x64.exe' -File)
+          if ($files.Count -ne 1 -or $files[0].Length -lt 10000000) {
+            throw 'Gmail Staging NSIS build did not produce an isolated installer'
+          }
+          $asar = Join-Path $dir 'win-unpacked/resources/app.asar'
+          if (-not (Test-Path -LiteralPath $asar)) { throw 'Gmail app.asar missing' }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $asar))
+          $contents = [System.Text.Encoding]::ASCII.GetString($bytes)
+          if (-not $contents.Contains($env:PUBLIC_FINGERPRINT)) {
+            throw 'Actual Windows app.asar did not embed the throwaway public signer'
+          }
+          Write-Host 'PASS: isolated Gmail test EXE and embedded public SPKI fingerprint verified'
+      - name: Remove ephemeral package files (never upload installer)
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item -LiteralPath 'src/licensing/googleStagingPackageTrust.generated.js' -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath 'build/google-staging-builder.generated.json' -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath 'dist-google-staging' -Recurse -Force -ErrorAction SilentlyContinue

@@ -4,9 +4,13 @@
  * Runs only over Cloudflare HTTPS; production keys are Worker secrets.
  * IMPORTANT: verify / sign use the EXACT lhmlic1 + lhmproof1 formats.
  */
+import { verifySaasAdminAccess } from './googleAdminAccess.mjs';
 import { renderAdminPage } from './adminPage.mjs';
 import { renderClientScript } from './adminClient.mjs';
 import { createPortalApi } from './adminPortal.mjs';
+import { createGoogleSaasApi } from './googleSaas.mjs';
+import { renderGooglePortal, renderGooglePortalScript } from './googlePortal.mjs';
+import { renderPairPortal, renderPairScript } from './googlePairPortal.mjs';
 const LICENSE_ID=/^lic_[a-f0-9]{24}$/;
 const INSTALL_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const NONCE=/^[a-zA-Z0-9_-]{22}$/;
@@ -172,6 +176,22 @@ async function isAdmin(req,env){
  let diff=0;for(let i=0;i<x.length;i++)diff|=x[i]^y[i];
  return diff===0;
 }
+// Dedicated v2 staging admin credential. Never reuse the legacy v1 issuer/admin token.
+async function isGoogleAdmin(request,env){
+ if(!await verifySaasAdminAccess(request,env))return false;
+ const expected=env?.BROWSER_SAAS_ADMIN_TOKEN;
+ if(typeof expected!=='string'||expected.length<32)return false;
+ const auth=request.headers.get('authorization')||'';
+ if(!/^Bearer [A-Za-z0-9._~+/-]{32,256}$/.test(auth))return false;
+ const [left,right]=await Promise.all([
+  crypto.subtle.digest('SHA-256',encoder.encode(auth.slice(7))),
+  crypto.subtle.digest('SHA-256',encoder.encode(expected))
+ ]);
+ const x=new Uint8Array(left),y=new Uint8Array(right);
+ let difference=0;
+ for(let i=0;i<x.length;i++)difference|=x[i]^y[i];
+ return difference===0;
+}
 function db(env){
  if(!env.LICENSE_DB||typeof env.LICENSE_DB.prepare!=='function')
   throw Error('d1_not_configured');
@@ -244,6 +264,19 @@ export function createAuthority({
    const url=new URL(request.url);
    if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))
     return response(400,{error:'https_required'});
+   // v2 uses isolated staging D1; without an explicit flag it returns 404.
+   if(url.pathname.startsWith('/v2/')){
+    if(env.BROWSER_SAAS_STAGING==='enabled'&&request.method==='GET'){
+     if(url.pathname==='/v2/portal')return renderGooglePortal();
+     if(url.pathname==='/v2/portal.js')return renderGooglePortalScript();
+     if(url.pathname==='/v2/desktop/pair/')return renderPairPortal();
+     if(url.pathname==='/v2/desktop/pair.js')return renderPairScript();
+    }
+    return createGoogleSaasApi({clock})(request,env,{adminAuth:isGoogleAdmin});
+   }
+   // Only the isolated staging hostname uses the customer commerce homepage.
+   if(env?.BROWSER_SAAS_STAGING==='enabled'&&url.pathname==='/'&&
+      ['GET','HEAD'].includes(request.method))return renderGooglePortal();
    if(url.pathname==='/'&&['GET','HEAD'].includes(request.method))
     return renderAdminPage(request);
    if(url.pathname==='/admin.js'&&request.method==='GET')

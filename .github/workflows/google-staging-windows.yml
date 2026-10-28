@@ -1,0 +1,125 @@
+name: Gmail Staging Windows installer (manual, isolated)
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type BUILD_GMAIL_STAGING_ONLY. Never produces a production release.'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: lhm-gmail-staging-windows
+  cancel-in-progress: false
+jobs:
+  windows-gmail-staging:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'BUILD_GMAIL_STAGING_ONLY'
+    runs-on: windows-latest
+    environment: staging
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Require independently configured Gmail staging and public signer
+        shell: pwsh
+        env:
+          BROWSER_LEASE_PUBLIC_SPKI_B64: ${{ secrets.BROWSER_LEASE_PUBLIC_SPKI_B64 }}
+          BROWSER_LEASE_PUBLIC_SPKI_SHA256: ${{ vars.BROWSER_LEASE_PUBLIC_SPKI_SHA256 }}
+          BROWSER_SAAS_ADMIN_TOKEN: ${{ secrets.BROWSER_SAAS_ADMIN_TOKEN }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:BROWSER_LEASE_PUBLIC_SPKI_B64) -or
+              [string]::IsNullOrWhiteSpace($env:BROWSER_LEASE_PUBLIC_SPKI_SHA256) -or
+              [string]::IsNullOrWhiteSpace($env:BROWSER_SAAS_ADMIN_TOKEN)) {
+            throw 'Private staging signer, independent SHA-256 pin, or admin access is missing'
+          }
+          if ($env:BROWSER_LEASE_PUBLIC_SPKI_SHA256 -notmatch '^[a-f0-9]{64}$') {
+            throw 'Invalid staging public signer SHA-256 fingerprint'
+          }
+          if ([bool]$env:CF_ACCESS_CLIENT_ID -xor [bool]$env:CF_ACCESS_CLIENT_SECRET) {
+            throw 'Cloudflare Access service token credentials must be configured together'
+          }
+          Write-Host 'Staging build credential presence PASS (values never printed)'
+      - name: Install dependencies and verify existing Preview and SaaS contracts
+        run: |
+          npm ci
+          npm test
+          node test/google-packaged-mode.js
+          node --experimental-sqlite test/google-saas-worker.js
+          node test/google-desktop-client.js
+      - name: Require live staging Worker configuration readiness (private admin endpoint)
+        shell: pwsh
+        env:
+          BROWSER_LEASE_PUBLIC_SPKI_SHA256: ${{ vars.BROWSER_LEASE_PUBLIC_SPKI_SHA256 }}
+          BROWSER_SAAS_ADMIN_TOKEN: ${{ secrets.BROWSER_SAAS_ADMIN_TOKEN }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          BROWSER_SAAS_ADMIN_ORIGIN: https://browser.lhmcrm.com
+        run: |
+          node tools/google-saas-admin.js ready
+          if ($LASTEXITCODE -ne 0) { throw 'Staging not ready: no EXE should be produced' }
+      - name: Validate public checkout-facing plan is explicitly enabled
+        shell: pwsh
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          $headers = @{}
+          if ($env:CF_ACCESS_CLIENT_ID) {
+            $headers['CF-Access-Client-Id'] = $env:CF_ACCESS_CLIENT_ID
+            $headers['CF-Access-Client-Secret'] = $env:CF_ACCESS_CLIENT_SECRET
+          }
+          $res = Invoke-RestMethod -Uri 'https://browser.lhmcrm.com/v2/plans' -Headers $headers -TimeoutSec 20
+          $plan = @($res.plans | Where-Object { $_.plan_code -eq 'personal_30' })
+          if ($plan.Count -ne 1 -or $plan[0].price_vnd -ne 499000 -or
+              $plan[0].duration_days -ne 30 -or $plan[0].seat_limit -ne 2 -or
+              $plan[0].max_profiles -lt 1) {
+            throw 'Gmail customer plan disabled or differs from approved terms'
+          }
+          Write-Host 'Live staging plan checkout config PASS'
+      - name: Embed ONLY approved public Ed25519 SPKI in isolated Gmail application
+        shell: pwsh
+        env:
+          GOOGLE_STAGING_PACKAGE_CONFIRMATION: ISOLATED_GMAIL_STAGING_ONLY
+          BROWSER_LEASE_PUBLIC_SPKI_B64: ${{ secrets.BROWSER_LEASE_PUBLIC_SPKI_B64 }}
+          BROWSER_LEASE_PUBLIC_SPKI_SHA256: ${{ vars.BROWSER_LEASE_PUBLIC_SPKI_SHA256 }}
+        run: |
+          node tools/prepare-google-staging-package.js
+          if ($LASTEXITCODE -ne 0) { throw 'Gmail signer build pin failed' }
+          node tools/assert-google-staging-package.js
+          if ($LASTEXITCODE -ne 0) { throw 'Gmail staged package identity invalid' }
+      - name: Build isolated Gmail STAGING Windows EXE (never tag or publish)
+        run: npm run build:google-staging:win
+      - name: Verify installer identity and record hash without secrets
+        shell: pwsh
+        run: |
+          $exes = @(Get-ChildItem 'dist-google-staging' -Filter 'LHM-Ads-Browser-Gmail-Staging-*-Setup-x64.exe' -File)
+          if ($exes.Count -ne 1 -or $exes[0].Length -lt 10000000) {
+            throw 'Isolated Gmail Staging installer missing or invalid'
+          }
+          if ((Get-ChildItem 'dist-google-staging' -Filter '*Preview*Setup*.exe').Count -gt 0) {
+            throw 'Preview artifact mixed with Gmail Staging release'
+          }
+          $hash = (Get-FileHash $exes[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $log = 'Gmail STAGING ONLY | EXE SHA256=' + $hash + ' | Commit=' + $env:GITHUB_SHA
+          $log | Out-File -FilePath 'dist-google-staging/sha256.txt' -Encoding ascii
+          Write-Host $log
+      - name: Upload isolated Windows test installer (NOT public release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Gmail-Staging-Windows-Test-x64
+          path: |
+            dist-google-staging/*.exe
+            dist-google-staging/sha256.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Destroy temporary public-key source/config after build
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item -LiteralPath 'src/licensing/googleStagingPackageTrust.generated.js' -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath 'build/google-staging-builder.generated.json' -Force -ErrorAction SilentlyContinue

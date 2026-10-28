@@ -1,0 +1,97 @@
+name: Browser Google SaaS staging (private bootstrap)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/deploy-google-saas-staging.yml'
+      - 'tools/browser-saas-staging-config.js'
+      - 'test/browser-saas-staging-config.js'
+      - 'tools/browser-saas-staging-d1.mjs'
+      - 'serverless/license-worker/migrations/0004_google_web_session_revocation.sql'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PRIVATE_STAGING_ONLY to create/update only the unreachable staging Worker and separate D1'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: lhm-google-browser-private-staging
+  cancel-in-progress: false
+jobs:
+  configuration-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate staging-only config generator and syntax
+        run: |
+          node --check tools/browser-saas-staging-config.js
+          node --check tools/browser-saas-staging-d1.mjs
+          node test/browser-saas-staging-config.js
+  bootstrap-private:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.confirmation == 'PRIVATE_STAGING_ONLY'
+    needs: configuration-preflight
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
+      LHM_D1_DATABASE_ID: ${{ secrets.LHM_D1_DATABASE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Cloudflare staging credentials (never echo values)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing Cloudflare API token secret"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing Cloudflare account ID secret"; exit 1; }
+          node -e "if(!/^[0-9a-f]{32}$/.test(process.env.CLOUDFLARE_ACCOUNT_ID))process.exit(1)"
+      - name: Resolve or create a dedicated staging D1 (never production)
+        id: staging_d1
+        run: node tools/browser-saas-staging-d1.mjs
+      - name: Generate private config with NO public route or workers.dev
+        env:
+          STAGING_D1_UUID: ${{ steps.staging_d1.outputs.d1_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/browser-saas-staging-config.js private "$STAGING_D1_UUID" > serverless/license-worker/wrangler.saas-private.toml
+          if grep -q 'custom_domain = true' serverless/license-worker/wrangler.saas-private.toml; then
+            echo "::error::Private staging must never expose a custom domain"
+            exit 1
+          fi
+      - name: Verify schema and Google lease tests before write operations
+        run: |
+          node --experimental-sqlite test/google-saas-worker.js
+          node test/google-lease-contract.js
+          node test/google-desktop-client.js
+          node test/google-tenant-storage.js
+      - name: Apply only staging Google SaaS schema (NOT legacy migrations)
+        working-directory: serverless/license-worker
+        run: |
+          npx --yes wrangler@4.148.0 d1 execute lhm-browser-saas-staging --remote --file ./migrations/0003_google_saas_staging.sql --config wrangler.saas-private.toml
+          npx --yes wrangler@4.148.0 d1 execute lhm-browser-saas-staging --remote --file ./migrations/0004_google_web_session_revocation.sql --config wrangler.saas-private.toml
+      - name: Publish a PRIVATE staging Worker (no DNS routes)
+        working-directory: serverless/license-worker
+        run: npx --yes wrangler@4.148.0 deploy --config wrangler.saas-private.toml
+      - name: Record private bootstrap result
+        run: |
+          {
+            echo '### LHM Browser Google SaaS — PRIVATE STAGING'
+            echo '- Dedicated D1: created/verified; production D1 untouched'
+            echo '- Dedicated Worker: lhm-browser-commerce-staging'
+            echo '- Public hostname, routes, workers.dev and preview URLs: DISABLED'
+            echo '- OAuth/bank/lease secret provisioning and actual sign-in: NOT TESTED'
+            echo '- No public release or Windows entitlement activation'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove generated binding config
+        if: always()
+        run: rm -f serverless/license-worker/wrangler.saas-private.toml

@@ -88,6 +88,17 @@ contextBridge.exposeInMainWorld('api', {
   removeInstalledExtension: id => ipcRenderer.invoke('extension-remove',id),
   getProfiles: () => ipcRenderer.invoke('get-profiles'),
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
+  // Gmail subscription UI: strictly allowlisted IPC, no arbitrary URLs or tokens.
+  googleLicenseStatus: () => ipcRenderer.invoke('google-license-status'),
+  googleLicenseStart: () => ipcRenderer.invoke('google-license-start'),
+  googleLicenseClaim: () => ipcRenderer.invoke('google-license-claim'),
+  googleLicensePlans: () => ipcRenderer.invoke('google-license-plans'),
+  googleLicenseActivate: () => ipcRenderer.invoke('google-license-activate'),
+  googleLicenseDevices: () => ipcRenderer.invoke('google-license-devices'),
+  googleLicenseReplace: (seatId, confirmation) =>
+    ipcRenderer.invoke('google-license-replace',seatId,confirmation),
+  googleLicenseLogout: () => ipcRenderer.invoke('google-license-logout'),
+  googleLicenseRestart: () => ipcRenderer.invoke('google-license-restart'),
   getLicenseStatus: () => ipcRenderer.invoke('license-center-status'),
   getLicenseServiceStatus: () => ipcRenderer.invoke('license-center-service-status'),
   verifyLicenseOnline: () => ipcRenderer.invoke('license-center-verify-online'),

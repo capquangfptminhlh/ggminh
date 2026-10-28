@@ -1,0 +1,40 @@
+# Example only: customer-approved hostname, isolated /v2/* route and separate D1.
+# NEVER attach to the whole browser.lhmcrm.com hostname or live LICENSE_DB.
+# Copy locally to wrangler.staging.toml, replace the placeholders, and keep it untracked.
+name = "lhm-browser-commerce-staging"
+main = "src/index.mjs"
+compatibility_date = "2026-10-24"
+workers_dev = false
+preview_urls = false
+
+[[routes]]
+pattern = "browser.lhmcrm.com/v2/*"
+zone_name = "lhmcrm.com"
+
+[[d1_databases]]
+binding = "BROWSER_SAAS_DB"
+database_name = "lhm-browser-saas-staging"
+database_id = "REPLACE_WITH_SEPARATE_STAGING_D1_UUID"
+migrations_dir = "migrations"
+
+[vars]
+BROWSER_SAAS_STAGING = "enabled"
+BROWSER_GOOGLE_REDIRECT_URI = "https://browser.lhmcrm.com/v2/auth/google/callback"
+
+# Configure as staging-specific Wrangler secrets:
+# BROWSER_GOOGLE_CLIENT_ID (OAuth ID, non-secret but provision outside repo)
+# BROWSER_GOOGLE_CLIENT_SECRET
+# BROWSER_SESSION_SECRET (at least 32 unpredictable characters)
+# BROWSER_LEASE_PRIVATE_PKCS8_B64 (dedicated v2 Ed25519 private key, base64 PKCS#8)
+# BROWSER_LEASE_PUBLIC_SPKI_B64 (matching public key, base64 SPKI)
+# The Windows commercial build MUST pin the exact public SPKI.
+# BROWSER_BANK_BIN
+# BROWSER_BANK_ACCOUNT_NO
+# BROWSER_BANK_ACCOUNT_NAME
+# BROWSER_SAAS_ADMIN_TOKEN (32+ chars; NEVER reuse the v1 license admin secret)
+# BROWSER_SAAS_ACCESS_TEAM_DOMAIN (e.g. <team>.cloudflareaccess.com)
+# BROWSER_SAAS_ACCESS_AUD (Cloudflare Access Application AUD tag)
+# Admin endpoints enforce signed Cloudflare Access JWT AND a dedicated v2 Bearer token.
+#
+# Cloudflare Access MUST protect /v2/admin/* independently of the Bearer token.
+# Do NOT enable a payment plan until max_profiles/features and bank are approved.

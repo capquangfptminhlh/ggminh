@@ -1,0 +1,19 @@
+name: Browser Gmail LIVE staging acceptance (read-only)
+# Optional legacy hostname diagnostic. The owner now wants the
+# customer-facing hostname browser.lhmcrm.com; the main-domain probe remains
+# mandatory on PR updates, whereas the old staging hostname is manual-only.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-http-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe real DNS, HTTPS, NO SALES, login redirect and admin protection
+        run: node test/google-live-staging-smoke.mjs

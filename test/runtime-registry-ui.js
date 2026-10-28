@@ -11,7 +11,9 @@ for(const action of ['getPinnedBrowserRuntimes','registerPinnedBrowserRuntime','
  assert(preload.includes(action+':')&&ui.includes('api.'+action+'('),action);
 for(const name of ['engine-runtime-status','engine-runtime-register','engine-runtime-clear'])
  assert(main.includes("ipcMain.handle('"+name+"'"),name);
-assert(main.includes('new RuntimeRegistry(storageDir)'));
+assert(main.includes('new RuntimeRegistry(customerStorageDir)'));
+assert(main.includes('const customerStorageDir=googleTenantRoot||storageDir'),
+ 'Browser runtime pins must be private to the verified Gmail tenant');
 assert(launcher.includes('this.runtimeRegistry?.binaryFor(engine)'));
 assert(ui.includes('textContent')&&ui.includes('replaceChildren'));
 console.log('v5.3 UI pin manager, main-process IPC, path privacy and launcher wiring passed');

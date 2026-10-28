@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage, shell } = require('electron');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -39,6 +39,7 @@ const {buildFleetTriage}=require('./src/ops/fleetTriage');
 const {MAX_FILE_BYTES,exportSelectedTemplates,previewTemplates,importTemplates}=require('./src/ops/agencyTemplateHandoff');
 const {runPerformanceLab}=require('./src/ops/performanceLab');
 const {UpdateCenter}=require('./src/update/updateCenter');
+const {DisabledGmailUpdateCenter}=require('./src/update/googleStagingUpdater');
 const {inspectUpgradeSafety}=require('./src/update/upgradeSafety');
 const {buildSupportReport}=require('./src/ops/supportReport');
 const {buildCustomerHandoff}=require('./src/ops/customerHandoff');
@@ -67,6 +68,9 @@ const {AIAdvisor} = require('./src/ai/advisor');
 const {proposeWorkflow} = require('./src/ai/workflowDraft');
 const {LicenseManager} = require('./src/licensing/manager');
 const {LicensePolicy} = require('./src/licensing/enforcement');
+const {GoogleBrowserDesktopClient} = require('./src/licensing/googleDesktopClient');
+const {googleTenantStorageRoot} = require('./src/licensing/googleTenantStorage');
+const {loadGoogleStagingConfig} = require('./src/licensing/googleStagingConfig');
 const {OnlineLicenseVerifier} = require('./src/licensing/onlineVerifier');
 const {resolveLicenseEndpoint}=require('./src/licensing/authorityConfig');
 const {getLicenseServiceStatus}=require('./src/licensing/serviceDiagnostics');
@@ -110,6 +114,31 @@ let extensionManager = null;
 let aiAdvisor = null;
 let licenseManager = null;
 let licensePolicy = null;
+let googleDesktop = null;
+let googleTenantRoot = null;
+let googleLeaseTimer = null;
+let googleRenewInFlight = null;
+function isGoogleTenantReady(){
+  if(!googleDesktop?.state.customer_id||!store?.baseDir)return false;
+  try{
+    return store.baseDir===googleTenantStorageRoot(
+      path.join(app.getPath('userData'),'storage'),googleDesktop.state.customer_id);
+  }catch(_){return false;}
+}
+function renewGooglePaidAccess(){
+  if(!googleDesktop||!googleDesktop.state.customer_id||!googleDesktop.state.grant)
+    return Promise.reject(Error('Google account pairing is required'));
+  if(!isGoogleTenantReady())
+    return Promise.reject(Error('TENANT_RESTART_REQUIRED'));
+  // Coalesce activation, boot renewal and periodic refresh. Otherwise two
+  // concurrent requests could compete to attach a limited server seat.
+  if(googleRenewInFlight)return googleRenewInFlight;
+  const task=Promise.resolve().then(()=>googleDesktop.renewOnline({
+    label:os.hostname().slice(0,50)||'Windows device'
+  }));
+  googleRenewInFlight=task.finally(()=>{googleRenewInFlight=null;});
+  return googleRenewInFlight;
+}
 let onlineLicenseVerifier = null;
 let licenseTimer = null;
 const LICENSE_REFRESH_MS=15*60*1000;
@@ -398,11 +427,16 @@ function initIPC() {
   const updatePublicKeyFile=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
     :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
-  const onlineUpdates=new UpdateCenter({
-    currentVersion:app.getVersion(),
-    publicKeyFile:updatePublicKeyFile,
-    licenseKey:LICENSE_PUBLIC_KEY
-  });
+  // Gmail Staging has a separate appId and storage root. It must never
+  // offer the existing signed Preview installer as an upgrade, even if
+  // the Preview publisher signature is valid for the original product.
+  const onlineUpdates=googleDesktop
+    ?new DisabledGmailUpdateCenter(app.getVersion())
+    :new UpdateCenter({
+      currentVersion:app.getVersion(),
+      publicKeyFile:updatePublicKeyFile,
+      licenseKey:LICENSE_PUBLIC_KEY
+    });
   let lastVerifiedInstallerPath=null;
   const inspectCurrentUpgrade=()=>inspectUpgradeSafety({
     storageDir:store.baseDir,store,workflowStore,proxyVault,launcher
@@ -454,14 +488,89 @@ function initIPC() {
     arch:process.arch,
     packaged:app.isPackaged
   }));
+  // Gmail pairing happens in the SYSTEM browser. Renderer receives only a
+  // six-digit comparison code, never the grant, refresh lease or OAuth tokens.
+  const requireGoogle=()=>{
+    if(!googleDesktop)throw Error('Kênh Google SaaS chưa được bật trên bản cài này');
+    return googleDesktop;
+  };
+  const tenantReady=()=>{
+    const client=requireGoogle();
+    if(!isGoogleTenantReady())
+      throw Error('Khởi động lại phần mềm để chuyển sang dữ liệu tài khoản Gmail');
+    return client;
+  };
+  ipcMain.handle('google-license-status',()=>{
+    if(!googleDesktop)return {enabled:false};
+    const state=licensePolicy.status();
+    return {...state,enabled:true,email:googleDesktop.state.email||null,
+      paired:!!googleDesktop.state.customer_id,
+      pending:!!googleDesktop.state.pending,seatAttached:!!googleDesktop.state.seat_id,
+      tenantReady:isGoogleTenantReady()};
+  });
+  ipcMain.handle('google-license-start',async()=>{
+    const client=requireGoogle();
+    if(client.state.customer_id)throw Error('Đăng xuất trước khi đổi tài khoản Gmail');
+    const pair=await client.startPair({
+      label:os.hostname().slice(0,50)||'Windows device'});
+    // startPair checks the URL against the fixed Cloudflare staging origin.
+    // A missing Windows default-browser association must not lose the
+    // one-time pairing or hide its code. Copy the already-validated URL.
+    let browserOpened=false,linkCopied=false;
+    try{await shell.openExternal(pair.approvalUrl);browserOpened=true;}
+    catch(_){
+      clipboard.writeText(pair.approvalUrl);
+      linkCopied=true;
+    }
+    return {comparisonCode:pair.comparisonCode,expiresAt:pair.pairingExpiresAt,
+      browserOpened,linkCopied};
+  });
+  ipcMain.handle('google-license-claim',async()=>{
+    const paired=await requireGoogle().claimPair();
+    return {...paired,restartRequired:true};
+  });
+  ipcMain.handle('google-license-restart',()=>{
+    requireGoogle();
+    if(launcher.listActive().length)throw Error('Đóng các profile đang chạy trước khi đổi tài khoản');
+    app.relaunch();app.quit();return true;
+  });
+  ipcMain.handle('google-license-plans',async()=>{
+    requireGoogle();
+    await shell.openExternal('https://browser.lhmcrm.com/v2/portal');
+    return true;
+  });
+  ipcMain.handle('google-license-activate',async()=>{
+    tenantReady();
+    return renewGooglePaidAccess();
+  });
+  ipcMain.handle('google-license-devices',()=>tenantReady().listSeats());
+  ipcMain.handle('google-license-replace',async(_,seatId,confirmation)=>{
+    const client=tenantReady();
+    await client.takeover(seatId,{confirmation,
+      label:os.hostname().slice(0,50)||'Windows device'});
+    return client.refreshLease();
+  });
+  ipcMain.handle('google-license-logout',async()=>{
+    const client=requireGoogle();
+    if(launcher.listActive().length||automationRunner.status().status==='running'||
+       batchAutomation.status().active)
+      throw Error('Đóng profile và tác vụ trước khi đăng xuất Gmail');
+    await client.logout();
+    // A previously signed-in customer's workspace must not remain visible
+    // after logout; immediately tear down the in-memory Store on restart.
+    setImmediate(()=>{app.relaunch();app.quit();});
+    return {restartRequired:true};
+  });
   ipcMain.handle('license-center-status', () => licensePolicy.status());
   ipcMain.handle('license-center-service-status', () =>
     getLicenseServiceStatus(onlineLicenseVerifier,licenseManager));
   ipcMain.handle('license-center-verify-online', async () => {
+    if(googleDesktop)throw Error('Kênh Gmail chỉ xác minh lease Google; không dùng dịch vụ license cũ');
     const result=await onlineLicenseVerifier.verifyNow();
     return {result,license:licensePolicy.status()};
   });
   ipcMain.handle('license-center-activate', async (_,token) => {
+    if(googleDesktop)throw Error('Đăng nhập Google thay cho license thủ công');
     licenseManager.activate(token);
     if(onlineLicenseVerifier.endpoint){
       try{await onlineLicenseVerifier.verifyNow();}
@@ -470,6 +579,7 @@ function initIPC() {
     return licensePolicy.status();
   });
   ipcMain.handle('license-center-deactivate', () => {
+    if(googleDesktop)throw Error('Hãy đăng xuất Gmail từ quản lý tài khoản');
     licenseManager.deactivate();
     return licensePolicy.status();
   });
@@ -1193,6 +1303,16 @@ app.on('second-instance', () => {
   }
 });
 app.whenReady().then(async () => {
+  // Resolve the packaged trust BEFORE the Electron single-instance lock and
+  // before reading any profile or license state. Gmail Staging must never
+  // share the Preview app's userData root, Chrome cookies or legacy license.
+  const googleConfig=loadGoogleStagingConfig({packaged:app.isPackaged});
+  if(googleConfig?.mode==='google-saas-packaged-staging'){
+    const isolatedUserData=path.join(app.getPath('appData'),
+      'LHM Ads Browser Gmail Staging');
+    fs.mkdirSync(isolatedUserData,{recursive:true,mode:0o700});
+    app.setPath('userData',isolatedUserData);
+  }
   if (process.env.LHM_CI_UI_CAPTURE === '1') {
     app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
   }
@@ -1212,18 +1332,26 @@ app.whenReady().then(async () => {
   }
   const storageDir = path.join(app.getPath('userData'), 'storage');
   const legacyDir = path.join(__dirname, 'data');
-  if (!fs.existsSync(path.join(storageDir, 'db.json')) &&
+  if (!googleConfig && !fs.existsSync(path.join(storageDir, 'db.json')) &&
       fs.existsSync(path.join(legacyDir, 'db.json'))) {
     fs.mkdirSync(path.dirname(storageDir), { recursive: true });
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
   }
-  store = new Store(storageDir);
-  try{localHealthDrift=new LocalHealthDrift(storageDir);}
+  if(googleConfig){
+    googleDesktop=new GoogleBrowserDesktopClient({
+      root:path.join(app.getPath('userData'),'google-saas-secure'),
+      safeStorage,apiOrigin:googleConfig.apiOrigin,publicKey:googleConfig.publicKey
+    });
+    googleTenantRoot=googleTenantStorageRoot(storageDir,googleDesktop.state.customer_id,{create:true});
+  }
+  const customerStorageDir=googleTenantRoot||storageDir;
+  store = new Store(customerStorageDir);
+  try{localHealthDrift=new LocalHealthDrift(customerStorageDir);}
   catch(error){
     console.warn('[HealthDrift] History unavailable:',error.message);
     localHealthDrift=null; // Preserve corrupted history for manual recovery.
   }
-  runtimeRegistry = new RuntimeRegistry(storageDir);
+  runtimeRegistry = new RuntimeRegistry(customerStorageDir);
   try { store.purgeExpiredTrashedProfiles(); }
   catch(error) { console.warn('[ProfileTrash] startup cleanup deferred:',error.message); }
   if (process.env.LHM_CI_UI_CAPTURE === '1') {
@@ -1238,18 +1366,46 @@ app.whenReady().then(async () => {
         fingerprint:{mode:'native'},proxy:{type:'direct'}});
     }
   }
-  proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
-  aiAdvisor = new AIAdvisor(storageDir,safeStorage);
-  licenseManager = new LicenseManager(storageDir);
-  licensePolicy = new LicensePolicy(storageDir,licenseManager);
-  onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
-    endpoint:resolveLicenseEndpoint({
+  proxyVault = new ProxyCredentialVault(customerStorageDir, safeStorage);
+  aiAdvisor = new AIAdvisor(customerStorageDir,safeStorage);
+  // The Gmail app uses a completely separate signed lease, never v1.
+  // Legacy helper objects are retained only for compatibility with Preview
+  // report/UI code, but their incidental state must be isolated by tenant.
+  const legacyLicenseRoot=googleDesktop?customerStorageDir:storageDir;
+  licenseManager = new LicenseManager(legacyLicenseRoot);
+  licensePolicy = new LicensePolicy(legacyLicenseRoot,licenseManager);
+  onlineLicenseVerifier = new OnlineLicenseVerifier(legacyLicenseRoot,licenseManager,{
+    endpoint:googleDesktop?null:resolveLicenseEndpoint({
       packaged:app.isPackaged,
       resourcesPath:process.resourcesPath,
       developmentEndpoint:process.env.LHM_LICENSE_VERIFY_URL||null
     })
   });
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
+  if(googleDesktop){
+    // Legacy trial/v1 signed keys never authorize commercial Gmail profiles.
+    licensePolicy={
+      status:()=>{
+        const raw=googleDesktop.status();
+        const mismatch=!!googleDesktop.state.customer_id&&!isGoogleTenantReady();
+        const s=mismatch?{...raw,allowed:false,reason:'TENANT_RESTART_REQUIRED',
+          features:[],maxProfiles:null}:raw;
+        return {...s,access:s.allowed?'licensed':'blocked',
+          status:s.allowed?'active':'inactive',active:s.allowed,
+          expiresAt:s.allowed?s.validUntil:null,plan:s.plan||null,
+          trial:false,remainingDays:s.allowed?
+            Math.ceil((Date.parse(s.validUntil)-Date.now())/86400000):0};
+      },
+      require:feature=>{
+        if(!isGoogleTenantReady())throw Error('TENANT_RESTART_REQUIRED');
+        return googleDesktop.require(feature);
+      },
+      assertCapacity:(count,addition)=>{
+        if(!isGoogleTenantReady())throw Error('TENANT_RESTART_REQUIRED');
+        return googleDesktop.assertCapacity(count,addition);
+      }
+    };
+  }
   store.licensePolicy = licensePolicy;
   launcher = new BrowserLauncher(store,{proxyVault});
   bundledEngine=new BundledEngineManager(app.isPackaged
@@ -1311,7 +1467,7 @@ app.whenReady().then(async () => {
       return camoufoxInstall.verifier().resolve(engine);
     }
   };
-  camoufoxAdapter=new CamoufoxAdapter(storageDir,{
+  camoufoxAdapter=new CamoufoxAdapter(customerStorageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,
     // Explicit operator-only opt-in. Production defaults fail closed until
     // independently verified proxy/DNS/WebRTC lab acceptance.
@@ -1320,7 +1476,7 @@ app.whenReady().then(async () => {
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the
   // packaged app until signed distribution and network lab release gates pass.
-  launcher.camoufoxPlaywrightController=new CamoufoxPlaywrightController(storageDir,{
+  launcher.camoufoxPlaywrightController=new CamoufoxPlaywrightController(customerStorageDir,{
     verifier:verifiedProviders,store,proxyVault,
     enabled:!app.isPackaged&&process.env.LHM_CAMOUFOX_PLAYWRIGHT_LAB==='1',
     labApproved:!app.isPackaged&&
@@ -1332,10 +1488,10 @@ app.whenReady().then(async () => {
   extensionManager = new ExtensionManager(store,launcher);
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
-  behaviorMonitor = new BehaviorMonitor(storageDir);
-  try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
+  behaviorMonitor = new BehaviorMonitor(customerStorageDir);
+  try{ipObservationStore=new ExitIpObservationStore(customerStorageDir);}catch(_){}
   try{
-    measurementRecordStore=new MeasurementRecordStore(storageDir);
+    measurementRecordStore=new MeasurementRecordStore(customerStorageDir);
     const loadedRecords=measurementRecordStore.status();
     if(loadedRecords.load.status==='error')
       console.warn('[measurement-records]',loadedRecords.load.reason);
@@ -1354,14 +1510,14 @@ app.whenReady().then(async () => {
   // below: the store counts 'authoritative' because the seeded
   // service registry already carries the accumulated totals.
   try{
-    warningHistory=createWarningHistory({storageDir,countMode:'authoritative'});
+    warningHistory=createWarningHistory({storageDir:customerStorageDir,countMode:'authoritative'});
     const loadedHistory=warningHistory.load();
     if(loadedHistory.status==='error')
       console.warn('[warning-history]',loadedHistory.reason);
   }catch(_){ warningHistory=null; }
   warningService = createWarningService({seed:warningHistory?warningHistory.seedRecords():null});
   camoufoxExecutableResolver = () => verifiedProviders.resolve('camoufox');
-  workflowStore = new WorkflowStore(storageDir);
+  workflowStore = new WorkflowStore(customerStorageDir);
   // Permanent-deletion completeness (findings F3/F4 — proposal pending
   // owner decision): when a profile is purged for good, sweep the
   // automation workflows bound to it so no dangling profileId remains,
@@ -1407,25 +1563,39 @@ app.whenReady().then(async () => {
   configBackup = new ConfigBackup(store, workflowStore);
   automationRunner = new AutomationRunner(workflowStore, store, createWindowBrowser);
   automationRunner.licensePolicy = licensePolicy;
-  batchAutomation = new BatchAutomation(storageDir, workflowStore, store, automationRunner);
+  batchAutomation = new BatchAutomation(customerStorageDir, workflowStore, store, automationRunner);
   sessionSnapshots = new SessionSnapshots(store,launcher,{inUse:id=>
     (automationRunner.status().status==='running'&&automationRunner.status().profileId===id)||
     (batchAutomation.status().active&&batchAutomation.status().batch?.tasks.some(t=>t.profileId===id))||
     (recorderManager?.status().state==='recording'&&recorderManager.status().profileId===id)
   });
-  localScheduler = new LocalScheduler(storageDir, workflowStore, automationRunner);
+  localScheduler = new LocalScheduler(customerStorageDir, workflowStore, automationRunner);
   // In-app polling only, never a Windows background service.
   schedulerTimer = setInterval(() => {
     if (recorderManager?.status().state === 'recording') return;
     localScheduler.tick().catch(error => console.warn('[Scheduler]',error.message));
   }, 60000);
   schedulerTimer.unref?.();
-  if(onlineLicenseVerifier.endpoint){
+  if(!googleDesktop && onlineLicenseVerifier.endpoint){
     onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
     licenseTimer=setInterval(()=>{
       onlineLicenseVerifier.verifyNow().catch(error=>console.warn('[License] Online check unavailable:',error.message));
     },LICENSE_REFRESH_MS);
     licenseTimer.unref?.();
+  }
+  if(googleDesktop){
+    // Try immediately after opening the desktop. An expired offline lease
+    // stays expired unless the actual SaaS issuer issues a fresh signed one.
+    const tryRenew=()=>renewGooglePaidAccess().catch(error=>{
+      if(!['NETWORK_UNAVAILABLE','SUBSCRIPTION_REQUIRED'].includes(error.code))
+        console.warn('[Google SaaS] Renewal:',error.code||'service_unavailable');
+    });
+    if(googleDesktop.state.grant)
+      setImmediate(()=>{void tryRenew();});
+    googleLeaseTimer=setInterval(()=>{
+      if(googleDesktop.state.grant)void tryRenew();
+    },5*60*1000);
+    googleLeaseTimer.unref?.();
   }
   recorderManager = new RecorderManager(store, createRecorderWindow);
   initIPC();
@@ -1448,6 +1618,7 @@ app.whenReady().then(async () => {
 app.on('before-quit', () => {
   if (schedulerTimer) clearInterval(schedulerTimer);
   if (licenseTimer) clearInterval(licenseTimer);
+  if (googleLeaseTimer) clearInterval(googleLeaseTimer);
   if (batchAutomation) batchAutomation.stop();
   if (automationRunner) automationRunner.stop();
   if (recorderManager?.status().state === 'recording') recorderManager.stop();
