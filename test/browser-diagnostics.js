@@ -65,7 +65,16 @@ const { diagnoseBrowsers, parseVersion, optionsFor } = require('../src/engine/br
   assert.strictEqual(configured.engines[2].status, 'error');
   assert.strictEqual(configured.engines[2].message, MSIX_FIREFOX_MESSAGE);
   const launcher = new BrowserLauncher({ baseDir: '.', getSettings: () => ({ geckoPath: storeAlias }) });
-  assert.throws(() => launcher.findBrowserBinary('gecko'), e => e.message === MSIX_FIREFOX_MESSAGE);
+  // The launcher probes the real disk; GitHub's Windows runner has a regular
+  // Firefox in Program Files, which is correctly preferred over the alias.
+  const realFs = require('fs'), realExists = realFs.existsSync;
+  realFs.existsSync = () => false;
+  try {
+    assert.throws(() => launcher.findBrowserBinary('gecko'), e => e.message === MSIX_FIREFOX_MESSAGE);
+    realFs.existsSync = p => /Program Files\\Mozilla Firefox\\firefox\.exe$/i.test(p);
+    assert.strictEqual(launcher.findBrowserBinary('gecko'), 'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
+      'a regular Firefox wins over a configured MSIX alias');
+  } finally { realFs.existsSync = realExists; }
   const health = checkProfile({ name: 'QA', engine: 'gecko', startUrl: 'https://example.com/',
     proxy: { type: 'direct' } }, { settings: {}, pathExists: none, msixProbe: aliasOk });
   const missing = health.issues.find(x => x.code === 'browser_missing');
