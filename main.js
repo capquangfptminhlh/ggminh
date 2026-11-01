@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
 const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
+const { AndroidControl } = require('./src/android/androidControl');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -401,6 +402,7 @@ function initIPC() {
   // These endpoints do not fabricate devices or use a command shell.
   const androidManager = new AndroidManager();
   const avdProvisioner = new AvdProvisioner(androidManager);
+  const androidControl = new AndroidControl(androidManager);
   ipcMain.handle('android-discover', async () => {
     const [devices, provisioning] = await Promise.all([androidManager.discover(), avdProvisioner.catalog()]);
     return {...devices, provisioning};
@@ -410,6 +412,31 @@ function initIPC() {
   ipcMain.handle('android-launch-avd', (_event, name) => androidManager.launchAvd(name));
   ipcMain.handle('android-open-screen', (_event, serial) => androidManager.openScreen(serial));
   ipcMain.handle('android-stop-emulator', (_event, serial) => androidManager.stopEmulator(serial));
+  ipcMain.handle('android-control-action', (_event, serial, action, args) =>
+    androidControl.execute(serial, action, args));
+  ipcMain.handle('android-control-screenshot', (_event, serial) =>
+    androidControl.screenshot(serial));
+  ipcMain.handle('android-control-install-apk', async (_event, serial) => {
+    await androidControl.authorized(serial);
+    const selected = await dialog.showOpenDialog(mainWindow, {
+      title:'Chọn APK để cài trên thiết bị Android',
+      properties:['openFile'],
+      filters:[{name:'Android Package',extensions:['apk']}]
+    });
+    if (selected.canceled || selected.filePaths.length !== 1) return {state:'cancelled'};
+    const filePath = selected.filePaths[0];
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type:'warning',
+      title:'Xác nhận cài ứng dụng Android',
+      message:'Cài tệp APK này lên thiết bị ' + serial + '?',
+      detail:'Tệp: ' + path.basename(filePath) +
+        '\nChỉ tiếp tục nếu anh tin tưởng nguồn APK. LHM không tự thay thế ứng dụng đã cài.',
+      buttons:['Hủy','Cài APK'],
+      defaultId:0,cancelId:0,noLink:true
+    });
+    if (confirmation.response !== 1) return {state:'cancelled'};
+    return androidControl.installApk(serial, filePath);
+  });
   const updatePublicKeyFile=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
     :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
