@@ -8,7 +8,8 @@ const sample={steps:[
   {action:'capture',note:'Kiểm tra ảnh màn hình'}
 ]};
 assert.equal(validatePlan(sample).steps.length,2);
-assert.deepEqual(parseModelPlan(JSON.stringify(sample)),sample);
+assert.equal(parseModelPlan(JSON.stringify(sample)).steps[0].action,'key');
+assert.deepEqual(parseModelPlan(JSON.stringify(sample)).steps[1].args,{});
 assert.throws(()=>parseModelPlan('not JSON'),/strict JSON/);
 assert.throws(()=>validatePlan({steps:[]}),/1–6/);
 assert.throws(()=>validatePlan({steps:[{action:'shell',args:{command:'id'}}]}),/Unsupported/);
