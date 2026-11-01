@@ -133,6 +133,16 @@ class AndroidAgentWorkflow {
       next:s.done||s.error?null:redactedStep(s.steps[s.index])
     };
   }
+  confirmationDetails(id) {
+    // Native main-process dialog only. A short proposed text must be visible
+    // verbatim before approval; renderer previews intentionally redact it.
+    const s=this._session(id);
+    if(s.done || s.error) throw new Error('Plan is not actionable');
+    const step=s.steps[s.index];
+    return step.action==='text'
+      ? 'Nội dung AI định gõ: '+step.args.text
+      : JSON.stringify(redactedStep(step).args);
+  }
   async next(id) {
     const s=this._session(id);
     if(s.busy) throw new Error('Android workflow step already running');
