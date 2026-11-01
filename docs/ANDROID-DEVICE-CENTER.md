@@ -25,13 +25,31 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
+## Android Agent Workflow — guided, not autonomous
+
+The in-app Android Agent Workflow uses the existing encrypted OpenRouter AI Advisor key to **propose a text-only JSON plan**. The user must explicitly opt in before the *goal description alone* is sent to OpenRouter; neither screenshot bytes, current app contents, device serials nor profile data are provided to the model. If no API key is configured, a **Home → Screenshot** offline template remains usable.
+
+Every plan is parsed using strict JSON and an allowlist of `capture`, `key` (HOME/BACK), `tap`, `swipe` or short validated `text`. Plans are at most six steps and end with a screenshot checkpoint. Proposed coordinates have no visual grounding and can be wrong; users must review each proposal carefully. There is no autonomous vision, OCR, semantic outcome verification, background scheduling or arbitrary ADB shell.
+
+The workflow binds to a single ADB-authorized serial and expires from memory after 10 minutes. **Every step** triggers an independent native Electron confirmation identifying the device, action and step number. The user can cancel between steps; no bulk approval mode exists. After each step, Android is captured locally for human verification, without uploading the image. An ADB timeout is treated as uncertain: the workflow blocks rather than blindly repeating a potentially irreversible action. No workflow history or screenshots are persisted to disk. On closing Device Center, the UI clears its image and attempts session cancellation.
+
+### Agent acceptance still required
+
+- [x] OpenRouter text-only proposal with explicit consent, schema validation, redacted preview, 1-step approval and transient screenshot verification (mock-tested).
+- [ ] Live Windows 10/11 end-to-end with AVD booted, UI responsiveness, per-step confirmation, cancellation after timeout and screenshot privacy validation.
+- [ ] Screen semantic understanding with independent privacy consent, verified accessibility tree and an explicit AI policy/tool permission model.
+- [ ] Local MCP agent bridge with authentication and per-device capabilities; no remote exposure until audited.
+
 ### Test
+
 
 Run: node test/android-manager.js
 
 Run: node test/android-provisioner.js
 
 Run: node test/android-control.js
+
+Run: node test/android-agent-workflow.js
 
 The normal test pipeline also executes both suites. Tests use a fake Android SDK process adapter and **do not** prove Windows virtualization, ADB access, APK compatibility or real-device runtime. Those require a Windows host with Android SDK installed.
 

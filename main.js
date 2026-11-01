@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require(
 const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const { AndroidControl } = require('./src/android/androidControl');
+const { AndroidAgentWorkflow } = require('./src/android/agentWorkflow');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -403,6 +404,10 @@ function initIPC() {
   const androidManager = new AndroidManager();
   const avdProvisioner = new AvdProvisioner(androidManager);
   const androidControl = new AndroidControl(androidManager);
+  // Workflow sessions live only in app memory; there is no headless
+  // scheduler or unauthenticated HTTP path to Android controls.
+  const androidAgent = new AndroidAgentWorkflow(androidControl, aiAdvisor);
+  const androidStepConfirmations = new Set();
   ipcMain.handle('android-discover', async () => {
     const [devices, provisioning] = await Promise.all([androidManager.discover(), avdProvisioner.catalog()]);
     return {...devices, provisioning};
@@ -416,6 +421,34 @@ function initIPC() {
     androidControl.execute(serial, action, args));
   ipcMain.handle('android-control-screenshot', (_event, serial) =>
     androidControl.screenshot(serial));
+  ipcMain.handle('android-agent-template', (_event, serial) =>
+    androidAgent.template(serial));
+  ipcMain.handle('android-agent-propose', (_event, serial, goal, consent) =>
+    androidAgent.propose(serial, goal, consent));
+  ipcMain.handle('android-agent-cancel', (_event, sessionId) =>
+    androidAgent.cancel(sessionId));
+  ipcMain.handle('android-agent-next', async (_event, sessionId) => {
+    if (androidStepConfirmations.has(sessionId))
+      throw new Error('Another Android confirmation is already open');
+    const plan = androidAgent.preview(sessionId);
+    if (plan.done || plan.error || !plan.next)
+      throw new Error('Android plan is finished or blocked');
+    androidStepConfirmations.add(sessionId);
+    try {
+      const next = plan.next;
+      const details = androidAgent.confirmationDetails(sessionId);
+      const confirm = await dialog.showMessageBox(mainWindow, {
+        type:'warning',title:'Xác nhận từng bước Android',
+        message:'Thực thi bước ' + (plan.index+1) + '/' + plan.total +
+          ' trên thiết bị ' + plan.serial + '?',
+        detail:next.note + '\n' + next.action + ' · ' + details +
+          '\nKhông hoàn tác tự động. LHM sẽ chụp màn hình để anh kiểm tra.',
+        buttons:['Hủy','Thực hiện bước này'],defaultId:0,cancelId:0,noLink:true
+      });
+      if (confirm.response !== 1) return {state:'declined',...plan};
+      return androidAgent.next(sessionId);
+    } finally { androidStepConfirmations.delete(sessionId); }
+  });
   ipcMain.handle('android-control-install-apk', async (_event, serial) => {
     await androidControl.authorized(serial);
     const selected = await dialog.showOpenDialog(mainWindow, {

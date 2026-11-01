@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="profileSignalCoverage.css">
   <link rel="stylesheet" href="androidManager.css">
   <link rel="stylesheet" href="androidControlStudio.css">
+  <link rel="stylesheet" href="androidAgentStudio.css">
 </head>
 <body data-view="profiles">
 
@@ -1858,6 +1859,33 @@ run();
           </div>
           <p id="android-control-feedback" role="status" aria-live="polite"></p>
         </section>
+        <section class="lhm-android-agent" aria-labelledby="android-agent-title">
+          <div class="lhm-android-agent-heading">
+            <div>
+              <h3 id="android-agent-title">Android Agent Workflow</h3>
+              <p>AI đề xuất bước → Anh duyệt từng bước → LHM điều khiển Android → Chụp ảnh kiểm tra.</p>
+            </div>
+            <span class="lhm-android-agent-tag">REVIEW EACH STEP</span>
+          </div>
+          <label for="android-agent-goal">Mục tiêu thao tác</label>
+          <textarea id="android-agent-goal" rows="2" maxlength="300" placeholder="Ví dụ: về màn hình chính, sau đó chụp ảnh kiểm tra. Không nhập thông tin cá nhân."></textarea>
+          <label class="lhm-android-agent-consent">
+            <input type="checkbox" id="android-agent-consent">
+            Chỉ gửi mô tả mục tiêu ở trên tới OpenRouter để AI đề xuất kế hoạch. Không gửi ảnh màn hình, dữ liệu ứng dụng hay hồ sơ thiết bị.
+          </label>
+          <div class="lhm-android-agent-buttons">
+            <button type="button" class="btn btn-secondary" id="android-agent-offline">Mẫu thử không dùng AI</button>
+            <button type="button" class="btn btn-primary" id="android-agent-propose">AI đề xuất kế hoạch</button>
+            <button type="button" class="btn btn-secondary" id="android-agent-next" disabled>Phê duyệt bước kế</button>
+            <button type="button" class="btn btn-secondary" id="android-agent-cancel" disabled>Hủy kế hoạch</button>
+          </div>
+          <p id="android-agent-status" role="status" aria-live="polite">Chọn thiết bị Android đã được ADB cấp quyền phía trên để bắt đầu.</p>
+          <div id="android-agent-plan" class="lhm-android-agent-plan" aria-live="polite"></div>
+          <div class="lhm-android-agent-result">
+            <img id="android-agent-screenshot" alt="Ảnh màn hình Android sau bước vừa thực hiện" hidden>
+            <p id="android-agent-review">Sau mỗi bước, đối chiếu ảnh để quyết định có phê duyệt bước tiếp theo không.</p>
+          </div>
+        </section>
         <section class="lhm-android-setup" aria-labelledby="android-setup-title">
           <h3 id="android-setup-title">Thiết lập lần đầu trên Windows</h3>
           <p>Cài Android Studio + Android SDK (Platform Tools, Emulator, một system image và AVD). Bật VT-x/AMD-V, Windows Hypervisor Platform. Để xem màn hình thiết bị qua ADB, cài thêm scrcpy và thêm vào PATH. Ứng dụng không tự cài SDK hay tự tạo máy khi chưa có tài nguyên thật.</p>
@@ -1908,6 +1936,7 @@ run();
   <script src="dashboard.js"></script>
   <script src="androidManager.js"></script>
   <script src="androidControlStudio.js"></script>
+  <script src="androidAgentStudio.js"></script>
   <script src="profilePanel.js"></script>
 </body>
 </html>
