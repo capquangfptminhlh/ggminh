@@ -113,6 +113,16 @@
     }
   }
 
+  function blockReason(reason) {
+    const messages = {
+      'already-running':'Máy này đang chạy',
+      'parallel-limit':'PC đã đạt giới hạn chạy song song',
+      'insufficient-free-memory':'Không đủ RAM trống để mở an toàn',
+      'memory-unavailable':'Không đo được bộ nhớ máy'
+    };
+    return messages[reason] || 'Chưa sẵn sàng';
+  }
+
   function renderAvds(state) {
     const root = $('android-avd-list');
     root.replaceChildren();
@@ -121,16 +131,29 @@
       return;
     }
     if (!state.avds.length) {
-      root.append(element('p','lhm-android-empty','Chưa có AVD. Tạo một thiết bị trong Android Studio → Device Manager.'));
+      root.append(element('p','lhm-android-empty','Chưa có AVD. Chọn system image phía trên để tạo máy Android mới.'));
       return;
     }
     state.avds.forEach(name => {
+      const readiness = state.fleet?.readiness?.[name];
+      const current = state.fleet?.running?.find(item => item.name === name);
       const starting = state.launches.includes(name);
-      root.append(row(name, starting ? 'Đang khởi động…' : 'Android Virtual Device đã cài',
-        [action(starting ? 'Đang mở' : 'Khởi chạy', async () => {
+      const running = !!current;
+      const booted = current?.bootCompleted === true;
+      const disabled = starting || running || !readiness?.allowed;
+      const status = booted ? 'Android đã khởi động'
+        : (running || starting) ? 'Đang khởi động Android'
+          : readiness?.allowed ? 'Sẵn sàng khởi chạy'
+            : blockReason(readiness?.reason);
+      const ram = readiness?.plannedRamMiB
+        ? ' · RAM AVD dự tính ' + Math.round(readiness.plannedRamMiB / 1024 * 10) / 10 + ' GB'
+        : '';
+      root.append(row(name, status + ram,
+        [action(running || starting ? 'Đang chạy' : 'Khởi chạy', async () => {
           const result = await window.api.androidLaunchAvd(name);
-          return 'Đã gửi lệnh khởi chạy ' + result.name + '. Kiểm tra kết nối trong danh sách thiết bị.';
-        }, starting)]));
+          return 'Đã gửi lệnh khởi chạy ' + result.name +
+            '. Màn hình Android sẽ xuất hiện khi emulator khởi động.';
+        }, disabled)]));
     });
   }
 
@@ -148,9 +171,12 @@
     state.devices.forEach(device => {
       const online = device.status === 'device';
       const title = device.model || device.serial;
+      const status = state.fleet?.running?.find(item => item.serial === device.serial);
       const description = device.serial + ' · ' +
         (device.kind === 'emulator' ? 'Máy ảo' : 'Thiết bị thật') + ' · ' +
-        (online ? 'Đã kết nối' : device.status);
+        (device.kind === 'emulator' && online
+          ? (status?.bootCompleted ? 'Android đã khởi động' : 'Đang khởi động')
+          : (online ? 'Đã kết nối' : device.status));
       const buttons = [
         action('Xem màn hình', async () => {
           await window.api.androidOpenScreen(device.serial);
@@ -178,6 +204,12 @@
       const ready = ['adb','emulator','scrcpy'].filter(x => state.tools[x]);
       $('android-sdk-status').textContent = ready.length + '/3 công cụ có sẵn · ' +
         state.avds.length + ' AVD · ' + state.devices.length + ' thiết bị';
+      const fleet = state.fleet;
+      $('android-host-status').textContent = fleet
+        ? ('RAM trống ' + (fleet.host.measured ? fleet.host.freeGiB + ' GB' : 'chưa đo') +
+          ' · CPU ' + fleet.host.cpuCount + ' luồng · ' +
+          fleet.activeCount + '/' + fleet.maxParallel + ' máy Android đang chạy (giới hạn an toàn)')
+        : 'Chưa đọc được trạng thái tài nguyên PC.';
       renderProvisioning(state);
       renderAvds(state);
       renderDevices(state);
@@ -185,6 +217,7 @@
     } catch (error) {
       if (seq === generation) {
         $('android-sdk-status').textContent = 'Không đọc được trạng thái Android.';
+        $('android-host-status').textContent = 'Chưa có số liệu RAM/CPU.';
         notice(error && error.message ? error.message : 'Lỗi kết nối Android IPC.', true);
       }
     } finally {
