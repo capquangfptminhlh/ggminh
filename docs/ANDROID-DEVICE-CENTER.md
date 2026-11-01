@@ -17,6 +17,7 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Duplicates an AVD's **system image configuration** into a new AVD with **empty application data**. This is not a full clone of accounts, apps, userdata, snapshots or cryptographic material.
 - Shows an optional disk-free preflight (6 GiB minimum when measurement is available), a 50-AVD creation limit, and clear missing-tool guidance.
 - Starts a selected existing AVD using the official Android Emulator. The UI reports **starting** until a connected device is detected; it never claims an AVD is booted immediately.
+- **Fleet Readiness:** shows measured free RAM / CPU threads, ADB-visible emulator names and Android boot-complete signals. Estimates per-AVD memory from its `config.ini` with a conservative 4 GiB fallback, honoring the API 37 minimum of 4 GiB. Launches are serialized and rejected if parallelism exceeds min(4, CPU threads / 2), if free RAM cannot cover estimated emulator RAM + 1 GiB overhead + 3 GiB reserved for Windows, or if ADB is unavailable. These are safety heuristics, not performance guarantees. Devices started outside LHM are counted when visible via ADB; unknown/offline devices count conservatively. Use **Làm mới thiết bị** to update measurements.
 - Opens a screen with scrcpy only after the device is online/authorized, and can stop an Android emulator through ADB.
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
@@ -35,7 +36,8 @@ The normal test pipeline also executes both suites. Tests use a fake Android SDK
 - [x] In-app AVD creation from already installed images and clean configuration-only duplication (mock-tested; live Windows AVD proof pending).
 - [ ] Full userdata clone/import/export, disk-image isolation acceptance checks, encrypted backup/restore.
 - [ ] Android system image downloader with checksums, signer/origin validation and disk checks.
-- [ ] Per-AVD resources: RAM, CPU, display, storage and network settings, with capacity warnings.
+- [x] Host capacity warnings and serialized AVD launch gates (mock-tested). Uses measured host memory and CPU, estimated per-AVD RAM, and ADB state.
+- [ ] User controls for RAM/CPU/display/storage/network per AVD and measured multi-instance throughput on real Windows hardware.
 - [ ] App installation, lifecycle, screenshots, accessibility-tree driven actions, Appium integration.
 - [ ] Multi-instance streaming, robust crash recovery, provisioning and encrypted backup/restore.
 - [ ] Local MCP/agent capability scopes and approval for external, destructive or account actions.
@@ -45,3 +47,7 @@ The normal test pipeline also executes both suites. Tests use a fake Android SDK
 Do not ship or market this Phase 1 as an AdsSpeed replacement. The current release gates for the Windows browser remain independent.
 
 Official Android docs now describe avdmanager as deprecated in favor of the newer Android CLI. This implementation uses locally installed avdmanager for compatibility; adding the new CLI as an alternative and performing live Windows E2E tests remain release gates. The Windows .bat launcher is restricted to SDK paths without command interpreter metacharacters and validates AVD names and installed system image identifiers before invocation.
+
+## Fleet Readiness limits
+
+The 4-instance cap is a deliberately conservative product policy, **not** a statement that the PC can run four emulators smoothly. RAM figures are approximate and GPU, disk I/O, background processes and Hyper-V/WHPX overhead are not directly measured. ADB reports `sys.boot_completed=1` only after Android has completed boot; a started emulator process is not treated as a booted Android device. Confirm live throughput and crash recovery before commercial release.
