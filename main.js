@@ -3,6 +3,7 @@ const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const { AndroidControl } = require('./src/android/androidControl');
 const { AndroidAgentWorkflow } = require('./src/android/agentWorkflow');
+const { AndroidUIInspector } = require('./src/android/uiInspector');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -404,6 +405,7 @@ function initIPC() {
   const androidManager = new AndroidManager();
   const avdProvisioner = new AvdProvisioner(androidManager);
   const androidControl = new AndroidControl(androidManager);
+  const androidUIInspector = new AndroidUIInspector(androidControl);
   // Workflow sessions live only in app memory; there is no headless
   // scheduler or unauthenticated HTTP path to Android controls.
   const androidAgent = new AndroidAgentWorkflow(androidControl, aiAdvisor);
@@ -421,6 +423,7 @@ function initIPC() {
     androidControl.execute(serial, action, args));
   ipcMain.handle('android-control-screenshot', (_event, serial) =>
     androidControl.screenshot(serial));
+  ipcMain.handle('android-ui-inspect', (_event, serial) => androidUIInspector.inspect(serial));
   ipcMain.handle('android-agent-template', (_event, serial) =>
     androidAgent.template(serial));
   ipcMain.handle('android-agent-propose', (_event, serial, goal, consent) =>
