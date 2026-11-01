@@ -22,7 +22,7 @@ assert.equal(evaluateLaunch({...host,freeBytes:5*GiB},0,4096).reason,'insufficie
 assert.equal(evaluateLaunch({...host,measured:false},0,4096).reason,'memory-unavailable');
 assert.equal(evaluateLaunch({...host,cpuCount:2},1,4096).reason,'parallel-limit');
 
-function fixture(freeGiB,cpuCount=8) {
+function fixture(freeGiB,cpuCount=8,externalName='External') {
   const sdk='C:\\Android\\Sdk';
   const avdHome='C:\\Users\\Demo\\.android\\avd\\';
   const adb=sdk+'\\platform-tools\\adb.exe';
@@ -50,7 +50,7 @@ function fixture(freeGiB,cpuCount=8) {
       events.push({file,args,kind:'exec'});
       if(args[0]==='devices')return done(null,'List of devices attached\nemulator-5554\tdevice model:Pixel_X\n');
       if(args[0]==='-list-avds')return done(null,'PixelA\nPixelB\n');
-      if(args.includes('name'))return done(null,'External\nOK\n');
+      if(args.includes('name'))return done(null,externalName+'\nOK\n');
       if(args.includes('getprop'))return done(null,'1\n');
       return done(new Error('unexpected'));
     },
@@ -82,6 +82,10 @@ function fixture(freeGiB,cpuCount=8) {
   await assert.rejects(mgr.launchAvd('PixelA'),/already starting/);
   started[0].emit('exit',0);
   assert.equal(mgr.launched.size,1);
+
+  const outside=fixture(20,8,'PixelA');
+  await assert.rejects(outside.mgr.launchAvd('PixelA'),/already running outside LHM/);
+  assert.equal(outside.started.length,0);
 
   const low=fixture(5);
   await assert.rejects(low.mgr.launchAvd('PixelA'),/insufficient-free-memory/);
