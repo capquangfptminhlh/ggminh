@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="neumorphicWorkspace.css">
   <link rel="stylesheet" href="profileSignalCoverage.css">
   <link rel="stylesheet" href="androidManager.css">
+  <link rel="stylesheet" href="androidControlStudio.css">
 </head>
 <body data-view="profiles">
 
@@ -1823,6 +1824,40 @@ run();
             <div id="android-device-list" class="lhm-android-list"></div>
           </section>
         </div>
+
+        <section class="lhm-android-control" id="android-control-panel" aria-labelledby="android-control-title">
+          <div class="lhm-android-control-head">
+            <div><h3 id="android-control-title">Android Control Studio</h3><p>Thao tác thủ công trên thiết bị ADB đã cấp quyền. Không gửi ảnh lên máy chủ.</p></div>
+            <span class="lhm-android-control-local">LOCAL ADB</span>
+          </div>
+          <div class="lhm-android-control-select">
+            <label for="android-control-serial">Thiết bị điều khiển</label>
+            <select id="android-control-serial" aria-label="Chọn thiết bị Android"></select>
+            <button type="button" class="btn btn-secondary" id="android-control-capture">Chụp màn hình</button>
+            <button type="button" class="btn btn-secondary" id="android-control-apk">Cài APK…</button>
+          </div>
+          <div class="lhm-android-control-layout">
+            <div class="lhm-android-preview" aria-label="Ảnh màn hình thiết bị Android">
+              <p id="android-control-placeholder">Chọn máy đang kết nối và bấm Chụp màn hình. Chạm trực tiếp lên ảnh để gửi lệnh chạm đến máy.</p>
+              <img id="android-control-image" alt="Ảnh màn hình Android mới chụp, có thể chạm vào ảnh để điều khiển" draggable="false" hidden>
+              <small id="android-control-shot-info"></small>
+            </div>
+            <div class="lhm-android-control-actions">
+              <h4>Thao tác Android</h4>
+              <div class="lhm-android-control-buttons">
+                <button type="button" class="btn btn-secondary" id="android-control-back">Quay lại</button>
+                <button type="button" class="btn btn-secondary" id="android-control-home">Màn hình chính</button>
+                <button type="button" class="btn btn-secondary" id="android-control-up">Vuốt lên</button>
+                <button type="button" class="btn btn-secondary" id="android-control-down">Vuốt xuống</button>
+              </div>
+              <label for="android-control-text">Gõ chữ vào ô đang chọn trên Android</label>
+              <input type="text" id="android-control-text" maxlength="120" autocomplete="off" placeholder="Chữ Latin đơn giản, không nhập mật khẩu">
+              <button type="button" class="btn btn-secondary" id="android-control-send-text">Gõ vào thiết bị</button>
+              <p>Ảnh chụp chỉ tạo khi anh chủ động yêu cầu. Không có thao tác tự động hoặc gửi dữ liệu cho AI ở giai đoạn này.</p>
+            </div>
+          </div>
+          <p id="android-control-feedback" role="status" aria-live="polite"></p>
+        </section>
         <section class="lhm-android-setup" aria-labelledby="android-setup-title">
           <h3 id="android-setup-title">Thiết lập lần đầu trên Windows</h3>
           <p>Cài Android Studio + Android SDK (Platform Tools, Emulator, một system image và AVD). Bật VT-x/AMD-V, Windows Hypervisor Platform. Để xem màn hình thiết bị qua ADB, cài thêm scrcpy và thêm vào PATH. Ứng dụng không tự cài SDK hay tự tạo máy khi chưa có tài nguyên thật.</p>
@@ -1872,6 +1907,7 @@ run();
   <script src="proxyCenter.js"></script>
   <script src="dashboard.js"></script>
   <script src="androidManager.js"></script>
+  <script src="androidControlStudio.js"></script>
   <script src="profilePanel.js"></script>
 </body>
 </html>
