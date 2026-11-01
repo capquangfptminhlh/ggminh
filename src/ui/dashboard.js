@@ -12,6 +12,7 @@
     create: 'btn-create-profile',
     proxy: 'btn-proxy-center',
     automation: 'btn-open-studio',
+    android: 'btn-android-manager',
     tower: 'btn-control-tower',
     health: 'btn-profile-health',
     behavior: 'btn-behavior-alert',

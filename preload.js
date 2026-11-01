@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  androidDiscover: () => ipcRenderer.invoke('android-discover'),
+  androidLaunchAvd: name => ipcRenderer.invoke('android-launch-avd', name),
+  androidOpenScreen: serial => ipcRenderer.invoke('android-open-screen', serial),
+  androidStopEmulator: serial => ipcRenderer.invoke('android-stop-emulator', serial),
   dashboardOverview: () => ipcRenderer.invoke('dashboard-overview'),
   runPerformanceLab: () => ipcRenderer.invoke('performance-lab-run'),
   exportPerformanceLab: () => ipcRenderer.invoke('performance-lab-export'),

@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="customerHandoff.css">
   <link rel="stylesheet" href="neumorphicWorkspace.css">
   <link rel="stylesheet" href="profileSignalCoverage.css">
+  <link rel="stylesheet" href="androidManager.css">
 </head>
 <body data-view="profiles">
 
@@ -31,6 +32,7 @@
     <button type="button" class="lhm-nav-btn" data-lhm-target="dashboard"><span data-lhm-icon="layout-dashboard" class="lhm-nav-icon"></span><span class="lhm-nav-label">Tổng quan</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="proxy"><span data-lhm-icon="network" class="lhm-nav-icon"></span><span class="lhm-nav-label">Proxy Center</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="automation"><span data-lhm-icon="workflow" class="lhm-nav-icon"></span><span class="lhm-nav-label">Automation Studio</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="android"><span data-lhm-icon="smartphone" class="lhm-nav-icon"></span><span class="lhm-nav-label">Android Device Center</span></button>
     <button type="button" class="lhm-nav-btn" data-lhm-target="tower"><span data-lhm-icon="layers" class="lhm-nav-icon"></span><span class="lhm-nav-label">Control Tower</span></button>
     <div class="lhm-nav-heading">BẢO MẬT & DỮ LIỆU</div>
     <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
@@ -130,6 +132,7 @@
       </div>
       <div class="header-actions">
         <div class="lhm-hidden-actions" aria-hidden="true">
+          <button type="button" id="btn-android-manager">Android Device Center</button>
           <button id="btn-proxy-center">Proxy Center</button>
           <button id="btn-control-tower">Control Tower</button>
           <button id="btn-profile-health">Kiểm tra hồ sơ</button>
@@ -1773,6 +1776,43 @@ run();
     </div>
   </div>
 
+  <!-- Android tools are optional: only real SDK devices and AVDs appear. -->
+  <div class="modal-overlay" id="modal-android-manager">
+    <div class="modal-dialog modal-lg lhm-android-dialog" role="dialog" aria-modal="true" aria-labelledby="android-dialog-title">
+      <div class="modal-header">
+        <div><h2 id="android-dialog-title">Android Device Center</h2><p class="lhm-android-subtitle">Điều khiển máy Android ảo và máy thật trên Windows</p></div>
+        <button type="button" class="btn-close" id="android-close" aria-label="Đóng Android Device Center">&times;</button>
+      </div>
+      <div class="modal-body lhm-android-content">
+        <div class="lhm-android-toolbar">
+          <div><strong>Local Android Runtime</strong><p id="android-sdk-status" role="status" aria-live="polite">Chưa kiểm tra môi trường Android.</p></div>
+          <button type="button" class="btn btn-secondary" id="android-refresh">Làm mới thiết bị</button>
+        </div>
+        <div class="lhm-android-grid">
+          <section class="lhm-android-panel" aria-labelledby="android-avd-title">
+            <div class="lhm-android-panel-heading"><span class="lhm-android-mark">01</span><h3 id="android-avd-title">Điện thoại Android ảo</h3></div>
+            <p>Đọc AVD có thật từ Android SDK. Khởi chạy bằng engine chính thức, không phải hồ sơ Chrome giả lập điện thoại.</p>
+            <div id="android-avd-list" class="lhm-android-list"></div>
+          </section>
+          <section class="lhm-android-panel" aria-labelledby="android-device-title">
+            <div class="lhm-android-panel-heading"><span class="lhm-android-mark">02</span><h3 id="android-device-title">Thiết bị đã kết nối</h3></div>
+            <p>Dùng ADB để phát hiện máy ảo/điện thoại. Xem và thao tác bằng scrcpy khi đã được thiết bị cấp quyền.</p>
+            <div id="android-device-list" class="lhm-android-list"></div>
+          </section>
+        </div>
+        <section class="lhm-android-setup" aria-labelledby="android-setup-title">
+          <h3 id="android-setup-title">Thiết lập lần đầu trên Windows</h3>
+          <p>Cài Android Studio + Android SDK (Platform Tools, Emulator, một system image và AVD). Bật VT-x/AMD-V, Windows Hypervisor Platform. Để xem màn hình thiết bị qua ADB, cài thêm scrcpy và thêm vào PATH. Ứng dụng không tự cài SDK hay tự tạo máy khi chưa có tài nguyên thật.</p>
+        </section>
+        <p class="lhm-android-feedback" id="android-feedback" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-footer">
+        <span class="lhm-android-footnote">Mọi lệnh chạy trên máy của anh. Không tự động root, đổi ID thiết bị hay vượt kiểm tra ứng dụng.</span>
+        <button type="button" id="android-done" class="btn btn-primary">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <script src="icons.js"></script>
   <script src="profilePagination.js"></script>
   <script src="profileStatusPoller.js"></script>
@@ -1808,6 +1848,7 @@ run();
   <script src="controlTower.js"></script>
   <script src="proxyCenter.js"></script>
   <script src="dashboard.js"></script>
+  <script src="androidManager.js"></script>
   <script src="profilePanel.js"></script>
 </body>
 </html>
