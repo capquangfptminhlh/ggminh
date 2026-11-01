@@ -60,7 +60,7 @@ const TOOLS=Object.freeze([
 
 const TOOL_NAMES=new Set(TOOLS.map(t=>t.name));
 function allowedSerials(value) {
-  const source=typeof value==='string' ? value.split(',') :
+  const source=typeof value==='string' ? (value.trim()?value.split(','):[]) :
     Array.isArray(value) ? value : [];
   if(source.length>8)throw Error('At most 8 explicitly authorized Android devices');
   const serials=source.map(x=>typeof x==='string'?x.trim():'');
