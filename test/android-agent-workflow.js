@@ -51,6 +51,7 @@ const engine=new AndroidAgentWorkflow(control,advisor,{
   assert.equal(plan.id,'1');
   assert.equal(plan.serial,'emulator-5554');
   assert.equal(plan.total,2);
+  assert.equal(engine.confirmationDetails(plan.id),JSON.stringify({key:'HOME'}));
   assert.equal(asks[0].payload.includeStatistics,false);
   assert.deepEqual(asks[0].profiles,[]);
   assert.equal(asks[0].payload.question.includes('data:image'),false);
@@ -80,6 +81,17 @@ const engine=new AndroidAgentWorkflow(control,advisor,{
     {action:'capture'}]}),model:'test'});
   await assert.rejects(engine.propose('emulator-5554','do anything',true),/Unsupported/);
   assert.equal(actions.length,1);
+
+  // Text previews redact content, while only native confirmation sees exact text.
+  advisor.ask=async()=>({answer:JSON.stringify({steps:[
+    {action:'text',args:{text:'hello world'},note:'Gõ nội dung'},
+    {action:'capture',note:'Chụp ảnh'}
+  ]}),model:'test'});
+  const textPlan=await engine.propose('emulator-5554','type greeting',true);
+  assert.equal(textPlan.steps[0].args.characters,11);
+  assert.equal(textPlan.steps[0].note,'Gõ văn bản đã được ẩn');
+  assert.equal(engine.confirmationDetails(textPlan.id),'Nội dung AI định gõ: hello world');
+  assert.equal(engine.cancel(textPlan.id).state,'cancelled');
 
   const third=await engine.template('emulator-5554');
   now+=10*60*1000+1;
