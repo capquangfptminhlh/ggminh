@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+const { AndroidManager } = require('./src/android/androidManager');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -395,6 +396,13 @@ function createWindow() {
 }
 
 function initIPC() {
+  // Android devices and AVDs are discovered from the user's installed SDK.
+  // These endpoints do not fabricate devices or use a command shell.
+  const androidManager = new AndroidManager();
+  ipcMain.handle('android-discover', () => androidManager.discover());
+  ipcMain.handle('android-launch-avd', (_event, name) => androidManager.launchAvd(name));
+  ipcMain.handle('android-open-screen', (_event, serial) => androidManager.openScreen(serial));
+  ipcMain.handle('android-stop-emulator', (_event, serial) => androidManager.stopEmulator(serial));
   const updatePublicKeyFile=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
     :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
