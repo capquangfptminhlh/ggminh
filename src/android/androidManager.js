@@ -57,7 +57,7 @@ class AndroidManager {
       name === 'emulator' ? [path.join('emulator', exe)] : [];
     const candidates = sdkFolders.flatMap(dir => suffixes.map(suffix => path.join(dir, suffix)));
     const pathKey = Object.keys(this.env).find(key => key.toLowerCase() === 'path');
-    const pathDirs = String(this.env[pathKey] || '').split(path.delimiter).filter(Boolean);
+    const pathDirs = String(this.env[pathKey] || '').split(windows ? ';' : path.delimiter).filter(Boolean);
     for (const dir of pathDirs) candidates.push(path.join(dir.replace(/^"|"$/g, ''), exe));
     for (const candidate of candidates) {
       try { if (this.fs.statSync(candidate).isFile()) return candidate; } catch (_) {}
