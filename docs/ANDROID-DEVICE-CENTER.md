@@ -25,6 +25,10 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
+## AI Agent MCP access (separate, read-only)
+
+LHM includes an opt-in **local MCP stdio server** at `bin/lhm-android-mcp.js`. It exposes only explicitly allowlisted ADB devices and sanitized UI metadata to a compatible local Agent client; no screenshots or Android write tools. It **does not** automatically connect to the 16-agent Robot Desktop app. See [ANDROID-MCP-BRIDGE.md](ANDROID-MCP-BRIDGE.md) for setup, permission controls and known limitations.
+
 ## Local Android widget roles (bounded, no raw labels)
 
 When a user clicks **Quét giao diện**, the inspector now classifies each enabled, clickable widget by Android class (button, input, toggle, picker, slider or general interactive view). It also shows a short **heuristic** hint only when an accessibility label matches an exact closed vocabulary: *Quay lại, Trang chủ, Tìm kiếm, Menu, Đóng, Tiếp theo* (English and Vietnamese). Every other label remains hidden; text, content descriptions, account identifiers and password data are **not returned via IPC**, written to a file or sent to OpenRouter. An XML attribute containing a literal \`>\` no longer truncates the node parser. The one-time tap guard rejects changed role or hint as well as geometry.
