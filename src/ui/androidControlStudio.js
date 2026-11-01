@@ -4,7 +4,7 @@
   // No AI service calls or persistent screenshot storage. Every action comes
   // directly from a visible user control within Android Device Center.
   const $ = id => document.getElementById(id);
-  let selected='',shot=null,working=false,online=new Set();
+  let selected='',shot=null,working=false,online=new Set(),shotVersion=0;
 
   function note(message,error=false) {
     $('android-control-feedback').textContent=String(message || '');
@@ -20,6 +20,7 @@
     }
   }
   function clearShot() {
+    ++shotVersion;
     shot=null;
     const image=$('android-control-image');
     image.removeAttribute('src');
@@ -84,9 +85,12 @@
   }
 
   function screenshot() {
+    const requestVersion=shotVersion;
     return perform('Chụp màn hình',async serial=>{
       const result=await window.api.androidControlScreenshot(serial);
-      if(serial!==selected)return result;
+      // Prevent capture results arriving after dialog close/device switch from
+      // recreating screenshots that the user already cleared.
+      if(serial!==selected || requestVersion!==shotVersion)return result;
       if(typeof result.dataUrl!=='string' || !result.dataUrl.startsWith('data:image/png;base64,'))
         throw Error('Định dạng màn hình không hợp lệ');
       shot={serial,width:result.width,height:result.height};
