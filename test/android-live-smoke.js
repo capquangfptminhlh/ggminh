@@ -1,0 +1,90 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {requestedAvd,findByName,run}=require('../tools/android-live-smoke');
+
+assert.equal(requestedAvd([],{LHM_ANDROID_AVD:'Test_AVD'}),'Test_AVD');
+assert.throws(()=>requestedAvd([],{LHM_ANDROID_AVD:'Bad & name'}),/safe existing/);
+assert.throws(()=>requestedAvd(['--shell'],{LHM_ANDROID_AVD:'Test_AVD'}),/no CLI shell/);
+
+const png=Buffer.alloc(32);
+Buffer.from([137,80,78,71,13,10,26,10]).copy(png);
+png.write('IHDR',12,'ascii');
+png.writeUInt32BE(720,16);
+png.writeUInt32BE(1280,20);
+function fixture(external=false) {
+  let launched=external,stopped=false;
+  const commands=[];
+  const manager={
+    launched:new Map(),
+    avds:async()=>['Test_AVD'],
+    tool:name=>name==='adb'?'C:\\Android\\Sdk\\platform-tools\\adb.exe':null,
+    devices:async()=>launched && !stopped
+      ?[{serial:'emulator-5554',status:'device',kind:'emulator'}]:[],
+    run:async(_executable,args)=>{
+      commands.push(args);
+      if(args.includes('emu')&&args.includes('name'))return 'Test_AVD\nOK\n';
+      if(args.includes('getprop'))return '1\n';
+      if(args.includes('keyevent'))return 'OK';
+      throw Error('Unexpected ADB request');
+    },
+    execFile:(_file,args,opts,callback)=>{
+      commands.push(args);
+      assert.equal(opts.shell,false);
+      if(args.includes('screencap'))return callback(null,png,Buffer.alloc(0));
+      if(args.includes('uiautomator'))return callback(null,
+        '<hierarchy rotation="0"><node class="android.widget.Button" '+
+        'text="Private OTP 123456" content-desc="account@example.com" '+
+        'clickable="true" enabled="true" password="false" '+
+        'bounds="[10,20][120,100]" /></hierarchy>');
+      return callback(new Error('Unexpected ADB command'));
+    },
+    launchAvd:async name=>{
+      assert.equal(name,'Test_AVD');
+      launched=true;
+      return {name,state:'starting'};
+    },
+    stopEmulator:async serial=>{
+      assert.equal(serial,'emulator-5554');
+      stopped=true;
+      return {state:'stopping'};
+    }
+  };
+  return {manager,commands,get state(){return {launched,stopped}}};
+}
+(async()=>{
+  const {manager,commands,state:unused}=fixture();
+  assert.equal(await findByName(manager,'Test_AVD'),null);
+  const result=await run({manager,name:'Test_AVD',clock:()=>1000});
+  assert.equal(result.status,'PASS');
+  assert.equal(result.source,'live-adb'); // mocked here; live-only evidence is separate
+  assert.equal(result.bootComplete,true);
+  assert.equal(result.screenshot.width,720);
+  assert.equal(result.screenshot.height,1280);
+  assert.equal(result.hierarchy.nodeCount,1);
+  assert.equal(result.hierarchy.actionableCount,1);
+  assert.equal(result.hierarchy.privacy,'geometry-only');
+  assert.equal(result.shutdownRequestedInCleanup,true);
+  assert(commands.some(args=>args.includes('screencap')));
+  assert(commands.some(args=>args.includes('uiautomator')));
+  assert(commands.some(args=>args.includes('keyevent')));
+  const out=JSON.stringify(result);
+  for(const secret of ['OTP','123456','account@example.com','emulator-5554'])
+    assert.equal(out.includes(secret),false,'Sensitive data escaped smoke output');
+
+  const already=fixture(true);
+  await assert.rejects(run({manager:already.manager,name:'Test_AVD'}),/already running/);
+  assert.equal(already.state.stopped,false);
+  const missing=fixture();
+  missing.manager.avds=async()=>[];
+  await assert.rejects(run({manager:missing.manager,name:'Test_AVD'}),/not installed/);
+  assert.equal(missing.state.stopped,false);
+
+  const failing=fixture();
+  failing.manager.execFile=(_file,args,_opts,cb)=>{
+    if(args.includes('screencap'))return cb(new Error('ADB screenshot failed'));
+    return cb(new Error('unexpected'));
+  };
+  await assert.rejects(run({manager:failing.manager,name:'Test_AVD'}),/Screen capture failed/);
+  assert.equal(failing.state.stopped,true);
+  console.log('Android live acceptance harness mock tests: PASS (NOT a real AVD run)');
+})().catch(err=>{console.error(err);process.exitCode=1;});
