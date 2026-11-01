@@ -9,7 +9,8 @@ const MAX_RECORDS = 24;
 const TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function sameTarget(a, b) {
-  if (!a || !b || a.type !== b.type || !a.bounds || !b.bounds) return false;
+  if (!a || !b || a.type !== b.type || a.role !== b.role ||
+      a.hint !== b.hint || !a.bounds || !b.bounds) return false;
   return ['left','top','right','bottom','x','y'].every(k =>
     Number.isInteger(a.bounds[k]) && a.bounds[k] === b.bounds[k]);
 }
@@ -47,7 +48,7 @@ class AndroidTargetGuard {
     this.records.set(scanId, {
       serial, capturedAt:this.clock(), used:false,
       elements:result.elements.map(node => ({
-        index:node.index, type:node.type,
+        index:node.index, type:node.type, role:node.role, hint:node.hint,
         bounds:{...node.bounds}
       }))
     });
@@ -66,7 +67,8 @@ class AndroidTargetGuard {
       throw new Error('UI scan expired; scan Android again');
     const target=record.elements.find(node => node.index === index);
     if (!target) throw new Error('Inspected UI node does not exist');
-    return {serial,index,type:target.type,bounds:{...target.bounds}};
+    return {serial,index,type:target.type,role:target.role,hint:target.hint,
+      bounds:{...target.bounds}};
   }
 
   async tap(serial, scanId, index) {
