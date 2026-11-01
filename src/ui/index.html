@@ -1788,6 +1788,29 @@ run();
           <div><strong>Local Android Runtime</strong><p id="android-sdk-status" role="status" aria-live="polite">Chưa kiểm tra môi trường Android.</p></div>
           <button type="button" class="btn btn-secondary" id="android-refresh">Làm mới thiết bị</button>
         </div>
+        <section class="lhm-android-provision" aria-labelledby="android-provision-title">
+          <div class="lhm-android-provision-heading"><h3 id="android-provision-title">Tạo điện thoại Android</h3><span id="android-storage-status">Kiểm tra dung lượng…</span></div>
+          <div class="lhm-android-provision-grid">
+            <form id="android-create-form" class="lhm-android-form">
+              <h4>Tạo máy Android mới</h4>
+              <label for="android-create-name">Tên máy</label>
+              <input id="android-create-name" name="name" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="LHM_Pixel_01" required autocomplete="off">
+              <label for="android-create-image">Android system image đã cài</label>
+              <select id="android-create-image" required></select>
+              <button id="android-create-submit" class="btn btn-primary" type="submit">Tạo Android ảo</button>
+            </form>
+            <form id="android-duplicate-form" class="lhm-android-form">
+              <h4>Nhân bản cấu hình máy</h4>
+              <label for="android-duplicate-source">Máy gốc</label>
+              <select id="android-duplicate-source" required></select>
+              <label for="android-duplicate-name">Tên máy mới</label>
+              <input id="android-duplicate-name" name="newName" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="LHM_Pixel_02" required autocomplete="off">
+              <button id="android-duplicate-submit" class="btn btn-secondary" type="submit">Nhân bản cấu hình</button>
+              <small>Máy mới sử dụng system image tương tự; dữ liệu ứng dụng và đăng nhập không sao chép.</small>
+            </form>
+          </div>
+          <p id="android-provision-hint">Chỉ tạo được từ Android system image đã cài. Không tải hoặc cài đặt phần mềm ngầm.</p>
+        </section>
         <div class="lhm-android-grid">
           <section class="lhm-android-panel" aria-labelledby="android-avd-title">
             <div class="lhm-android-panel-heading"><span class="lhm-android-mark">01</span><h3 id="android-avd-title">Điện thoại Android ảo</h3></div>
