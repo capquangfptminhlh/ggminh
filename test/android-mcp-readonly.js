@@ -32,6 +32,8 @@ const inspector={
 };
 const handler=createMcpHandler({manager,inspector,allowedSerials:['emulator-5554']});
 assert.deepEqual([...allowedSerials('emulator-5554, PHONE')],['emulator-5554','PHONE']);
+assert.deepEqual([...allowedSerials('')],[]);
+assert.deepEqual([...allowedSerials(undefined)],[]);
 assert.throws(()=>allowedSerials('emulator-5554;rm -rf /'),/Invalid/);
 assert.throws(()=>allowedSerials(Array(9).fill('emulator-5554')),/At most 8/);
 const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
