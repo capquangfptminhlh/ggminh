@@ -98,7 +98,7 @@ async function run(options={}) {
         actionableCount:inspect.actionableCount,privacy:inspect.privacy},
       elapsedMs:Math.max(0,clock()-begun),
       // No image bytes, node text, device identifiers or account data in logs.
-      emulatorStoppedInCleanup:true
+      shutdownRequestedInCleanup:true
     };
   } finally {
     if(started) {
