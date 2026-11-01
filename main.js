@@ -436,9 +436,7 @@ function initIPC() {
     androidStepConfirmations.add(sessionId);
     try {
       const next = plan.next;
-      const details = next.action === 'text'
-        ? 'Văn bản được ẩn · ' + next.args.characters + ' ký tự'
-        : JSON.stringify(next.args);
+      const details = androidAgent.confirmationDetails(sessionId);
       const confirm = await dialog.showMessageBox(mainWindow, {
         type:'warning',title:'Xác nhận từng bước Android',
         message:'Thực thi bước ' + (plan.index+1) + '/' + plan.total +
