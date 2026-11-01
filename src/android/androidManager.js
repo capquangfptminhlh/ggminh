@@ -6,6 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFile, spawn } = require('child_process');
+const { configMemoryMiB, hostMemory, evaluateLaunch, emulatorAvdName, DEFAULT_AVD_RAM_MIB } = require('./fleetCapacity');
 
 const SAFE_AVD = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
 const SAFE_SERIAL = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -43,6 +44,10 @@ class AndroidManager {
     this.execFile = options.execFile || execFile;
     this.spawn = options.spawn || spawn;
     this.launched = new Map();
+    this.os = options.os || os;
+    this.path = this.platform === 'win32' ? path.win32 : path;
+    this.pendingLaunches = new Set();
+    this.launchQueue = Promise.resolve();
   }
 
   tool(name) {
@@ -106,30 +111,119 @@ class AndroidManager {
       try { avds = await this.avds(); }
       catch (error) { errors.push('Android Emulator: ' + error.message); }
     }
+    let fleet;
+    try { fleet = await this.fleetSnapshot(devices, avds); }
+    catch (error) {
+      errors.push('Fleet: ' + error.message);
+      fleet = null;
+    }
     return {
-      tools, devices, avds, errors,
-      launches: [...this.launched.keys()],
+      tools, devices, avds, errors, fleet,
+      launches: [...new Set([...this.launched.keys(), ...this.pendingLaunches])],
       setupRequired: !tools.adb || !tools.emulator
     };
   }
 
-  async launchAvd(name) {
-    if (typeof name !== 'string' || !SAFE_AVD.test(name)) throw new Error('Invalid Android virtual device name');
-    const emulator = this.tool('emulator');
-    if (!emulator) throw new Error('Android Emulator not installed. Install Android Studio / SDK Emulator.');
-    if (!(await this.avds()).includes(name)) throw new Error('Android virtual device does not exist: ' + name);
-    if (this.launched.has(name)) throw new Error('This Android virtual device is already starting.');
-    // Use the official SDK emulator process; never invoke cmd.exe, PowerShell or a shell.
-    const child = this.spawn(emulator, ['-avd', name], {
-      shell: false, windowsHide: false, stdio: 'ignore'
-    });
-    if (!child || !Number.isInteger(child.pid) || child.pid <= 0) {
-      throw new Error('Android Emulator could not start');
+  avdMemoryMiB(name) {
+    if (!SAFE_AVD.test(name)) return DEFAULT_AVD_RAM_MIB;
+    const avdHome = this.env.ANDROID_AVD_HOME ||
+      this.path.join(this.home, '.android', 'avd');
+    try {
+      return configMemoryMiB(this.fs.readFileSync(
+        this.path.join(avdHome, name + '.avd', 'config.ini'), 'utf8'));
+    } catch (_) {
+      return DEFAULT_AVD_RAM_MIB;
     }
-    this.launched.set(name, child);
-    child.once('exit', () => { if (this.launched.get(name) === child) this.launched.delete(name); });
-    child.once('error', () => { if (this.launched.get(name) === child) this.launched.delete(name); });
-    return { name, pid: child.pid, state: 'starting' };
+  }
+
+  async fleetSnapshot(devices, avds) {
+    const list = Array.isArray(devices) ? devices : await this.devices();
+    const available = Array.isArray(avds) ? avds : await this.avds();
+    const adb = this.tool('adb');
+    const emulators = list.filter(item => item.kind === 'emulator');
+    const running = await Promise.all(emulators.map(async device => {
+      let name = null, bootCompleted = false;
+      if (device.status === 'device' && adb) {
+        try {
+          name = emulatorAvdName(
+            await this.run(adb, ['-s', device.serial, 'emu', 'avd', 'name']));
+        } catch (_) { /* name unavailable: counts as unknown running VM */ }
+        try {
+          bootCompleted = (await this.run(adb, [
+            '-s', device.serial, 'shell', 'getprop', 'sys.boot_completed'
+          ])).trim() === '1';
+        } catch (_) { /* never claim a device booted without evidence */ }
+      }
+      return {
+        serial: device.serial, name, status: device.status,
+        bootCompleted: device.status === 'device' && bootCompleted
+      };
+    }));
+    const knownNames = new Set([...this.launched.keys(), ...running.map(x=>x.name).filter(Boolean)]);
+    // Unknown serials may represent launched AVDs, but never subtract them
+    // without a verified mapping. Conservative double-counting is intentional.
+    const unrecognizedCount = running.filter(x=>!x.name).length;
+    const activeCount = knownNames.size + unrecognizedCount;
+    const host = hostMemory(this.os);
+    const readiness = {};
+    for (const name of available) {
+      const estimateMiB = this.avdMemoryMiB(name);
+      const policy = evaluateLaunch(host, activeCount, estimateMiB);
+      const alreadyRunning = knownNames.has(name);
+      readiness[name] = {
+        ...policy,
+        plannedRamMiB: estimateMiB,
+        allowed: !alreadyRunning && policy.allowed,
+        reason: alreadyRunning ? 'already-running' : policy.reason
+      };
+    }
+    const {freeBytes, ...publicHost} = host;
+    return {
+      host: publicHost, running, launching:[...new Set([
+        ...this.launched.keys(), ...this.pendingLaunches
+      ])], activeCount, readiness,
+      maxParallel: evaluateLaunch(host, activeCount, DEFAULT_AVD_RAM_MIB).maxParallel
+    };
+  }
+
+  async launchAvd(name) {
+    if (typeof name !== 'string' || !SAFE_AVD.test(name))
+      throw new Error('Invalid Android virtual device name');
+    if (this.pendingLaunches.has(name) || this.launched.has(name))
+      throw new Error('This Android virtual device is already starting.');
+    this.pendingLaunches.add(name);
+    // Serialize preflight + spawn. Concurrent UI clicks cannot both consume
+    // the same free RAM budget or exceed the host parallelism gate.
+    const task = this.launchQueue.then(async () => {
+      const emulator = this.tool('emulator');
+      if (!emulator) throw new Error('Android Emulator not installed.');
+      const available = await this.avds();
+      if (!available.includes(name)) throw new Error('Android virtual device does not exist: ' + name);
+      const fleet = await this.fleetSnapshot(undefined, available);
+      if (fleet.running.some(device => device.name === name))
+        throw new Error('This Android virtual device is already running outside LHM.');
+      const readiness = fleet.readiness[name];
+      if (!readiness?.allowed) {
+        throw new Error('Android launch blocked by host preflight: ' +
+          (readiness?.reason || 'resources-unavailable'));
+      }
+      const child = this.spawn(emulator, ['-avd', name], {
+        shell:false, windowsHide:false, stdio:'ignore'
+      });
+      if (!child || !Number.isInteger(child.pid) || child.pid <= 0)
+        throw new Error('Android Emulator could not start');
+      this.launched.set(name, child);
+      child.once('exit', () => {
+        if (this.launched.get(name) === child) this.launched.delete(name);
+      });
+      child.once('error', () => {
+        if (this.launched.get(name) === child) this.launched.delete(name);
+      });
+      return {name, pid:child.pid, state:'starting'};
+    });
+    this.launchQueue = task.catch(() => {});
+    try { return await task; }
+    finally { this.pendingLaunches.delete(name); }
   }
 
   async openScreen(serial) {
