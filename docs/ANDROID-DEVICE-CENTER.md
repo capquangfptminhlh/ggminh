@@ -19,6 +19,9 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Starts a selected existing AVD using the official Android Emulator. The UI reports **starting** until a connected device is detected; it never claims an AVD is booted immediately.
 - **Fleet Readiness:** shows measured free RAM / CPU threads, ADB-visible emulator names and Android boot-complete signals. Estimates per-AVD memory from its `config.ini` with a conservative 4 GiB fallback, honoring the API 37 minimum of 4 GiB. Launches are serialized and rejected if parallelism exceeds min(4, CPU threads / 2), if free RAM cannot cover estimated emulator RAM + 1 GiB overhead + 3 GiB reserved for Windows, or if ADB is unavailable. These are safety heuristics, not performance guarantees. Devices started outside LHM are counted when visible via ADB; unknown/offline devices count conservatively. Use **Làm mới thiết bị** to update measurements.
 - Opens a screen with scrcpy only after the device is online/authorized, and can stop an Android emulator through ADB.
+- **Manual Android Control Studio:** choose an ADB-authorized device, explicitly capture a PNG screen into the *local Electron view* (never uploaded or saved), click the scaled screenshot to tap, swipe up/down, send HOME/BACK key events, and type short basic Latin text into the focused Android app. The screenshot is cleared when the dialog closes.
+- **User-approved APK installation:** the Windows native file chooser opens for one .apk file, followed by a separate confirmation identifying the selected target device. The ADB install command does not include replace flags; existing installations are not silently overwritten. Only local regular files up to 256 MiB are accepted.
+- Commands are allowlisted and validated, require ADB status `device`, and run with shell:false. The UI exposes no arbitrary ADB shell, port forwarding, hidden monitoring, root, background agent execution or text history.
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
@@ -27,6 +30,8 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 Run: node test/android-manager.js
 
 Run: node test/android-provisioner.js
+
+Run: node test/android-control.js
 
 The normal test pipeline also executes both suites. Tests use a fake Android SDK process adapter and **do not** prove Windows virtualization, ADB access, APK compatibility or real-device runtime. Those require a Windows host with Android SDK installed.
 
@@ -38,7 +43,8 @@ The normal test pipeline also executes both suites. Tests use a fake Android SDK
 - [ ] Android system image downloader with checksums, signer/origin validation and disk checks.
 - [x] Host capacity warnings and serialized AVD launch gates (mock-tested). Uses measured host memory and CPU, estimated per-AVD RAM, and ADB state.
 - [ ] User controls for RAM/CPU/display/storage/network per AVD and measured multi-instance throughput on real Windows hardware.
-- [ ] App installation, lifecycle, screenshots, accessibility-tree driven actions, Appium integration.
+- [x] User-approved APK installation, transient screenshot preview and manual tap/swipe/HOME/BACK/short ASCII typing (ADB mock-tested).
+- [ ] APK smoke test on actual emulator/phone, UI accessibility-tree extraction, scoped Appium/agent workflow, approvals and rollback.
 - [ ] Multi-instance streaming, robust crash recovery, provisioning and encrypted backup/restore.
 - [ ] Local MCP/agent capability scopes and approval for external, destructive or account actions.
 - [ ] Device/environment integrity assessment and compatibility tests; no unverified bypass claims.
@@ -51,3 +57,6 @@ Official Android docs now describe avdmanager as deprecated in favor of the newe
 ## Fleet Readiness limits
 
 The 4-instance cap is a deliberately conservative product policy, **not** a statement that the PC can run four emulators smoothly. RAM figures are approximate and GPU, disk I/O, background processes and Hyper-V/WHPX overhead are not directly measured. ADB reports `sys.boot_completed=1` only after Android has completed boot; a started emulator process is not treated as a booted Android device. Confirm live throughput and crash recovery before commercial release.
+
+## Control Studio privacy and testing
+The screenshot is captured only when the user clicks the capture button, stays in Electron renderer memory and is cleared on dialog close. It may display private messages, 2FA codes or passwords; never transmit it to AI services without informed approval. The user must explicitly pick the APK and confirm the target serial before installation. Remote AI/agent access to these IPC methods is **not yet enabled**. Tests use simulated ADB callbacks, including a synthetic PNG; they do not establish live device compatibility or app-install success on real hardware.
