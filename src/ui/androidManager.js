@@ -47,6 +47,72 @@
     return item;
   }
 
+  function setOptions(id, options, placeholder) {
+    const select = $(id);
+    const previous = select.value;
+    select.replaceChildren();
+    if (!options.length) {
+      const empty = element('option', '', placeholder);
+      empty.value = '';
+      select.append(empty);
+      select.disabled = true;
+      return;
+    }
+    options.forEach(({value,label}) => {
+      const option = element('option','',label);
+      option.value = value;
+      select.append(option);
+    });
+    if (options.some(item => item.value === previous)) select.value = previous;
+    select.disabled = false;
+  }
+
+  function renderProvisioning(state) {
+    const info = state.provisioning;
+    const images = info?.installedImages || [];
+    const disk = info?.disk;
+    const ready = !!info?.canCreate && disk?.enough !== false;
+    setOptions('android-create-image', images.map(item => ({
+      value:item.id, label:item.api + ' · ' + item.tag + ' · ' + item.abi
+    })), 'Chưa cài Android system image');
+    setOptions('android-duplicate-source', state.avds.map(name => ({
+      value:name,label:name
+    })), 'Chưa có AVD để nhân bản');
+    const status = $('android-storage-status');
+    status.textContent = disk?.checked
+      ? 'Ổ trống ' + disk.freeGiB + ' GiB' +
+        (disk.enough ? '' : ' · cần ít nhất 6 GiB')
+      : 'Chưa đo được dung lượng ổ';
+    $('android-create-submit').disabled = !ready || !images.length || !!info?.pending?.length;
+    $('android-duplicate-submit').disabled = !ready || !state.avds.length || !!info?.pending?.length;
+    $('android-provision-hint').textContent = !info?.canCreate
+      ? 'Chưa có SDK Command-Line Tools (avdmanager). Cài trong Android Studio → SDK Manager.'
+      : !images.length
+        ? 'Chưa có system image trên PC. Cài image qua Android Studio → SDK Manager.'
+        : disk?.enough === false
+          ? 'Ổ đĩa AVD cần ít nhất 6 GiB trống trước khi tạo máy.'
+          : 'Mỗi máy mới có userdata độc lập. Tạo AVD không đồng nghĩa khởi động Android.';
+  }
+
+  async function submitProvisioning(form, work) {
+    if (!form.reportValidity()) return;
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    notice('Đang tạo AVD bằng Android SDK…');
+    try {
+      const created = await work();
+      notice('Đã tạo ' + created.name + ' với dữ liệu mới độc lập. Bấm Khởi chạy để mở Android.');
+      form.reset();
+    } catch (error) {
+      notice(error?.message || 'Không tạo được máy Android.', true);
+    } finally {
+      button.disabled = false;
+      // Always re-read SDK state; provisioning may have changed capacity or
+      // installed-image availability. The refreshed state owns button validity.
+      await refresh();
+    }
+  }
+
   function renderAvds(state) {
     const root = $('android-avd-list');
     root.replaceChildren();
@@ -112,6 +178,7 @@
       const ready = ['adb','emulator','scrcpy'].filter(x => state.tools[x]);
       $('android-sdk-status').textContent = ready.length + '/3 công cụ có sẵn · ' +
         state.avds.length + ' AVD · ' + state.devices.length + ' thiết bị';
+      renderProvisioning(state);
       renderAvds(state);
       renderDevices(state);
       if (state.errors.length) notice(state.errors.join(' · '), true);
@@ -138,6 +205,18 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    $('android-create-form').addEventListener('submit', event => {
+      event.preventDefault();
+      submitProvisioning(event.currentTarget, () => window.api.androidCreateAvd(
+        $('android-create-name').value, $('android-create-image').value
+      ));
+    });
+    $('android-duplicate-form').addEventListener('submit', event => {
+      event.preventDefault();
+      submitProvisioning(event.currentTarget, () => window.api.androidDuplicateAvd(
+        $('android-duplicate-source').value, $('android-duplicate-name').value
+      ));
+    });
     $('btn-android-manager').addEventListener('click', open);
     $('android-refresh').addEventListener('click', refresh);
     $('android-close').addEventListener('click', close);
