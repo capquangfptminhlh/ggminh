@@ -29,13 +29,22 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 
 The **Android UI Inspector** is a separate read-only screen for operators to inspect interactive Android widgets. It uses `adb -s SERIAL exec-out uiautomator dump /dev/tty` and extracts the nodes flagged `clickable=true`, `enabled=true` with valid screen bounds. It returns only a short widget type and its bounding box/center, capped to 120 entries. All `text`, `content-desc`, package names, resource identifiers and password-entry nodes are removed **inside the Electron main process before any IPC reply**. Raw UI XML is not saved, exported, logged or passed to OpenRouter.
 
-The operator clicks **Quét giao diện** to capture a one-time list and can click **Chạm** on an entry. Coordinates expire after 15 seconds or immediately on switching devices, closing Device Center or attempting a tap. The app never automatically interprets a button's purpose, and a tap could still hit the wrong control if the Android UI changes between inspection and action. This is an operator aid, **not a claim of semantic AI screen understanding**. It requires an authorized, unlocked ADB device; `uiautomator dump` can fail on some applications and during animations. No root, no local XML file on the Android device and no remote processing.
+The operator clicks **Quét giao diện** to capture a one-time list and can click **Chạm** on an entry. A unique, short-lived scan token is kept in Electron main-process memory. Manual node taps require a separate native Windows confirmation and the UIAutomator hierarchy is re-read immediately before a single allowed tap; mismatch, 15-second expiry, device change or replay causes a fail-closed refusal. Scan tokens are never reusable. Coordinates expire after 15 seconds or immediately on switching devices, closing Device Center or attempting a tap. The app never automatically interprets a button's purpose, and a tap could still hit the wrong control if the Android UI changes between inspection and action. This is an operator aid, **not a claim of semantic AI screen understanding**. It requires an authorized, unlocked ADB device; `uiautomator dump` can fail on some applications and during animations. No root, no local XML file on the Android device and no remote processing.
+
+### Inspector-guided Agent Workflow
+
+Click **Agent** next to a freshly inspected interactive node to build a device-bound, two-step offline plan: (1) tap the selected, one-time UI node and (2) capture an Android screenshot for verification. The operator must approve each step in a **native Electron confirmation dialog**. Before the first tap, the main process reads the UI hierarchy again and compares widget class, index and exact bounds. If it changed, **no tap is sent**; the plan blocks. The scan is valid for only 15 seconds and cannot be replayed. No OpenRouter request is made by this path; a detected widget type is not proof of what the button does.
+
+Remote proposals (OpenRouter) remain text-only, explicitly consented and cannot generate `inspector-tap` tokens: the step type is accepted only by the local Inspector-to-Agent code path.
+
+Run: `node test/android-target-guard.js`
 
 ### UI Inspector acceptance still required
 
 - [x] Bounded XML parsing, sensitive-text redaction, password exclusion and per-serial ADB invocation (mock-tested).
 - [ ] Live Android 10–17 UIAutomator compatibility, screenshot overlay alignment, orientation changes, secure windows and real touch accuracy.
-- [ ] Optional semantic agent integration with separate informed consent, no hidden capture or unreviewed actions.
+- [x] Operator-guided UI node-to-Agent plan with one-use token, strict reinspection and native per-step approval (mock-tested).
+- [ ] Automatic semantic AI widget identification, separate informed consent, no hidden capture or unreviewed actions.
 
 ## Android Agent Workflow — guided, not autonomous
 
