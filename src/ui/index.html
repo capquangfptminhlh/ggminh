@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="androidManager.css">
   <link rel="stylesheet" href="androidControlStudio.css">
   <link rel="stylesheet" href="androidAgentStudio.css">
+  <link rel="stylesheet" href="androidUIInspector.css">
 </head>
 <body data-view="profiles">
 
@@ -1859,6 +1860,17 @@ run();
           </div>
           <p id="android-control-feedback" role="status" aria-live="polite"></p>
         </section>
+        <section class="lhm-android-inspector" aria-labelledby="android-inspector-title">
+          <div class="lhm-android-inspector-head">
+            <div><h3 id="android-inspector-title">Android UI Inspector</h3>
+              <p>Đọc vùng nút bấm từ Android UIAutomator. Ẩn toàn bộ nội dung chữ, tên tài khoản và trường mật khẩu.</p>
+            </div>
+            <button type="button" class="btn btn-secondary" id="android-inspector-scan">Quét giao diện</button>
+          </div>
+          <p id="android-inspector-status" role="status" aria-live="polite">Chọn máy Android đã kết nối, rồi chủ động quét giao diện.</p>
+          <div id="android-inspector-nodes" class="lhm-android-inspector-nodes"></div>
+          <p class="lhm-android-inspector-notice">Chỉ dữ liệu hình học của nút bấm được hiển thị tại máy. Tọa độ có thể thay đổi khi ứng dụng chuyển màn hình. LHM không tự gửi kết quả quét cho AI.</p>
+        </section>
         <section class="lhm-android-agent" aria-labelledby="android-agent-title">
           <div class="lhm-android-agent-heading">
             <div>
@@ -1937,6 +1949,7 @@ run();
   <script src="androidManager.js"></script>
   <script src="androidControlStudio.js"></script>
   <script src="androidAgentStudio.js"></script>
+  <script src="androidUIInspector.js"></script>
   <script src="profilePanel.js"></script>
 </body>
 </html>
