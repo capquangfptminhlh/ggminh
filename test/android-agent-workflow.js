@@ -15,6 +15,7 @@ assert.throws(()=>validatePlan({steps:[{action:'shell',args:{command:'id'}}]}),/
 assert.throws(()=>validatePlan({steps:[{action:'key',args:{key:'HOME'}}]}),/must be capture/);
 assert.throws(()=>validatePlan({steps:[{action:'text',args:{text:'a;rm -rf'}},{action:'capture'}]}),/basic Latin/);
 assert.deepEqual(redactedStep({action:'text',args:{text:'sometext'},note:'Test'}).args,{characters:8});
+assert.equal(redactedStep({action:'text',args:{text:'sometext'},note:'private text'}).note,'Gõ văn bản đã được ẩn');
 
 let now=1000,number=0,asks=[],screens=0;
 const actions=[];
@@ -108,5 +109,17 @@ const engine=new AndroidAgentWorkflow(control,advisor,{
   await assert.rejects(Promise.resolve().then(()=>slow.cancel(s.id)),/step is running/);
   unblock();await pending;
   assert.equal(slow.preview(s.id).index,1);
+
+  // Screenshot failure blocks any next action, even after ADB returned OK.
+  const noScreenshot=new AndroidAgentWorkflow({
+    ...control,screenshot:async()=>{throw Error('USB disconnected');}
+  },advisor,{clock:()=>now,idFactory:()=>String(++number)});
+  const snapPlan=await noScreenshot.template('emulator-5554');
+  const blockedCapture=await noScreenshot.next(snapPlan.id);
+  assert.equal(blockedCapture.state,'blocked');
+  assert.match(blockedCapture.error,/Verification screenshot unavailable/);
+  assert.equal(blockedCapture.next,null);
+  await assert.rejects(noScreenshot.next(snapPlan.id),/completed or blocked/);
+  assert.equal(noScreenshot.cancel(snapPlan.id).state,'cancelled');
   console.log('Android Agent human approval workflow tests: PASS');
 })().catch(err=>{console.error(err);process.exitCode=1;});
