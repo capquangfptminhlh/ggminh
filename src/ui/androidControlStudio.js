@@ -35,6 +35,7 @@
     $('android-control-serial').value=selected;
     toggleControls();
     window.LHMAndroidAgentStudio?.onDeviceChange();
+    window.LHMAndroidUIInspector?.onDeviceChange();
   }
 
   function render(state) {
@@ -64,6 +65,7 @@
     select.disabled=!online.size || working;
     toggleControls();
     window.LHMAndroidAgentStudio?.onDeviceChange();
+    window.LHMAndroidUIInspector?.onDeviceChange();
   }
 
   async function perform(label, operation) {

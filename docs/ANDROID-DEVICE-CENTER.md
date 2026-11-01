@@ -25,6 +25,18 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
+## Android UI Inspector — local geometry-only view
+
+The **Android UI Inspector** is a separate read-only screen for operators to inspect interactive Android widgets. It uses `adb -s SERIAL exec-out uiautomator dump /dev/tty` and extracts the nodes flagged `clickable=true`, `enabled=true` with valid screen bounds. It returns only a short widget type and its bounding box/center, capped to 120 entries. All `text`, `content-desc`, package names, resource identifiers and password-entry nodes are removed **inside the Electron main process before any IPC reply**. Raw UI XML is not saved, exported, logged or passed to OpenRouter.
+
+The operator clicks **Quét giao diện** to capture a one-time list and can click **Chạm** on an entry. Coordinates expire after 15 seconds or immediately on switching devices, closing Device Center or attempting a tap. The app never automatically interprets a button's purpose, and a tap could still hit the wrong control if the Android UI changes between inspection and action. This is an operator aid, **not a claim of semantic AI screen understanding**. It requires an authorized, unlocked ADB device; `uiautomator dump` can fail on some applications and during animations. No root, no local XML file on the Android device and no remote processing.
+
+### UI Inspector acceptance still required
+
+- [x] Bounded XML parsing, sensitive-text redaction, password exclusion and per-serial ADB invocation (mock-tested).
+- [ ] Live Android 10–17 UIAutomator compatibility, screenshot overlay alignment, orientation changes, secure windows and real touch accuracy.
+- [ ] Optional semantic agent integration with separate informed consent, no hidden capture or unreviewed actions.
+
 ## Android Agent Workflow — guided, not autonomous
 
 The in-app Android Agent Workflow uses the existing encrypted OpenRouter AI Advisor key to **propose a text-only JSON plan**. The user must explicitly opt in before the *goal description alone* is sent to OpenRouter; neither screenshot bytes, current app contents, device serials nor profile data are provided to the model. If no API key is configured, a **Home → Screenshot** offline template remains usable.
@@ -51,6 +63,8 @@ Run: node test/android-control.js
 
 Run: node test/android-agent-workflow.js
 
+Run: node test/android-ui-inspector.js
+
 The normal test pipeline also executes both suites. Tests use a fake Android SDK process adapter and **do not** prove Windows virtualization, ADB access, APK compatibility or real-device runtime. Those require a Windows host with Android SDK installed.
 
 ## Release / parity gates (not yet complete)
@@ -62,7 +76,8 @@ The normal test pipeline also executes both suites. Tests use a fake Android SDK
 - [x] Host capacity warnings and serialized AVD launch gates (mock-tested). Uses measured host memory and CPU, estimated per-AVD RAM, and ADB state.
 - [ ] User controls for RAM/CPU/display/storage/network per AVD and measured multi-instance throughput on real Windows hardware.
 - [x] User-approved APK installation, transient screenshot preview and manual tap/swipe/HOME/BACK/short ASCII typing (ADB mock-tested).
-- [ ] APK smoke test on actual emulator/phone, UI accessibility-tree extraction, scoped Appium/agent workflow, approvals and rollback.
+- [x] Read-only local UI hierarchy extraction with geometry-only results and redaction (mock-tested).
+- [ ] APK smoke test on actual emulator/phone, production accessibility-tree compatibility, scoped Appium/agent workflow, approvals and rollback.
 - [ ] Multi-instance streaming, robust crash recovery, provisioning and encrypted backup/restore.
 - [ ] Local MCP/agent capability scopes and approval for external, destructive or account actions.
 - [ ] Device/environment integrity assessment and compatibility tests; no unverified bypass claims.
