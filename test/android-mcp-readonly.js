@@ -1,9 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {PassThrough}=require('node:stream');
 const {spawn}=require('node:child_process');
 const path=require('node:path');
-const {createMcpHandler,startStdio,TOOLS,redactUI}=require('../src/android/mcpReadOnly');
+const {createMcpHandler,allowedSerials}=require('../src/android/mcpReadOnly');
 
 let calls={avds:0,devices:0,inspections:0};
 let rawSecret='otp 123456 account@private.example';
@@ -31,7 +30,10 @@ const inspector={
     };
   }
 };
-const handler=createMcpHandler({manager,inspector});
+const handler=createMcpHandler({manager,inspector,allowedSerials:['emulator-5554']});
+assert.deepEqual([...allowedSerials('emulator-5554, PHONE')],['emulator-5554','PHONE']);
+assert.throws(()=>allowedSerials('emulator-5554;rm -rf /'),/Invalid/);
+assert.throws(()=>allowedSerials(Array(9).fill('emulator-5554')),/At most 8/);
 const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
 (async()=>{
   assert.equal((await ask(1,'tools/list',{})).error.code,-32000);
@@ -52,10 +54,10 @@ const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
   const decode=message=>JSON.parse(message.result.content[0].text);
   const caps=await ask(5,'tools/call',{name:'android_capabilities',arguments:{}});
   assert.equal(decode(caps).actions,'disabled');
+  assert.equal(decode(caps).authorizedDeviceCount,1);
   const dev=decode(await ask(6,'tools/call',{name:'android_list_devices',arguments:{}}));
-  assert.equal(dev.devices.length,2);
+  assert.equal(dev.devices.length,1);
   assert.equal(dev.devices[0].serial,'emulator-5554');
-  assert.equal(dev.devices[1].status,'unauthorized');
   assert(!JSON.stringify(dev).includes('Sensitive'));
   assert(!JSON.stringify(dev).includes(rawSecret));
   const avds=decode(await ask(7,'tools/call',{name:'android_list_avds',arguments:{}}));
@@ -79,6 +81,17 @@ const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
     arguments:{serial:'ABCD'}});
   assert.equal(inaccessible.result.isError,true);
   assert(!JSON.stringify(inaccessible).includes(rawSecret));
+  assert.equal(inaccessible.result.content[0].text,'Device not permitted by LHM MCP allowlist');
+  const unconfigured=createMcpHandler({manager,inspector,allowedSerials:[]});
+  const initNew=await unconfigured.handle({jsonrpc:'2.0',id:41,method:'initialize',
+    params:{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test'}}});
+  assert.equal(initNew.result.protocolVersion,'2025-06-18');
+  const hidden=await unconfigured.handle({jsonrpc:'2.0',id:42,method:'tools/call',
+    params:{name:'android_list_devices',arguments:{}}});
+  assert.deepEqual(JSON.parse(hidden.result.content[0].text).devices,[]);
+  const refused=await unconfigured.handle({jsonrpc:'2.0',id:43,method:'tools/call',
+    params:{name:'android_inspect_ui',arguments:{serial:'emulator-5554'}}});
+  assert.equal(refused.result.isError,true);
   const unsafe=await ask(12,'tools/call',{name:'android_inspect_ui',
     arguments:{serial:'evil;rm -rf'}});
   assert.equal(unsafe.result.isError,true);
