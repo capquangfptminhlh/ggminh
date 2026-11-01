@@ -118,7 +118,8 @@
       'already-running':'Máy này đang chạy',
       'parallel-limit':'PC đã đạt giới hạn chạy song song',
       'insufficient-free-memory':'Không đủ RAM trống để mở an toàn',
-      'memory-unavailable':'Không đo được bộ nhớ máy'
+      'memory-unavailable':'Không đo được bộ nhớ máy',
+      'adb-unavailable':'Không tìm thấy ADB để xác nhận trạng thái máy ảo'
     };
     return messages[reason] || 'Chưa sẵn sàng';
   }
