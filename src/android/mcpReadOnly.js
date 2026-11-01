@@ -5,7 +5,6 @@
  * No socket listener, no screenshots, no device writes and no remote AI calls.
  * Interactive control remains exclusively behind Electron's native approvals.
  */
-const readline = require('node:readline');
 const {AndroidManager} = require('./androidManager');
 const {AndroidControl} = require('./androidControl');
 const {AndroidUIInspector} = require('./uiInspector');
@@ -60,6 +59,15 @@ const TOOLS=Object.freeze([
 ]);
 
 const TOOL_NAMES=new Set(TOOLS.map(t=>t.name));
+function allowedSerials(value) {
+  const source=typeof value==='string' ? value.split(',') :
+    Array.isArray(value) ? value : [];
+  if(source.length>8)throw Error('At most 8 explicitly authorized Android devices');
+  const serials=source.map(x=>typeof x==='string'?x.trim():'');
+  if(serials.some(x=>!SAFE_SERIAL.test(x)))
+    throw Error('Invalid Android MCP device allowlist');
+  return new Set(serials);
+}
 function cleanId(id) {
   if(typeof id==='number' && Number.isSafeInteger(id)) return id;
   if(typeof id==='string' && id.length>=1 && id.length<=128) return id;
@@ -112,6 +120,10 @@ function redactUI(result) {
 function createMcpHandler(options={}) {
   const manager=options.manager||new AndroidManager();
   const inspector=options.inspector||new AndroidUIInspector(new AndroidControl(manager));
+  // The operator controls this allowlist in the MCP client's local process
+  // environment. An unconfigured bridge sees ZERO Android devices.
+  const approved=allowedSerials(options.allowedSerials===undefined?
+    process.env.LHM_MCP_ALLOWED_SERIALS:options.allowedSerials);
   let initialized=false;
   let busy=false;
   let calls=0;
@@ -127,6 +139,8 @@ function createMcpHandler(options={}) {
           actions:'disabled',
           noScreenshots:true,
           noRemoteListener:true,
+          authorizedDeviceCount:approved.size,
+          deviceAccess:approved.size?'explicit-allowlist':'disabled-until-allowlisted',
           tools:TOOLS.map(x=>x.name)};
       }
       if(name==='android_list_avds') {
@@ -137,11 +151,14 @@ function createMcpHandler(options={}) {
       if(name==='android_list_devices') {
         paramsObject(args);
         const devices=await manager.devices();
-        return {devices:devices.slice(0,30).map(redactDevice)};
+        return {devices:devices.filter(d=>approved.has(d.serial))
+          .slice(0,8).map(redactDevice)};
       }
       const inputs=paramsObject(args,['serial']);
       if(typeof inputs.serial!=='string'||!SAFE_SERIAL.test(inputs.serial))
         throw Error('Specify one valid Android device serial');
+      if(!approved.has(inputs.serial))
+        throw Error('Device not explicitly authorized for MCP');
       const result=await inspector.inspect(inputs.serial);
       return redactUI(result);
     }finally {busy=false;calls++;}
@@ -188,6 +205,7 @@ function createMcpHandler(options={}) {
           msg==='Another Android read is still running'?'Android read busy':
           msg==='Specify one valid Android device serial'?'Invalid serial':
           msg==='Invalid tool arguments'?'Invalid arguments':
+          msg==='Device not explicitly authorized for MCP'?'Device not permitted by LHM MCP allowlist':
           'Android read unavailable; verify local SDK, ADB authorization and device screen';
         return respond(errorResult(safe));
       }
@@ -249,5 +267,5 @@ function startStdio({stdin=process.stdin,stdout=process.stdout,handler=createMcp
 
 module.exports={
   NAME,VERSION,PROTOCOL,TOOLS,createMcpHandler,startStdio,
-  redactUI,redactDevice
+  redactUI,redactDevice,allowedSerials
 };
