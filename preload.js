@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   androidDiscover: () => ipcRenderer.invoke('android-discover'),
+  androidCreateAvd: (name, image) => ipcRenderer.invoke('android-create-avd', name, image),
+  androidDuplicateAvd: (source, name) => ipcRenderer.invoke('android-duplicate-avd', source, name),
   androidLaunchAvd: name => ipcRenderer.invoke('android-launch-avd', name),
   androidOpenScreen: serial => ipcRenderer.invoke('android-open-screen', serial),
   androidStopEmulator: serial => ipcRenderer.invoke('android-stop-emulator', serial),
