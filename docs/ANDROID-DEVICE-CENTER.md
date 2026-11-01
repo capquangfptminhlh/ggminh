@@ -25,6 +25,31 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
+## Local Android widget roles (bounded, no raw labels)
+
+When a user clicks **Quét giao diện**, the inspector now classifies each enabled, clickable widget by Android class (button, input, toggle, picker, slider or general interactive view). It also shows a short **heuristic** hint only when an accessibility label matches an exact closed vocabulary: *Quay lại, Trang chủ, Tìm kiếm, Menu, Đóng, Tiếp theo* (English and Vietnamese). Every other label remains hidden; text, content descriptions, account identifiers and password data are **not returned via IPC**, written to a file or sent to OpenRouter. An XML attribute containing a literal \`>\` no longer truncates the node parser. The one-time tap guard rejects changed role or hint as well as geometry.
+
+**Important:** role and hint are not trustworthy evidence of the button's real-world effect. A label "Next" could still advance a purchase or submit a form. All actions remain reviewed and manually approved; there is no autonomous semantic agent.
+
+### Real Windows Android acceptance gate (opt-in)
+
+The script \`tools/android-live-smoke.js\` is a **real runtime acceptance harness**, not a synthetic/CI proof of Android availability. On a Windows 10/11 PC with VT-x/AMD-V, WHPX, Android SDK tools and a pre-created test AVD, run it from the project root in PowerShell:
+
+\`\`\`powershell
+$env:LHM_ANDROID_AVD="LHM_Test_Pixel"
+node tools/android-live-smoke.js
+\`\`\`
+
+Use a **dedicated test AVD with no personal accounts**. The harness refuses an AVD that is already running. It launches that AVD, waits up to five minutes for ADB \`sys.boot_completed=1\`, validates a real PNG screenshot, sends HOME to the test AVD, inspects the real UI hierarchy locally and requests emulator shutdown in cleanup. It emits only pass/fail, screenshot dimensions and counts; no screenshot, UI text, serial, apps, accounts or secrets are uploaded or logged. A shutdown request is not proof that the emulator exited immediately.
+
+For an unattended **but manually triggered** real-device CI gate, provision a dedicated Windows self-hosted GitHub Actions runner with custom label \`android-sdk\`, Android SDK/AVD already installed, and hardware acceleration available. Then dispatch **Android Live Windows Acceptance (manual, real AVD)**, entering the AVD name. Without such a self-hosted runner, this job cannot run: the ordinary Windows installer workflow continues to use synthetic Android mocks and proves **only the code/build**, not runtime compatibility.
+
+Local mock regressions:
+- \`node test/android-role-hints.js\`
+- \`node test/android-live-smoke.js\`
+
+Acceptance to ship Android commercially still requires a **successful real runner result**, evidence that boot/screenshot/inspection work on supported Windows hosts, and a separate multi-instance performance benchmark. Do not present the mock tests or installer build as that evidence.
+
 ## Android UI Inspector — local geometry-only view
 
 The **Android UI Inspector** is a separate read-only screen for operators to inspect interactive Android widgets. It uses `adb -s SERIAL exec-out uiautomator dump /dev/tty` and extracts the nodes flagged `clickable=true`, `enabled=true` with valid screen bounds. It returns only a short widget type and its bounding box/center, capped to 120 entries. All `text`, `content-desc`, package names, resource identifiers and password-entry nodes are removed **inside the Electron main process before any IPC reply**. Raw UI XML is not saved, exported, logged or passed to OpenRouter.
