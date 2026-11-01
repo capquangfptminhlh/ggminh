@@ -18,6 +18,8 @@ function fakeExec(file,args,opts,done) {
   invoked.push({file,args,opts});
   if (args[0] === 'devices') return done(null,'List of devices attached\nemulator-5554\tdevice model:Pixel_8\nPHONE\tunauthorized\n','');
   if (args[0] === '-list-avds') return done(null,'Pixel_8\n','');
+  if (args.includes('emu') && args.includes('name')) return done(null,'OtherRunning\nOK\n','');
+  if (args.includes('getprop')) return done(null,'1\n','');
   if (args.includes('kill')) return done(null,'OK','');
   return done(new Error('unexpected arguments'));
 }
@@ -36,7 +38,8 @@ const mgr = new AndroidManager({
     if ([adb,emulator,scrcpy].includes(file)) return {isFile:()=>true};
     throw Object.assign(new Error('not found'),{code:'ENOENT'});
   }},
-  execFile:fakeExec,spawn:fakeSpawn
+  execFile:fakeExec,spawn:fakeSpawn,
+  os:{totalmem:()=>24*1024**3, freemem:()=>18*1024**3, cpus:()=>Array(8).fill({})}
 });
 
 (async()=>{
@@ -46,6 +49,10 @@ const mgr = new AndroidManager({
   assert.equal(state.devices[0].kind,'emulator');
   assert.equal(state.devices[1].status,'unauthorized');
   assert.equal(state.errors.length,0);
+  assert.equal(state.fleet.running[0].name,'OtherRunning');
+  assert.equal(state.fleet.running[0].bootCompleted,true);
+  assert.equal(state.fleet.maxParallel,4);
+  assert.equal(state.fleet.readiness.Pixel_8.allowed,true);
   await assert.rejects(mgr.launchAvd('evil && del C:\\'),/Invalid/);
   await assert.rejects(mgr.launchAvd('DoesNotExist'),/does not exist/);
   const started = await mgr.launchAvd('Pixel_8');
