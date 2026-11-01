@@ -98,5 +98,8 @@ function fixture(freeGiB,cpuCount=8) {
   const disconnected=await noAdb.mgr.fleetSnapshot();
   assert.equal(disconnected.host.measured,true);
   assert.equal(disconnected.running.length,0);
+  assert.equal(disconnected.readiness.PixelA.reason,'adb-unavailable');
+  await assert.rejects(noAdb.mgr.launchAvd('PixelA'),/adb-unavailable/);
+  assert.equal(noAdb.started.length,0);
   console.log('Android fleet capacity and lifecycle tests: PASS');
 })().catch(error=>{console.error(error);process.exitCode=1;});
