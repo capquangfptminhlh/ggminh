@@ -2,6 +2,7 @@
 
 // Read-only Android UI structure inspector. The raw UIAutomator XML may
 // contain credentials, messages, OTPs or account names: never return or log it.
+const {roleForType,safeHint} = require('./uiRoleHints');
 const MAX_XML_BYTES = 1024 * 1024;
 const MAX_ELEMENTS = 120;
 const SAFE_CLASS = /^[A-Za-z][A-Za-z0-9._$]{0,100}$/;
@@ -20,9 +21,9 @@ function parseBounds(value) {
 
 function attributes(tag) {
   const result = Object.create(null);
-  // Parse only properties needed for a numeric metadata-only inspection.
-  // Intentionally skip text, content-desc, resource-id and package.
-  const RE=/\b(class|clickable|enabled|focusable|scrollable|password|bounds)="([^"]*)"/g;
+  // Read labels only within this main-process parser, then reduce them to a
+  // closed, non-sensitive vocabulary; raw text never reaches IPC or logs.
+  const RE=/\b(class|clickable|enabled|focusable|scrollable|password|bounds|text|content-desc)="([^"]*)"/g;
   let match;
   while ((match=RE.exec(tag)) !== null) result[match[1]]=match[2];
   return result;
@@ -35,7 +36,8 @@ function parseHierarchy(raw) {
   const end=raw.indexOf('</hierarchy>',start);
   if(start<0 || end<0) throw new Error('Android did not produce a UI hierarchy; unlock the device and try again');
   const xml=raw.slice(start,end+'</hierarchy>'.length);
-  const tags=xml.match(/<node\b[^>]*>/g) || [];
+  // A label containing '>' must not cut off the attributes or bounds.
+  const tags=xml.match(/<node\b(?:[^>"']|"[^"]*"|'[^']*')*>/g) || [];
   if(tags.length > 3000) throw new Error('Android UI hierarchy has too many elements');
   const elements=[];
   let actionableCount=0;
@@ -49,9 +51,11 @@ function parseHierarchy(raw) {
     actionableCount++;
     if(elements.length===MAX_ELEMENTS)continue;
     const cls=SAFE_CLASS.test(a.class || '') ? a.class : 'android.view.View';
+    const type=cls.split('.').at(-1);
     elements.push({
       index:elements.length+1,
-      type:cls.split('.').at(-1),
+      type,role:roleForType(type),
+      hint:safeHint(a.text,a['content-desc']),
       bounds
     });
   }
