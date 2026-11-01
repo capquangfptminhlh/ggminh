@@ -101,13 +101,15 @@
     notice('Đang tạo AVD bằng Android SDK…');
     try {
       const created = await work();
-      await refresh();
       notice('Đã tạo ' + created.name + ' với dữ liệu mới độc lập. Bấm Khởi chạy để mở Android.');
       form.reset();
     } catch (error) {
       notice(error?.message || 'Không tạo được máy Android.', true);
     } finally {
       button.disabled = false;
+      // Always re-read SDK state; provisioning may have changed capacity or
+      // installed-image availability. The refreshed state owns button validity.
+      await refresh();
     }
   }
 
