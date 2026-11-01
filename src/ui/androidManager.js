@@ -237,6 +237,7 @@
 
   function close() {
     window.LHMAndroidAgentStudio?.close();
+    window.LHMAndroidUIInspector?.clear();
     window.LHMAndroidControlStudio?.clear();
     $('modal-android-manager').classList.remove('open');
     if (lastFocus && lastFocus.isConnected) lastFocus.focus();
