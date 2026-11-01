@@ -9,18 +9,25 @@ const MAX_STEPS=6;
 const TTL_MS=10*60*1000;
 const ALLOWED=new Set(['capture','key','tap','swipe','text']);
 const SAFE_SERIAL=/^[A-Za-z0-9._:-]{1,128}$/;
+const TOKEN=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function validatePlan(raw) {
+function validatePlan(raw,{allowInspectorTarget=false}={}) {
   if(!raw || typeof raw!=='object' || Array.isArray(raw) ||
      !Array.isArray(raw.steps) || raw.steps.length<1 || raw.steps.length>MAX_STEPS)
     throw new Error('Android plan must have 1–6 steps');
   const steps=raw.steps.map((input,index)=>{
     if(!input || typeof input!=='object' || Array.isArray(input) ||
-       typeof input.action!=='string' || !ALLOWED.has(input.action))
+       typeof input.action!=='string' ||
+       !(ALLOWED.has(input.action) || (allowInspectorTarget && input.action==='inspector-tap')))
       throw new Error('Unsupported Android plan action at step '+(index+1));
     const action=input.action;
     const args=action==='capture' ? {} : input.args;
-    if(action!=='capture') validateAction(action,args);
+    if(action==='inspector-tap') {
+      if(!allowInspectorTarget || !args || typeof args!=='object' ||
+         typeof args.scanId!=='string' || !TOKEN.test(args.scanId) ||
+         !Number.isInteger(args.index) || args.index<1 || args.index>120)
+        throw new Error('Invalid Inspector target step');
+    } else if(action!=='capture') validateAction(action,args);
     if(action==='capture' && input.args!==undefined &&
        (typeof input.args!=='object' || Array.isArray(input.args) ||
         Object.keys(input.args).length!==0))
@@ -50,6 +57,7 @@ function redactedStep(step) {
   return {
     action,note:action==='text'?'Gõ văn bản đã được ẩn':note,
     args:action==='text'?{characters:args.text.length}:
+      action==='inspector-tap'?{index:args.index}:
       action==='capture'?{}:{...args}
   };
 }
@@ -58,6 +66,7 @@ class AndroidAgentWorkflow {
   constructor(control,advisor,options={}) {
     this.control=control;
     this.advisor=advisor;
+    this.targetGuard=options.targetGuard||null;
     this.clock=options.clock||(()=>Date.now());
     this.idFactory=options.idFactory||(()=>crypto.randomUUID());
     this.sessions=new Map();
@@ -67,19 +76,29 @@ class AndroidAgentWorkflow {
       if(this.clock()-s.createdAt>TTL_MS && !s.busy) this.sessions.delete(id);
     }
   }
-  _create(serial,plan,source) {
+  _create(serial,plan,source,{allowInspectorTarget=false}={}) {
     this._clean();
     if(typeof serial!=='string' || !SAFE_SERIAL.test(serial))
       throw new Error('Invalid Android serial');
     if([...this.sessions.values()].some(s=>s.serial===serial && !s.done))
       throw new Error('Cancel the existing Android plan for this device first');
-    const validated=validatePlan(plan);
+    const validated=validatePlan(plan,{allowInspectorTarget});
     const id=this.idFactory();
     this.sessions.set(id,{
       id,serial,source,steps:validated.steps,index:0,busy:false,
       createdAt:this.clock(),done:false,error:null
     });
     return this.preview(id);
+  }
+  async fromInspector(serial,scanId,index) {
+    if(!this.targetGuard) throw new Error('Android UI Inspector target guard is unavailable');
+    await this.control.authorized(serial);
+    const target=this.targetGuard.validate(serial,scanId,index);
+    return this._create(serial,{steps:[
+      {action:'inspector-tap',args:{scanId,index},
+        note:'Chạm nút #' + target.index + ' (' + target.type + ') từ UI Inspector'},
+      {action:'capture',note:'Chụp màn hình xác minh sau thao tác'}
+    ]},'inspector-guided',{allowInspectorTarget:true});
   }
   async template(serial) {
     await this.control.authorized(serial);
@@ -141,7 +160,9 @@ class AndroidAgentWorkflow {
     const step=s.steps[s.index];
     return step.action==='text'
       ? 'Nội dung AI định gõ: '+step.args.text
-      : JSON.stringify(redactedStep(step).args);
+      : step.action==='inspector-tap'
+        ? 'Nút UI Inspector #' + step.args.index + '; quét lại trước khi chạm'
+        : JSON.stringify(redactedStep(step).args);
   }
   async next(id) {
     const s=this._session(id);
@@ -153,7 +174,12 @@ class AndroidAgentWorkflow {
     try {
       await this.control.authorized(s.serial);
       if(step.action!=='capture') {
-        try {await this.control.execute(s.serial,step.action,step.args);}
+        try {
+          if(step.action==='inspector-tap') {
+            if(!this.targetGuard) throw new Error('UI target guard unavailable');
+            await this.targetGuard.tap(s.serial,step.args.scanId,step.args.index);
+          } else await this.control.execute(s.serial,step.action,step.args);
+        }
         catch(error) {
           // ADB can time out after acting. Never retry a non-idempotent step.
           s.error='Action failed or uncertain: '+String(error.message).slice(0,130);

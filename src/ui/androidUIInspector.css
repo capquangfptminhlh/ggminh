@@ -37,3 +37,6 @@
 @media(max-width:600px){
   #modal-android-manager .lhm-android-inspector {padding:12px;}
 }
+
+#modal-android-manager .lhm-android-inspector-actions {display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+#modal-android-manager .lhm-android-inspector-actions button {font-size:11px;padding:7px 9px;}

@@ -30,8 +30,9 @@
     root.replaceChildren();
     if(!plan) {controls();return;}
     const heading=document.createElement('strong');
-    heading.textContent=(plan.source==='openrouter-proposal'?'Đề xuất AI':'Mẫu không dùng AI')+
-      ' · '+plan.total+' bước · '+plan.serial;
+    const sourceLabel=plan.source==='openrouter-proposal'?'Đề xuất AI':
+      plan.source==='inspector-guided'?'Nút đã chọn từ UI Inspector':'Mẫu không dùng AI';
+    heading.textContent=sourceLabel+' · '+plan.total+' bước · '+plan.serial;
     root.append(heading);
     for(const [i,step] of plan.steps.entries()) {
       const item=document.createElement('div');
@@ -50,7 +51,7 @@
   }
 
   async function setPlan(work) {
-    if(working || session || !serial()) return;
+    if(working || session || !serial()) return false;
     const thisVersion=++version;
     working=true;controls();clearScreenshot();
     status('Đang kiểm tra và xây dựng kế hoạch…');
@@ -58,12 +59,14 @@
       const result=await work(serial());
       if(thisVersion!==version) {
         if(result?.id) await window.api.androidAgentCancel(result.id).catch(()=>{});
-        return;
+        return false;
       }
       renderPlan(result);
-      status('Kế hoạch chỉ là đề xuất. Xem từng bước rồi bấm Phê duyệt bước kế.');
+      status('Kế hoạch đã được khóa với thiết bị. Duyệt từng bước trong hộp thoại Windows.');
+      return true;
     } catch(error) {
       if(thisVersion===version)status(error?.message||'Không tạo được kế hoạch.',true);
+      return false;
     } finally {working=false;controls();}
   }
 
@@ -144,7 +147,20 @@
     status('Đã đóng phiên Android Agent. Không lưu ảnh màn hình.');
   }
 
-  window.LHMAndroidAgentStudio={close,onDeviceChange};
+  window.LHMAndroidAgentStudio={
+    close,onDeviceChange,
+    async fromInspector(target,scanId,index) {
+      if(target!==serial() || working || session) return false;
+      const ok=await setPlan(s=>window.api.androidAgentFromInspector(s,scanId,index));
+      if(ok) {
+        $('android-agent-goal').value='';
+        $('android-agent-consent').checked=false;
+        $('android-agent-title').scrollIntoView({behavior:'smooth',block:'start'});
+        $('android-agent-next').focus();
+      }
+      return ok;
+    }
+  };
   window.addEventListener('DOMContentLoaded',()=>{
     $('android-agent-offline').addEventListener('click',()=>setPlan(s=>
       window.api.androidAgentTemplate(s)));

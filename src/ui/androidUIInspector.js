@@ -9,9 +9,13 @@
     $('android-inspector-status').textContent=String(message||'');
     $('android-inspector-status').dataset.state=error?'error':'normal';
   }
-  function clear() {
+  function clear({keepServerToken=false}={}) {
     version++;
+    const old=snapshot;
     snapshot=null;
+    if(old?.scanId && !keepServerToken) {
+      window.api.androidUiInvalidate(old.scanId).catch(()=>{});
+    }
     $('android-inspector-nodes').replaceChildren();
     $('android-inspector-scan').disabled=!serial();
   }
@@ -61,10 +65,8 @@
         button.disabled=true;
         status('Đang chạm nút #'+node.index+' trên '+target+'…');
         try {
-          await window.api.androidControlAction(target,'tap',{
-            x:node.bounds.x,y:node.bounds.y
-          });
-          status('Đã gửi lệnh chạm. Quét lại vì giao diện có thể đã thay đổi.');
+          const result=await window.api.androidUiTapTarget(target,snapshot.scanId,node.index);
+          status(result.state==='cancelled'?'Đã hủy thao tác.':'Đã chạm nút đã xác minh. Quét lại để thao tác tiếp.');
         } catch(error) {
           status(error?.message||'ADB không thực hiện được thao tác.',true);
         } finally {
@@ -72,7 +74,35 @@
           clear(); // Never repeat a stale point or keep post-action hierarchy.
         }
       });
-      entry.append(text,button);
+      const agent=makeButton('Agent',async()=>{
+        if(working)return;
+        if(!snapshot || snapshot.serial!==serial() ||
+           Date.now()-snapshot.capturedAt>STALE_MS) {
+          clear();
+          status('Mục tiêu đã cũ. Quét lại Android trước khi tạo kế hoạch.',true);
+          return;
+        }
+        working=true;
+        const scanId=snapshot.scanId,target=serial();
+        try {
+          const ok=await window.LHMAndroidAgentStudio?.fromInspector(target,scanId,node.index);
+          if(ok) {
+            // Ownership transferred to the approval-gated Agent session. The
+            // server token must survive until its one approved use or expiry.
+            clear({keepServerToken:true});
+            status('Đã chuyển nút #'+node.index+' vào Agent. Duyệt từng bước bên dưới.');
+          } else status('Agent đang có kế hoạch khác. Hủy kế hoạch đó trước.',true);
+        } catch(error) {
+          status(error?.message||'Không tạo được kế hoạch từ nút đã quét.',true);
+        } finally {
+          working=false;
+          $('android-inspector-scan').disabled=!serial();
+        }
+      });
+      const actions=document.createElement('div');
+      actions.className='lhm-android-inspector-actions';
+      actions.append(button,agent);
+      entry.append(text,actions);
       box.append(entry);
     }
   }
@@ -94,8 +124,9 @@
         throw new Error('Kết quả quét không hợp lệ');
       }
       // Trust local IPC only for a bounded, sanitized tree.
+      if(typeof result.scanId!=='string')throw Error('Thiếu mã phiên quét an toàn');
       snapshot={
-        serial:target,capturedAt:Date.now(),
+        serial:target,scanId:result.scanId,capturedAt:Date.now(),
         elements:result.elements
       };
       render(result);
