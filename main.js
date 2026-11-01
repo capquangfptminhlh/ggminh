@@ -4,6 +4,7 @@ const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const { AndroidControl } = require('./src/android/androidControl');
 const { AndroidAgentWorkflow } = require('./src/android/agentWorkflow');
 const { AndroidUIInspector } = require('./src/android/uiInspector');
+const { AndroidTargetGuard } = require('./src/android/targetGuard');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -406,9 +407,10 @@ function initIPC() {
   const avdProvisioner = new AvdProvisioner(androidManager);
   const androidControl = new AndroidControl(androidManager);
   const androidUIInspector = new AndroidUIInspector(androidControl);
+  const androidTargetGuard = new AndroidTargetGuard(androidUIInspector,androidControl);
   // Workflow sessions live only in app memory; there is no headless
   // scheduler or unauthenticated HTTP path to Android controls.
-  const androidAgent = new AndroidAgentWorkflow(androidControl, aiAdvisor);
+  const androidAgent = new AndroidAgentWorkflow(androidControl, aiAdvisor,{targetGuard:androidTargetGuard});
   const androidStepConfirmations = new Set();
   ipcMain.handle('android-discover', async () => {
     const [devices, provisioning] = await Promise.all([androidManager.discover(), avdProvisioner.catalog()]);
@@ -423,7 +425,26 @@ function initIPC() {
     androidControl.execute(serial, action, args));
   ipcMain.handle('android-control-screenshot', (_event, serial) =>
     androidControl.screenshot(serial));
-  ipcMain.handle('android-ui-inspect', (_event, serial) => androidUIInspector.inspect(serial));
+  ipcMain.handle('android-ui-inspect', (_event, serial) => androidTargetGuard.scan(serial));
+  ipcMain.handle('android-ui-invalidate', (_event, scanId) =>
+    androidTargetGuard.invalidate(scanId));
+  ipcMain.handle('android-ui-tap-target', async (_event, serial, scanId, index) => {
+    const target = androidTargetGuard.validate(serial,scanId,index);
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type:'question',title:'Xác nhận chạm Android',
+      message:'Chạm nút #' + target.index + ' (' + target.type + ') trên ' + target.serial + '?',
+      detail:'LHM sẽ đọc lại giao diện ngay trước khi gửi lệnh chạm. ' +
+        'Nút có thể thực hiện hành động trong ứng dụng; không có hoàn tác tự động.',
+      buttons:['Hủy','Chạm một lần'],defaultId:0,cancelId:0,noLink:true
+    });
+    if(confirmation.response!==1) {
+      androidTargetGuard.invalidate(scanId);
+      return {state:'cancelled'};
+    }
+    return androidTargetGuard.tap(serial,scanId,index);
+  });
+  ipcMain.handle('android-agent-from-inspector', (_event,serial,scanId,index) =>
+    androidAgent.fromInspector(serial,scanId,index));
   ipcMain.handle('android-agent-template', (_event, serial) =>
     androidAgent.template(serial));
   ipcMain.handle('android-agent-propose', (_event, serial, goal, consent) =>
