@@ -90,3 +90,51 @@
 @media (prefers-reduced-motion: reduce) {
   #modal-android-manager * { animation: none !important; transition: none !important; }
 }
+
+
+/* AVD provisioning */
+#modal-android-manager .lhm-android-provision {
+  background: #fff; border: 1px solid #d8e4f2; border-radius: 16px;
+  padding: 17px 18px; margin: 0 0 16px;
+}
+#modal-android-manager .lhm-android-provision-heading {
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;margin-bottom:14px;
+}
+#modal-android-manager .lhm-android-provision-heading h3 {font-size:17px;color:#193958;}
+#modal-android-manager #android-storage-status {
+  font-size:12px;color:#526987;background:#f1f6fc;
+  border:1px solid #d9e7f7;border-radius:999px;padding:6px 10px;
+}
+#modal-android-manager .lhm-android-provision-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+}
+#modal-android-manager .lhm-android-form {
+  background:#f6faff;border:1px solid #e0e8f3;padding:16px;
+  border-radius:13px;display:flex;flex-direction:column;align-items:stretch;gap:9px;
+}
+#modal-android-manager .lhm-android-form h4 {
+  font-size:14px;color:#1c405f;margin:0 0 5px;
+}
+#modal-android-manager .lhm-android-form label {
+  font-size:12px;font-weight:600;color:#395875;
+}
+#modal-android-manager .lhm-android-form input,
+#modal-android-manager .lhm-android-form select {
+  width:100%;min-height:40px;padding:8px 10px;
+  color:#163452;background:#fff;border:1px solid #cad9ea;border-radius:9px;
+  font-size:13px;
+}
+#modal-android-manager .lhm-android-form input:focus-visible,
+#modal-android-manager .lhm-android-form select:focus-visible {
+  outline:2px solid #2c75c7;outline-offset:2px;
+}
+#modal-android-manager .lhm-android-form button {margin-top:5px;min-height:39px;}
+#modal-android-manager .lhm-android-form small,
+#modal-android-manager #android-provision-hint {
+  font-size:12px;line-height:1.5;color:#526c87;
+}
+#modal-android-manager #android-provision-hint {margin:12px 0 0;}
+@media(max-width:760px) {
+  #modal-android-manager .lhm-android-provision-grid {grid-template-columns:1fr;}
+}
