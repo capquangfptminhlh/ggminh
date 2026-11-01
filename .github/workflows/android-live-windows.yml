@@ -1,0 +1,35 @@
+name: Android Live Windows Acceptance (manual, real AVD)
+
+on:
+  workflow_dispatch:
+    inputs:
+      avd_name:
+        description: "Existing test AVD on the Windows self-hosted runner (no customer account)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-live-windows
+  cancel-in-progress: false
+
+jobs:
+  android-live:
+    # Custom label requires an explicitly provisioned Windows PC with
+    # Android SDK + hardware virtualization. Hosted build CI is not proof.
+    runs-on: [self-hosted, Windows, X64, android-sdk]
+    timeout-minutes: 15
+    env:
+      LHM_ANDROID_AVD: ${{ inputs.avd_name }}
+    steps:
+      - name: Checkout this exact commit
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run opt-in Android emulator live acceptance (no screenshots uploaded)
+        shell: pwsh
+        run: node tools/android-live-smoke.js

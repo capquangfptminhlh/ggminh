@@ -47,7 +47,14 @@
       entry.className='lhm-android-inspector-item';
       const text=document.createElement('div');
       const heading=document.createElement('strong');
-      heading.textContent='#'+node.index+' · '+node.type;
+      const hints={back:'Quay lại',home:'Trang chủ',search:'Tìm kiếm',
+        menu:'Menu',close:'Đóng',next:'Tiếp theo'};
+      const roleLabels={button:'Nút bấm','text-input':'Ô nhập',
+        toggle:'Công tắc','picker':'Danh sách chọn',slider:'Thanh kéo',
+        'interactive-view':'Vùng tương tác'};
+      const role=roleLabels[node.role]||'Vùng tương tác';
+      const hint=node.hint&&hints[node.hint] ? ' · Gợi ý: '+hints[node.hint] : '';
+      heading.textContent='#'+node.index+' · '+role+hint;
       const position=document.createElement('small');
       position.textContent='Tâm ('+node.bounds.x+', '+node.bounds.y+
         ') · '+node.bounds.width+'×'+node.bounds.height+' px';
