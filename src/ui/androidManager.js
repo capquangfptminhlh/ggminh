@@ -184,6 +184,14 @@
           return 'Đã gửi lệnh mở màn hình ' + device.serial + ' qua scrcpy.';
         }, !online || !state.tools.scrcpy)
       ];
+      if (online) {
+        const control = element('button', 'btn btn-secondary lhm-android-action', 'Điều khiển');
+        control.type = 'button';
+        control.addEventListener('click', () => {
+          window.LHMAndroidControlStudio?.select(device.serial);
+        });
+        buttons.unshift(control);
+      }
       if (device.kind === 'emulator') {
         buttons.push(action('Tắt', async () => {
           await window.api.androidStopEmulator(device.serial);
@@ -214,6 +222,7 @@
       renderProvisioning(state);
       renderAvds(state);
       renderDevices(state);
+      window.LHMAndroidControlStudio?.render(state);
       if (state.errors.length) notice(state.errors.join(' · '), true);
     } catch (error) {
       if (seq === generation) {
@@ -227,6 +236,7 @@
   }
 
   function close() {
+    window.LHMAndroidControlStudio?.clear();
     $('modal-android-manager').classList.remove('open');
     if (lastFocus && lastFocus.isConnected) lastFocus.focus();
   }
