@@ -251,6 +251,15 @@
         $('android-duplicate-source').value, $('android-duplicate-name').value
       ));
     });
+    // Only poll while the Android dialog is visible. Avoid stealing focus
+    // from AVD controls or interrupting a form being filled in.
+    setInterval(() => {
+      if (document.hidden || !$('modal-android-manager').classList.contains('open')) return;
+      if ($('android-refresh').disabled) return;
+      const active = document.activeElement;
+      if (active?.closest?.('#modal-android-manager .lhm-android-form, #modal-android-manager .lhm-android-item-actions')) return;
+      refresh();
+    }, 10000);
     $('btn-android-manager').addEventListener('click', open);
     $('android-refresh').addEventListener('click', refresh);
     $('android-close').addEventListener('click', close);
