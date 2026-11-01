@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
   androidStopEmulator: serial => ipcRenderer.invoke('android-stop-emulator', serial),
   androidControlAction: (serial,action,args) => ipcRenderer.invoke('android-control-action',serial,action,args),
   androidControlScreenshot: serial => ipcRenderer.invoke('android-control-screenshot',serial),
+  androidUiInspect: serial => ipcRenderer.invoke('android-ui-inspect',serial),
   androidControlInstallApk: serial => ipcRenderer.invoke('android-control-install-apk',serial),
   androidAgentTemplate: serial => ipcRenderer.invoke('android-agent-template',serial),
   androidAgentPropose: (serial,goal,consent) => ipcRenderer.invoke('android-agent-propose',serial,goal,consent),
