@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $=id=>document.getElementById(id);
-  let session=null,working=false,version=0;
+  let session=null,working=false,version=0,deferredCancelId=null;
   function serial() {return $('android-control-serial').value;}
   function status(message,isError=false) {
     $('android-agent-status').textContent=String(message);
@@ -99,7 +99,14 @@
         result.state==='blocked');
     } catch(error) {
       if(thisVersion===version)status(error?.message||'Thao tác Android thất bại.',true);
-    } finally {working=false;controls();}
+    } finally {
+      working=false;
+      if(deferredCancelId===currentId) {
+        deferredCancelId=null;
+        await window.api.androidAgentCancel(currentId).catch(()=>{});
+      }
+      controls();
+    }
   }
 
   async function cancel() {
@@ -125,10 +132,11 @@
   function close() {
     ++version;
     clearScreenshot();
-    if(session && !working) {
+    if(session) {
       const id=session.id;
+      if(working) deferredCancelId=id;
+      else window.api.androidAgentCancel(id).catch(()=>{});
       session=null;
-      window.api.androidAgentCancel(id).catch(()=>{});
     }
     renderPlan(null);
     $('android-agent-goal').value='';
