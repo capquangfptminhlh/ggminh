@@ -48,7 +48,7 @@ function parseModelPlan(value) {
 function redactedStep(step) {
   const {action,args,note}=step;
   return {
-    action,note,
+    action,note:action==='text'?'Gõ văn bản đã được ẩn':note,
     args:action==='text'?{characters:args.text.length}:
       action==='capture'?{}:{...args}
   };
@@ -130,7 +130,7 @@ class AndroidAgentWorkflow {
       id:s.id,serial:s.serial,source:s.source,index:s.index,
       total:s.steps.length,done:s.done,error:s.error,
       steps:s.steps.map(redactedStep),
-      next:s.done?null:redactedStep(s.steps[s.index])
+      next:s.done||s.error?null:redactedStep(s.steps[s.index])
     };
   }
   async next(id) {
@@ -154,8 +154,14 @@ class AndroidAgentWorkflow {
       s.done=s.index>=s.steps.length;
       let screenshot=null,verificationError=null;
       try {screenshot=await this.control.screenshot(s.serial);}
-      catch(error){verificationError=String(error.message).slice(0,160);}
-      return {...this.preview(id),state:s.done?'completed':'review',
+      catch(error){
+        verificationError=String(error.message).slice(0,160);
+        // A step without a verification image must not unlock subsequent
+        // actions. The operator can inspect Android manually and restart.
+        s.error='Verification screenshot unavailable: '+verificationError;
+        s.done=false;
+      }
+      return {...this.preview(id),state:s.error?'blocked':s.done?'completed':'review',
         executed:redactedStep(step),screenshot,verificationError};
     } finally {s.busy=false;}
   }
