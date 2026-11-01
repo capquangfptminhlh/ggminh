@@ -173,8 +173,9 @@ class AndroidManager {
       readiness[name] = {
         ...policy,
         plannedRamMiB: estimateMiB,
-        allowed: !alreadyRunning && policy.allowed,
-        reason: alreadyRunning ? 'already-running' : policy.reason
+        allowed: !!adb && !alreadyRunning && policy.allowed,
+        reason: !adb ? 'adb-unavailable'
+          : alreadyRunning ? 'already-running' : policy.reason
       };
     }
     const {freeBytes, ...publicHost} = host;
