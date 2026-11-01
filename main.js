@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
 const { AndroidManager } = require('./src/android/androidManager');
+const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -399,7 +400,13 @@ function initIPC() {
   // Android devices and AVDs are discovered from the user's installed SDK.
   // These endpoints do not fabricate devices or use a command shell.
   const androidManager = new AndroidManager();
-  ipcMain.handle('android-discover', () => androidManager.discover());
+  const avdProvisioner = new AvdProvisioner(androidManager);
+  ipcMain.handle('android-discover', async () => {
+    const [devices, provisioning] = await Promise.all([androidManager.discover(), avdProvisioner.catalog()]);
+    return {...devices, provisioning};
+  });
+  ipcMain.handle('android-create-avd', (_event, name, image) => avdProvisioner.create(name, image));
+  ipcMain.handle('android-duplicate-avd', (_event, source, name) => avdProvisioner.duplicate(source, name));
   ipcMain.handle('android-launch-avd', (_event, name) => androidManager.launchAvd(name));
   ipcMain.handle('android-open-screen', (_event, serial) => androidManager.openScreen(serial));
   ipcMain.handle('android-stop-emulator', (_event, serial) => androidManager.stopEmulator(serial));
