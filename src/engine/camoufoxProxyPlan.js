@@ -35,7 +35,7 @@ function normalizedProxy(proxy){
 }
 
 async function prepareCamoufoxProxy(profile,profileDir,{
- store=null,proxyVault=null,applyPrefs=updateGeckoProxy,
+ store=null,proxyVault=null,applyPrefs=updateGeckoProxy,peerGuard=null,
  createSocksGateway=createAuthenticatedSocksGateway,
  createHttpGateway=createAuthenticatedHttpGateway
 }={}){
@@ -61,7 +61,10 @@ async function prepareCamoufoxProxy(profile,profileDir,{
   // HTTPS CONNECT. SOCKS destinations are sent as hostnames to upstream.
   const config={type:proxy.type,host:proxy.host,port:proxy.port,
    user:secret.user,pass:secret.pass};
-  gateway=await (proxy.type==='socks5'?createSocksGateway:createHttpGateway)(config);
+  // Only the profile's own browser may tunnel with these credentials.
+  if(peerGuard)await peerGuard.ready();
+  const gatewayOptions=peerGuard?{authorizePeer:socket=>peerGuard.authorize(socket)}:{};
+  gateway=await (proxy.type==='socks5'?createSocksGateway:createHttpGateway)(config,gatewayOptions);
   if(gateway?.host!=='127.0.0.1'||!Number.isInteger(gateway.port)||
      gateway.port<1||gateway.port>65535||typeof gateway.close!=='function')
    throw Error('Authenticated proxy gateway did not bind a valid loopback listener');
