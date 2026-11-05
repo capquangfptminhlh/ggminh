@@ -11,6 +11,7 @@ const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
 const {identityEnvForProfile,assertIdentityMatchesProfile}=require('./camoufoxIdentity');
+const {applyGeckoDownloadDir}=require('./downloadDirectory');
 
 const MIN_STARTUP_MS=1000;
 const MAX_STARTUP_MS=45000;
@@ -95,7 +96,7 @@ class CamoufoxAdapter{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
-  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false
+  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false,downloadsRoot=null
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
      typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
@@ -107,6 +108,8 @@ class CamoufoxAdapter{
   this.closeWindow=closeWindow;this.platform=platform;
   this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
   this.allowProxyLab=allowProxyLab===true;
+  // Per-profile download folder; never the shared OS Downloads folder.
+  this.downloadsRoot=downloadsRoot||(path.isAbsolute(String(baseDir||''))?path.join(baseDir,'downloads'):null);
   this.startupTimeoutMs=startupTimeoutMs;
   this.sessions=new Map();this.pending=new Map();
  }
@@ -178,6 +181,7 @@ class CamoufoxAdapter{
    proxyPlan=await this.prepareProxy(profile,profileDir,{
     store:this.store,proxyVault:this.proxyVault
    });
+   if(this.downloadsRoot)applyGeckoDownloadDir(profileDir,this.downloadsRoot,id);
    child=this.spawnProcess(executable,args,{
     cwd:path.dirname(executable),windowsHide:false,
     detached:false,stdio:['ignore','pipe','pipe'],
