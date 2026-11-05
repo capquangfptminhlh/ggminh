@@ -152,20 +152,23 @@ async function setApiEnabled(enabled) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) {
     throw new Error('Invalid API port');
   }
+  // createApiServer returns the express app; listen() returns the
+  // http.Server that owns `listening`, `close()` and the 'error' event.
   const service = createApiServer(store, launcher, { apiKey, behaviorMonitor,licensePolicy });
+  let server = null;
   try {
     await new Promise((resolve, reject) => {
-      service.once('error', reject);
-      service.listen(port, '127.0.0.1', () => {
-        service.removeListener('error', reject);
+      server = service.listen(port, '127.0.0.1', () => {
+        server.removeListener('error', reject);
         resolve();
       });
+      server.once('error', reject);
     });
   } catch (error) {
-    try { service.close(); } catch (_) {}
+    try { server?.close(); } catch (_) {}
     throw new Error('Cannot start Local API: ' + error.message);
   }
-  apiServer = service;
+  apiServer = server;
   store.updateSettings({ apiEnabled: true });
   return apiStatus();
 }

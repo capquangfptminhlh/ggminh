@@ -99,6 +99,12 @@ const { cdpAllowed, CDP_DISABLED_MESSAGE } = require('../src/security/cdpPolicy'
     assert.strictEqual(body.data.debug_port, 9333);
     assert.strictEqual(body.data.ws.selenium, '127.0.0.1:9333');
     assert.strictEqual(body.data.ws.puppeteer, 'ws://127.0.0.1:9333/devtools/browser/x');
+    // main.js must keep the http.Server returned by listen(), not the express
+    // app: otherwise the UI always shows the API as off and disabling it crashes.
+    const mainSource = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+    assert(mainSource.includes("server = service.listen(port, '127.0.0.1'"), 'Local API keeps the http.Server');
+    assert(mainSource.includes('apiServer = server;') && !mainSource.includes('apiServer = service;'));
+    assert(mainSource.includes('function setCdpEnabled(enabled)') && mainSource.includes("'set-cdp-enabled'"));
     console.log('CDP port: closed by default, opt-in only, API and bulk-open respect it');
   } finally {
     if (server) await new Promise(resolve => server.close(resolve));
