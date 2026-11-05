@@ -56,7 +56,7 @@ toàn" tổng hợp.
 
 ## 🤖 Local API an toàn (Python + Playwright, chỉ Chromium)
 
-**Điều kiện:** sử dụng Chrome/Edge, hồ sơ được cấp quyền API trong license, và người dùng **tự bật Local API** trong ứng dụng (mặc định tắt). API chỉ lắng nghe trên `127.0.0.1:50325`; vào giao diện ứng dụng để **Sao chép API Key** của phiên hiện tại rồi đặt biến môi trường `LHM_API_KEY` trong phiên terminal riêng. Không nhúng key vào file Python, Git, video hay ảnh hỗ trợ.
+**Điều kiện:** sử dụng Chrome/Edge, hồ sơ được cấp quyền API trong license, và người dùng **tự bật Local API** rồi bật thêm **Tự động hoá (CDP)** trong menu Công cụ (cả hai mặc định tắt; cổng CDP không có mật khẩu nên mọi chương trình trên máy dùng được trong lúc hồ sơ mở). API chỉ lắng nghe trên `127.0.0.1:50325`; vào giao diện ứng dụng để **Sao chép API Key** của phiên hiện tại rồi đặt biến môi trường `LHM_API_KEY` trong phiên terminal riêng. Không nhúng key vào file Python, Git, video hay ảnh hỗ trợ.
 
 Ví dụ dưới đây yêu cầu `requests` và `playwright` trong môi trường Python. Thay `ID_PROFILE_CHROMIUM` bằng ID hồ sơ Chromium đang dùng; không dùng ví dụ này cho Firefox/Camoufox.
 

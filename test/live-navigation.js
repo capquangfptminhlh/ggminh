@@ -2,7 +2,7 @@
 const assert=require('assert');
 const {prepare,openInRunning}=require('../src/ops/liveNavigation');
 (async()=>{
- const store={getSettings:()=>({apiEnabled:true}),
+ const store={getSettings:()=>({apiEnabled:true,cdpEnabled:true}),
  getProfiles:()=>[
   {id:'pb_000000000001',engine:'chromium'},
   {id:'pb_000000000002',engine:'chromium'},

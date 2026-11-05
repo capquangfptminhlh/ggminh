@@ -10,6 +10,7 @@ const { optionsFor } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
+const { cdpAllowed } = require('../security/cdpPolicy');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null } = {}) {
@@ -136,8 +137,9 @@ class BrowserLauncher {
     if(!['chromium','gecko'].includes(engine))
       throw Error('Installed runtime cannot handle this engine');
     const browserBin = this.findBrowserBinary(engine);
-    // Manual browsing does not require a remotely controllable DevTools endpoint.
-    const port = engine === 'chromium' && this.store.getSettings().apiEnabled === true ?
+    // The CDP port is unauthenticated (any local process/user can read the
+    // profile's cookies), so it opens only on the explicit automation opt-in.
+    const port = engine === 'chromium' && cdpAllowed(this.store.getSettings()) ?
       await this.findAvailablePort(9222 + Math.floor(Math.random() * 500)) : null;
 
     // Gecko and Chromium must never share browser profile files.

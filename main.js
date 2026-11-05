@@ -124,7 +124,16 @@ let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
 function apiStatus() {
-  return { enabled: !!apiServer?.listening, port: store.getSettings().apiPort || 50325 };
+  return { enabled: !!apiServer?.listening, port: store.getSettings().apiPort || 50325,
+    cdpEnabled: store.getSettings().cdpEnabled === true };
+}
+
+// Opt-in for the unauthenticated Chromium DevTools port (see cdpPolicy).
+// Browsers already running keep their current state until reopened.
+function setCdpEnabled(enabled) {
+  if (enabled && !apiServer?.listening) throw new Error('Bật Local API trước khi bật Tự động hoá (CDP)');
+  store.updateSettings({ cdpEnabled: enabled });
+  return apiStatus();
 }
 
 async function setApiEnabled(enabled) {
@@ -1275,6 +1284,7 @@ function initIPC() {
   });
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
+  ipcMain.handle('set-cdp-enabled', (_, enabled) => setCdpEnabled(enabled === true));
   ipcMain.handle('copy-api-key', () => {
     if (!apiServer?.listening) throw new Error('Enable Local API first');
     clipboard.writeText(apiKey);

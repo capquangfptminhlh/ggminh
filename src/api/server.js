@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { checkProxy } = require('../engine/proxyChecker');
 const {resolveEngineType}=require('../engine/EngineFactory');
 const {safeWebUrl}=require('../engine/launchArgs');
+const {cdpAllowed,CDP_DISABLED_MESSAGE}=require('../security/cdpPolicy');
 
 // Data minimization for profile payloads leaving over the Local API
 // (QA-003): publicProfile already strips proxy passwords, but it still
@@ -86,7 +87,14 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
             debug_port:null,ws:{playwright:null}}});
       }
       if (profile?.engine === 'gecko') return res.status(409).json({ code: -1, msg: 'Gecko profile is manual-only; CDP API is not supported.' });
+      // Do not launch a browser the caller cannot control: the CDP port is
+      // opt-in because it is unauthenticated for every local process.
+      if (!cdpAllowed(store.getSettings())) return res.status(409).json({ code: -1, msg: CDP_DISABLED_MESSAGE,
+        data: { cdp: 'disabled', debug_port: null, ws: { puppeteer: null, selenium: null } } });
       const instance = await launcher.start(id, req.query.open_url);
+      if (!instance.port) return res.status(409).json({ code: -1,
+        msg: 'Hồ sơ đang mở từ trước khi bật Tự động hoá (CDP). Đóng rồi mở lại hồ sơ.',
+        data: { cdp: 'unavailable', debug_port: null, ws: { puppeteer: null, selenium: null } } });
       if (behaviorMonitor) behaviorMonitor.record('profile_open', id, 'api');
       const ws = instance.wsEndpoint || (instance.port ? await launcher.fetchWebSocketDebuggerUrl(instance.port, 10) : null);
       res.json({ code: 0, data: {
