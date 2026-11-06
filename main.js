@@ -124,7 +124,16 @@ let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
 function apiStatus() {
-  return { enabled: !!apiServer?.listening, port: store.getSettings().apiPort || 50325 };
+  return { enabled: !!apiServer?.listening, port: store.getSettings().apiPort || 50325,
+    cdpEnabled: store.getSettings().cdpEnabled === true };
+}
+
+// Opt-in for the unauthenticated Chromium DevTools port (see cdpPolicy).
+// Browsers already running keep their current state until reopened.
+function setCdpEnabled(enabled) {
+  if (enabled && !apiServer?.listening) throw new Error('Bật Local API trước khi bật Tự động hoá (CDP)');
+  store.updateSettings({ cdpEnabled: enabled });
+  return apiStatus();
 }
 
 async function setApiEnabled(enabled) {
@@ -143,20 +152,23 @@ async function setApiEnabled(enabled) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) {
     throw new Error('Invalid API port');
   }
+  // createApiServer returns the express app; listen() returns the
+  // http.Server that owns `listening`, `close()` and the 'error' event.
   const service = createApiServer(store, launcher, { apiKey, behaviorMonitor,licensePolicy });
+  let server = null;
   try {
     await new Promise((resolve, reject) => {
-      service.once('error', reject);
-      service.listen(port, '127.0.0.1', () => {
-        service.removeListener('error', reject);
+      server = service.listen(port, '127.0.0.1', () => {
+        server.removeListener('error', reject);
         resolve();
       });
+      server.once('error', reject);
     });
   } catch (error) {
-    try { service.close(); } catch (_) {}
+    try { server?.close(); } catch (_) {}
     throw new Error('Cannot start Local API: ' + error.message);
   }
-  apiServer = service;
+  apiServer = server;
   store.updateSettings({ apiEnabled: true });
   return apiStatus();
 }
@@ -1275,6 +1287,7 @@ function initIPC() {
   });
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
+  ipcMain.handle('set-cdp-enabled', (_, enabled) => setCdpEnabled(enabled === true));
   ipcMain.handle('copy-api-key', () => {
     if (!apiServer?.listening) throw new Error('Enable Local API first');
     clipboard.writeText(apiKey);

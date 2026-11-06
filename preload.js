@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('api', {
   provisionCamoufoxIdentity: (id) => ipcRenderer.invoke('provision-camoufox-identity', id),
   getApiStatus: () => ipcRenderer.invoke('get-api-status'),
   setApiEnabled: enabled => ipcRenderer.invoke('set-api-enabled', enabled),
+  setCdpEnabled: enabled => ipcRenderer.invoke('set-cdp-enabled', enabled),
   copyApiKey: () => ipcRenderer.invoke('copy-api-key'),
   listSavedProxies: () => ipcRenderer.invoke('proxy-center-list'),
   saveSavedProxy: value => ipcRenderer.invoke('proxy-center-save', value),

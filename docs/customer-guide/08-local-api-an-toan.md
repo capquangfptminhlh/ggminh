@@ -7,6 +7,7 @@ Hướng dẫn này áp dụng cho **API cục bộ trên chính máy Windows đ
 1. Cài bản Preview từ nguồn đáng tin cậy, mở LHM và kích hoạt license có quyền **API** (bản dùng thử còn hiệu lực cũng có thể có quyền).
 2. Dùng hồ sơ **Chromium (Chrome/Edge)** đã tạo trong LHM. Gecko Firefox không trả WebSocket CDP; Camoufox chỉ có điều khiển Playwright nội bộ trong trường hợp được bật, không có Chromium CDP.
 3. Bật công tắc **Local API** trong ứng dụng. Local API mặc định **tắt** và chỉ được truy cập trên `http://127.0.0.1:50325` của máy hiện tại.
+   Sau đó bật thêm **Tự động hoá (CDP)** trong menu Công cụ (mặc định **tắt**) rồi mới mở hồ sơ. Cổng CDP của Chrome/Edge không có mật khẩu: trong lúc hồ sơ đang mở, mọi chương trình trên máy, kể cả tài khoản Windows khác trên cùng máy RDP/VPS, đọc được cookie và đăng nhập của hồ sơ. Chỉ bật trên máy riêng và tắt khi không dùng.
 4. Chọn **Sao chép API Key**, đặt biến môi trường `LHM_API_KEY` chỉ trong terminal riêng. Ví dụ PowerShell: `$env:LHM_API_KEY = Read-Host "Nhap API Key"` (không chụp ảnh, không đưa giá trị vào Git/chat).
 5. Cài hai thư viện trong môi trường Python của bạn: `python -m pip install requests playwright`. Trình duyệt chạy bằng Chrome/Edge hiện có trong LHM; mẫu dưới đây không tự cài hoặc giả lập Camoufox.
 
@@ -49,6 +50,8 @@ with sync_playwright() as p:
 | Không kết nối được cổng 50325 | Local API đang tắt hoặc phần mềm chưa mở | Mở LHM và bật API; không tự mở dịch vụ ra Internet |
 | HTTP 401 | Chưa gửi API Key hoặc key của phiên cũ | Sao chép key mới; header `X-API-Key` hoặc `Authorization: Bearer` |
 | HTTP 403 | License không có quyền API, `Origin` bị chặn hoặc host không phải loopback | Kiểm tra gói license, gọi từ terminal cục bộ thay vì JavaScript trong trang web |
+| HTTP 409, `data.cdp = "disabled"` | Tự động hoá (CDP) đang tắt | Bật **Tự động hoá (CDP)** trong menu Công cụ |
+| HTTP 409, `data.cdp = "unavailable"` | Hồ sơ đã mở từ trước khi bật CDP | Đóng hồ sơ rồi gọi lại API |
 | HTTP 409 | Hồ sơ Gecko thủ công hoặc Camoufox không có đường điều khiển đã xác minh | Dùng hồ sơ Chromium cho mẫu CDP; không ép Firefox qua CDP |
 | Không có `ws.puppeteer` | Engine không có attachable Chromium CDP | Kiểm tra trường `data.engine` / `data.protocol`, không tự suy đoán endpoint |
 | Proxy có kết nối nhưng cảnh báo DNS/WebRTC | Chỉ một phần quan sát mạng được đo | Đọc từng tiêu chí ĐẠT/KHÔNG ĐẠT/CHƯA ĐO; không coi kết nối proxy là chứng nhận ẩn danh |

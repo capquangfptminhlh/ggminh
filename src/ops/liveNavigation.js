@@ -1,12 +1,14 @@
 'use strict';
 const {safeWebUrl}=require('../engine/launchArgs');
 const {uniqueIds}=require('./operations');
+const {cdpAllowed,CDP_DISABLED_MESSAGE}=require('../security/cdpPolicy');
 function prepare(store,launcher,ids,url){
  const chosen=uniqueIds(ids);
  if(chosen.length>10)throw Error('Select up to 10 profiles');
  const link=safeWebUrl(url);
  if(store.getSettings().apiEnabled!==true)
   throw Error('Enable Local API before opening Chromium profiles');
+ if(!cdpAllowed(store.getSettings()))throw Error(CDP_DISABLED_MESSAGE);
  const profileIds=new Map(store.getProfiles().map(p=>[p.id,p]));
  const running=[],skipped=[],seen=new Set();
  for(const id of chosen){

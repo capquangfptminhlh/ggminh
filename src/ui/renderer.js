@@ -3,6 +3,7 @@ let allProfiles = [];
 let activeBrowserMap = new Map(); // profileId -> info
 let currentGeneratedFP = null;
 let apiEnabled = false;
+let cdpEnabled = false;
 let behaviorAlertsSeen = new Set();
 let behaviorInitialized = false;
 const selectedProfileIds = new Set();
@@ -218,6 +219,10 @@ async function refreshApiStatus() {
   document.getElementById('stat-api').textContent = state.enabled ? '127.0.0.1:' + state.port : 'Đang tắt';
   document.getElementById('btn-api-toggle').textContent = state.enabled ? 'API: Bật' : 'API: Tắt';
   document.getElementById('btn-api-copy').style.display = state.enabled ? '' : 'none';
+  cdpEnabled = state.cdpEnabled === true;
+  const cdpButton = document.getElementById('btn-cdp-toggle');
+  cdpButton.style.display = state.enabled ? '' : 'none';
+  cdpButton.textContent = cdpEnabled ? 'Tự động hoá (CDP): Bật' : 'Tự động hoá (CDP): Tắt';
 }
 
 const behaviorActions = {
@@ -351,6 +356,18 @@ function setupEventListeners() {
       await refreshApiStatus();
       alert(apiEnabled ? 'Đã bật API chỉ trên máy này. Dùng nút Sao chép API Key để kết nối.' : 'Local API đã tắt.');
     } catch (error) { alert('Không thể thay đổi API: ' + error.message); }
+  });
+  document.getElementById('btn-cdp-toggle').addEventListener('click', async () => {
+    if (!cdpEnabled && !confirm('Bật cổng tự động hoá (CDP) cho Puppeteer/Selenium/Playwright?\n\n' +
+      'Cổng này KHÔNG có mật khẩu: trong lúc hồ sơ Chromium đang mở, mọi chương trình trên máy ' +
+      '(kể cả tài khoản Windows khác trên cùng máy RDP/VPS) đọc được cookie và đăng nhập của hồ sơ đó.\n\n' +
+      'Chỉ bật trên máy riêng của bạn và tắt khi không dùng.')) return;
+    try {
+      await window.api.setCdpEnabled(!cdpEnabled);
+      await refreshApiStatus();
+      alert(cdpEnabled ? 'Đã bật Tự động hoá (CDP). Áp dụng cho hồ sơ mở từ bây giờ.' :
+        'Đã tắt Tự động hoá (CDP). Hồ sơ đang mở vẫn giữ cổng cho tới khi đóng lại.');
+    } catch (error) { alert('Không thể thay đổi Tự động hoá (CDP): ' + error.message); }
   });
   document.getElementById('btn-api-copy').addEventListener('click', async () => {
     try { await window.api.copyApiKey(); alert('Đã sao chép API Key vào clipboard. Không chia sẻ với người khác.'); }

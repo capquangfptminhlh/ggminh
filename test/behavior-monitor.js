@@ -31,6 +31,7 @@ const { createApiServer } = require('../src/api/server');
     time += 24 * 60 * 60 * 1000;
     assert.strictEqual(restored.getReport().recentEvents.length, 0);
     const store = new Store(path.join(directory, 'store'));
+    store.updateSettings({ apiEnabled: true, cdpEnabled: true });
     store.saveProfile({ id: 'p002', name: 'Unit test', proxy: { type: 'direct' } });
     const launched = { port: 9222, profileId: 'p002', wsEndpoint: 'ws://127.0.0.1:9222/fake' };
     const launcher = {
