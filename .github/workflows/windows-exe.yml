@@ -114,6 +114,9 @@ jobs:
               throw "Required unpacked runtime helper missing: $required"
             }
           }
+          if (-not (Test-Path (Join-Path $resources "lhm-update-publisher\\update-publisher-ed25519.pub") -PathType Leaf)) {
+            throw "Update trust anchor missing from packaged resources"
+          }
           # Preview releases must not accidentally ship an unapproved engine
           # executable or manifest from a developer's staging directory.
           foreach ($folder in @("lhm-camoufox", "lhm-engines")) {
