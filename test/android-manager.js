@@ -1,7 +1,8 @@
 'use strict';
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const path = require('node:path');
+// The fixture drives platform 'win32', so its paths use Windows rules on any host.
+const path = require('node:path').win32;
 const { AndroidManager, parseDevices, parseAvds } = require('../src/android/androidManager');
 
 assert.deepEqual(parseAvds('Pixel_7\nTest-Phone\nPixel_7\ninvalid name\n'), ['Pixel_7', 'Test-Phone']);
