@@ -8,6 +8,7 @@ const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation
 const { updateGeckoProxy } = require('./geckoProxy');
 const { stopBrowserProcess } = require('./processStopper');
 const { applyChromiumDownloadDir, applyGeckoDownloadDir } = require('./downloadDirectory');
+const { applyChromiumWebrtcPolicy } = require('./chromiumWebrtcPolicy');
 const { createPeerGuard } = require('../security/loopbackPeerGuard');
 const { optionsFor } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
@@ -206,6 +207,9 @@ class BrowserLauncher {
       applyGeckoDownloadDir(profileDir, this.downloadsRoot, profile.id);
     } else {
       applyChromiumDownloadDir(profileDir, this.downloadsRoot, profile.id);
+      applyChromiumWebrtcPolicy(profileDir, {
+        proxied: !!(effectiveProxy.host && effectiveProxy.type !== 'direct')
+      });
     }
     const localExtensions=engine==='chromium' && this.extensionManager
       ? this.extensionManager.getEnabledPaths(profile.id) : [];
