@@ -9,7 +9,7 @@ const net=require('net');
  * by the local gateway. Only HTTPS CONNECT is supported (fail closed).
  */
 async function createAuthenticatedSocksGateway(upstream, {
-  createServer=http.createServer, connect=net.connect
+  createServer=http.createServer, connect=net.connect, authorizePeer=null
 }={}) {
   if (!upstream || upstream.type!=='socks5' || typeof upstream.host!=='string' ||
       !Number.isInteger(upstream.port) || upstream.port<1 || upstream.port>65535 ||
@@ -29,7 +29,22 @@ async function createAuthenticatedSocksGateway(upstream, {
     sockets.add(socket);
     socket.on('close',()=>sockets.delete(socket));
   });
-  server.on('connect',(req,client,head)=>{
+
+  // Optional loopback peer check (see src/security/loopbackPeerGuard.js):
+  // only the profile's own browser may use this gateway.
+  const guarded=handler=>(req,client,head)=>{
+    // Node's HTTP server drops its own socket error listener on 'connect':
+    // without this, a browser resetting a tunnel (ECONNRESET) is an
+    // uncaught exception that takes down the whole app process.
+    client.on('error',()=>client.destroy());
+    if(typeof authorizePeer!=='function'){handler(req,client,head);return;}
+    client.pause();
+    Promise.resolve().then(()=>authorizePeer(client)).then(ok=>{
+      if(ok!==true||client.destroyed){client.destroy();return;}
+      client.resume();handler(req,client,head);
+    },()=>client.destroy());
+  };
+  server.on('connect',guarded((req,client,head)=>{
     if (!['127.0.0.1','::ffff:127.0.0.1'].includes(client.remoteAddress)) {
       client.destroy();return;
     }
@@ -106,7 +121,7 @@ async function createAuthenticatedSocksGateway(upstream, {
     upstreamSocket.on('error',()=>{if(!handshakeDone)reject();else client.destroy();});
     upstreamSocket.on('close',()=>sockets.delete(upstreamSocket));
     client.once('close',()=>upstreamSocket.destroy());
-  });
+  }));
   try{
     await new Promise((resolve,reject)=>{
       server.once('error',reject);

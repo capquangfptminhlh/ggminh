@@ -8,6 +8,7 @@ const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation
 const { updateGeckoProxy } = require('./geckoProxy');
 const { stopBrowserProcess } = require('./processStopper');
 const { applyChromiumDownloadDir, applyGeckoDownloadDir } = require('./downloadDirectory');
+const { createPeerGuard } = require('../security/loopbackPeerGuard');
 const { optionsFor } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
@@ -15,12 +16,16 @@ const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null,
-    stopProcess = stopBrowserProcess, downloadsRoot = null } = {}) {
+    stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory } = {}) {
     this.store = store;
     this.proxyVault = proxyVault;
     this.extensionManager = extensionManager;
     this.spawnProcess = spawnProcess;
     this.stopProcess = stopProcess;
+    // Only processes we really spawned have PIDs we can vouch for; a custom
+    // spawner (tests, embedding) must pass its own guard factory.
+    this.peerGuardFactory = peerGuardFactory !== undefined ? peerGuardFactory
+      : (spawnProcess === spawn ? createPeerGuard : null);
     this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
     this.baseDataDir = store.baseDir;
@@ -159,7 +164,7 @@ class BrowserLauncher {
 
     // Apply Gecko proxy preferences after the credential gateway is ready.
 
-    let gateway=null;
+    let gateway=null, peerGuard=null;
     let effectiveProxy=profile.proxy || {type:'direct'};
     if(effectiveProxy.authProxyId){
       const proxyId=effectiveProxy.authProxyId;
@@ -171,12 +176,17 @@ class BrowserLauncher {
       }
       const credentials=this.proxyVault.get(proxyId);
       if(!credentials)throw Error('Không tìm thấy mật khẩu proxy. Hãy nhập lại trong Proxy Center.');
+      // The gateway forwards with the customer's proxy password: accept only
+      // this profile's browser, never other local processes or users.
+      peerGuard=this.peerGuardFactory?this.peerGuardFactory():null;
+      if(peerGuard)await peerGuard.ready();
+      const gatewayOptions=peerGuard?{authorizePeer:socket=>peerGuard.authorize(socket)}:{};
       if(saved.type==='socks5') {
         const {createAuthenticatedSocksGateway}=require('./authenticatedSocksGateway');
-        gateway=await createAuthenticatedSocksGateway({...saved,...credentials});
+        gateway=await createAuthenticatedSocksGateway({...saved,...credentials},gatewayOptions);
       }else{
         const {createAuthenticatedHttpGateway}=require('./authenticatedHttpGateway');
-        gateway=await createAuthenticatedHttpGateway({...saved,...credentials});
+        gateway=await createAuthenticatedHttpGateway({...saved,...credentials},gatewayOptions);
       }
       effectiveProxy={type:'http',host:'127.0.0.1',port:gateway.port};
     }
@@ -212,6 +222,7 @@ class BrowserLauncher {
       detached: false,
       stdio: 'ignore'
     });
+    peerGuard?.setRoot(proc.pid);
 
     // Attach lifecycle handlers before awaiting spawn. A process can exit
     // between its spawn event and the continuation of an async function.
