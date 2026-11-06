@@ -80,6 +80,43 @@ async function stopperTests() {
     assert.deepStrictEqual(proc.signals, ['SIGTERM']);
     assert.deepStrictEqual(r.calls, []);
   }
+  // Windows Firefox (--wait-for-browser): the tracked PID is a windowless
+  // launcher; WM_CLOSE goes to its direct children (the browser), never /T.
+  {
+    const listing = (children, { failClose = false } = {}) => {
+      const calls = [];
+      const run = (cmd, args, _opts, cb) => {
+        calls.push([cmd, ...args]);
+        setImmediate(() => cmd === 'powershell.exe' ? cb(null, children.join('\r\n') + '\r\n', '')
+          : cb(failClose && !args.includes('/F') ? Error('no window') : null, '', ''));
+      };
+      return { calls, run };
+    };
+    const proc = fakeProc(), r = listing([5150]);
+    assert.strictEqual(stopBrowserProcess(proc, { platform: 'win32', run: r.run, graceMs: 60, isChild, graceTree: true }), true);
+    await sleep(20);
+    assert.strictEqual(r.calls[0][0], 'powershell.exe');
+    assert(r.calls[0].at(-1).includes('ParentProcessId=4242'), r.calls[0].at(-1));
+    assert.deepStrictEqual(r.calls[1], ['taskkill', '/PID', '5150']);
+    proc.exit(0);
+    await sleep(90);
+    assert.strictEqual(r.calls.length, 2, 'clean browser exit -> no force, no /T');
+    // No child (browser not up yet) -> force at once.
+    const lone = fakeProc(), empty = listing([]);
+    stopBrowserProcess(lone, { platform: 'win32', run: empty.run, graceMs: 5000, isChild, graceTree: true });
+    await sleep(30);
+    assert.deepStrictEqual(empty.calls.at(-1), ['taskkill', '/PID', '4242', '/T', '/F']);
+    // Every child refuses WM_CLOSE -> force at once, not after the grace.
+    const stuck = fakeProc(), refused = listing([5150, 5151], { failClose: true });
+    stopBrowserProcess(stuck, { platform: 'win32', run: refused.run, graceMs: 5000, isChild, graceTree: true });
+    await sleep(40);
+    assert.deepStrictEqual(refused.calls.at(-1), ['taskkill', '/PID', '4242', '/T', '/F']);
+    // Browser ignores WM_CLOSE -> tree force-kill after the grace.
+    const slow = fakeProc(), ignored = listing([5150]);
+    stopBrowserProcess(slow, { platform: 'win32', run: ignored.run, graceMs: 40, isChild, graceTree: true });
+    await sleep(100);
+    assert.deepStrictEqual(ignored.calls.at(-1), ['taskkill', '/PID', '4242', '/T', '/F']);
+  }
   // Already exited or kill refused -> reported as not sent.
   {
     const proc = fakeProc(); proc.exitCode = 0;
@@ -161,7 +198,7 @@ async function launcherTests(root) {
   const a = store.saveProfile({ name: 'A', engine: 'chromium', proxy: { type: 'direct' } });
   const b = store.saveProfile({ name: 'B', engine: 'chromium', proxy: { type: 'direct' } });
   const g = store.saveProfile({ name: 'G', engine: 'gecko', proxy: { type: 'direct' } });
-  const spawned = [], stopped = [];
+  const spawned = [], stopped = [], stopOptions = [];
   const spawnProcess = (bin, args) => {
     const proc = fakeProc(60000 + spawned.length);
     spawned.push({ bin, args, proc });
@@ -170,7 +207,8 @@ async function launcherTests(root) {
   };
   const downloadsRoot = path.join(root, 'customer-downloads');
   const launcher = new BrowserLauncher(store, {
-    spawnProcess, downloadsRoot, stopProcess: proc => { stopped.push(proc); return true; }
+    spawnProcess, downloadsRoot,
+    stopProcess: (proc, options) => { stopped.push(proc); stopOptions.push(options); return true; }
   });
   let binary = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
   launcher.findBrowserBinary = () => binary;
@@ -196,6 +234,12 @@ async function launcherTests(root) {
   assert.strictEqual(launcher.isBusy(a.id), true);
   spawned[0].proc.exit(0);
   assert.strictEqual(launcher.isBusy(a.id), false);
+  assert(!stopOptions[0]?.graceTree, 'Chromium: WM_CLOSE to the browser PID itself');
+  // Gecko: the tracked PID is Firefox's --wait-for-browser launcher.
+  assert.strictEqual(launcher.stop(g.id).success, true);
+  assert.strictEqual(stopped[1], spawned[2].proc);
+  assert.deepStrictEqual(stopOptions[1], { graceTree: true });
+  spawned[2].proc.exit(0);
   const refusing = new BrowserLauncher(store, { spawnProcess, downloadsRoot, stopProcess: () => false });
   refusing.findBrowserBinary = () => binary;
   await refusing.start(a.id);

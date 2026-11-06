@@ -300,7 +300,10 @@ class BrowserLauncher {
     try {
       // Graceful close first so the browser flushes cookies/logins to disk;
       // force-terminate the process tree only after the grace period.
-      const sent = this.stopProcess(proc);
+      // Windows Firefox runs with --wait-for-browser: the tracked PID is its
+      // windowless launcher, so the graceful close must reach the tree.
+      const sent = active.engine === 'gecko' ? this.stopProcess(proc, { graceTree: true })
+        : this.stopProcess(proc);
       if (sent === false) return { success: false, message: 'Could not stop browser process' };
       active.stopping = true;
       // Keep the profile locked until the child emits 'exit'.

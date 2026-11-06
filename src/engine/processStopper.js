@@ -27,9 +27,16 @@ function hasExited(proc) {
     proc.signalCode !== null && proc.signalCode !== undefined;
 }
 
+// graceTree: the tracked PID is a launcher whose browser is its direct child,
+// e.g. Windows Firefox run with --wait-for-browser. The launcher owns no
+// window, so WM_CLOSE to it fails and the tree was force-killed (Firefox did
+// not shut down cleanly). `taskkill /T` without /F did not close Firefox
+// either (measured: forced after the full grace). WM_CLOSE to the launcher's
+// direct children (the browser; content processes are its own children)
+// closes Firefox cleanly in about 1 s.
 function stopBrowserProcess(proc, {
   platform = process.platform, run = execFile, graceMs = DEFAULT_GRACE_MS,
-  isChild = value => value instanceof ChildProcess
+  isChild = value => value instanceof ChildProcess, graceTree = false
 } = {}) {
   if (!proc || typeof proc.kill !== 'function') return false;
   if (hasExited(proc)) return false;
@@ -56,6 +63,25 @@ function stopBrowserProcess(proc, {
     timer.unref?.();
   };
 
+  if (useTaskkill && graceTree) {
+    run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+      'Get-CimInstance Win32_Process -Filter "ParentProcessId=' + pid + '" | ForEach-Object { $_.ProcessId }'],
+    { windowsHide: true }, (error, stdout) => {
+      const children = String(stdout || '').split(/\s+/).map(Number)
+        .filter(child => Number.isSafeInteger(child) && child > 0 && child !== pid);
+      if (error || !children.length) return force();
+      let pending = children.length, signalled = 0;
+      for (const child of children) {
+        run('taskkill', ['/PID', String(child)], { windowsHide: true }, closeError => {
+          if (!closeError) signalled++;
+          // No child had a closable window: do not wait out the grace period.
+          if (--pending === 0 && !signalled) force();
+        });
+      }
+    });
+    armForce();
+    return true;
+  }
   if (useTaskkill) {
     run('taskkill', ['/PID', String(pid)], { windowsHide: true }, error => {
       // No closable window (headless, still starting): nothing will close
