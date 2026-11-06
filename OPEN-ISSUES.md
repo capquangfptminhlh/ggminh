@@ -12,6 +12,7 @@ tự vá code tính năng.
 - **QA-002**: `.gitignore` đã có các mẫu `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `*private*key*`.
 - **QA-003**: `GET /api/profiles` đi qua `apiProfile()` trong `src/api/server.js`, hàm này bỏ `notes` và che blob danh tính, giống cách `/api/v1/user/list` đã làm.
 - **QA-006**: CI có thêm job `linux-tests` (ubuntu, `npm test`) chạy trên mọi PR. Lần chạy đầu tiên lộ thêm 3 lỗi đường dẫn đã sửa: `AndroidManager.tool()` dựng đường dẫn SDK bằng quy tắc của máy chủ thay vì của nền tảng đang điều khiển, cùng hai fixture dùng chuỗi Windows.
+- **QA-004**: README không còn câu "miễn phí vĩnh viễn"; nó nói rõ bản dùng thử 10 ngày, tối đa 10 hồ sơ, và các gói license trả phí.
 - **QA-005**: `npm test` đã có runner gom kết quả. Nó chạy hết mọi bước kể cả khi có bước fail và in `steps run: N of N | PASS | FAIL`.
 
 Lỗi bảo mật và độ ổn định đã sửa sau ngày lập danh sách:
@@ -24,7 +25,20 @@ Lỗi bảo mật và độ ổn định đã sửa sau ngày lập danh sách:
 
 Vẫn mở:
 
-- QA-001, QA-004: chờ chủ dự án quyết định.
+- QA-001: chờ chủ dự án quyết định.
+
+Đối chiếu `docs/decisions/OWNER-DECISIONS-CONSOLIDATED.md` với code ngày 2026-11-06. Các mục sau đã được cài sẵn, chủ dự án chỉ cần xác nhận hoặc đổi:
+
+- F3 = 1: xoá vĩnh viễn thì xoá luôn snapshot phiên (`PROFILE_PURGE_ONLY_ROOTS` trong `src/db/store.js`), và hộp xác nhận có nói rõ.
+- F4 = 2: xoá vĩnh viễn thì xoá luôn các workflow gắn với hồ sơ (`store.onProfilePurged` trong `main.js`). Hộp xác nhận có nói chung chung nhưng chưa liệt kê tên workflow.
+- D1 = 1: chỉ kiểm tra cập nhật khi người dùng bấm.
+- D2 = 1: kênh cập nhật là GitHub Releases.
+- D4 = 2: chỉ tải khi người dùng bấm, có kiểm chữ ký và hash; app không tự chạy bộ cài.
+- QD-04: không còn áp dụng. Workflow giờ được sửa qua PR bình thường.
+
+Để bật cập nhật trong app, vẫn thiếu khoá công khai ký cập nhật thật (`resources/update-publisher/update-publisher-ed25519.pub`). Chủ dự án phải tự sinh khoá này và giữ khoá riêng. Chưa có khoá thì Update Center báo `not-configured`.
+
+Gói nghiệm thu Gate 3 cho bản `main` @ `6f3ef60` (CI run 42215127628): bộ cài `3d8366bc…9f66`, 128.104.742 byte, SHA-256 khớp bằng chứng CI.
 - QA-007, QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
 - QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
 
