@@ -11,6 +11,7 @@ tự vá code tính năng.
 
 - **QA-002**: `.gitignore` đã có các mẫu `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `*private*key*`.
 - **QA-003**: `GET /api/profiles` đi qua `apiProfile()` trong `src/api/server.js`, hàm này bỏ `notes` và che blob danh tính, giống cách `/api/v1/user/list` đã làm.
+- **QA-006**: CI có thêm job `linux-tests` (ubuntu, `npm test`) chạy trên mọi PR. Lần chạy đầu tiên lộ thêm 3 lỗi đường dẫn đã sửa: `AndroidManager.tool()` dựng đường dẫn SDK bằng quy tắc của máy chủ thay vì của nền tảng đang điều khiển, cùng hai fixture dùng chuỗi Windows.
 - **QA-005**: `npm test` đã có runner gom kết quả. Nó chạy hết mọi bước kể cả khi có bước fail và in `steps run: N of N | PASS | FAIL`.
 
 Lỗi bảo mật và độ ổn định đã sửa sau ngày lập danh sách:
@@ -24,7 +25,6 @@ Lỗi bảo mật và độ ổn định đã sửa sau ngày lập danh sách:
 Vẫn mở:
 
 - QA-001, QA-004: chờ chủ dự án quyết định.
-- QA-006: chưa kiểm lại trên Linux.
 - QA-007, QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
 - QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
 
