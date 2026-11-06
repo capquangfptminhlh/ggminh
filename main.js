@@ -8,6 +8,7 @@ const { AndroidTargetGuard } = require('./src/android/targetGuard');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
+const { copyTextVerified } = require('./src/ops/clipboardCopy');
 const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
@@ -584,10 +585,10 @@ function initIPC() {
     licenseManager.deactivate();
     return licensePolicy.status();
   });
-  ipcMain.handle('license-center-copy-installation', () => {
-    clipboard.writeText(licenseManager.installationId);
-    return true;
-  });
+  // Electron 44+: clipboard.writeText is async and can resolve without copying
+  // when another program holds the clipboard; copyTextVerified reads it back.
+  ipcMain.handle('license-center-copy-installation', () =>
+    copyTextVerified(clipboard, licenseManager.installationId));
   ipcMain.handle('session-snapshots-list', (_,id) => sessionSnapshots.list(id));
   ipcMain.handle('session-snapshots-create', (_,id,passphrase) =>
     sessionSnapshots.create(id,passphrase));
@@ -1288,10 +1289,9 @@ function initIPC() {
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
   ipcMain.handle('set-cdp-enabled', (_, enabled) => setCdpEnabled(enabled === true));
-  ipcMain.handle('copy-api-key', () => {
+  ipcMain.handle('copy-api-key', async () => {
     if (!apiServer?.listening) throw new Error('Enable Local API first');
-    clipboard.writeText(apiKey);
-    return true;
+    return copyTextVerified(clipboard, apiKey);
   });
 }
 
