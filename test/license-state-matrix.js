@@ -266,7 +266,7 @@ const BLOCKED_MSG = 'Giấy phép hết hạn, bị thu hồi hoặc chưa đư�
     const { manager, policy } = client(clientDir, clock);
     const env = { LHM_ISSUER_PASSPHRASE: PASS };
     const cust = commands(['add', ledger, 'End To End Customer', manager.installationId], { now: clock });
-    const issued = commands(['issue', ledger, cust.id, 'pro', '3', '50', pem], { now: clock, env, publicKey: PUB });
+    const issued = commands(['issue', ledger, cust.id, 'pro', '3', '50', pem], { now: clock, env, publicKey: PUB, authorityEnabled: true });
     const claimsOut = verifyLicense(issued.token, PUB);
     assert.equal(claimsOut.plan, 'pro'); assert.equal(claimsOut.maxProfiles, 50);
     assert.deepEqual(claimsOut.features, ['api', 'automation', 'profiles']);

@@ -17,7 +17,19 @@ function issuerKey(file,env){
  });}
  catch(_){throw Error('Wrong issuer private key or password');}
 }
-function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now(),publicKey}={}){
+// Owner-sweep tokens need the online license authority: an installer built
+// with resources/license-authority/authority.json disabled blocks them
+// ('owner_sweep_authority_unconfigured'). Read the shipped config so the
+// default never sells a customer a license their app refuses.
+const OWNER_SWEEP_NEEDS_SERVER='Owner-sweep licenses are blocked by installers whose license authority is disabled; issue strict until the license server is live.';
+function shippedAuthorityEnabled(){
+ try{
+  const file=path.join(__dirname,'..','resources','license-authority','authority.json');
+  return JSON.parse(fs.readFileSync(file,'utf8')).enabled===true;
+ }catch(_){return false;}
+}
+function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now(),publicKey,
+ authorityEnabled=shippedAuthorityEnabled()}={}){
  const cmd=argv[0],filename=argv[1];
  if(!filename||!path.isAbsolute(filename))
   throw Error('Supply an absolute ledger path outside GitHub');
@@ -29,7 +41,7 @@ function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now()
   const byDays=argv[4]==='--days',offset=byDays?1:0;
   if(![7+offset,8+offset].includes(argv.length))
    throw Error('Usage: issue LEDGER CUSTOMER_ID starter|pro|business MONTHS|--days DAYS MAX_PROFILES PRIVATE_PEM [owner-sweep|strict]');
-  const enforcementMode=argv[7+offset]===undefined?'owner_sweep':
+  const enforcementMode=argv[7+offset]===undefined?(authorityEnabled?'owner_sweep':'strict'):
    argv[7+offset]==='owner-sweep'?'owner_sweep':argv[7+offset];
   const signed=ledger.issue(filename,{
    customerId:argv[2],plan:argv[3],
@@ -37,7 +49,8 @@ function commands(argv=process.argv.slice(2),{env=process.env,now=()=>Date.now()
    maxProfiles:Number(argv[5+offset]),privateKey:issuerKey(argv[6+offset],env),
    enforcementMode,...(publicKey?{publicKey}:{}),now
   });
-  return {token:signed.token,record:signed.record};
+  return {token:signed.token,record:signed.record,
+   ...(enforcementMode==='owner_sweep'&&!authorityEnabled?{warning:OWNER_SWEEP_NEEDS_SERVER}:{})};
  }
  if(cmd==='renew'){
   const byDays=argv[3]==='--days',offset=byDays?1:0;

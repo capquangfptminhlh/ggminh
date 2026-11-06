@@ -23,6 +23,20 @@ Tài liệu vận hành nội bộ cho bên bán/cấp license. Mọi lệnh dư
 
 ## 1. Chuẩn bị một lần
 
+> **Khoá phát hành hiện tại (tạo ngày 2026-11-06)**
+> - Khoá riêng (đã mã hoá): `D:\LHM-Keys\license-issuer-private.pem` trên máy chủ dự án.
+> - Mật khẩu: `D:\LHM-Keys\license-issuer-passphrase.dpapi`, mã hoá bằng DPAPI nên chỉ đọc được bằng đúng tài khoản Windows đã tạo nó.
+> - Khoá công khai được biên dịch trong app và trong Worker: vân tay SPKI `725db621…dff0`, được `test/license-trust-anchor.js` ghim.
+> - Sao lưu cả hai file ra ngoài máy. Mất khoá thì phải thay khoá trong app, và mọi license đã cấp sẽ mất hiệu lực.
+>
+> Nạp mật khẩu cho phiên PowerShell hiện tại, không hiện ra màn hình:
+>
+> ```powershell
+> $s = ConvertTo-SecureString (Get-Content D:\LHM-Keys\license-issuer-passphrase.dpapi -Raw).Trim(); $env:LHM_ISSUER_PASSPHRASE = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s))
+> ```
+>
+> **Khi máy chủ license online chưa chạy** (`resources/license-authority/authority.json` có `enabled: false`), app chặn mọi token `owner-sweep` (`owner_sweep_authority_unconfigured`). Lúc đó `license-admin issue` tự cấp `strict`; nếu bạn ghi rõ `owner-sweep`, kết quả sẽ kèm một dòng `warning`.
+
 1. Tạo khóa phát hành Ed25519 đã mã hóa bằng passphrase, lưu ở
    đường dẫn tuyệt đối ngoài repo. Công cụ quản trị yêu cầu: file
    khóa là file thường (không phải symlink), dung lượng ≤ 25 KB,
@@ -66,7 +80,8 @@ Tài liệu vận hành nội bộ cho bên bán/cấp license. Mọi lệnh dư
      đồng nghĩa 30 ngày.
    - Gói và tính năng: **starter** = chỉ tính năng hồ sơ;
      **pro** và **business** = hồ sơ + API cục bộ + Automation.
-   - Mặc định là `owner-sweep`: hết kỳ thuê vẫn dùng được khi máy chủ
+   - Khi máy chủ license chưa chạy, mặc định là `strict` (xem ghi chú ở mục 1).
+     Khi máy chủ đã chạy, mặc định là `owner-sweep`: hết kỳ thuê vẫn dùng được khi máy chủ
      chủ sở hữu ngoại tuyến; lần quét khởi động/định kỳ sẽ ghi thu hồi,
      và máy khách khóa thao tác mới sau khi nhận biên nhận có chữ ký.
      Chọn `strict` nếu muốn máy khách tự khóa đúng ngày hết hạn.
