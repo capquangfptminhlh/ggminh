@@ -51,6 +51,8 @@ class AndroidManager {
   }
 
   tool(name) {
+    // Same path rules as the platform being driven (this.path), not the host's.
+    const path = this.path;
     const windows = this.platform === 'win32';
     const exe = name + (windows ? '.exe' : '');
     const sdkFolders = [

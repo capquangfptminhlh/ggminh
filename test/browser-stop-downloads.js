@@ -172,11 +172,14 @@ async function launcherTests(root) {
   const launcher = new BrowserLauncher(store, {
     spawnProcess, downloadsRoot, stopProcess: proc => { stopped.push(proc); return true; }
   });
-  let binary = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+  // Host-absolute paths (QA-006): the launcher reads the file name with the
+  // host path module, so a Windows literal has no basename on POSIX.
+  const binDir = process.platform === 'win32' ? 'C:\\LHMTest\\' : '/LHMTest/';
+  let binary = binDir + 'msedge.exe';
   launcher.findBrowserBinary = () => binary;
   await launcher.start(a.id);
   assert.strictEqual(spawned[0].args[0], '--edge-skip-compat-layer-relaunch', 'Edge must not relaunch itself');
-  binary = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+  binary = binDir + 'chrome.exe';
   await launcher.start(b.id);
   assert(!spawned[1].args.includes('--edge-skip-compat-layer-relaunch'), 'flag is Edge-only');
   await launcher.start(g.id);
