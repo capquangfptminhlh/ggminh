@@ -1,0 +1,151 @@
+{
+  "schema": "lhm.ip-leak-measurement.v1",
+  "measuredAt": "2026-11-06",
+  "machine": "owner Windows 11 PC, IPv4+IPv6 network",
+  "proxy": "loopback logging HTTP CONNECT proxy (forwards to the internet); real exit IP == machine IP, so the test checks for traffic that BYPASSES the proxy, not exit-IP correctness",
+  "stun": [
+    "stun.l.google.com:19302",
+    "stun.cloudflare.com:3478"
+  ],
+  "chromeNetlog": {
+    "browser": "Google Chrome (installed)",
+    "launchArgs": "product createLaunchArgs (proxy set)",
+    "proxied": {
+      "directTcpConnects": 0,
+      "localDnsResolutions": 0,
+      "udpSocketsWithBytesSent": 0,
+      "udpConnectOnly": "IPv6 reachability probe to 2001:4860:4860::8888, no bytes sent",
+      "iceCandidateTypes": [
+        "host",
+        "srflx",
+        "srflx"
+      ],
+      "proxyCarriedHosts": 24
+    },
+    "baselineDirect": {
+      "directTcpConnects": 23,
+      "localDnsResolutions": 27,
+      "iceCandidateTypes": [
+        "host",
+        "srflx",
+        "srflx"
+      ]
+    },
+    "proxiedWithWebrtcPreference": {
+      "directTcpConnects": 0,
+      "localDnsResolutions": 0,
+      "iceCandidateTypes": []
+    }
+  },
+  "productLaunchPath": {
+    "tool": "stage0-measure/run-ip-leak-product.js (BrowserLauncher, no CDP)",
+    "chromeBeforeFix": [
+      {
+        "profile": "proxied",
+        "launch": 1,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      },
+      {
+        "profile": "proxied",
+        "launch": 2,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      },
+      {
+        "profile": "direct",
+        "launch": 1,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      },
+      {
+        "profile": "direct",
+        "launch": 2,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      }
+    ],
+    "chromeAfterFix": [
+      {
+        "profile": "proxied",
+        "launch": 1,
+        "iceCandidateTypes": []
+      },
+      {
+        "profile": "proxied",
+        "launch": 2,
+        "iceCandidateTypes": []
+      },
+      {
+        "profile": "direct",
+        "launch": 1,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      },
+      {
+        "profile": "direct",
+        "launch": 2,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      }
+    ],
+    "edgeAfterFix": [
+      {
+        "profile": "proxied",
+        "launch": 1,
+        "iceCandidateTypes": []
+      },
+      {
+        "profile": "proxied",
+        "launch": 2,
+        "iceCandidateTypes": []
+      },
+      {
+        "profile": "direct",
+        "launch": 1,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      },
+      {
+        "profile": "direct",
+        "launch": 2,
+        "iceCandidateTypes": [
+          "host",
+          "srflx",
+          "srflx"
+        ]
+      }
+    ]
+  },
+  "verdict": {
+    "chromiumTcp": "PASS (all via proxy)",
+    "chromiumDns": "PASS (no local resolution)",
+    "chromiumQuic": "PASS (no UDP bytes)",
+    "chromiumWebrtcBeforeFix": "FAIL: srflx candidate = real public IP",
+    "chromiumWebrtcAfterFix": "PASS (no candidates when proxied)",
+    "gecko": "NOT_RUN (Firefox not installed); preferences added",
+    "camoufox": "NOT_RUN (no Camoufox binary); preferences added",
+    "realRemoteProxyExitIp": "NOT_RUN (needs a real remote proxy)"
+  }
+}

@@ -7,6 +7,7 @@
  */
 const path=require('path');
 const {normalizedProxy}=require('./camoufoxProxyPlan');
+const {GECKO_PROXIED_LEAK_PREFS,GECKO_DIRECT_LEAK_PREFS}=require('./geckoProxy');
 
 function firefoxPrefs(profile,proxyPlan){
  const proxy=normalizedProxy(profile?.proxy);
@@ -18,7 +19,8 @@ function firefoxPrefs(profile,proxyPlan){
    throw Error('Unexpected proxy gateway for a direct profile');
   return Object.freeze({
    'network.proxy.type':0,
-   'network.proxy.socks_remote_dns':true
+   'network.proxy.socks_remote_dns':true,
+   ...GECKO_DIRECT_LEAK_PREFS
   });
  }
  if(!proxyPlan||proxyPlan.mode!=='authenticated-connect'||
@@ -35,7 +37,8 @@ function firefoxPrefs(profile,proxyPlan){
   'network.proxy.ssl':'127.0.0.1',
   'network.proxy.ssl_port':proxyPlan.gateway.port,
   'network.proxy.socks_remote_dns':true,
-  'network.proxy.no_proxies_on':''
+  'network.proxy.no_proxies_on':'',
+  ...GECKO_PROXIED_LEAK_PREFS
  });
 }
 function assertIsolatedProfileDirectory(root,dir){

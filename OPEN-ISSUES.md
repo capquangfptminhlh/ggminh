@@ -43,7 +43,12 @@ Khoá phát hành license được tạo mới ngày 2026-11-06, vì khoá riên
 Máy chủ license online `browser.lhmcrm.com` chưa được dựng: DNS không có bản ghi, workflow deploy chưa chạy lần nào, môi trường `production` mới có `CLOUDFLARE_API_TOKEN`. Trong lúc chưa có máy chủ, việc bán chạy bằng token `strict` cấp offline (`tools/license-admin.js`), và đó là mặc định của lệnh cấp.
 
 Gói nghiệm thu Gate 3 phải lấy từ một bản build `main` có khoá này. Gói cũ cho `6f3ef60` không có khoá.
-- QA-007, QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
+- QA-007 (đo một phần ngày 2026-11-06, chi tiết ở `stage0-measure/ip-leak-results-2026-11-06.json`): đo hồ sơ Chrome và Edge có proxy trên máy thật.
+  - TCP: đều đi qua proxy. DNS: trình duyệt không tự tra. QUIC: không có byte UDP nào. Cả ba **ĐẠT**.
+  - WebRTC: **lộ IP thật** qua STUN (candidate srflx). Cờ `--force-webrtc-ip-handling-policy` không có tác dụng, extension "spoof" cũng không chặn được. Đã sửa: launcher ghi `webrtc.ip_handling_policy=disable_non_proxied_udp` vào Preferences của hồ sơ trước mỗi lần mở, và sau khi sửa không còn candidate nào.
+  - Firefox (Gecko) và Camoufox: đã thêm preference ICE chỉ qua proxy, tắt DNS prefetch, tắt HTTP/3. Chưa đo vì máy không có Firefox hay Camoufox.
+  - IP thoát ra qua một proxy thật ở xa: chưa đo.
+- QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
 - QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
 
 Ghi chú: 6 cảnh báo mức trung bình còn lại của `npm audit` đều là `minimatch`. Gói này chỉ có trong công cụ build và chỉ xử lý mẫu glob do dự án tự viết.
