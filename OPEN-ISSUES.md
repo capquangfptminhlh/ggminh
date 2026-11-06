@@ -36,9 +36,9 @@ Vẫn mở:
 - D4 = 2: chỉ tải khi người dùng bấm, có kiểm chữ ký và hash; app không tự chạy bộ cài.
 - QD-04: không còn áp dụng. Workflow giờ được sửa qua PR bình thường.
 
-Để bật cập nhật trong app, vẫn thiếu khoá công khai ký cập nhật thật (`resources/update-publisher/update-publisher-ed25519.pub`). Chủ dự án phải tự sinh khoá này và giữ khoá riêng. Chưa có khoá thì Update Center báo `not-configured`.
+Khoá công khai ký cập nhật đã có từ 2026-11-06 (`resources/update-publisher/update-publisher-ed25519.pub`, vân tay SPKI `38f6fa46…f228`, được `test/update-trust-anchor.js` ghim). Khoá riêng đã mã hoá và mật khẩu của nó nằm ngoài repo, trên máy chủ dự án. Chỉ bộ cài build từ commit có khoá này mới nhận được cập nhật online, nên khách phải được giao tay một bộ cài như vậy ít nhất một lần.
 
-Gói nghiệm thu Gate 3 cho bản `main` @ `6f3ef60` (CI run 42215127628): bộ cài `3d8366bc…9f66`, 128.104.742 byte, SHA-256 khớp bằng chứng CI.
+Gói nghiệm thu Gate 3 phải lấy từ một bản build `main` có khoá này. Gói cũ cho `6f3ef60` không có khoá.
 - QA-007, QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
 - QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
 
