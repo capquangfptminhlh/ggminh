@@ -18,7 +18,7 @@ const DAY=86_400_000;
 // Worker health/issue/verify must fail closed if owner provisioned a different
 // valid issuer pair; only the exact client-trusted signer can be deployed.
 // This is a public trust anchor, NEVER a private key or admin credential.
-export const CLIENT_ISSUER_SPKI_B64='MCowBQYDK2VwAyEAQrZOTb8wh66eNTYWoegyBpiEgQUz7dlrXHJ8mHcBKR4=';
+export const CLIENT_ISSUER_SPKI_B64='MCowBQYDK2VwAyEAePk51gWDZKaio2N9BORbXipxGQJ9gjn2qhK0YefDrco=';
 const encoder=new TextEncoder();
 const decoder=new TextDecoder('utf-8',{fatal:true});
 

@@ -38,6 +38,10 @@ Vẫn mở:
 
 Khoá công khai ký cập nhật đã có từ 2026-11-06 (`resources/update-publisher/update-publisher-ed25519.pub`, vân tay SPKI `38f6fa46…f228`, được `test/update-trust-anchor.js` ghim). Khoá riêng đã mã hoá và mật khẩu của nó nằm ngoài repo, trên máy chủ dự án. Chỉ bộ cài build từ commit có khoá này mới nhận được cập nhật online, nên khách phải được giao tay một bộ cài như vậy ít nhất một lần.
 
+Khoá phát hành license được tạo mới ngày 2026-11-06, vì khoá riêng ứng với khoá cũ (`4fa87829…`) không còn. Khoá công khai mới (`725db621…dff0`) nằm trong app và trong Worker, được `test/license-trust-anchor.js` ghim. Mọi license đã ký bằng khoá cũ đều mất hiệu lực.
+
+Máy chủ license online `browser.lhmcrm.com` chưa được dựng: DNS không có bản ghi, workflow deploy chưa chạy lần nào, môi trường `production` mới có `CLOUDFLARE_API_TOKEN`. Trong lúc chưa có máy chủ, việc bán chạy bằng token `strict` cấp offline (`tools/license-admin.js`), và đó là mặc định của lệnh cấp.
+
 Gói nghiệm thu Gate 3 phải lấy từ một bản build `main` có khoá này. Gói cũ cho `6f3ef60` không có khoá.
 - QA-007, QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
 - QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
