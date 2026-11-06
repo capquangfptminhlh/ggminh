@@ -1,4 +1,10 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+const { AndroidManager } = require('./src/android/androidManager');
+const { AvdProvisioner } = require('./src/android/avdProvisioner');
+const { AndroidControl } = require('./src/android/androidControl');
+const { AndroidAgentWorkflow } = require('./src/android/agentWorkflow');
+const { AndroidUIInspector } = require('./src/android/uiInspector');
+const { AndroidTargetGuard } = require('./src/android/targetGuard');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
@@ -412,6 +418,99 @@ function createWindow() {
 }
 
 function initIPC() {
+  // Android devices and AVDs are discovered from the user's installed SDK.
+  // These endpoints do not fabricate devices or use a command shell.
+  const androidManager = new AndroidManager();
+  const avdProvisioner = new AvdProvisioner(androidManager);
+  const androidControl = new AndroidControl(androidManager);
+  const androidUIInspector = new AndroidUIInspector(androidControl);
+  const androidTargetGuard = new AndroidTargetGuard(androidUIInspector,androidControl);
+  // Workflow sessions live only in app memory; there is no headless
+  // scheduler or unauthenticated HTTP path to Android controls.
+  const androidAgent = new AndroidAgentWorkflow(androidControl, aiAdvisor,{targetGuard:androidTargetGuard});
+  const androidStepConfirmations = new Set();
+  ipcMain.handle('android-discover', async () => {
+    const [devices, provisioning] = await Promise.all([androidManager.discover(), avdProvisioner.catalog()]);
+    return {...devices, provisioning};
+  });
+  ipcMain.handle('android-create-avd', (_event, name, image) => avdProvisioner.create(name, image));
+  ipcMain.handle('android-duplicate-avd', (_event, source, name) => avdProvisioner.duplicate(source, name));
+  ipcMain.handle('android-launch-avd', (_event, name) => androidManager.launchAvd(name));
+  ipcMain.handle('android-open-screen', (_event, serial) => androidManager.openScreen(serial));
+  ipcMain.handle('android-stop-emulator', (_event, serial) => androidManager.stopEmulator(serial));
+  ipcMain.handle('android-control-action', (_event, serial, action, args) =>
+    androidControl.execute(serial, action, args));
+  ipcMain.handle('android-control-screenshot', (_event, serial) =>
+    androidControl.screenshot(serial));
+  ipcMain.handle('android-ui-inspect', (_event, serial) => androidTargetGuard.scan(serial));
+  ipcMain.handle('android-ui-invalidate', (_event, scanId) =>
+    androidTargetGuard.invalidate(scanId));
+  ipcMain.handle('android-ui-tap-target', async (_event, serial, scanId, index) => {
+    const target = androidTargetGuard.validate(serial,scanId,index);
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type:'question',title:'Xác nhận chạm Android',
+      message:'Chạm nút #' + target.index + ' (' + target.type + ') trên ' + target.serial + '?',
+      detail:'LHM sẽ đọc lại giao diện ngay trước khi gửi lệnh chạm. ' +
+        'Nút có thể thực hiện hành động trong ứng dụng; không có hoàn tác tự động.',
+      buttons:['Hủy','Chạm một lần'],defaultId:0,cancelId:0,noLink:true
+    });
+    if(confirmation.response!==1) {
+      androidTargetGuard.invalidate(scanId);
+      return {state:'cancelled'};
+    }
+    return androidTargetGuard.tap(serial,scanId,index);
+  });
+  ipcMain.handle('android-agent-from-inspector', (_event,serial,scanId,index) =>
+    androidAgent.fromInspector(serial,scanId,index));
+  ipcMain.handle('android-agent-template', (_event, serial) =>
+    androidAgent.template(serial));
+  ipcMain.handle('android-agent-propose', (_event, serial, goal, consent) =>
+    androidAgent.propose(serial, goal, consent));
+  ipcMain.handle('android-agent-cancel', (_event, sessionId) =>
+    androidAgent.cancel(sessionId));
+  ipcMain.handle('android-agent-next', async (_event, sessionId) => {
+    if (androidStepConfirmations.has(sessionId))
+      throw new Error('Another Android confirmation is already open');
+    const plan = androidAgent.preview(sessionId);
+    if (plan.done || plan.error || !plan.next)
+      throw new Error('Android plan is finished or blocked');
+    androidStepConfirmations.add(sessionId);
+    try {
+      const next = plan.next;
+      const details = androidAgent.confirmationDetails(sessionId);
+      const confirm = await dialog.showMessageBox(mainWindow, {
+        type:'warning',title:'Xác nhận từng bước Android',
+        message:'Thực thi bước ' + (plan.index+1) + '/' + plan.total +
+          ' trên thiết bị ' + plan.serial + '?',
+        detail:next.note + '\n' + next.action + ' · ' + details +
+          '\nKhông hoàn tác tự động. LHM sẽ chụp màn hình để anh kiểm tra.',
+        buttons:['Hủy','Thực hiện bước này'],defaultId:0,cancelId:0,noLink:true
+      });
+      if (confirm.response !== 1) return {state:'declined',...plan};
+      return androidAgent.next(sessionId);
+    } finally { androidStepConfirmations.delete(sessionId); }
+  });
+  ipcMain.handle('android-control-install-apk', async (_event, serial) => {
+    await androidControl.authorized(serial);
+    const selected = await dialog.showOpenDialog(mainWindow, {
+      title:'Chọn APK để cài trên thiết bị Android',
+      properties:['openFile'],
+      filters:[{name:'Android Package',extensions:['apk']}]
+    });
+    if (selected.canceled || selected.filePaths.length !== 1) return {state:'cancelled'};
+    const filePath = selected.filePaths[0];
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type:'warning',
+      title:'Xác nhận cài ứng dụng Android',
+      message:'Cài tệp APK này lên thiết bị ' + serial + '?',
+      detail:'Tệp: ' + path.basename(filePath) +
+        '\nChỉ tiếp tục nếu anh tin tưởng nguồn APK. LHM không tự thay thế ứng dụng đã cài.',
+      buttons:['Hủy','Cài APK'],
+      defaultId:0,cancelId:0,noLink:true
+    });
+    if (confirmation.response !== 1) return {state:'cancelled'};
+    return androidControl.installApk(serial, filePath);
+  });
   const updatePublicKeyFile=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-update-publisher','update-publisher-ed25519.pub')
     :path.join(app.getAppPath(),'resources','update-publisher','update-publisher-ed25519.pub');
@@ -1268,7 +1367,9 @@ app.whenReady().then(async () => {
   });
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
-  launcher = new BrowserLauncher(store,{proxyVault});
+  // Per-profile download folders live where customers look for files.
+  const downloadsRoot = path.join(app.getPath('downloads'), 'LHM Ads Browser');
+  launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot});
   bundledEngine=new BundledEngineManager(app.isPackaged
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));
@@ -1329,7 +1430,7 @@ app.whenReady().then(async () => {
     }
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
-    bundleVerifier:verifiedProviders,store,proxyVault,
+    bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
     // Explicit operator-only opt-in. Production defaults fail closed until
     // independently verified proxy/DNS/WebRTC lab acceptance.
     allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'

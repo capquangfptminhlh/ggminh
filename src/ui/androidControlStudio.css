@@ -1,0 +1,80 @@
+/* Manual Android controls; scoped to Device Center only. */
+#modal-android-manager .lhm-android-control {
+  margin-top:15px; padding:18px; border:1px solid #d4e3f4;
+  border-radius:16px; background:#fff; color:#193958;
+}
+#modal-android-manager .lhm-android-control-head {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:14px;
+}
+#modal-android-manager .lhm-android-control-head h3 {
+  margin:0 0 6px; font-size:18px; color:#1c395b;
+}
+#modal-android-manager .lhm-android-control-head p {
+  margin:0;color:#56718d;line-height:1.5;font-size:12px;
+}
+#modal-android-manager .lhm-android-control-local {
+  white-space:nowrap; background:#e9f5ef; color:#1b765a; padding:7px 10px;
+  border-radius:99px; font-size:11px; font-weight:700;
+}
+#modal-android-manager .lhm-android-control-select {
+  display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;
+}
+#modal-android-manager .lhm-android-control-select label,
+#modal-android-manager .lhm-android-control-actions label {
+  font-weight:650;color:#395574;font-size:12px;
+}
+#modal-android-manager #android-control-serial,
+#modal-android-manager #android-control-text {
+  background:#fff;color:#243c59;border:1px solid #bdcee2;
+  border-radius:9px;padding:10px 12px;font-size:13px;min-height:40px;
+}
+#modal-android-manager #android-control-serial { flex:1;min-width:180px;max-width:390px; }
+#modal-android-manager .lhm-android-control-layout {
+  display:grid;grid-template-columns:minmax(260px,1fr) minmax(230px,.8fr);
+  gap:18px;align-items:start;
+}
+#modal-android-manager .lhm-android-preview {
+  min-height:220px;padding:12px;border:1px solid #d7e5f2;border-radius:14px;
+  background:#f0f5fb;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:9px;
+}
+#modal-android-manager #android-control-placeholder {
+  max-width:250px;text-align:center;color:#5f7794;font-size:13px;line-height:1.7;
+}
+#modal-android-manager #android-control-image {
+  max-width:100%;max-height:510px;width:auto;height:auto;
+  object-fit:contain;border:4px solid #27394d;border-radius:17px;
+  box-shadow:0 8px 25px #21344e25;cursor:crosshair;
+  user-select:none;
+}
+#modal-android-manager #android-control-image[hidden] {display:none;}
+#modal-android-manager #android-control-shot-info {
+  color:#536c87;font-size:11px;line-height:1.5;
+}
+#modal-android-manager .lhm-android-control-actions {
+  display:flex;flex-direction:column;align-items:stretch;gap:12px;
+  background:#f8fbff;border:1px solid #d9e5f2;border-radius:14px;padding:16px;
+}
+#modal-android-manager .lhm-android-control-actions h4 {font-size:15px;color:#24405f;}
+#modal-android-manager .lhm-android-control-buttons {
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+#modal-android-manager .lhm-android-control-actions p {
+  font-size:12px;color:#536d88;line-height:1.6;margin-top:4px;
+}
+#modal-android-manager #android-control-feedback {
+  color:#286f9b;font-size:12px;margin:12px 0 0;min-height:18px;
+  overflow-wrap:anywhere;
+}
+#modal-android-manager #android-control-feedback[data-state="error"] {color:#b83e48;}
+#modal-android-manager .lhm-android-control button:disabled,
+#modal-android-manager .lhm-android-control input:disabled {opacity:.56;cursor:not-allowed;}
+@media(max-width:840px) {
+  #modal-android-manager .lhm-android-control-layout {grid-template-columns:1fr;}
+}
+@media(max-width:520px) {
+  #modal-android-manager .lhm-android-control {padding:12px;}
+  #modal-android-manager .lhm-android-control-buttons {grid-template-columns:1fr;}
+  #modal-android-manager #android-control-serial {min-width:100%;}
+}

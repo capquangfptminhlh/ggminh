@@ -1,0 +1,42 @@
+#modal-android-manager .lhm-android-inspector {
+  margin-top:15px;padding:18px;border:1px solid #d4e3f2;
+  border-radius:16px;background:#fff;color:#173652;
+}
+#modal-android-manager .lhm-android-inspector-head {
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;flex-wrap:wrap;
+}
+#modal-android-manager .lhm-android-inspector-head h3 {font-size:18px;color:#1e3d5d;}
+#modal-android-manager .lhm-android-inspector-head p {
+  font-size:12px;line-height:1.6;color:#54718b;margin:5px 0 0;max-width:690px;
+}
+#modal-android-manager #android-inspector-status {
+  color:#276d9c;font-size:12px;line-height:1.6;margin:12px 0;
+}
+#modal-android-manager #android-inspector-status[data-state="error"]{color:#b73548;}
+#modal-android-manager .lhm-android-inspector-nodes {
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:8px;
+}
+#modal-android-manager .lhm-android-inspector-item {
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px;border-radius:11px;border:1px solid #dce6ef;background:#f6faff;
+}
+#modal-android-manager .lhm-android-inspector-item div {
+  min-width:0;display:flex;flex-direction:column;gap:4px;
+}
+#modal-android-manager .lhm-android-inspector-item strong {
+  font-size:12px;color:#1a3a58;overflow-wrap:anywhere;
+}
+#modal-android-manager .lhm-android-inspector-item small {
+  font-size:11px;color:#59718b;
+}
+#modal-android-manager .lhm-android-inspector-item button {flex-shrink:0;}
+#modal-android-manager .lhm-android-inspector-notice {
+  font-size:12px;line-height:1.55;margin:12px 0 0;color:#667c93;
+}
+@media(max-width:600px){
+  #modal-android-manager .lhm-android-inspector {padding:12px;}
+}
+
+#modal-android-manager .lhm-android-inspector-actions {display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+#modal-android-manager .lhm-android-inspector-actions button {font-size:11px;padding:7px 9px;}

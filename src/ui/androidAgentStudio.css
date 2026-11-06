@@ -1,0 +1,88 @@
+/* Local Android Agent: deliberately restrained, no simulated autonomy. */
+#modal-android-manager .lhm-android-agent {
+  margin-top:15px;padding:18px;border:1px solid #d7e3f1;
+  border-radius:16px;background:#fff;color:#173652;
+}
+#modal-android-manager .lhm-android-agent-heading {
+  display:flex;justify-content:space-between;align-items:start;
+  gap:14px;margin-bottom:14px;
+}
+#modal-android-manager .lhm-android-agent-heading h3 {
+  font-size:18px;color:#1e3d5d;margin:0 0 6px;
+}
+#modal-android-manager .lhm-android-agent-heading p {
+  margin:0;font-size:12px;line-height:1.6;color:#5b738f;
+}
+#modal-android-manager .lhm-android-agent-tag {
+  white-space:nowrap;font-size:11px;letter-spacing:.03em;
+  border-radius:100px;background:#edf3fd;border:1px solid #dce7f8;
+  color:#245ba2;padding:7px 11px;font-weight:700;
+}
+#modal-android-manager .lhm-android-agent > label:not(.lhm-android-agent-consent) {
+  display:block;font-size:12px;font-weight:650;color:#294d70;
+  margin:9px 0 6px;
+}
+#modal-android-manager #android-agent-goal {
+  display:block;resize:vertical;width:100%;min-height:76px;
+  padding:12px;border:1px solid #c6d7e8;border-radius:12px;
+  color:#1b3a55;background:#f9fcff;font-size:13px;line-height:1.5;
+}
+#modal-android-manager .lhm-android-agent-consent {
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12px;line-height:1.6;color:#526c86;
+  padding:12px 2px;
+}
+#modal-android-manager .lhm-android-agent-consent input {
+  width:16px;height:16px;flex:0 0 auto;margin-top:2px;
+}
+#modal-android-manager .lhm-android-agent-buttons {
+  display:flex;gap:9px;flex-wrap:wrap;
+}
+#modal-android-manager .lhm-android-agent-buttons button {
+  min-height:37px;
+}
+#modal-android-manager .lhm-android-agent-buttons button:disabled {
+  opacity:.55;cursor:not-allowed;
+}
+#modal-android-manager #android-agent-status {
+  padding:10px 0;min-height:20px;font-size:12px;color:#306793;
+  line-height:1.6;overflow-wrap:anywhere;
+}
+#modal-android-manager #android-agent-status[data-state=error] {color:#b43148;}
+#modal-android-manager .lhm-android-agent-plan {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:9px;
+  margin-top:6px;
+}
+#modal-android-manager .lhm-android-agent-plan > strong {
+  grid-column:1/-1;font-size:13px;margin-bottom:3px;color:#1a3955;
+}
+#modal-android-manager .lhm-android-agent-step {
+  display:flex;flex-direction:column;gap:6px;min-height:67px;
+  padding:11px 13px;border:1px solid #d9e4ef;
+  border-radius:11px;background:#f8fbff;
+}
+#modal-android-manager .lhm-android-agent-step span {font-size:12px;font-weight:650;}
+#modal-android-manager .lhm-android-agent-step small {
+  color:#617790;font-size:11px;line-height:1.5;overflow-wrap:anywhere;
+}
+#modal-android-manager .lhm-android-agent-step[data-state=current] {
+  border-color:#8bb4e5;background:#ecf5ff;
+}
+#modal-android-manager .lhm-android-agent-step[data-state=completed] {
+  background:#eef8f2;border-color:#bfdfc9;
+}
+#modal-android-manager .lhm-android-agent-result {
+  display:grid;justify-items:start;gap:10px;margin-top:14px;
+}
+#modal-android-manager #android-agent-screenshot {
+  max-width:min(100%,260px);height:auto;max-height:440px;
+  border-radius:14px;border:3px solid #2a3d51;
+}
+#modal-android-manager #android-agent-screenshot[hidden] {display:none;}
+#modal-android-manager #android-agent-review {
+  font-size:12px;line-height:1.6;color:#5b738d;
+}
+@media(max-width:600px){
+  #modal-android-manager .lhm-android-agent {padding:12px;}
+  #modal-android-manager .lhm-android-agent-heading {flex-wrap:wrap;}
+}

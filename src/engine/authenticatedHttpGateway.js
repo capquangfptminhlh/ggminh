@@ -9,7 +9,7 @@ const net=require('net');
  * This implements HTTPS CONNECT only; plain HTTP requests fail closed.
  */
 async function createAuthenticatedHttpGateway(upstream,{
-  createServer=http.createServer, connect=net.connect
+  createServer=http.createServer, connect=net.connect, authorizePeer=null
 }={}){
   if(!upstream||upstream.type!=='http'||typeof upstream.user!=='string'||
       typeof upstream.pass!=='string'||!upstream.host||!Number.isInteger(upstream.port))
@@ -25,7 +25,22 @@ async function createAuthenticatedHttpGateway(upstream,{
     sockets.add(client);
     client.on('close',()=>sockets.delete(client));
   });
-  server.on('connect',(req,client,head)=>{
+
+  // Optional loopback peer check (see src/security/loopbackPeerGuard.js):
+  // only the profile's own browser may use this gateway.
+  const guarded=handler=>(req,client,head)=>{
+    // Node's HTTP server drops its own socket error listener on 'connect':
+    // without this, a browser resetting a tunnel (ECONNRESET) is an
+    // uncaught exception that takes down the whole app process.
+    client.on('error',()=>client.destroy());
+    if(typeof authorizePeer!=='function'){handler(req,client,head);return;}
+    client.pause();
+    Promise.resolve().then(()=>authorizePeer(client)).then(ok=>{
+      if(ok!==true||client.destroyed){client.destroy();return;}
+      client.resume();handler(req,client,head);
+    },()=>client.destroy());
+  };
+  server.on('connect',guarded((req,client,head)=>{
     if(client.remoteAddress!=='127.0.0.1'&&client.remoteAddress!=='::ffff:127.0.0.1'){
       client.destroy();return;
     }
@@ -40,7 +55,7 @@ async function createAuthenticatedHttpGateway(upstream,{
       if(!client.destroyed)client.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n');
       upstreamSocket.destroy();
     };
-    upstreamSocket.once('error',()=>{if(!completed)fail();else client.destroy();});
+    upstreamSocket.on('error',()=>{if(!completed)fail();else client.destroy();});
     upstreamSocket.on('close',()=>sockets.delete(upstreamSocket));
     client.once('close',()=>upstreamSocket.destroy());
     upstreamSocket.once('connect',()=>{
@@ -65,7 +80,7 @@ async function createAuthenticatedHttpGateway(upstream,{
       client.pipe(upstreamSocket);upstreamSocket.pipe(client);
     };
     upstreamSocket.on('data',onData);
-  });
+  }));
   try{
     await new Promise((resolve,reject)=>{
       server.once('error',reject);

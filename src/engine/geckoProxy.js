@@ -32,13 +32,14 @@ function preferencesFor(proxy) {
   return p.map(([name, value]) => 'user_pref(' + JSON.stringify(name) + ', ' + JSON.stringify(value) + ');').join('\n');
 }
 
-function updateGeckoProxy(profileDir, proxy) {
+// Replace one LHM-owned, marker-delimited block in user.js; every other
+// user preference is preserved. Shared by the proxy and downloads blocks.
+function writeManagedUserJsBlock(profileDir, begin, end, body, label = 'proxy') {
   if (!path.isAbsolute(profileDir)) throw new Error('Firefox profile directory must be absolute');
   if (!fs.existsSync(profileDir) || !fs.statSync(profileDir).isDirectory()) {
     throw new Error('Firefox profile directory does not exist');
   }
-  // Build and validate first, before touching the user's on-disk Firefox profile.
-  const managed = BEGIN + '\n' + preferencesFor(proxy) + '\n' + END;
+  const managed = begin + '\n' + body + '\n' + end;
   const file = path.join(profileDir, 'user.js');
   if (fs.existsSync(file) && (!fs.lstatSync(file).isFile() || fs.lstatSync(file).isSymbolicLink())) {
     throw new Error('Refusing to modify linked or nonregular Firefox preferences file');
@@ -46,13 +47,13 @@ function updateGeckoProxy(profileDir, proxy) {
   const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
   if (Buffer.byteLength(current) > MAX_BYTES) throw new Error('Firefox user.js too large');
   // Remove only our own complete block; refuse malformed markers rather than risking user data.
-  const start = current.indexOf(BEGIN), end = current.indexOf(END);
-  if ((start === -1) !== (end === -1) || (start !== -1 && (end < start || current.indexOf(BEGIN, start+BEGIN.length) !== -1))) {
-    throw new Error('Malformed LHM proxy block in Firefox user.js');
+  const start = current.indexOf(begin), stop = current.indexOf(end);
+  if ((start === -1) !== (stop === -1) || (start !== -1 && (stop < start || current.indexOf(begin, start+begin.length) !== -1))) {
+    throw new Error('Malformed LHM ' + label + ' block in Firefox user.js');
   }
   let kept = current;
   if (start !== -1) {
-    kept = current.slice(0, start) + current.slice(end + END.length);
+    kept = current.slice(0, start) + current.slice(stop + end.length);
   }
   // Existing user preferences are preserved. LHM-managed prefs at the end take precedence.
   const output = kept.trimEnd() + (kept.trim() ? '\n\n' : '') + managed + '\n';
@@ -64,6 +65,13 @@ function updateGeckoProxy(profileDir, proxy) {
     try { fs.rmSync(temp, { force: true }); } catch (_) {}
     throw error;
   }
-  return { file, type: proxy?.type || 'direct', bytes: Buffer.byteLength(output) };
+  return { file, bytes: Buffer.byteLength(output) };
 }
-module.exports = { updateGeckoProxy, preferencesFor, BEGIN, END };
+
+function updateGeckoProxy(profileDir, proxy) {
+  // Build and validate first, before touching the user's on-disk Firefox profile.
+  const body = preferencesFor(proxy);
+  const result = writeManagedUserJsBlock(profileDir, BEGIN, END, body, 'proxy');
+  return { file: result.file, type: proxy?.type || 'direct', bytes: result.bytes };
+}
+module.exports = { updateGeckoProxy, writeManagedUserJsBlock, preferencesFor, BEGIN, END };

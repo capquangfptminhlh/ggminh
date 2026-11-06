@@ -1,6 +1,23 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  androidDiscover: () => ipcRenderer.invoke('android-discover'),
+  androidCreateAvd: (name, image) => ipcRenderer.invoke('android-create-avd', name, image),
+  androidDuplicateAvd: (source, name) => ipcRenderer.invoke('android-duplicate-avd', source, name),
+  androidLaunchAvd: name => ipcRenderer.invoke('android-launch-avd', name),
+  androidOpenScreen: serial => ipcRenderer.invoke('android-open-screen', serial),
+  androidStopEmulator: serial => ipcRenderer.invoke('android-stop-emulator', serial),
+  androidControlAction: (serial,action,args) => ipcRenderer.invoke('android-control-action',serial,action,args),
+  androidControlScreenshot: serial => ipcRenderer.invoke('android-control-screenshot',serial),
+  androidUiInspect: serial => ipcRenderer.invoke('android-ui-inspect',serial),
+  androidUiTapTarget: (serial,scanId,index) => ipcRenderer.invoke('android-ui-tap-target',serial,scanId,index),
+  androidUiInvalidate: scanId => ipcRenderer.invoke('android-ui-invalidate',scanId),
+  androidAgentFromInspector: (serial,scanId,index) => ipcRenderer.invoke('android-agent-from-inspector',serial,scanId,index),
+  androidControlInstallApk: serial => ipcRenderer.invoke('android-control-install-apk',serial),
+  androidAgentTemplate: serial => ipcRenderer.invoke('android-agent-template',serial),
+  androidAgentPropose: (serial,goal,consent) => ipcRenderer.invoke('android-agent-propose',serial,goal,consent),
+  androidAgentNext: sessionId => ipcRenderer.invoke('android-agent-next',sessionId),
+  androidAgentCancel: sessionId => ipcRenderer.invoke('android-agent-cancel',sessionId),
   dashboardOverview: () => ipcRenderer.invoke('dashboard-overview'),
   runPerformanceLab: () => ipcRenderer.invoke('performance-lab-run'),
   exportPerformanceLab: () => ipcRenderer.invoke('performance-lab-export'),
