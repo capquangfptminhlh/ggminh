@@ -19,6 +19,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      # Electron 42+ no longer downloads its binary in postinstall; the UI
+      # capture step below runs node_modules\electron\dist\electron.exe.
+      - name: Install Electron runtime binary
+        run: npx install-electron --no
       - name: Run verification tests
         run: npm test
       - name: Verify vendor-pinned license endpoint and safe Preview defaults

@@ -584,8 +584,10 @@ function initIPC() {
     licenseManager.deactivate();
     return licensePolicy.status();
   });
-  ipcMain.handle('license-center-copy-installation', () => {
-    clipboard.writeText(licenseManager.installationId);
+  // Electron 44+: clipboard.writeText returns a Promise; await it so a failed
+  // copy reaches the UI instead of being reported as success.
+  ipcMain.handle('license-center-copy-installation', async () => {
+    await clipboard.writeText(licenseManager.installationId);
     return true;
   });
   ipcMain.handle('session-snapshots-list', (_,id) => sessionSnapshots.list(id));
@@ -1288,9 +1290,9 @@ function initIPC() {
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
   ipcMain.handle('set-cdp-enabled', (_, enabled) => setCdpEnabled(enabled === true));
-  ipcMain.handle('copy-api-key', () => {
+  ipcMain.handle('copy-api-key', async () => {
     if (!apiServer?.listening) throw new Error('Enable Local API first');
-    clipboard.writeText(apiKey);
+    await clipboard.writeText(apiKey);
     return true;
   });
 }
