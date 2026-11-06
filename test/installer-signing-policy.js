@@ -37,6 +37,17 @@ assert(pkg.build && pkg.build.win && pkg.build.win.forceCodeSigning !== true,
 assert(pkg.scripts['build:win'].includes('--win nsis') &&
   pkg.scripts['build:win'].includes('--publish never'),
   'Preserve existing Windows installer target and no automatic publishing');
+// Optional signing stays opt-in: secrets switch it on, nothing forces it,
+// and a configured-but-broken signature fails the build instead of shipping.
+const workflow = read('.github/workflows/windows-exe.yml');
+assert(workflow.includes('WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}') &&
+  workflow.includes('WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}'),
+  'Installer build reads optional signing material only from repo secrets');
+assert(workflow.includes('Check Authenticode status') &&
+  workflow.includes("$sig.Status -ne 'Valid'"),
+  'A configured signature must be verified as Valid');
+assert(!/CSC_LINK\s*:\s*['"]?[A-Za-z0-9+/]{40,}/.test(workflow),
+  'No inline certificate material in the workflow');
 // The owner waived ONLY installer signing: existing proprietary functions remain.
 for(const p of [
  'src/engine/EngineFactory.js', 'src/health/signalChain.js',
