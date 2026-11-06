@@ -1304,10 +1304,13 @@ app.on('second-instance', () => {
     mainWindow.focus();
   }
 });
+// CI UI capture owns a throwaway data folder. It must be set before 'ready':
+// Chromium writes Local State and its GPU caches to userData at startup, so a
+// later setPath leaves those files in the customer's real data folder.
+if (process.env.LHM_CI_UI_CAPTURE === '1') {
+  app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
+}
 app.whenReady().then(async () => {
-  if (process.env.LHM_CI_UI_CAPTURE === '1') {
-    app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
-  }
   // Single-instance guard (reconstruction of the owner's local fix,
   // Agent R12): a second LHM process on this userData directory would
   // load its own in-memory copy of db.json (Store loads once and

@@ -5,6 +5,31 @@ Trạng thái ban đầu lập ngày 2026-10-21 trên commit nền
 chứng tái hiện/đọc code, điều kiện đóng. Agent 10 chỉ ghi nhận, không
 tự vá code tính năng.
 
+## Cập nhật 2026-11-06
+
+Đã đóng (có bằng chứng):
+
+- **QA-002**: `.gitignore` đã có các mẫu `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `*private*key*`.
+- **QA-003**: `GET /api/profiles` đi qua `apiProfile()` trong `src/api/server.js`, hàm này bỏ `notes` và che blob danh tính, giống cách `/api/v1/user/list` đã làm.
+- **QA-005**: `npm test` đã có runner gom kết quả. Nó chạy hết mọi bước kể cả khi có bước fail và in `steps run: N of N | PASS | FAIL`.
+
+Lỗi bảo mật và độ ổn định đã sửa sau ngày lập danh sách:
+
+- Tắt hồ sơ êm, tách file tải về theo hồ sơ: #84.
+- Proxy gateway chỉ phục vụ trình duyệt của chính hồ sơ: #85.
+- Cổng CDP tắt mặc định: #86.
+- Nâng Electron 33 (đã hết hỗ trợ) lên 44, và chỉ báo "đã sao chép" khi clipboard thật sự có dữ liệu: #87.
+- Vá `body-parser` (lỗi DoS), nâng `electron-builder` lên 26 (bỏ lỗi `tar` mức critical). Sửa chế độ chụp UI của CI để nó không ghi `Local State` và bộ nhớ đệm GPU vào dữ liệu thật của khách.
+
+Vẫn mở:
+
+- QA-001, QA-004: chờ chủ dự án quyết định.
+- QA-006: chưa kiểm lại trên Linux.
+- QA-007, QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
+- QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
+
+Ghi chú: 6 cảnh báo mức trung bình còn lại của `npm audit` đều là `minimatch`. Gói này chỉ có trong công cụ build và chỉ xử lý mẫu glob do dự án tự viết.
+
 | ID | Mức | Vấn đề | Bằng chứng | Đóng khi |
 |---|---|---|---|---|
 | QA-001 | Cần quyết định chủ dự án | `NetworkSafetyCheck.evaluate` cho hồ sơ Camoufox kết nối **direct** trả `safeToLaunch:true` mã `PREFLIGHT_ONLY` dù an toàn mạng chưa được chứng nhận. Là quyết định thiết kế đã ghi trong code, nhưng có thể xung đột với diễn giải nghiêm ngặt của Mục 19.4 Hiến pháp. | `src/engine/NetworkSafetyCheck.js` hàm `evaluate` (nhánh `proxy.type==='direct'`); `EngineFactory.launchProfile` chỉ chặn khi `safeToLaunch=false` | Chủ dự án chốt: giữ PREFLIGHT_ONLY cho direct, hay chặn tới khi có phép đo mạng. |
