@@ -1363,7 +1363,9 @@ app.whenReady().then(async () => {
   });
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
-  launcher = new BrowserLauncher(store,{proxyVault});
+  // Per-profile download folders live where customers look for files.
+  const downloadsRoot = path.join(app.getPath('downloads'), 'LHM Ads Browser');
+  launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot});
   bundledEngine=new BundledEngineManager(app.isPackaged
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));
@@ -1424,7 +1426,7 @@ app.whenReady().then(async () => {
     }
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
-    bundleVerifier:verifiedProviders,store,proxyVault,
+    bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
     // Explicit operator-only opt-in. Production defaults fail closed until
     // independently verified proxy/DNS/WebRTC lab acceptance.
     allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'

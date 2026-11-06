@@ -11,6 +11,8 @@ const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
 const {identityEnvForProfile,assertIdentityMatchesProfile}=require('./camoufoxIdentity');
+const {applyGeckoDownloadDir}=require('./downloadDirectory');
+const {createPeerGuard}=require('../security/loopbackPeerGuard');
 
 const MIN_STARTUP_MS=1000;
 const MAX_STARTUP_MS=45000;
@@ -95,7 +97,7 @@ class CamoufoxAdapter{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
-  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false
+  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false,downloadsRoot=null,peerGuardFactory
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
      typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
@@ -103,10 +105,15 @@ class CamoufoxAdapter{
      startupTimeoutMs>MAX_STARTUP_MS)throw Error('Invalid Camoufox startup timeout');
   this.baseDir=baseDir;this.bundleVerifier=bundleVerifier;
   this.spawnProcess=spawnProcess;this.windowProbe=windowProbe;
+  // Proxy gateway accepts only this browser's process tree (real spawns only).
+  this.peerGuardFactory=peerGuardFactory!==undefined?peerGuardFactory
+   :(spawnProcess===spawn?createPeerGuard:null);
   if(typeof prepareProxy!=='function')throw Error('Invalid Camoufox proxy configurator');
   this.closeWindow=closeWindow;this.platform=platform;
   this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
   this.allowProxyLab=allowProxyLab===true;
+  // Per-profile download folder; never the shared OS Downloads folder.
+  this.downloadsRoot=downloadsRoot||(path.isAbsolute(String(baseDir||''))?path.join(baseDir,'downloads'):null);
   this.startupTimeoutMs=startupTimeoutMs;
   this.sessions=new Map();this.pending=new Map();
  }
@@ -175,14 +182,17 @@ class CamoufoxAdapter{
   try{
    // A new local gateway gets its own dynamic port; the Firefox profile
    // user.js is refreshed before launch. No --proxy-server CLI is assumed.
+   const peerGuard=this.peerGuardFactory?this.peerGuardFactory():null;
    proxyPlan=await this.prepareProxy(profile,profileDir,{
-    store:this.store,proxyVault:this.proxyVault
+    store:this.store,proxyVault:this.proxyVault,peerGuard
    });
+   if(this.downloadsRoot)applyGeckoDownloadDir(profileDir,this.downloadsRoot,id);
    child=this.spawnProcess(executable,args,{
     cwd:path.dirname(executable),windowsHide:false,
     detached:false,stdio:['ignore','pipe','pipe'],
     ...(identity?{env:{...process.env,...identity.env}}:{})
    });
+   peerGuard?.setRoot(child?.pid);
    if(!child||typeof child.once!=='function'||typeof child.kill!=='function')
     throw Error('Camoufox spawn did not return a child process');
    child.once('exit',(code,signal)=>{
