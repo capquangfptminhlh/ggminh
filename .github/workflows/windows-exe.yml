@@ -71,7 +71,30 @@ jobs:
       - name: Smoke real Chrome or Edge profile and active tab
         run: node test/real-chromium-smoke.js
       - name: Build Windows installer
+        env:
+          # Optional Authenticode signing (Constitution v1.4: not required).
+          # With repo secrets WIN_CSC_LINK (base64 .pfx) and
+          # WIN_CSC_KEY_PASSWORD set, electron-builder signs the app EXE and
+          # the installer; without them (or on fork PRs) the build is unsigned.
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: npm run build:win
+      - name: Check Authenticode status
+        shell: pwsh
+        env:
+          SIGNING_CONFIGURED: ${{ secrets.WIN_CSC_LINK != '' }}
+        run: |
+          $files = @(Get-Item ".\dist\win-unpacked\LHM Ads Browser.exe") + @(Get-ChildItem ".\dist\*.exe")
+          foreach ($file in $files) {
+            $sig = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            Write-Host ("{0}: {1} {2}" -f $file.Name, $sig.Status, $sig.SignerCertificate.Subject)
+            if ($env:SIGNING_CONFIGURED -eq 'true' -and $sig.Status -ne 'Valid') {
+              throw "Signing is configured but $($file.Name) is not validly signed ($($sig.Status))"
+            }
+          }
+          if ($env:SIGNING_CONFIGURED -ne 'true') {
+            Write-Host 'Unsigned build: allowed by Constitution v1.4; Windows SmartScreen will warn on install.'
+          }
       - name: Verify packaged Win32 helper is unpacked
         shell: pwsh
         run: |
