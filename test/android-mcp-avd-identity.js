@@ -43,7 +43,6 @@ const {parseAvdBindings,verifyBoundAvd}=require('../src/android/mcpAvdIdentity')
     'bad;evil\nOK\n']) {
     response=wrong;
     // Ambiguous or unexpected replies must never grant access.
-    if(wrong.includes('Profile_B'))continue;
     assert.equal(await verifyBoundAvd(manager,'emulator-5554','Profile_A'),false);
   }
   response=null;
