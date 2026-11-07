@@ -193,6 +193,12 @@
         buttons.unshift(control);
       }
       if (device.kind === 'emulator') {
+        buttons.unshift(action('Mở Chrome', async () => {
+          const result=await window.api.androidOpenChrome(device.serial);
+          if(result?.state==='cancelled')return 'Đã hủy mở Chrome.';
+          if(result?.state!=='launch-requested')throw Error('Không có xác nhận gửi lệnh mở Chrome.');
+          return 'Đã gửi lệnh mở Chrome trên AVD. Kiểm tra cửa sổ Android để xác nhận ứng dụng hiển thị.';
+        }, !online || status?.bootCompleted!==true));
         buttons.push(action('Tắt', async () => {
           await window.api.androidStopEmulator(device.serial);
           return 'Đã gửi lệnh tắt emulator ' + device.serial + '.';
