@@ -2,12 +2,19 @@
 const assert=require('node:assert/strict');
 const {spawn}=require('node:child_process');
 const path=require('node:path');
-const {createMcpHandler,allowedSerials}=require('../src/android/mcpReadOnly');
+const {createMcpHandler,allowedSerials,parseAvdBindings}=require('../src/android/mcpReadOnly');
 
 let calls={avds:0,devices:0,inspections:0};
 let rawSecret='otp 123456 account@private.example';
+let avdOwner='Pixel_Test_01';
 const manager={
-  avds:async()=>{calls.avds++;return ['Pixel_Test_01','bad;evil']},
+  tool:name=>name==='adb'?'adb.exe':null,
+  run:async (_adb,args)=>{
+    if(args.includes('emu') && args.includes('name'))
+      return avdOwner+'\nOK\n';
+    throw Error('Unexpected ADB operation');
+  },
+  avds:async()=>{calls.avds++;return ['Pixel_Test_01','Other_Private_Profile','bad;evil']},
   devices:async()=>{calls.devices++;return [
     {serial:'emulator-5554',status:'device',kind:'emulator',model:'Sensitive Person Name',product:rawSecret},
     {serial:'ABCD',status:'unauthorized',kind:'physical',model:'Secret 2'}
@@ -30,12 +37,29 @@ const inspector={
     };
   }
 };
-const handler=createMcpHandler({manager,inspector,allowedSerials:['emulator-5554']});
+const handler=createMcpHandler({manager,inspector,
+  allowedSerials:['emulator-5554'],
+  avdBindings:'emulator-5554=Pixel_Test_01'
+});
 assert.deepEqual([...allowedSerials('emulator-5554, PHONE')],['emulator-5554','PHONE']);
 assert.deepEqual([...allowedSerials('')],[]);
 assert.deepEqual([...allowedSerials(undefined)],[]);
 assert.throws(()=>allowedSerials('emulator-5554;rm -rf /'),/Invalid/);
 assert.throws(()=>allowedSerials(Array(9).fill('emulator-5554')),/At most 8/);
+assert.deepEqual([...parseAvdBindings('emulator-5554=Pixel_Test_01')],
+  [['emulator-5554','Pixel_Test_01']]);
+assert.equal(parseAvdBindings(undefined).size,0);
+for(const wrong of [
+  'PHONE=Personal','emulator-5554=../Other',
+  'emulator-5554=Pixel_Test_01,emulator-5554=Other',
+  'emulator-5554=Pixel_Test_01,emulator-5556=Pixel_Test_01',
+  'emulator-5554=Pixel_Test_01;rm',
+  'emulator-5554=Pixel Test',
+  'emulator-5554=Pixel=Test'
+])assert.throws(()=>parseAvdBindings(wrong),Error);
+assert.throws(()=>parseAvdBindings(Array(9).fill(
+  'emulator-5554=Pixel_Test_01')),/At most eight/);
+
 const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
 (async()=>{
   assert.equal((await ask(1,'tools/list',{})).error.code,-32000);
@@ -57,6 +81,8 @@ const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
   const caps=await ask(5,'tools/call',{name:'android_capabilities',arguments:{}});
   assert.equal(decode(caps).actions,'disabled');
   assert.equal(decode(caps).authorizedDeviceCount,1);
+  assert.equal(decode(caps).deviceAccess,'serial-and-avd-identity-bound');
+  assert.equal(decode(caps).privateProfileNamesHidden,true);
   const dev=decode(await ask(6,'tools/call',{name:'android_list_devices',arguments:{}}));
   assert.equal(dev.devices.length,1);
   assert.equal(dev.devices[0].serial,'emulator-5554');
@@ -64,6 +90,7 @@ const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
   assert(!JSON.stringify(dev).includes(rawSecret));
   const avds=decode(await ask(7,'tools/call',{name:'android_list_avds',arguments:{}}));
   assert.deepEqual(avds.avds,['Pixel_Test_01']);
+  assert(!JSON.stringify(avds).includes('Other_Private_Profile'));
   const ui=decode(await ask(8,'tools/call',{name:'android_inspect_ui',
     arguments:{serial:'emulator-5554'}}));
   assert.equal(ui.privacy,'geometry-only');
@@ -72,6 +99,56 @@ const ask=(id,method,params)=>handler.handle({jsonrpc:'2.0',id,method,params});
   assert.equal(ui.elements[0].bounds.x,80);
   assert(!JSON.stringify(ui).includes(rawSecret));
   assert(!JSON.stringify(ui).includes('left')); // No extra coordinates
+  // ADB serials are recycled! A new profile on emulator-5554 MUST NOT
+  // inherit the old allowlist or expose another AVD's UI / AVD names.
+  avdOwner='Other_Private_Profile';
+  const swappedDev=decode(await ask(91,'tools/call',{
+    name:'android_list_devices',arguments:{}
+  }));
+  assert.deepEqual(swappedDev.devices,[]);
+  const swappedAvds=decode(await ask(92,'tools/call',{
+    name:'android_list_avds',arguments:{}
+  }));
+  assert.deepEqual(swappedAvds.avds,[]);
+  const leaked=await ask(93,'tools/call',{
+    name:'android_inspect_ui',arguments:{serial:'emulator-5554'}
+  });
+  assert.equal(leaked.result.isError,true);
+  assert(!JSON.stringify(leaked).includes(rawSecret));
+  assert(!JSON.stringify(leaked).includes('Other_Private_Profile'));
+  avdOwner='Pixel_Test_01';
+
+  const serialOnly=createMcpHandler({manager,inspector,
+    allowedSerials:['emulator-5554'],avdBindings:''});
+  await serialOnly.handle({jsonrpc:'2.0',id:80,method:'initialize',
+    params:{protocolVersion:'2025-06-18'}});
+  const deniedAvds=await serialOnly.handle({jsonrpc:'2.0',id:81,
+    method:'tools/call',params:{name:'android_list_avds',arguments:{}}});
+  assert.deepEqual(JSON.parse(deniedAvds.result.content[0].text).avds,[]);
+  const deniedDevices=await serialOnly.handle({jsonrpc:'2.0',id:82,
+    method:'tools/call',params:{name:'android_list_devices',arguments:{}}});
+  assert.deepEqual(JSON.parse(deniedDevices.result.content[0].text).devices,[]);
+  const deniedUi=await serialOnly.handle({jsonrpc:'2.0',id:83,
+    method:'tools/call',params:{name:'android_inspect_ui',
+      arguments:{serial:'emulator-5554'}}});
+  assert.equal(deniedUi.result.isError,true);
+  assert(!JSON.stringify(deniedUi).includes(rawSecret));
+
+  // Cross-device switch mid-inspection: the *second* identity check must
+  // refuse returning stale geometry from a different profile.
+  let allowFinish;
+  late=new Promise(resolve=>{allowFinish=resolve;});
+  const midRead=ask(94,'tools/call',{name:'android_inspect_ui',
+    arguments:{serial:'emulator-5554'}});
+  await new Promise(resolve=>setImmediate(resolve));
+  avdOwner='Other_Private_Profile';
+  allowFinish();
+  const changed=await midRead;
+  assert.equal(changed.result.isError,true);
+  assert(!JSON.stringify(changed).includes(rawSecret));
+  avdOwner='Pixel_Test_01';
+  late=null;
+
   const denied=await ask(9,'tools/call',{name:'android_touch',arguments:{serial:'emulator-5554'}});
   assert.equal(denied.result.isError,true);
   assert.equal(denied.result.content[0].text,'Tool is not exposed');
