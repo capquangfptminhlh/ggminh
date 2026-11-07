@@ -97,8 +97,10 @@ async function firefox(exe, state, loopbackUrl, proxyPort) {
       for (let i = 0; i < 90 && state.results.length === before; i++) await sleep(500);
       await sleep(4000);
       const got = state.results.length > before ? state.results[state.results.length - 1] : null;
-      await launcher.stop(profile.id); await sleep(4000);
-      runs.push({ label, launch: n, gotResult: !!got, error: got ? got.err : 'no result',
+      const trackedWhileOpen = launcher.activeProcesses.has(profile.id);
+      const stopped = await launcher.stop(profile.id).catch(e => ({ error: String(e.message || e) })); await sleep(4000);
+      runs.push({ label, launch: n, gotResult: !!got, error: got ? got.err : 'no result', trackedWhileOpen,
+        stopResult: stopped && (stopped.success === true ? 'stopped' : JSON.stringify(stopped).slice(0, 160)),
         iceCandidateTypes: types(got), proxyRequests: state.log.length - logBefore,
         locallyResolvedHosts: resolvedHosts(prefix) });
     }
