@@ -85,7 +85,8 @@ function sanitizedEmulatorEnv(env={}) {
   // The emulator honors http_proxy when -http-proxy is absent.
   const cleaned={};
   for(const [key,value] of Object.entries(env)) {
-    if(/^(?:http_proxy|https_proxy|all_proxy|no_proxy)$/i.test(key))continue;
+    if(/^(?:http_proxy|https_proxy|all_proxy|no_proxy)$/i.test(key) ||
+       /^LHM_(?:ANDROID|MCP)_/i.test(key))continue;
     cleaned[key]=value;
   }
   return cleaned;
