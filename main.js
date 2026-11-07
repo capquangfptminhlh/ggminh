@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
 const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
-const { AndroidControl } = require('./src/android/androidControl');
+const { AndroidControl, safeChromeUrl } = require('./src/android/androidControl');
 const { AndroidAgentWorkflow } = require('./src/android/agentWorkflow');
 const { AndroidUIInspector } = require('./src/android/uiInspector');
 const { AndroidTargetGuard } = require('./src/android/targetGuard');
@@ -467,6 +467,28 @@ function initIPC() {
       if(confirm.response!==1)return {state:'cancelled'};
       return androidControl.openBrowser(serial);
     } finally { androidChromeConfirmations.delete(serial); }
+  });
+  ipcMain.handle('android-chrome-navigate', async (_event, serial, inputUrl) => {
+    // Site selection is an owner-originated UI action, not an Agent/MCP tool.
+    // Validate before showing approval and again inside the ADB transport.
+    if(typeof serial!=='string' || !/^emulator-\d{4,5}$/.test(serial))
+      throw new Error('Web navigation requires an Android emulator');
+    const href=safeChromeUrl(inputUrl);
+    if(androidChromeConfirmations.has(serial))
+      throw new Error('Another Chrome approval is already open');
+    androidChromeConfirmations.add(serial);
+    try {
+      const confirm=await dialog.showMessageBox(mainWindow,{
+        type:'question',title:'Xác nhận mở website trên Android',
+        message:'Mở địa chỉ HTTPS này trong Chrome của ' + serial + '?',
+        detail:href + '\n\nChỉ gửi một yêu cầu mở trang. ' +
+          'Không tự xác nhận đăng nhập, giao dịch hoặc nội dung trang. ' +
+          'Kiểm tra màn hình Android sau khi thực hiện.',
+        buttons:['Hủy','Mở website'],defaultId:0,cancelId:0,noLink:true
+      });
+      if(confirm.response!==1)return {state:'cancelled'};
+      return androidControl.navigateChrome(serial,href);
+    } finally {androidChromeConfirmations.delete(serial);}
   });
   ipcMain.handle('android-ui-inspect', (_event, serial) => androidTargetGuard.scan(serial));
   ipcMain.handle('android-ui-invalidate', (_event, scanId) =>
