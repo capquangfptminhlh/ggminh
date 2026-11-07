@@ -25,6 +25,18 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
+## Open Chrome inside a dedicated Android emulator (owner-approved)
+
+After an AVD reports `sys.boot_completed=1` in **Android Device Center**, its row now enables **Mở Chrome**. This asks for an Electron-native confirmation, verifies that the selected target is still an ADB-authorized `emulator-XXXX`, verifies boot completion, and checks that `com.android.chrome` is installed before sending one fixed `monkey` launcher event. If Chrome is missing, choose a suitable official Android system image with Chrome. No browser APK is silently downloaded or installed.
+
+- This button opens Chrome **inside Android**, not a desktop Chromium profile. The emulator window or optional scrcpy displays its screen. Chrome first-run prompts remain user-controlled. No automatic URL visits, cookie copying, profile cloning, or hidden browsing.
+- The command returns `launch-requested` when ADB confirms injection. This **does not prove Chrome is visibly in the foreground**; the operator should verify the window. Busy/booting/uninstalled/offline/physical-phone/uncertain command results fail closed; no blind retry.
+- The regular `npm test` includes `test/android-browser-launch.js` plus `test/android-live-smoke.js` (ADB fixtures, not Android hardware).
+- For **actual Windows AVD** validation, manually run workflow `.github/workflows/android-live-windows.yml` on a dedicated `[self-hosted, Windows, X64, android-sdk]` runner and select `test_chrome=YES` with a clean AVD with Chrome preinstalled. The harness checks a Chrome resumed/focused ActivityManager marker and a valid PNG screenshot, then requests AVD shutdown. If the foreground marker is not observed it reports FAIL. It does not prove page load, internet access, account behavior, performance or multi-instance stability.
+- An initial `test_chrome=NO` run remains the recommended read-only/basic HOME+snapshot preflight. Test only a clean AVD without personal accounts.
+
+**Commercial gate remains OPEN:** no measured multi-AVD latency/CPU/RAM stability, no owner-endorsed physical Windows AVD acceptance, and no semantic browser interaction parity with competing Android platforms.
+
 ## AI Agent MCP access (separate, read-only)
 
 LHM includes an opt-in **local MCP stdio server** at `bin/lhm-android-mcp.js`. It exposes only explicitly allowlisted ADB devices and sanitized UI metadata to a compatible local Agent client; no screenshots or Android write tools. It **does not** automatically connect to the 16-agent Robot Desktop app. See [ANDROID-MCP-BRIDGE.md](ANDROID-MCP-BRIDGE.md) for setup, permission controls and known limitations.
