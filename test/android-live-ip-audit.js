@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const {publicIpFromXml,readWebIp,decideEgress,run}=
+const {isPublicAddress,publicIpFromXml,readWebIp,decideEgress,run}=
   require('../tools/android-live-ip-audit');
 
 const serial='emulator-5554',name='Clean_IP_Test';
@@ -13,7 +13,7 @@ function xml(ip) {
 }
 function fixture() {
   let actualName=name,connected=true,booted=true,foreground=true;
-  let sourceIp='203.0.113.24',count=0;
+  let sourceIp='8.8.8.8',count=0;
   const calls=[];
   const manager={
     tool:cmd=>cmd==='adb'?'adb.exe':null,
@@ -42,8 +42,8 @@ function fixture() {
     }
   };
   const opts=()=>({
-    manager,control,serial,avdName:name,expectedIp:'203.0.113.24',
-    hostIpProbe:async()=> '198.51.100.5',
+    manager,control,serial,avdName:name,expectedIp:'8.8.8.8',
+    hostIpProbe:async()=> '1.1.1.1',
     approved:true,delay:async()=>{},maxPolls:1
   });
   return {opts,calls,manager,setName:v=>{actualName=v;},
@@ -53,37 +53,44 @@ function fixture() {
 }
 
 (async()=>{
-  assert.equal(publicIpFromXml(xml('203.0.113.24')),'203.0.113.24');
-  assert.equal(publicIpFromXml(xml('2001:db8::1')),'2001:db8::1');
+  assert.equal(publicIpFromXml(xml('8.8.8.8')),'8.8.8.8');
+  assert.equal(publicIpFromXml(xml('2606:4700:4700::1111')),'2606:4700:4700::1111');
   assert.equal(publicIpFromXml(xml('Not a public IP')),null);
-  assert.equal(publicIpFromXml(xml('203.0.113.24').replace(
-    '</hierarchy>','<node text="198.51.100.2"/></hierarchy>')),null);
-  assert.equal(publicIpFromXml('<node text="203.0.113.24" />'),null);
-  assert.equal(publicIpFromXml(xml('203.0.113.24')+'x'.repeat(1048576)),null);
+  assert.equal(publicIpFromXml(xml('8.8.8.8').replace(
+    '</hierarchy>','<node text="1.0.0.1"/></hierarchy>')),null);
+  assert.equal(publicIpFromXml('<node text="8.8.8.8" />'),null);
+  assert.equal(publicIpFromXml(xml('8.8.8.8')+'x'.repeat(1048576)),null);
   assert.equal(publicIpFromXml(null),null);
+  for(const bad of ['127.0.0.1','10.1.1.1','192.168.1.1',
+    '169.254.0.1','203.0.113.25','198.51.100.7',
+    '100.100.100.1','2001:db8::1','::1','fe80::1','fd00::1'])
+    assert.equal(isPublicAddress(bad),false,'Nonpublic address accepted: '+bad);
+  assert.equal(isPublicAddress('8.8.8.8'),true);
+  assert.equal(isPublicAddress('2606:4700:4700::1111'),true);
+
 
   const success=decideEgress({
-    deviceIp:'203.0.113.24',hostIp:'198.51.100.5',
-    expectedIp:'203.0.113.24'
+    deviceIp:'8.8.8.8',hostIp:'1.1.1.1',
+    expectedIp:'8.8.8.8'
   });
   assert.deepEqual(success,{
     status:'IP_ONLY_PASS',reason:'EXPECTED_ANDROID_EGRESS_OBSERVED'
   });
   assert.deepEqual(decideEgress({
-    deviceIp:'198.51.100.5',hostIp:'198.51.100.5',
-    expectedIp:'198.51.100.5'
+    deviceIp:'1.1.1.1',hostIp:'1.1.1.1',
+    expectedIp:'1.1.1.1'
   }),{status:'FAIL',reason:'ANDROID_EGRESS_MATCHES_WINDOWS_HOST'});
   assert.equal(decideEgress({
-    deviceIp:'203.0.113.24',hostIp:'198.51.100.5',
-    expectedIp:'203.0.113.20'
+    deviceIp:'8.8.8.8',hostIp:'1.1.1.1',
+    expectedIp:'8.8.4.4'
   }).status,'FAIL');
   assert.equal(decideEgress({
-    deviceIp:'203.0.113.24',hostIp:'198.51.100.5',
+    deviceIp:'8.8.8.8',hostIp:'1.1.1.1',
     expectedIp:null
   }).status,'NOT_VERIFIED');
   assert.equal(decideEgress({
-    deviceIp:null,hostIp:'198.51.100.5',
-    expectedIp:'203.0.113.24'
+    deviceIp:null,hostIp:'1.1.1.1',
+    expectedIp:'8.8.8.8'
   }).status,'NOT_VERIFIED');
 
   const f=fixture();
@@ -98,7 +105,7 @@ function fixture() {
   assert.equal(report.persistedData,false);
   assert.equal(f.navigationCount(),1);
   const reportData=JSON.stringify(report);
-  for(const leak of ['203.0.113.24','198.51.100.5',
+  for(const leak of ['8.8.8.8','1.1.1.1',
     'Clean_IP_Test','emulator-5554','https://api.ipify.org'])
     assert(!reportData.includes(leak),'Report leaked internal network or profile information');
 
@@ -128,7 +135,7 @@ function fixture() {
     'Do not browse if Windows host egress is not measurable');
 
   const same=fixture();
-  same.setIp('198.51.100.5');
+  same.setIp('1.1.1.1');
   const shared=await run(same.opts());
   assert.equal(shared.status,'FAIL');
   assert.equal(shared.reason,'ANDROID_EGRESS_MATCHES_WINDOWS_HOST');
@@ -151,12 +158,12 @@ function fixture() {
 
   const noAdb={
     tool:()=>null,
-    execFile:(cmd,args,opts,done)=>done(null,xml('203.0.113.24'))
+    execFile:(cmd,args,opts,done)=>done(null,xml('8.8.8.8'))
   };
   assert.equal(await readWebIp(noAdb,serial),null);
   const badDump={
     tool:()=> 'adb.exe',
-    execFile:(_cmd,_args,_opts,done)=>done(new Error('private token'),xml('203.0.113.24'))
+    execFile:(_cmd,_args,_opts,done)=>done(new Error('private token'),xml('8.8.8.8'))
   };
   assert.equal(await readWebIp(badDump,serial),null);
 
