@@ -21,6 +21,15 @@ const MAX_BOOT_MS=5*60*1000;
 const POLL_MS=3000;
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
+function chromeForeground(output) {
+  // ActivityManager dumps have slightly different focus labels across SDK
+  // versions. Only a foreground/resumed marker with the exact Chrome package
+  // is sufficient; do not confuse an installed/background process with success.
+  return String(output||'').split(/\r?\n/).some(line =>
+    /\b(?:topResumedActivity|mResumedActivity|ResumedActivity|mFocusedApp|mCurrentFocus)\b/.test(line) &&
+    /\bcom\.android\.chrome\//.test(line));
+}
+
 function requestedAvd(args,env=process.env) {
   if(args.length !== 0) throw Error('Set LHM_ANDROID_AVD to the test AVD name; no CLI shell interpolation.');
   const name=env.LHM_ANDROID_AVD;
@@ -89,11 +98,33 @@ async function run(options={}) {
     if(inspect.privacy!=='geometry-only' ||
       !Number.isInteger(inspect.totalNodes)||inspect.totalNodes<1)
       throw Error('Android UI hierarchy is unavailable.');
+    let chrome=null;
+    if(options.testChrome===true) {
+      const launchReceipt=await control.openBrowser(serial);
+      if(launchReceipt.state!=='launch-requested')
+        throw Error('Chrome did not accept a launcher event');
+      const adb=manager.tool('adb');
+      let focused=false;
+      for(let attempt=0;attempt<4 && !focused;attempt++) {
+        await (options.delay||delay)(1200);
+        const activity=await manager.run(adb,['-s',serial,'shell',
+          'dumpsys','activity','activities']);
+        focused=chromeForeground(activity);
+      }
+      if(!focused)
+        throw Error('Chrome did not become the foreground Android activity');
+      const chromeShot=await control.screenshot(serial);
+      if(!chromeShot.width || !chromeShot.height || !chromeShot.byteLength)
+        throw Error('Chrome foreground screenshot unavailable');
+      chrome={state:'foreground-observed',frame:{width:chromeShot.width,
+        height:chromeShot.height},verifiedBy:'adb-resumed-activity-and-png'};
+    }
     return {
       status:'PASS',source:'live-adb',
       bootComplete:true,
       screenshot:{width:screen.width,height:screen.height,bytes:screen.byteLength},
       homeKey:'executed',
+      chrome,
       hierarchy:{nodeCount:inspect.totalNodes,
         actionableCount:inspect.actionableCount,privacy:inspect.privacy},
       elapsedMs:Math.max(0,clock()-begun),
@@ -125,11 +156,16 @@ async function run(options={}) {
 }
 
 if(require.main===module) {
-  run().then(summary=>console.log(JSON.stringify(summary,null,2)))
+  const consent=process.env.LHM_ANDROID_TEST_CHROME||'NO';
+  if(!['YES','NO'].includes(consent)) {
+    console.error('ANDROID LIVE SMOKE: FAIL - invalid Chrome test opt-in');
+    process.exitCode=2;
+  } else run({testChrome:consent==='YES'})
+    .then(summary=>console.log(JSON.stringify(summary,null,2)))
     .catch(error=>{
       console.error('ANDROID LIVE SMOKE: FAIL - '+String(error.message||error).slice(0,260));
       process.exitCode=1;
     });
 }
 
-module.exports={requestedAvd,findByName,waitForBoot,run};
+module.exports={requestedAvd,findByName,waitForBoot,chromeForeground,run};
