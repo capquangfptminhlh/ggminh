@@ -41,6 +41,11 @@
   }
 
   function render(state) {
+    // ADB emulator serials are recycled. An Android fleet refresh may now
+    // point the same serial at a DIFFERENT AVD/profile. Never leave a prior
+    // profile screenshot or tap coordinates active after rediscovery.
+    clearShot();
+    $('android-chrome-url').value='';
     bootedEmulators=new Set((state?.fleet?.running || [])
       .filter(device=>device.bootCompleted===true && /^emulator-\d{4,5}$/.test(device.serial))
       .map(device=>device.serial));
