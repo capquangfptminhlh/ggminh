@@ -47,6 +47,28 @@ The result `intent-sent-unverified` means that Android accepted the intent reque
 
 `test/android-browser-navigation.js` covers validation, concurrency, boot, package, renderer wiring, native approval and error redaction using mock ADB. The regular `npm test` runs it on Linux and Windows. Live AVD compatibility, website rendering, page-load metrics and concurrent-emulator benchmarks still need separate Windows owner acceptance.
 
+### One-click real Windows AVD acceptance (no GitHub runner required)
+
+From a **complete, trusted `ggminh` source checkout**, with Node.js 22+, Android Studio SDK Platform-Tools, Android Emulator, a system image with Chrome, Windows virtualization (WHPX) enabled, and an already-created clean AVD:
+
+1. Double-click **`CHECK_ANDROID_WINDOWS.cmd`** in the repository root.
+2. The local diagnostic checks ADB + Emulator, lists existing AVDs, free host RAM, CPU threads, and launch-gate readiness.
+3. Type the exact name of a **dedicated disposable test AVD** (without personal accounts, banking, OTP, messages or customer data).
+4. Choose **1 = boot/screenshot**, **2 = Chrome foreground**, or **3 = Chrome foreground plus public `example.com` page heading**.
+5. Type the exact confirmation **YES** to authorize launching and stopping only the selected AVD. The harness refuses an already-running AVD and requests cleanup shutdown. Read the sanitized PASS/FAIL result in the local console.
+
+This is local execution, **not remote testing**: no screenshots, Android screen text, account records, device serials or raw UI XML are stored by the helper or uploaded. The result contains dimensions and observational timings only. The launcher does not install SDK tools, download system images, create/clone profiles, silently log in, or use existing active emulators. A failed acceptance must not be reinterpreted as a PASS.
+
+Alternatively, use PowerShell from the complete repository:
+
+```powershell
+node tools/android-local-acceptance.js --list
+node tools/android-local-acceptance.js --avd LHM_Test_Pixel --mode basic --ack-clean-avd
+node tools/android-local-acceptance.js --avd LHM_Test_Pixel --mode page --ack-clean-avd
+```
+
+The `--ack-clean-avd` flag is an explicit operator acknowledgment; it **cannot verify** that an AVD contains no personal data. Do not select one with real accounts. For a downloadable EXE, this source-level acceptance helper does not replace testing the packaged Electron UI. Running this on a real Windows machine provides host evidence absent from normal GitHub CI.
+
 ### Real Windows AVD public website acceptance (explicitly opted in)
 
 The manual GitHub workflow `.github/workflows/android-live-windows.yml` can now check a **fixed public sample page** on a clean, dedicated AVD with Chrome already installed. It is not a performance certification. Configure a Windows 10/11 self-hosted runner with SDK, an existing accelerated AVD, and the `android-sdk` label. Select one of these gates:
