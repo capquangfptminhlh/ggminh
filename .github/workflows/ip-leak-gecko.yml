@@ -1,0 +1,63 @@
+name: IP leak measurement - Firefox and Camoufox (Windows)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ip-leak-gecko.yml'
+      - 'stage0-measure/run-ip-leak-gecko.js'
+      - 'src/engine/geckoProxy.js'
+      - 'src/engine/CamoufoxProfileManager.js'
+      - 'src/engine/CamoufoxPlaywrightController.js'
+      - 'src/engine/camoufoxProxyPlan.js'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ip-leak-gecko-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gecko-ip-leak:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js 20 (Electron-compatible Playwright runtime)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install app dependencies and pinned Playwright (test only)
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'playwright-core install failed' }
+      - name: Download official pinned Camoufox and verify it (never redistributed)
+        shell: pwsh
+        run: ./tools/stage-camoufox-upstream-smoke.ps1
+      - name: Locate the runner's installed Firefox
+        shell: pwsh
+        run: |
+          $ff = @("C:\Program Files\Mozilla Firefox\firefox.exe", "C:\Program Files (x86)\Mozilla Firefox\firefox.exe") |
+            Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not $ff) { Write-Warning 'Firefox not installed on this runner: Firefox measurement NOT_RUN' }
+          else { "LHM_FIREFOX_EXECUTABLE=$ff" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append; (Get-Item $ff).VersionInfo.ProductVersion }
+      - name: Measure WebRTC and DNS leaks for proxied Firefox and Camoufox profiles
+        shell: pwsh
+        timeout-minutes: 15
+        run: |
+          node stage0-measure/run-ip-leak-gecko.js "$env:RUNNER_TEMP\ip-leak-gecko"
+          if ($LASTEXITCODE -ne 0) { throw 'IP leak measurement did not complete' }
+          $report = Get-Content "$env:RUNNER_TEMP\ip-leak-gecko\ip-leak-gecko-report.json" -Raw | ConvertFrom-Json
+          "Firefox: $($report.verdict.firefox)  Camoufox: $($report.verdict.camoufox)" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
+          if ($report.verdict.firefox -eq 'FAIL' -or $report.verdict.camoufox -eq 'FAIL') { throw 'IP leak found in a proxied Gecko profile' }
+      - name: Publish the measurement report (no browser binaries, no logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-IP-Leak-Gecko-Report
+          path: ${{ runner.temp }}/ip-leak-gecko/ip-leak-gecko-report.json
+          if-no-files-found: warn
+          retention-days: 30
