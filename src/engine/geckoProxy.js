@@ -17,7 +17,13 @@ const GECKO_PROXIED_LEAK_PREFS = Object.freeze({
   'media.peerconnection.ice.no_host': true,
   'network.dns.disablePrefetch': true,
   'network.predictor.enabled': false,
-  'network.http.http3.enable': false
+  'network.http.http3.enable': false,
+  // Measured on Windows CI: on first start Firefox resolved example.org and
+  // ipv4only.arpa (connectivity/NAT64 checks) and cloudflare-dns.com (DoH
+  // bootstrap) with the local resolver, outside the proxy.
+  'network.connectivity-service.enabled': false,
+  'network.trr.mode': 5,
+  'doh-rollout.disable-heuristics': true
 });
 const GECKO_DIRECT_LEAK_PREFS = Object.freeze({
   'media.peerconnection.ice.proxy_only_if_behind_proxy': false,
@@ -25,7 +31,10 @@ const GECKO_DIRECT_LEAK_PREFS = Object.freeze({
   'media.peerconnection.ice.no_host': false,
   'network.dns.disablePrefetch': false,
   'network.predictor.enabled': true,
-  'network.http.http3.enable': true
+  'network.http.http3.enable': true,
+  'network.connectivity-service.enabled': true,
+  'network.trr.mode': 0,
+  'doh-rollout.disable-heuristics': false
 });
 
 /** Persist scoped Firefox proxy preferences without clobbering unrelated user.js settings. */

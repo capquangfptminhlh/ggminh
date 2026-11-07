@@ -46,7 +46,8 @@ Gói nghiệm thu Gate 3 phải lấy từ một bản build `main` có khoá n�
 - QA-007 (đo một phần ngày 2026-11-06, chi tiết ở `stage0-measure/ip-leak-results-2026-11-06.json`): đo hồ sơ Chrome và Edge có proxy trên máy thật.
   - TCP: đều đi qua proxy. DNS: trình duyệt không tự tra. QUIC: không có byte UDP nào. Cả ba **ĐẠT**.
   - WebRTC: **lộ IP thật** qua STUN (candidate srflx). Cờ `--force-webrtc-ip-handling-policy` không có tác dụng, extension "spoof" cũng không chặn được. Đã sửa: launcher ghi `webrtc.ip_handling_policy=disable_non_proxied_udp` vào Preferences của hồ sơ trước mỗi lần mở, và sau khi sửa không còn candidate nào.
-  - Firefox (Gecko) và Camoufox: đã thêm preference ICE chỉ qua proxy, tắt DNS prefetch, tắt HTTP/3. Chưa đo vì máy không có Firefox hay Camoufox.
+  - Firefox (Gecko) và Camoufox: đã đo ngày 2026-11-07 trên runner Windows của CI (workflow `ip-leak-gecko.yml`, kết quả ở `stage0-measure/ip-leak-results-gecko-2026-11-07.json`). Hồ sơ có proxy: không có candidate WebRTC và không tra DNS tại máy, **ĐẠT**. Hồ sơ direct làm đối chứng vẫn có srflx.
+  - Lần đo đầu lộ hai lỗi, đã sửa. (1) Ở lần mở đầu, Firefox tự tra DNS tại máy cho các bước kiểm tra mạng và DoH (`example.org`, `ipv4only.arpa`, `cloudflare-dns.com`); cách sửa là tắt connectivity service, DoH và DoH heuristics khi có proxy. (2) Trên Windows, `firefox.exe` thoát sau chưa tới 3 giây trong khi trình duyệt vẫn chạy, nên app mất dấu process và nút Dừng không đóng được; cách sửa là thêm `--wait-for-browser`.
   - IP thoát ra qua một proxy thật ở xa: chưa đo.
 - QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
 - QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.

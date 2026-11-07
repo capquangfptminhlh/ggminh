@@ -18,6 +18,8 @@ try {
     proxy: { type: 'direct' }
   });
   assert.deepStrictEqual(args.slice(0, 2), ['--no-remote', '--profile']);
+  // Windows firefox.exe exits right after starting the browser unless told to wait.
+  assert.strictEqual(args.includes('--wait-for-browser'), process.platform === 'win32');
   assert(args.includes('--new-window'));
   assert(!args.some(x => x.includes('--load-extension') || x.includes('--remote-debugging')));
   assert.throws(() => createLaunchArgs({ engine: 'gecko', profileDir: dir, url: 'https://example.com/', port: 9222 }), /CDP/);
