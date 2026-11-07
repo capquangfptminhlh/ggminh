@@ -60,7 +60,10 @@ function emulatorAvdName(output) {
   // Refuse to map ambiguous or unacknowledged responses.
   const lines = String(output || '').trim().split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
   const name = lines[0];
-  return lines.includes('OK') && /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(name)
+  // Serial ports are recycled between AVD profiles. Require an unambiguous
+  // exact emulator console response, not arbitrary extra lines containing OK.
+  return lines.length===2 && lines[1]==='OK' &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(name)
     ? name : null;
 }
 
