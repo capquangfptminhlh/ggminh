@@ -442,7 +442,7 @@ function initIPC() {
   ipcMain.handle('android-open-chrome', async (_event, serial) => {
     // This permission is separate from screenshots, taps, APK installs and
     // the Robot's Android MCP. Never start a browser without owner approval.
-    if (typeof serial!=='string' || !/^emulator-\\d{4,5}$/.test(serial))
+    if (typeof serial!=='string' || !/^emulator-\d{4,5}$/.test(serial))
       throw new Error('Chrome is only available on an Android test emulator');
     if (androidChromeConfirmations.has(serial))
       throw new Error('Another Chrome confirmation is already open');
