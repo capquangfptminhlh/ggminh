@@ -434,7 +434,15 @@ function initIPC() {
   ipcMain.handle('android-duplicate-avd', (_event, source, name) => avdProvisioner.duplicate(source, name));
   ipcMain.handle('android-launch-avd', (_event, name) => androidManager.launchAvd(name));
   ipcMain.handle('android-open-screen', (_event, serial) => androidManager.openScreen(serial));
-  ipcMain.handle('android-stop-emulator', (_event, serial) => androidManager.stopEmulator(serial));
+  ipcMain.handle('android-stop-emulator', async (_event, serial) => {
+    // AVD shutdown must not race an approved Chrome launch or other in-flight
+    // Android command. Sharing the local control busy set serializes both.
+    if (androidControl.busy.has(serial) || androidChromeConfirmations.has(serial))
+      throw new Error('Android is busy or waiting for approval; close that step before stopping');
+    androidControl.busy.add(serial);
+    try { return await androidManager.stopEmulator(serial); }
+    finally { androidControl.busy.delete(serial); }
+  });
   ipcMain.handle('android-control-action', (_event, serial, action, args) =>
     androidControl.execute(serial, action, args));
   ipcMain.handle('android-control-screenshot', (_event, serial) =>
