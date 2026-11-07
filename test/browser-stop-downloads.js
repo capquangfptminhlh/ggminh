@@ -65,6 +65,16 @@ async function stopperTests() {
     await sleep(80);
     assert.strictEqual(r.calls.length, 1, 'no force after a clean exit');
   }
+  // Windows Firefox: the tree close reports errors for windowless processes;
+  // that must not trigger an immediate force-kill, only the grace timer does.
+  {
+    const proc = fakeProc(), r = recorder({ failGraceful: true });
+    stopBrowserProcess(proc, { platform: 'win32', run: r.run, graceMs: 60, isChild, gracefulTree: true });
+    await sleep(25);
+    assert.strictEqual(r.calls.length, 1, 'no immediate force on a partial tree-close error');
+    await sleep(80);
+    assert.deepStrictEqual(r.calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
+  }
   // Windows: no closable window (headless/starting) -> force at once.
   {
     const proc = fakeProc(), r = recorder({ failGraceful: true });

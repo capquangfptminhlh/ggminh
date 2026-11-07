@@ -65,8 +65,11 @@ function stopBrowserProcess(proc, {
   if (useTaskkill) {
     run('taskkill', ['/PID', String(pid), ...(gracefulTree ? ['/T'] : [])], { windowsHide: true }, error => {
       // No closable window (headless, still starting): nothing will close
-      // gracefully, so do not wait out the grace period.
-      if (error) force();
+      // gracefully, so do not wait out the grace period. A tree close always
+      // reports an error for the windowless processes in it (the launcher,
+      // content processes) while the browser window still closes normally,
+      // so there the grace timer decides instead.
+      if (error && !gracefulTree) force();
     });
     armForce();
     return true;

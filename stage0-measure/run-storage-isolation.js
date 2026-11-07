@@ -75,9 +75,15 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     await launcher.start(profile.id, url);
     for (let i = 0; i < 60 && results.length === before; i++) await sleep(500);
     const r = results.length > before ? results[results.length - 1] : { err: 'no result' };
+    const proc = launcher.activeProcesses.get(profile.id)?.process;
+    const exited = new Promise(res => { if (!proc || proc.exitCode !== null) res(null); else proc.once('exit', (code, signal) => res({ code, signal })); });
+    const stopAt = Date.now();
     await Promise.resolve().then(() => launcher.stop(profile.id)).catch(() => {});
-    await sleep(3500);
-    steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore });
+    const exit = await Promise.race([exited, sleep(20000).then(() => 'still running after 20 s')]);
+    const stopToExitMs = Date.now() - stopAt;
+    for (let i = 0; i < 40 && launcher.activeProcesses.has(profile.id); i++) await sleep(250);
+    await sleep(2000);
+    steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit });
     return r;
   }
   await visit(A, base + '/set?p=A', 'A writes');
