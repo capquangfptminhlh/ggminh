@@ -204,6 +204,12 @@ function fixture(external=false,chrome={},page={}) {
 
   const external=fixture();
   const externalDevices=external.manager.devices;
+  const externalRun=external.manager.run;
+  external.manager.run=async(executable,args)=>{
+    if(args.includes('emu') && args.includes('name') && args.includes('emulator-5556'))
+      return 'Other_AVD\nOK\n';
+    return externalRun(executable,args);
+  };
   external.manager.devices=async()=>[
     {serial:'emulator-5556',kind:'emulator',status:'device'},
     ...await externalDevices()
