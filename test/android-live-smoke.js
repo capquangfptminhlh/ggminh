@@ -1,17 +1,22 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {requestedAvd,findByName,run}=require('../tools/android-live-smoke');
+const {requestedAvd,findByName,chromeForeground,run}=require('../tools/android-live-smoke');
 
 assert.equal(requestedAvd([],{LHM_ANDROID_AVD:'Test_AVD'}),'Test_AVD');
 assert.throws(()=>requestedAvd([],{LHM_ANDROID_AVD:'Bad & name'}),/safe existing/);
 assert.throws(()=>requestedAvd(['--shell'],{LHM_ANDROID_AVD:'Test_AVD'}),/no CLI shell/);
+assert(chromeForeground('topResumedActivity=ActivityRecord{123 u0 com.android.chrome/com.google.android.apps.chrome.Main t7}'));
+assert(chromeForeground('mResumedActivity: ActivityRecord{123 com.android.chrome/com.google.android.apps.chrome.Main}'));
+assert.equal(chromeForeground('Hist #0: ActivityRecord{u0 com.android.chrome/com.google.android.apps.chrome.Main}'),false);
+assert.equal(chromeForeground('topResumedActivity=ActivityRecord{u0 com.android.settings/.Settings}'),false);
+
 
 const png=Buffer.alloc(32);
 Buffer.from([137,80,78,71,13,10,26,10]).copy(png);
 png.write('IHDR',12,'ascii');
 png.writeUInt32BE(720,16);
 png.writeUInt32BE(1280,20);
-function fixture(external=false) {
+function fixture(external=false,chrome={}) {
   let launched=external,stopped=false;
   const commands=[];
   const manager={
@@ -25,6 +30,12 @@ function fixture(external=false) {
       if(args.includes('emu')&&args.includes('name'))return 'Test_AVD\nOK\n';
       if(args.includes('getprop'))return '1\n';
       if(args.includes('keyevent'))return 'OK';
+      if(args.includes('pm')&&args.includes('path'))return chrome.installed===false
+        ? '' : 'package:/data/app/com.android.chrome/base.apk\n';
+      if(args.includes('monkey'))return 'Events injected: 1\n';
+      if(args.includes('dumpsys'))return chrome.foreground===false
+        ? 'topResumedActivity=ActivityRecord{u0 com.android.settings/.Settings}'
+        : 'topResumedActivity=ActivityRecord{u0 com.android.chrome/com.google.android.apps.chrome.Main}';
       throw Error('Unexpected ADB request');
     },
     execFile:(_file,args,opts,callback)=>{
@@ -70,6 +81,28 @@ function fixture(external=false) {
   const out=JSON.stringify(result);
   for(const secret of ['OTP','123456','account@example.com','emulator-5554'])
     assert.equal(out.includes(secret),false,'Sensitive data escaped smoke output');
+
+  const withChrome=fixture();
+  const verified=await run({manager:withChrome.manager,name:'Test_AVD',
+    clock:()=>1000,testChrome:true,delay:async()=>{}});
+  assert.equal(verified.chrome.state,'foreground-observed');
+  assert.equal(verified.chrome.frame.width,720);
+  assert.equal(verified.chrome.verifiedBy,'adb-resumed-activity-and-png');
+  assert(withChrome.commands.some(args=>args.includes('monkey')));
+  assert(withChrome.commands.some(args=>args.includes('dumpsys')));
+  for(const secret of ['com.android.chrome/com.google.android.apps.chrome.Main','emulator-5554'])
+    assert.equal(JSON.stringify(verified).includes(secret),false);
+
+  const missingChrome=fixture(false,{installed:false});
+  await assert.rejects(run({manager:missingChrome.manager,name:'Test_AVD',
+    testChrome:true,delay:async()=>{}}),/Chrome is not installed/);
+  assert.equal(missingChrome.state.stopped,true);
+  assert(!missingChrome.commands.some(args=>args.includes('monkey')));
+
+  const backgroundChrome=fixture(false,{foreground:false});
+  await assert.rejects(run({manager:backgroundChrome.manager,name:'Test_AVD',
+    testChrome:true,delay:async()=>{}}),/foreground Android activity/);
+  assert.equal(backgroundChrome.state.stopped,true);
 
   const already=fixture(true);
   await assert.rejects(run({manager:already.manager,name:'Test_AVD'}),/already running/);
