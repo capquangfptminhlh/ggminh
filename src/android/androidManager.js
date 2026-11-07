@@ -233,9 +233,20 @@ class AndroidManager {
     if (typeof serial !== 'string' || !SAFE_SERIAL.test(serial)) throw new Error('Invalid device serial');
     const device = (await this.devices()).find(item => item.serial === serial);
     if (!device || device.status !== 'device') throw new Error('Device is not connected and authorized');
+    // A mirrored window must not become a side-channel between Android
+    // profiles through the shared Windows clipboard, audio output, drag/drop,
+    // copy/paste or file transfer. Deliberately default to *view-only*.
+    // The owner's per-step manual controls remain in Android Control Studio.
+    if(device.kind!=='emulator')throw new Error('Private Android mirror is available only for emulators');
     const scrcpy = this.tool('scrcpy');
     if (!scrcpy) throw new Error('scrcpy is not installed. Install scrcpy and add it to PATH.');
-    const child = this.spawn(scrcpy, ['-s', serial, '--window-title', 'LHM Android - ' + serial], {
+    const child = this.spawn(scrcpy, [
+      '-s',serial,
+      '--no-control',              // blocks clipboard shortcuts and drag/drop
+      '--no-clipboard-autosync',   // no device-to-host or host-to-device sync
+      '--no-audio',                // no cross-profile audio on host speakers
+      '--window-title','LHM Android - ' + serial
+    ], {
       shell: false, windowsHide: false, stdio: 'ignore'
     });
     if (!child || !Number.isInteger(child.pid) || child.pid <= 0) throw new Error('Cannot open device screen');
