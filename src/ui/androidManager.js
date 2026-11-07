@@ -181,7 +181,7 @@
       const buttons = [
         action('Xem màn hình', async () => {
           await window.api.androidOpenScreen(device.serial);
-          return 'Đã gửi lệnh mở màn hình ' + device.serial + ' qua scrcpy.';
+          return 'Đang mở màn hình chỉ xem qua scrcpy (không chia sẻ clipboard/âm thanh). Chạm, vuốt và gõ trong Android Control Studio.';
         }, !online || !state.tools.scrcpy)
       ];
       if (online) {
