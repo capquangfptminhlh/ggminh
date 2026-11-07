@@ -69,6 +69,25 @@ node tools/android-local-acceptance.js --avd LHM_Test_Pixel --mode page --ack-cl
 
 The `--ack-clean-avd` flag is an explicit operator acknowledgment; it **cannot verify** that an AVD contains no personal data. Do not select one with real accounts. For a downloadable EXE, this source-level acceptance helper does not replace testing the packaged Electron UI. Running this on a real Windows machine provides host evidence absent from normal GitHub CI.
 
+### Two-AVD sequential Chrome stability check (Windows, manual)
+
+The operator can now run **`CHECK_ANDROID_2AVD_WINDOWS.cmd`** from a complete source checkout to compare TWO clean, independently created Android Virtual Devices on one Windows host **one after another**. This reuses the guarded single-AVD acceptance and requires Node.js 22+, a working Android SDK, installed Chrome in both AVD system images, hardware virtualization, adequate free RAM, and both AVDs shut down before the test.
+
+1. Double-click the command file; it lists AVD names and host readiness.
+2. Enter two **different dedicated test AVD names** (no personal accounts).
+3. Choose `chrome` to check foreground launch or `page` to also check the public `example.com` heading; default is `page`.
+4. Confirm **YES**. First AVD must PASS and verify complete shutdown before the second starts.
+5. The sanitized local report gives `timingRanges` for boot, Chrome foreground, public page observation and shutdown, including min/max/spread in milliseconds and no device names or screen content.
+
+PowerShell noninteractive example:
+
+```powershell
+node tools/android-two-avd-stability.js --list
+node tools/android-two-avd-stability.js --avds Clean_A,Clean_B --mode page --ack-clean-avds
+```
+
+The command **does not run two Android emulators concurrently**. It is a stability and device-compatibility check, not proof of parallel capacity, CPU/GPU/FPS stability, session isolation, network speed or Play Integrity. It refuses missing/duplicate AVD names, ambiguous capacity/SDK state and unconfirmed shutdown; it does not start a second AVD after the first fails. More demanding parallel load measurements require an explicitly scoped Windows acceptance harness and direct monitoring of host CPU, memory, GPU, thermals and active device health.
+
 ### Measured stage timings and verified emulator shutdown
 
 The Windows local acceptance and manual GitHub AVD workflow now collect **observation-only stage timings**:
