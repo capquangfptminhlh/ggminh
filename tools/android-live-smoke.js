@@ -39,10 +39,10 @@ function pageHeadingVisible(raw) {
   if (typeof raw!=='string' || Buffer.byteLength(raw,'utf8')>MAX_PAGE_XML_BYTES ||
       !raw.includes('<hierarchy') || !raw.includes('</hierarchy>'))return false;
   // Use only the exact public landing-page heading, not the address bar URL.
-  return raw.split(/<node\\b/).slice(1,3001).some(chunk => {
+  return raw.split(/<node\b/).slice(1,3001).some(chunk => {
     const tag=chunk.slice(0,chunk.indexOf('>')>=0?chunk.indexOf('>'):0);
-    return /(?:^|\\s)text="Example Domain"(?=\\s|\\/|$)/.test(tag) &&
-      !/(?:^|\\s)password="true"(?=\\s|\\/|$)/.test(tag);
+    return /(?:^|\s)text="Example Domain"(?=\s|\/|$)/.test(tag) &&
+      !/(?:^|\s)password="true"(?=\s|\/|$)/.test(tag);
   });
 }
 
