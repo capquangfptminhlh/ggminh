@@ -20,11 +20,13 @@ function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, pro
   const startUrls = safeWebUrls(urls === undefined ? [url] : urls);
   if (engine === 'gecko') {
     if (port) throw new Error('Gecko does not support Chromium CDP endpoints');
-    // Windows firefox.exe is a launcher process: it starts the real browser
-    // and exits at once (code 0), so the tracked PID "closes" while Firefox
-    // keeps running. --wait-for-browser keeps it alive until the browser exits.
+    // On Windows firefox.exe is a launcher process that starts the real browser
+    // and exits at once (measured: exit code 0 within 3 s while the window stays
+    // open), so the app lost track of the profile and Stop could not close it.
+    // --wait-for-browser keeps the spawned process alive until the browser exits.
     return ['--no-remote', '--profile', profileDir,
-      ...(platform === 'win32' ? ['--wait-for-browser'] : []), '--new-window', startUrls[0],
+      ...(platform === 'win32' ? ['--wait-for-browser'] : []),
+      '--new-window', startUrls[0],
       ...startUrls.slice(1).flatMap(item => ['--new-tab', item])];
   }
   if (engine !== 'chromium') throw new Error('Unsupported browser engine');

@@ -145,9 +145,20 @@ const {makeAuthority,readRegistry}=require('../src/licensing/authority');
   assert.strictEqual(issue(dayFile,{...dayOptions,months:1}).record.expiresAt,
    '2028-02-29T09:00:00.000Z','Legacy ledger month clamp is unchanged');
   const dailyCli=commands(['issue',dayFile,dayCustomer.id,'pro','--days','30','40',pem],
-   {now:clock,env,publicKey});
+   {now:clock,env,publicKey,authorityEnabled:true});
   assert.strictEqual(dailyCli.record.expiresAt,'2028-03-01T09:00:00.000Z');
   assert.strictEqual(dailyCli.record.enforcementMode,'owner_sweep');
+  assert.strictEqual(dailyCli.warning,undefined);
+  // Without a live license server the app blocks owner-sweep tokens, so the
+  // default becomes strict and an explicit owner-sweep issue is flagged.
+  const offlineDefault=commands(['issue',dayFile,dayCustomer.id,'pro','--days','30','40',pem],
+   {now:clock,env,publicKey,authorityEnabled:false});
+  assert.strictEqual(offlineDefault.record.enforcementMode,'strict');
+  assert.strictEqual(offlineDefault.warning,undefined);
+  const offlineSweep=commands(['issue',dayFile,dayCustomer.id,'pro','--days','30','40',pem,'owner-sweep'],
+   {now:clock,env,publicKey,authorityEnabled:false});
+  assert.strictEqual(offlineSweep.record.enforcementMode,'owner_sweep');
+  assert.match(offlineSweep.warning,/license server/);
   const dailyRenewed=commands(['renew',dayFile,dailyCli.record.licenseId,'--days','30',pem],
    {now:clock,env,publicKey});
   assert.strictEqual(dailyRenewed.record.expiresAt,'2028-03-31T09:00:00.000Z');

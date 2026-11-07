@@ -51,7 +51,7 @@ async function verifyInstalledBrowser(executable) {
   let launcher, launch;
   try {
     const store = new Store(path.join(root, 'storage'));
-    store.updateSettings({ apiEnabled: true });
+    store.updateSettings({ apiEnabled: true, cdpEnabled: true });
     const profile = store.saveProfile({
       name: 'Disposable CI Chromium', engine: 'chromium',
       startUrl: 'https://example.com/',

@@ -6,6 +6,37 @@ const BEGIN = '// LHM_MANAGED_PROXY_BEGIN';
 const END = '// LHM_MANAGED_PROXY_END';
 const MAX_BYTES = 2 * 1024 * 1024;
 
+// Firefox sends WebRTC STUN over direct UDP even when a proxy is set, which
+// reveals the real IP; it also prefetches DNS locally and may use HTTP/3 (UDP).
+// With a proxy: ICE only through the proxy, no host candidates, no local DNS
+// prefetch, no HTTP/3. Without one these return to Firefox defaults, because
+// values written by user.js persist in prefs.js after the block is replaced.
+const GECKO_PROXIED_LEAK_PREFS = Object.freeze({
+  'media.peerconnection.ice.proxy_only_if_behind_proxy': true,
+  'media.peerconnection.ice.default_address_only': true,
+  'media.peerconnection.ice.no_host': true,
+  'network.dns.disablePrefetch': true,
+  'network.predictor.enabled': false,
+  'network.http.http3.enable': false,
+  // Measured on Windows CI: on first start Firefox resolved example.org and
+  // ipv4only.arpa (connectivity/NAT64 checks) and cloudflare-dns.com (DoH
+  // bootstrap) with the local resolver, outside the proxy.
+  'network.connectivity-service.enabled': false,
+  'network.trr.mode': 5,
+  'doh-rollout.disable-heuristics': true
+});
+const GECKO_DIRECT_LEAK_PREFS = Object.freeze({
+  'media.peerconnection.ice.proxy_only_if_behind_proxy': false,
+  'media.peerconnection.ice.default_address_only': false,
+  'media.peerconnection.ice.no_host': false,
+  'network.dns.disablePrefetch': false,
+  'network.predictor.enabled': true,
+  'network.http.http3.enable': true,
+  'network.connectivity-service.enabled': true,
+  'network.trr.mode': 0,
+  'doh-rollout.disable-heuristics': false
+});
+
 /** Persist scoped Firefox proxy preferences without clobbering unrelated user.js settings. */
 function preferencesFor(proxy) {
   const result = validateProxy(proxy);
@@ -29,6 +60,7 @@ function preferencesFor(proxy) {
     p[5][1] = result.host; p[6][1] = result.port;
     p[8][1] = true; // Firefox resolves hostnames through SOCKS, not the local DNS resolver.
   }
+  p.push(...Object.entries(result.type === 'direct' ? GECKO_DIRECT_LEAK_PREFS : GECKO_PROXIED_LEAK_PREFS));
   return p.map(([name, value]) => 'user_pref(' + JSON.stringify(name) + ', ' + JSON.stringify(value) + ');').join('\n');
 }
 
@@ -74,4 +106,5 @@ function updateGeckoProxy(profileDir, proxy) {
   const result = writeManagedUserJsBlock(profileDir, BEGIN, END, body, 'proxy');
   return { file: result.file, type: proxy?.type || 'direct', bytes: result.bytes };
 }
-module.exports = { updateGeckoProxy, writeManagedUserJsBlock, preferencesFor, BEGIN, END };
+module.exports = { updateGeckoProxy, writeManagedUserJsBlock, preferencesFor, BEGIN, END,
+  GECKO_PROXIED_LEAK_PREFS, GECKO_DIRECT_LEAK_PREFS };

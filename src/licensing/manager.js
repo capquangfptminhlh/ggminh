@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 
-const PUBLIC_KEY='-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAQrZOTb8wh66eNTYWoegyBpiEgQUz7dlrXHJ8mHcBKR4=\n-----END PUBLIC KEY-----';
+const PUBLIC_KEY='-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAePk51gWDZKaio2N9BORbXipxGQJ9gjn2qhK0YefDrco=\n-----END PUBLIC KEY-----';
 const PREFIX='lhmlic1';
 const PLANS=new Set(['starter','pro','business']);
 const FEATURES=new Set(['profiles','automation','api','team']);

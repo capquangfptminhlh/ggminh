@@ -5,6 +5,55 @@ Trạng thái ban đầu lập ngày 2026-10-21 trên commit nền
 chứng tái hiện/đọc code, điều kiện đóng. Agent 10 chỉ ghi nhận, không
 tự vá code tính năng.
 
+## Cập nhật 2026-11-06
+
+Đã đóng (có bằng chứng):
+
+- **QA-002**: `.gitignore` đã có các mẫu `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `*private*key*`.
+- **QA-003**: `GET /api/profiles` đi qua `apiProfile()` trong `src/api/server.js`, hàm này bỏ `notes` và che blob danh tính, giống cách `/api/v1/user/list` đã làm.
+- **QA-006**: CI có thêm job `linux-tests` (ubuntu, `npm test`) chạy trên mọi PR. Lần chạy đầu tiên lộ thêm 3 lỗi đường dẫn đã sửa: `AndroidManager.tool()` dựng đường dẫn SDK bằng quy tắc của máy chủ thay vì của nền tảng đang điều khiển, cùng hai fixture dùng chuỗi Windows.
+- **QA-004**: README không còn câu "miễn phí vĩnh viễn"; nó nói rõ bản dùng thử 10 ngày, tối đa 10 hồ sơ, và các gói license trả phí.
+- **QA-005**: `npm test` đã có runner gom kết quả. Nó chạy hết mọi bước kể cả khi có bước fail và in `steps run: N of N | PASS | FAIL`.
+
+Lỗi bảo mật và độ ổn định đã sửa sau ngày lập danh sách:
+
+- Tắt hồ sơ êm, tách file tải về theo hồ sơ: #84.
+- Proxy gateway chỉ phục vụ trình duyệt của chính hồ sơ: #85.
+- Cổng CDP tắt mặc định: #86.
+- Nâng Electron 33 (đã hết hỗ trợ) lên 44, và chỉ báo "đã sao chép" khi clipboard thật sự có dữ liệu: #87.
+- Vá `body-parser` (lỗi DoS), nâng `electron-builder` lên 26 (bỏ lỗi `tar` mức critical). Sửa chế độ chụp UI của CI để nó không ghi `Local State` và bộ nhớ đệm GPU vào dữ liệu thật của khách.
+
+Vẫn mở:
+
+- QA-001: chờ chủ dự án quyết định.
+
+Đối chiếu `docs/decisions/OWNER-DECISIONS-CONSOLIDATED.md` với code ngày 2026-11-06. Các mục sau đã được cài sẵn, chủ dự án chỉ cần xác nhận hoặc đổi:
+
+- F3 = 1: xoá vĩnh viễn thì xoá luôn snapshot phiên (`PROFILE_PURGE_ONLY_ROOTS` trong `src/db/store.js`), và hộp xác nhận có nói rõ.
+- F4 = 2: xoá vĩnh viễn thì xoá luôn các workflow gắn với hồ sơ (`store.onProfilePurged` trong `main.js`). Hộp xác nhận có nói chung chung nhưng chưa liệt kê tên workflow.
+- D1 = 1: chỉ kiểm tra cập nhật khi người dùng bấm.
+- D2 = 1: kênh cập nhật là GitHub Releases.
+- D4 = 2: chỉ tải khi người dùng bấm, có kiểm chữ ký và hash; app không tự chạy bộ cài.
+- QD-04: không còn áp dụng. Workflow giờ được sửa qua PR bình thường.
+
+Khoá công khai ký cập nhật đã có từ 2026-11-06 (`resources/update-publisher/update-publisher-ed25519.pub`, vân tay SPKI `38f6fa46…f228`, được `test/update-trust-anchor.js` ghim). Khoá riêng đã mã hoá và mật khẩu của nó nằm ngoài repo, trên máy chủ dự án. Chỉ bộ cài build từ commit có khoá này mới nhận được cập nhật online, nên khách phải được giao tay một bộ cài như vậy ít nhất một lần.
+
+Khoá phát hành license được tạo mới ngày 2026-11-06, vì khoá riêng ứng với khoá cũ (`4fa87829…`) không còn. Khoá công khai mới (`725db621…dff0`) nằm trong app và trong Worker, được `test/license-trust-anchor.js` ghim. Mọi license đã ký bằng khoá cũ đều mất hiệu lực.
+
+Máy chủ license online `browser.lhmcrm.com` chưa được dựng: DNS không có bản ghi, workflow deploy chưa chạy lần nào, môi trường `production` mới có `CLOUDFLARE_API_TOKEN`. Trong lúc chưa có máy chủ, việc bán chạy bằng token `strict` cấp offline (`tools/license-admin.js`), và đó là mặc định của lệnh cấp.
+
+Gói nghiệm thu Gate 3 phải lấy từ một bản build `main` có khoá này. Gói cũ cho `6f3ef60` không có khoá.
+- QA-007 (đo một phần ngày 2026-11-06, chi tiết ở `stage0-measure/ip-leak-results-2026-11-06.json`): đo hồ sơ Chrome và Edge có proxy trên máy thật.
+  - TCP: đều đi qua proxy. DNS: trình duyệt không tự tra. QUIC: không có byte UDP nào. Cả ba **ĐẠT**.
+  - WebRTC: **lộ IP thật** qua STUN (candidate srflx). Cờ `--force-webrtc-ip-handling-policy` không có tác dụng, extension "spoof" cũng không chặn được. Đã sửa: launcher ghi `webrtc.ip_handling_policy=disable_non_proxied_udp` vào Preferences của hồ sơ trước mỗi lần mở, và sau khi sửa không còn candidate nào.
+  - Firefox (Gecko) và Camoufox: đã đo ngày 2026-11-07 trên runner Windows của CI (workflow `ip-leak-gecko.yml`, kết quả ở `stage0-measure/ip-leak-results-gecko-2026-11-07.json`). Hồ sơ có proxy: không có candidate WebRTC và không tra DNS tại máy, **ĐẠT**. Hồ sơ direct làm đối chứng vẫn có srflx.
+  - Lần đo đầu lộ hai lỗi, đã sửa. (1) Ở lần mở đầu, Firefox tự tra DNS tại máy cho các bước kiểm tra mạng và DoH (`example.org`, `ipv4only.arpa`, `cloudflare-dns.com`); cách sửa là tắt connectivity service, DoH và DoH heuristics khi có proxy. (2) Trên Windows, `firefox.exe` thoát sau chưa tới 3 giây trong khi trình duyệt vẫn chạy, nên app mất dấu process và nút Dừng không đóng được; cách sửa là thêm `--wait-for-browser`.
+  - IP thoát ra qua một proxy thật ở xa: chưa đo.
+- QA-008, QA-009: nằm ngoài phạm vi các đợt sửa trên.
+- QA-010: chưa xong. Agent đã cài thử bộ cài NSIS, nâng cấp đè lên bản cũ và gỡ cài đặt trên máy Windows của chủ dự án, với dữ liệu cô lập. Nhưng cổng nghiệm thu của chính chủ dự án, ký số và máy Windows sạch vẫn NOT_RUN.
+
+Ghi chú: 6 cảnh báo mức trung bình còn lại của `npm audit` đều là `minimatch`. Gói này chỉ có trong công cụ build và chỉ xử lý mẫu glob do dự án tự viết.
+
 | ID | Mức | Vấn đề | Bằng chứng | Đóng khi |
 |---|---|---|---|---|
 | QA-001 | Cần quyết định chủ dự án | `NetworkSafetyCheck.evaluate` cho hồ sơ Camoufox kết nối **direct** trả `safeToLaunch:true` mã `PREFLIGHT_ONLY` dù an toàn mạng chưa được chứng nhận. Là quyết định thiết kế đã ghi trong code, nhưng có thể xung đột với diễn giải nghiêm ngặt của Mục 19.4 Hiến pháp. | `src/engine/NetworkSafetyCheck.js` hàm `evaluate` (nhánh `proxy.type==='direct'`); `EngineFactory.launchProfile` chỉ chặn khi `safeToLaunch=false` | Chủ dự án chốt: giữ PREFLIGHT_ONLY cho direct, hay chặn tới khi có phép đo mạng. |

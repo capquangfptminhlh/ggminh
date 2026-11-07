@@ -219,3 +219,11 @@ phạm vi đợt triển khai.
   yêu cầu (2026-10-22)**; không ghi NOT_RUN như một điều kiện chặn
   phát hành. Chữ ký engine/manifest và cập nhật vẫn theo chính sách
   xác minh nguồn, độc lập với chữ ký file cài.
+  Muốn ký (để SmartScreen không cảnh báo): lưu chứng thư `.pfx` dạng
+  base64 vào secret `WIN_CSC_LINK` của repo và mật khẩu vào
+  `WIN_CSC_KEY_PASSWORD`. CI tự ký file app và bộ cài. Bước "Check
+  Authenticode status" làm build fail nếu đã cấu hình mà chữ ký không
+  `Valid`. Đã thử 2026-11-06 bằng chứng thư tự tạo: ký đủ cả hai file và
+  `elevate.exe`, có dấu thời gian, app đã ký vẫn chạy bình thường.
+  Chứng thư lưu trên token phần cứng (EV) cần dịch vụ ký từ xa, không
+  dùng cách `.pfx` này.

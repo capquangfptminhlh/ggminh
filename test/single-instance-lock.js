@@ -6,7 +6,7 @@
  * twice) belongs to Gate 3, but the init ORDER is checkable here and
  * is the part that silently breaks if main.js is refactored:
  *   - the lock is requested inside whenReady,
- *   - AFTER the LHM_CI_UI_CAPTURE per-PID setPath (parallel CI
+ *   - AFTER the LHM_CI_UI_CAPTURE per-PID setPath (set before whenReady; parallel CI
  *     captures own separate userData dirs and must not block),
  *   - BEFORE the legacy migration / new Store(...) (a second writer
  *     must never reach the store),
@@ -36,11 +36,13 @@ check('lock order: CI setPath -> lock -> new Store', () => {
   const readyAt = mainSrc.indexOf('app.whenReady().then');
   assert.ok(readyAt >= 0, 'whenReady block found');
   const body = mainSrc.slice(readyAt);
-  const setPathAt = body.indexOf("app.setPath('userData'");
+  // The CI-capture setPath runs before 'ready' (Chromium writes Local State
+  // and GPU caches to userData at startup), so it precedes the whenReady block.
+  const setPathAt = mainSrc.indexOf("app.setPath('userData'");
   const lockAt = body.indexOf('app.requestSingleInstanceLock()');
   const storeAt = body.indexOf('new Store(');
-  assert.ok(setPathAt >= 0 && lockAt > setPathAt,
-    'lock must come after the CI-capture setPath inside whenReady');
+  assert.ok(setPathAt >= 0 && setPathAt < readyAt && lockAt >= 0,
+    'CI-capture setPath must run before whenReady, and the lock inside it');
   assert.ok(storeAt > lockAt,
     'lock must come before Store construction inside whenReady');
 });

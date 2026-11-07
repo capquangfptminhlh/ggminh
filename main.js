@@ -8,6 +8,7 @@ const { AndroidTargetGuard } = require('./src/android/targetGuard');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
+const { copyTextVerified } = require('./src/ops/clipboardCopy');
 const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
@@ -124,7 +125,16 @@ let apiServer = null;
 const apiKey = crypto.randomBytes(32).toString('hex');
 
 function apiStatus() {
-  return { enabled: !!apiServer?.listening, port: store.getSettings().apiPort || 50325 };
+  return { enabled: !!apiServer?.listening, port: store.getSettings().apiPort || 50325,
+    cdpEnabled: store.getSettings().cdpEnabled === true };
+}
+
+// Opt-in for the unauthenticated Chromium DevTools port (see cdpPolicy).
+// Browsers already running keep their current state until reopened.
+function setCdpEnabled(enabled) {
+  if (enabled && !apiServer?.listening) throw new Error('Bật Local API trước khi bật Tự động hoá (CDP)');
+  store.updateSettings({ cdpEnabled: enabled });
+  return apiStatus();
 }
 
 async function setApiEnabled(enabled) {
@@ -143,20 +153,23 @@ async function setApiEnabled(enabled) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) {
     throw new Error('Invalid API port');
   }
+  // createApiServer returns the express app; listen() returns the
+  // http.Server that owns `listening`, `close()` and the 'error' event.
   const service = createApiServer(store, launcher, { apiKey, behaviorMonitor,licensePolicy });
+  let server = null;
   try {
     await new Promise((resolve, reject) => {
-      service.once('error', reject);
-      service.listen(port, '127.0.0.1', () => {
-        service.removeListener('error', reject);
+      server = service.listen(port, '127.0.0.1', () => {
+        server.removeListener('error', reject);
         resolve();
       });
+      server.once('error', reject);
     });
   } catch (error) {
-    try { service.close(); } catch (_) {}
+    try { server?.close(); } catch (_) {}
     throw new Error('Cannot start Local API: ' + error.message);
   }
-  apiServer = service;
+  apiServer = server;
   store.updateSettings({ apiEnabled: true });
   return apiStatus();
 }
@@ -589,10 +602,10 @@ function initIPC() {
     licenseManager.deactivate();
     return licensePolicy.status();
   });
-  ipcMain.handle('license-center-copy-installation', () => {
-    clipboard.writeText(licenseManager.installationId);
-    return true;
-  });
+  // Electron 44+: clipboard.writeText is async and can resolve without copying
+  // when another program holds the clipboard; copyTextVerified reads it back.
+  ipcMain.handle('license-center-copy-installation', () =>
+    copyTextVerified(clipboard, licenseManager.installationId));
   ipcMain.handle('session-snapshots-list', (_,id) => sessionSnapshots.list(id));
   ipcMain.handle('session-snapshots-create', (_,id,passphrase) =>
     sessionSnapshots.create(id,passphrase));
@@ -1292,10 +1305,10 @@ function initIPC() {
   });
   ipcMain.handle('get-api-status', apiStatus);
   ipcMain.handle('set-api-enabled', (_, enabled) => setApiEnabled(enabled === true));
-  ipcMain.handle('copy-api-key', () => {
+  ipcMain.handle('set-cdp-enabled', (_, enabled) => setCdpEnabled(enabled === true));
+  ipcMain.handle('copy-api-key', async () => {
     if (!apiServer?.listening) throw new Error('Enable Local API first');
-    clipboard.writeText(apiKey);
-    return true;
+    return copyTextVerified(clipboard, apiKey);
   });
 }
 
@@ -1308,10 +1321,13 @@ app.on('second-instance', () => {
     mainWindow.focus();
   }
 });
+// CI UI capture owns a throwaway data folder. It must be set before 'ready':
+// Chromium writes Local State and its GPU caches to userData at startup, so a
+// later setPath leaves those files in the customer's real data folder.
+if (process.env.LHM_CI_UI_CAPTURE === '1') {
+  app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
+}
 app.whenReady().then(async () => {
-  if (process.env.LHM_CI_UI_CAPTURE === '1') {
-    app.setPath('userData', path.join(os.tmpdir(), 'lhm-ui-ci-' + process.pid));
-  }
   // Single-instance guard (reconstruction of the owner's local fix,
   // Agent R12): a second LHM process on this userData directory would
   // load its own in-memory copy of db.json (Store loads once and
