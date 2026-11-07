@@ -252,7 +252,7 @@ class AndroidManager {
     if(avdNetworkMode(this.env)!=='isolated-tcp')return {
       status:'DIRECT_UNVERIFIED',publicIpVerified:false
     };
-    if(typeof serial!=='string'||!/^emulator-\\d{4,5}$/.test(serial))
+    if(typeof serial!=='string'||!/^emulator-\d{4,5}$/.test(serial))
       throw Error('Android Chrome network identity could not be verified');
     const adb=this.tool('adb');
     const list=await this.devices();
