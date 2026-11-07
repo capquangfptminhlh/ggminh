@@ -55,6 +55,16 @@ async function stopperTests() {
     await sleep(80);
     assert.deepStrictEqual(r.calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
   }
+  // Windows Firefox: the graceful close goes to the whole tree (the spawned
+  // launcher process has no window), still without /F.
+  {
+    const proc = fakeProc(), r = recorder();
+    stopBrowserProcess(proc, { platform: 'win32', run: r.run, graceMs: 40, isChild, gracefulTree: true });
+    assert.deepStrictEqual(r.calls, [['taskkill', '/PID', '4242', '/T']]);
+    proc.exit(0);
+    await sleep(80);
+    assert.strictEqual(r.calls.length, 1, 'no force after a clean exit');
+  }
   // Windows: no closable window (headless/starting) -> force at once.
   {
     const proc = fakeProc(), r = recorder({ failGraceful: true });

@@ -27,9 +27,15 @@ function hasExited(proc) {
     proc.signalCode !== null && proc.signalCode !== undefined;
 }
 
+// gracefulTree: send the graceful WM_CLOSE to the whole tree (/T, no /F).
+// Needed for Firefox on Windows: the spawned firefox.exe is a launcher
+// process (kept alive by --wait-for-browser) with no window of its own, so a
+// plain `taskkill /PID` failed and fell straight through to /T /F. That killed
+// the real browser before it flushed localStorage (measured on Windows CI:
+// cookies and IndexedDB survived a Stop, localStorage was lost).
 function stopBrowserProcess(proc, {
   platform = process.platform, run = execFile, graceMs = DEFAULT_GRACE_MS,
-  isChild = value => value instanceof ChildProcess
+  isChild = value => value instanceof ChildProcess, gracefulTree = false
 } = {}) {
   if (!proc || typeof proc.kill !== 'function') return false;
   if (hasExited(proc)) return false;
@@ -57,7 +63,7 @@ function stopBrowserProcess(proc, {
   };
 
   if (useTaskkill) {
-    run('taskkill', ['/PID', String(pid)], { windowsHide: true }, error => {
+    run('taskkill', ['/PID', String(pid), ...(gracefulTree ? ['/T'] : [])], { windowsHide: true }, error => {
       // No closable window (headless, still starting): nothing will close
       // gracefully, so do not wait out the grace period.
       if (error) force();
