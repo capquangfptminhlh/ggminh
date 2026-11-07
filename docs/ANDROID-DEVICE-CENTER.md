@@ -6,7 +6,7 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 
 1. Install Android Studio with Android SDK Platform-Tools and Android Emulator.
 2. In Android Studio > SDK Manager install **SDK Command-Line Tools**, Android Emulator and one or more **Android system images**. Enable Intel VT-x / AMD-V and Windows Hypervisor Platform (reboot if required). You can now create AVDs within LHM; no need to pre-create them in Android Studio.
-3. Optionally install [scrcpy](https://github.com/Genymobile/scrcpy) for a dedicated mirrored-screen window, and add scrcpy's directory to PATH.
+3. Optionally install a recent [scrcpy](https://github.com/Genymobile/scrcpy) release (2.x or newer) for a **view-only** emulator window. LHM disables scrcpy control, clipboard autosync and audio to prevent host-to-profile leakage. Add scrcpy's directory to PATH.
 4. Set ANDROID_SDK_ROOT to the SDK folder if it is nonstandard. On most PCs the default is %LOCALAPPDATA%\Android\Sdk.
 5. Launch LHM Ads Browser and open **Android Device Center** from the sidebar.
 
@@ -18,12 +18,19 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Shows an optional disk-free preflight (6 GiB minimum when measurement is available), a 50-AVD creation limit, and clear missing-tool guidance.
 - Starts a selected existing AVD using the official Android Emulator. The UI reports **starting** until a connected device is detected; it never claims an AVD is booted immediately.
 - **Fleet Readiness:** shows measured free RAM / CPU threads, ADB-visible emulator names and Android boot-complete signals. Estimates per-AVD memory from its `config.ini` with a conservative 4 GiB fallback, honoring the API 37 minimum of 4 GiB. Launches are serialized and rejected if parallelism exceeds min(4, CPU threads / 2), if free RAM cannot cover estimated emulator RAM + 1 GiB overhead + 3 GiB reserved for Windows, or if ADB is unavailable. These are safety heuristics, not performance guarantees. Devices started outside LHM are counted when visible via ADB; unknown/offline devices count conservatively. Use **Làm mới thiết bị** to update measurements.
-- Opens a screen with scrcpy only after the device is online/authorized, and can stop an Android emulator through ADB.
+- Opens a **view-only emulator** screen via scrcpy with `--no-control --no-clipboard-autosync --no-audio` only after ADB authorization; physical phones are excluded. Use Android Control Studio for explicit local touch/key actions. Can stop an Android emulator through ADB.
 - **Manual Android Control Studio:** choose an ADB-authorized device, explicitly capture a PNG screen into the *local Electron view* (never uploaded or saved), click the scaled screenshot to tap, swipe up/down, send HOME/BACK key events, and type short basic Latin text into the focused Android app. The screenshot is cleared when the dialog closes.
 - **User-approved APK installation:** the Windows native file chooser opens for one .apk file, followed by a separate confirmation identifying the selected target device. The ADB install command does not include replace flags; existing installations are not silently overwritten. Only local regular files up to 256 MiB are accepted.
 - Commands are allowlisted and validated, require ADB status `device`, and run with shell:false. The UI exposes no arbitrary ADB shell, port forwarding, hidden monitoring, root, background agent execution or text history.
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
+
+## Cross-profile privacy controls (defense in depth)
+
+- Android AVDs are independent Android emulator userdata directories. **Duplicate** only imports the installed system image configuration and creates empty userdata; it does not copy cookies, logged-in apps, accounts, keys, screenshots or AVD snapshots.
+- The optional **scrcpy mirror is view-only**. LHM now launches it with `--no-control --no-clipboard-autosync --no-audio` to prevent automatic clipboard sharing, drag-and-drop/file transfer through the mirror, and profile audio forwarded to Windows. Use Android Control Studio for explicitly initiated taps/swipes. Do not use older scrcpy binaries that lack these flags.
+- The read-only MCP bridge now requires both `LHM_MCP_ALLOWED_SERIALS` and `LHM_MCP_ALLOWED_AVD_BINDINGS` (for example `emulator-5554=Pixel_Test_01`). It verifies the emulator's actual AVD name before **and after** a UI read. A reused serial cannot inherit access to a different profile; all unbound AVD names are hidden. MCP physical-device access is disabled.
+- These checks reduce software-level accidental sharing, **not** an absolute security guarantee. The same Windows account still owns ADB and can access multiple emulators, malware or another unrestricted ADB client can bypass LHM, and an app inside an AVD can still access services it is logged into. Use separate Windows user accounts/virtual machines or an isolated host for mutually untrusted customers; do not copy AVD data folders, snapshots or logged-in Android accounts between profiles. No cross-profile clipboard synchronization is performed by LHM.
 
 ## Open Chrome inside a dedicated Android emulator (owner-approved)
 
