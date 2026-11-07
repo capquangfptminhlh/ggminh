@@ -47,6 +47,18 @@ The result `intent-sent-unverified` means that Android accepted the intent reque
 
 `test/android-browser-navigation.js` covers validation, concurrency, boot, package, renderer wiring, native approval and error redaction using mock ADB. The regular `npm test` runs it on Linux and Windows. Live AVD compatibility, website rendering, page-load metrics and concurrent-emulator benchmarks still need separate Windows owner acceptance.
 
+### Real Windows AVD public website acceptance (explicitly opted in)
+
+The manual GitHub workflow `.github/workflows/android-live-windows.yml` can now check a **fixed public sample page** on a clean, dedicated AVD with Chrome already installed. It is not a performance certification. Configure a Windows 10/11 self-hosted runner with SDK, an existing accelerated AVD, and the `android-sdk` label. Select one of these gates:
+
+- `test_chrome=NO, test_page=NO`: basic AVD boot, HOME, local PNG and accessibility probe.
+- `test_chrome=YES, test_page=NO`: additionally launch Chrome and observe a resumed Chrome foreground activity and PNG.
+- `test_chrome=YES, test_page=YES`: additionally send one HTTPS VIEW intent **only to `https://example.com/`**. Poll Chrome foreground and local UIAutomator XML until the exact public heading `Example Domain` is observed, then capture one local PNG and emit its dimensions and `navigationObservationMs`. The XML and PNG bytes remain on the runner and are **never logged or uploaded**. A missing heading, a lost foreground, missing Chrome or timeout fails the gate. No automatic retry of a potentially delivered navigation intent.
+
+`test_page=YES` without `test_chrome=YES` is explicitly rejected. The harness refuses a running target AVD and requests shutdown only for the emulator it started. The shutdown request is not proof that the OS process exited or that browser cookies were isolated. Do not use personal accounts on the test device.
+
+**Evidence boundaries:** A public heading visible through the Android accessibility tree plus a screenshot is a stronger end-to-end smoke test than ADB intent injection, but does not measure network correctness, pixel-level rendering, interactive page responsiveness, JavaScript execution, FPS, CPU/RAM pressure, account isolation or multi-instance stability. On Android versions that do not expose web content in UIAutomator, this gate can fail even when the page looks correct. Such cases require human review and another inspected measurement, not lowering the acceptance threshold silently. `npm test` runs deterministic mock-ADB tests of the gate but is **not** the live Windows runner result.
+
 ## AI Agent MCP access (separate, read-only)
 
 LHM includes an opt-in **local MCP stdio server** at `bin/lhm-android-mcp.js`. It exposes only explicitly allowlisted ADB devices and sanitized UI metadata to a compatible local Agent client; no screenshots or Android write tools. It **does not** automatically connect to the 16-agent Robot Desktop app. See [ANDROID-MCP-BRIDGE.md](ANDROID-MCP-BRIDGE.md) for setup, permission controls and known limitations.
