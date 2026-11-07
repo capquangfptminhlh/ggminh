@@ -25,6 +25,51 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
 
+### Manual Chrome Android public-IP egress audit (strictly opt-in)
+
+**Current network reality:** An Android Emulator does not automatically inherit the desktop Chrome/Edge profile proxy settings. Independent AVD userdata is **not** independent internet egress. Without explicit network routing, two AVDs may present the same Windows-host public IP. This project does not currently guarantee per-AVD VPN/proxy, DNS/WebRTC/IPv6 leak protection, or stable browser fingerprint traits.
+
+Use `tools/android-live-ip-audit.js` from a complete trusted source checkout only on a Windows PC with a **running, clean, disposable test AVD**, Android SDK/ADB and preinstalled Chrome. The test visits the fixed public IP-only service `https://api.ipify.org/` from Android Chrome and independently requests the public IP from the Windows host, then checks the Android result against the **owner-supplied expected public proxy/VPN IP**. The tool never returns or writes those addresses; the third-party IP-check service sees the request addresses as part of normal network diagnostics.
+
+PowerShell example (replace all three example identifiers with your dedicated test device's actual values):
+
+```powershell
+$env:LHM_ANDROID_SERIAL='emulator-5554'
+$env:LHM_ANDROID_AVD='Clean_IP_Test'
+$env:LHM_ANDROID_EXPECTED_IP='8.8.8.8'
+$env:LHM_ANDROID_IP_AUDIT_CONSENT='YES'
+node tools/android-live-ip-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL,Env:LHM_ANDROID_AVD,Env:LHM_ANDROID_EXPECTED_IP,Env:LHM_ANDROID_IP_AUDIT_CONSENT
+```
+
+Note: `8.8.8.8` is **only a syntax placeholder**, not an Android egress recommendation or an IP this tool creates. Enter the actual public IP of the intended Android route. This diagnostic does not set or change a proxy, VPN, DNS, firewall or system image. It does not start or stop an AVD.
+
+The tool checks that the ADB emulator serial still corresponds to the exact AVD name before, during and after the test; it also requires Android boot completion and a Chrome foreground UI. ADB port recycling or missing confirmation causes failure. It returns only:
+
+- `IP_ONLY_PASS` if a browser-visible public IP matches the expected public IP **and differs from the Windows host**.
+- `FAIL` if the Android result matches the Windows host or differs from the expected IP.
+- `NOT_VERIFIED` when host/Android public IP cannot be read reliably (including if Chrome does not expose web text to UIAutomator).
+
+All outputs are IP-redacted. This is **not** a full leak certificate: IPv4/IPv6 dual stack, DNS, WebRTC/STUN, browser UA, Canvas, WebGL, AudioContext and app-level sharing remain `NOT_TESTED`. A successful visible IP check also cannot prove a network kill switch or unspoofable site identity. Never put personal accounts inside diagnostic AVDs. For a commercial guarantee, use independently monitored Windows/Android network captures and separate host/VM isolation.
+
+### Manual two-AVD system fingerprint identity observation (strictly opt-in)
+
+The **read-only** `tools/android-live-fingerprint-audit.js` can compare two simultaneously online, disposable, clean AVDs on one Windows PC. It samples `settings get secure android_id` twice per AVD and checks whether the shell-visible value stayed stable in that short interval and differs between the two AVDs. It also checks whether the underlying Android OS build fingerprint strings match. Raw IDs and build strings are kept only in process memory and **never printed, stored, uploaded, or included in the result**. No fingerprint spoofing, device setting mutation, app account read, network request, AVD start/stop, or unattended automation is performed.
+
+Both running AVDs must have unique exact **serial + AVD name** combinations; the audit verifies each ADB association before/after the read. Example PowerShell (replace serials/names with your own clean AVDs):
+
+```powershell
+$env:LHM_ANDROID_SERIAL_A='emulator-5554'
+$env:LHM_ANDROID_AVD_A='Clean_A'
+$env:LHM_ANDROID_SERIAL_B='emulator-5556'
+$env:LHM_ANDROID_AVD_B='Clean_B'
+$env:LHM_ANDROID_FINGERPRINT_AUDIT_CONSENT='YES'
+node tools/android-live-fingerprint-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL_A,Env:LHM_ANDROID_AVD_A,Env:LHM_ANDROID_SERIAL_B,Env:LHM_ANDROID_AVD_B,Env:LHM_ANDROID_FINGERPRINT_AUDIT_CONSENT
+```
+
+A repeated shell-visible Android ID triggers `FAIL`; an inconsistent/missing ID produces `NOT_VERIFIED`. Different observed IDs produce only `OS_ID_DISTINCT_OBSERVED`, **not** proof that browser fingerprints are unique or immune to correlation. Modern Android app-scoped `ANDROID_ID` can be scoped to app signer/user, so the shell result is **not** equivalent to an app-visible device ID. Identical system `ro.build.fingerprint` values are common for AVDs sharing an Android system image; this is noted but not itself a failure. Chrome Client Hints, User-Agent, Canvas, WebGL, WebAudio, advertising ID, GPU, DNS, IPv6 and cross-site fingerprint persistence remain **NOT_TESTED**. The regular CI tests this diagnostic with fake ADB only.
+
 ## Cross-profile privacy controls (defense in depth)
 
 - Android AVDs are independent Android emulator userdata directories. **Duplicate** only imports the installed system image configuration and creates empty userdata; it does not copy cookies, logged-in apps, accounts, keys, screenshots or AVD snapshots.
