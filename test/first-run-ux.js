@@ -124,6 +124,7 @@ function engineElement(id) {
   return engineElements[id];
 }
 let installStatus = null;
+let bundleStatus = { valid: true, version: '5.8.0', fileCount: 3, sha256: 'a'.repeat(64) };
 let domReady = null;
 const engineWindow = {
   addEventListener: (ev, fn) => { if (ev === 'DOMContentLoaded') domReady = fn; },
@@ -131,7 +132,7 @@ const engineWindow = {
   api: {
     bundledEngineStatus: async () => ({
       source: 'system', geckoProvider: 'firefox',
-      bundle: { valid: true, version: '5.8.0', fileCount: 3, sha256: 'a'.repeat(64) },
+      bundle: bundleStatus,
       camoufox: { ready: false },
     }),
     camoufoxInstallStatus: async () => installStatus,
@@ -171,6 +172,27 @@ const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => s
   await flush();
   assert.ok(engineElement('camoufox-install-info').textContent.includes('Bấm nút cài đặt bên dưới'),
     'available state must point at the install button');
+
+  // Packaged builds without a bundled Chromium: the raw lstat error carries
+  // the install path (and the Windows user name) and must never be shown.
+  bundleStatus = { available: false, valid: false,
+    reason: "ENOENT: no such file or directory, lstat 'C:\\Users\\alice\\AppData\\Local\\Programs\\LHM Ads Browser\\resources\\lhm-engines\\manifest.json'" };
+  await engineElement('engine-source-refresh').click();
+  await flush();
+  const missingText = engineElement('engine-source-result').textContent;
+  assert.ok(missingText.includes('không kèm engine Chromium đóng gói'),
+    'missing bundle manifest must be explained, got: ' + missingText);
+  assert.ok(missingText.includes('Chế độ System vẫn hoạt động'), 'missing bundle must give the fallback');
+  assert.ok(!/ENOENT|alice|AppData|manifest\.json/.test(missingText),
+    'raw error and install path must not reach the dialog, got: ' + missingText);
+
+  bundleStatus = { available: false, valid: false,
+    reason: "Bundled manifest signature invalid for 'D:\\engines\\alice\\chrome.exe'" };
+  await engineElement('engine-source-refresh').click();
+  await flush();
+  const otherText = engineElement('engine-source-result').textContent;
+  assert.ok(otherText.includes('signature invalid'), 'other reasons keep their technical cause');
+  assert.ok(!/alice|D:\\/.test(otherText), 'other reasons must have paths removed, got: ' + otherText);
   console.log('PASS engine dialog guidance (behavioural)');
   console.log('first-run-ux: all assertions passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

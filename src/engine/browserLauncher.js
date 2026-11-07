@@ -10,7 +10,7 @@ const { stopBrowserProcess } = require('./processStopper');
 const { applyChromiumDownloadDir, applyGeckoDownloadDir } = require('./downloadDirectory');
 const { applyChromiumWebrtcPolicy } = require('./chromiumWebrtcPolicy');
 const { createPeerGuard } = require('../security/loopbackPeerGuard');
-const { optionsFor } = require('./browserDiagnostics');
+const { optionsFor, msixFirefoxPath, isWindowsAppsPath, MSIX_FIREFOX_MESSAGE } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
@@ -60,10 +60,11 @@ class BrowserLauncher {
          ...detected.find(x => x.id === 'edge').candidates];
 
     for (const bin of candidates) {
-      if (bin && fs.existsSync(bin)) {
+      if (bin && !isWindowsAppsPath(bin) && fs.existsSync(bin)) {
         return bin;
       }
     }
+    if (engine === 'gecko' && msixFirefoxPath(settings)) throw new Error(MSIX_FIREFOX_MESSAGE);
     throw new Error(engine === 'gecko'
       ? 'Cannot find Firefox/Gecko. Install Firefox or configure Gecko executable in settings.'
       : 'Cannot find Chromium/Chrome/Edge. Configure Chrome path in settings.');
@@ -305,7 +306,10 @@ class BrowserLauncher {
     try {
       // Graceful close first so the browser flushes cookies/logins to disk;
       // force-terminate the process tree only after the grace period.
-      const sent = this.stopProcess(proc);
+      // Windows Firefox runs with --wait-for-browser: the tracked PID is its
+      // windowless launcher, so the graceful close must reach the tree.
+      const sent = active.engine === 'gecko' ? this.stopProcess(proc, { graceTree: true })
+        : this.stopProcess(proc);
       if (sent === false) return { success: false, message: 'Could not stop browser process' };
       active.stopping = true;
       // Keep the profile locked until the child emits 'exit'.

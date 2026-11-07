@@ -1,6 +1,6 @@
 const {validateProxy}=require('./proxyValidation');
 const fs = require('fs');
-const { optionsFor } = require('../engine/browserDiagnostics');
+const { optionsFor, msixFirefoxPath, isWindowsAppsPath, MSIX_FIREFOX_MESSAGE } = require('../engine/browserDiagnostics');
 const {checkProfileSignalChain}=require('./signalChain');
 
 function checkProfile(profile, options = {}) {
@@ -15,7 +15,9 @@ function checkProfile(profile, options = {}) {
     ? engines.find(x => x.id === 'firefox').candidates
     : [...engines.find(x => x.id === 'chrome').candidates,
        ...engines.find(x => x.id === 'edge').candidates];
-  if (!executable.filter(Boolean).some(pathExists)) issues.push({ level: 'error', code: 'browser_missing', message: 'Không tìm thấy chương trình trình duyệt phù hợp trên máy này.' });
+  if (!executable.filter(Boolean).some(p => !isWindowsAppsPath(p) && pathExists(p))) issues.push({ level: 'error', code: 'browser_missing',
+    message: engine === 'gecko' && msixFirefoxPath(settings, options.msixProbe) ? MSIX_FIREFOX_MESSAGE :
+      'Không tìm thấy chương trình trình duyệt phù hợp trên máy này.' });
   if (!name.trim()) issues.push({ level: 'error', code: 'no_name', message: 'Hồ sơ chưa có tên.' });
   try {
     const url = new URL(profile.startUrl || 'https://ads.google.com/');
