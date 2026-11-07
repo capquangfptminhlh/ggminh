@@ -17,7 +17,8 @@ const MAX_PIXEL = 8192;
 // assuming host execFile(shell:false) alone makes remote shell arguments safe.
 function safeChromeUrl(input) {
   if (typeof input!=='string' || input.length<12 || input.length>1024 ||
-      input!==input.trim() || !/^https:\/\//i.test(input)) {
+      input!==input.trim() || !/^[\x21-\x7e]+$/.test(input) ||
+      !/^https:\/\//i.test(input)) {
     throw new Error('Enter a public HTTPS URL (up to 1024 characters)');
   }
   let url;
