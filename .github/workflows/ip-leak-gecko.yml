@@ -5,6 +5,9 @@ on:
     paths:
       - '.github/workflows/ip-leak-gecko.yml'
       - 'stage0-measure/run-ip-leak-gecko.js'
+      - 'stage0-measure/run-storage-isolation.js'
+      - 'src/engine/browserLauncher.js'
+      - 'src/engine/launchArgs.js'
       - 'src/engine/geckoProxy.js'
       - 'src/engine/CamoufoxProfileManager.js'
       - 'src/engine/CamoufoxPlaywrightController.js'
@@ -54,11 +57,23 @@ jobs:
           "Firefox: $($report.verdict.firefox)  Camoufox: $($report.verdict.camoufox)" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
           if ($report.verdict.firefox -eq 'FAIL' -or $report.verdict.camoufox -eq 'FAIL') { throw 'IP leak found in a proxied Gecko profile' }
           if ("$($report.verdict.firefox) $($report.verdict.camoufox)" -match 'ERROR') { throw 'IP leak measurement errored' }
-      - name: Publish the measurement report (no browser binaries, no logs)
+      - name: Measure cookie, storage and cache isolation between two Firefox profiles
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          if (-not $env:LHM_FIREFOX_EXECUTABLE) { Write-Warning 'Firefox not installed: storage isolation NOT_RUN'; exit 0 }
+          node stage0-measure/run-storage-isolation.js "$env:RUNNER_TEMP\storage-isolation-firefox" "$env:LHM_FIREFOX_EXECUTABLE" gecko
+          $code = $LASTEXITCODE
+          $report = Get-Content "$env:RUNNER_TEMP\storage-isolation-firefox\storage-isolation-report.json" -Raw | ConvertFrom-Json
+          "Firefox storage isolation: $($report.verdict)" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
+          if ($code -ne 0) { throw 'Firefox profiles share or lose storage' }
+      - name: Publish the measurement reports (no browser binaries, no logs)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: LHM-IP-Leak-Gecko-Report
-          path: ${{ runner.temp }}/ip-leak-gecko/ip-leak-gecko-report.json
+          path: |
+            ${{ runner.temp }}/ip-leak-gecko/ip-leak-gecko-report.json
+            ${{ runner.temp }}/storage-isolation-firefox/storage-isolation-report.json
           if-no-files-found: warn
           retention-days: 30

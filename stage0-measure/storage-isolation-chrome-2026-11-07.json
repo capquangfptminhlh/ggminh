@@ -1,0 +1,81 @@
+{
+  "schema": "lhm.storage-isolation.v1",
+  "at": "2026-11-07T07:45:49.301Z",
+  "engine": "chromium",
+  "browser": "Google Chrome (installed)",
+  "sameOrigin": true,
+  "storesChecked": [
+    "cookie (JS)",
+    "cookie (HttpOnly)",
+    "localStorage",
+    "IndexedDB",
+    "Cache Storage",
+    "HTTP disk cache"
+  ],
+  "steps": [
+    {
+      "step": "A writes",
+      "mode": "set",
+      "err": null,
+      "cookie": "lhm_js=A",
+      "localStorage": "A",
+      "indexedDB": "A",
+      "cacheStorage": "A",
+      "cookieHeader": "lhm_http=A; lhm_js=A",
+      "httpCacheNetworkFetches": 1
+    },
+    {
+      "step": "B reads (must be empty)",
+      "mode": "read",
+      "err": null,
+      "cookie": "",
+      "localStorage": null,
+      "indexedDB": null,
+      "cacheStorage": null,
+      "cookieHeader": "",
+      "httpCacheNetworkFetches": 1
+    },
+    {
+      "step": "A reads after restart (must be A)",
+      "mode": "read",
+      "err": null,
+      "cookie": "lhm_js=A",
+      "localStorage": "A",
+      "indexedDB": "A",
+      "cacheStorage": "A",
+      "cookieHeader": "lhm_http=A; lhm_js=A",
+      "httpCacheNetworkFetches": 0
+    },
+    {
+      "step": "B writes",
+      "mode": "set",
+      "err": null,
+      "cookie": "lhm_js=B",
+      "localStorage": "B",
+      "indexedDB": "B",
+      "cacheStorage": "B",
+      "cookieHeader": "lhm_http=B; lhm_js=B",
+      "httpCacheNetworkFetches": 0
+    },
+    {
+      "step": "A reads after B wrote (must be A only)",
+      "mode": "read",
+      "err": null,
+      "cookie": "lhm_js=A",
+      "localStorage": "A",
+      "indexedDB": "A",
+      "cacheStorage": "A",
+      "cookieHeader": "lhm_http=A; lhm_js=A",
+      "httpCacheNetworkFetches": 0
+    }
+  ],
+  "checks": {
+    "profileBSeesNothingOfA": true,
+    "profileAPersistsAcrossRestart": true,
+    "profileANotPollutedByB": true,
+    "profileBWroteOwnValues": true,
+    "httpCacheNotSharedWithB": true,
+    "httpCachePersistsForA": true
+  },
+  "verdict": "PASS"
+}
