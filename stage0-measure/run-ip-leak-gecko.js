@@ -48,8 +48,9 @@ function startProxy(state) {
     state.log.push(req.method + ' ' + req.url);
     let u; try { u = new URL(req.url); } catch (_) { return handlePage(req, res); } // loopback (direct) page
     if (u.hostname === 'leaktest.lhm') return handlePage(req, res);
+    const headers = { ...req.headers }; delete headers['proxy-authorization'];
     const up = http.request({ host: u.hostname, port: u.port || 80, path: u.pathname + u.search, method: req.method,
-      headers: { ...req.headers, 'proxy-authorization': undefined } }, r => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
+      headers }, r => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
     up.on('error', () => { res.writeHead(502); res.end(); });
     req.pipe(up);
   });
