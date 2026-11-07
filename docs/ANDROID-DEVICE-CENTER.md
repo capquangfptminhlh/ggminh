@@ -52,6 +52,24 @@ The tool checks that the ADB emulator serial still corresponds to the exact AVD 
 
 All outputs are IP-redacted. This is **not** a full leak certificate: IPv4/IPv6 dual stack, DNS, WebRTC/STUN, browser UA, Canvas, WebGL, AudioContext and app-level sharing remain `NOT_TESTED`. A successful visible IP check also cannot prove a network kill switch or unspoofable site identity. Never put personal accounts inside diagnostic AVDs. For a commercial guarantee, use independently monitored Windows/Android network captures and separate host/VM isolation.
 
+### Manual two-AVD system fingerprint identity observation (strictly opt-in)
+
+The **read-only** `tools/android-live-fingerprint-audit.js` can compare two simultaneously online, disposable, clean AVDs on one Windows PC. It samples `settings get secure android_id` twice per AVD and checks whether the shell-visible value stayed stable in that short interval and differs between the two AVDs. It also checks whether the underlying Android OS build fingerprint strings match. Raw IDs and build strings are kept only in process memory and **never printed, stored, uploaded, or included in the result**. No fingerprint spoofing, device setting mutation, app account read, network request, AVD start/stop, or unattended automation is performed.
+
+Both running AVDs must have unique exact **serial + AVD name** combinations; the audit verifies each ADB association before/after the read. Example PowerShell (replace serials/names with your own clean AVDs):
+
+```powershell
+$env:LHM_ANDROID_SERIAL_A='emulator-5554'
+$env:LHM_ANDROID_AVD_A='Clean_A'
+$env:LHM_ANDROID_SERIAL_B='emulator-5556'
+$env:LHM_ANDROID_AVD_B='Clean_B'
+$env:LHM_ANDROID_FINGERPRINT_AUDIT_CONSENT='YES'
+node tools/android-live-fingerprint-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL_A,Env:LHM_ANDROID_AVD_A,Env:LHM_ANDROID_SERIAL_B,Env:LHM_ANDROID_AVD_B,Env:LHM_ANDROID_FINGERPRINT_AUDIT_CONSENT
+```
+
+A repeated shell-visible Android ID triggers `FAIL`; an inconsistent/missing ID produces `NOT_VERIFIED`. Different observed IDs produce only `OS_ID_DISTINCT_OBSERVED`, **not** proof that browser fingerprints are unique or immune to correlation. Modern Android app-scoped `ANDROID_ID` can be scoped to app signer/user, so the shell result is **not** equivalent to an app-visible device ID. Identical system `ro.build.fingerprint` values are common for AVDs sharing an Android system image; this is noted but not itself a failure. Chrome Client Hints, User-Agent, Canvas, WebGL, WebAudio, advertising ID, GPU, DNS, IPv6 and cross-site fingerprint persistence remain **NOT_TESTED**. The regular CI tests this diagnostic with fake ADB only.
+
 ## Cross-profile privacy controls (defense in depth)
 
 - Android AVDs are independent Android emulator userdata directories. **Duplicate** only imports the installed system image configuration and creates empty userdata; it does not copy cookies, logged-in apps, accounts, keys, screenshots or AVD snapshots.
