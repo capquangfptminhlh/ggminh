@@ -19,6 +19,8 @@ const {emulatorAvdName}=require('../src/android/fleetCapacity');
 const SAFE_AVD=/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const MAX_BOOT_MS=5*60*1000;
 const POLL_MS=3000;
+const SHUTDOWN_ATTEMPTS=10;
+const SHUTDOWN_POLL_MS=1500;
 // A public, non-account test URL only. No caller-controlled remote URLs.
 const PAGE_TEST_URL='https://example.com/';
 const MAX_PAGE_XML_BYTES=1024*1024;
@@ -99,6 +101,32 @@ async function waitForBoot(manager,name,startedAt) {
   throw Error('Android boot did not complete within 5 minutes.');
 }
 
+// Do not trust the ADB "stopping" receipt: wait until the emulator is absent
+// from ADB (including offline devices) AND LHM's child process has exited.
+// The baseline guards against claiming success while a newly attached
+// emulator might still be booting; such uncertainty fails closed.
+async function waitForShutdown(manager,name,beforeSerials,options={}) {
+  const attempts=options.shutdownAttempts===undefined ? SHUTDOWN_ATTEMPTS :
+    options.shutdownAttempts;
+  if(!Number.isInteger(attempts) || attempts<1 || attempts>SHUTDOWN_ATTEMPTS)
+    throw Error('Invalid shutdown verification limit');
+  for(let i=0;i<attempts;i++) {
+    try {
+      const devices=await manager.devices();
+      if(!Array.isArray(devices))throw Error('ADB did not provide a device list');
+      const newEmulators=devices.some(device=>device.kind==='emulator' &&
+        !beforeSerials.has(device.serial));
+      const ownedChildActive=!!manager.launched?.has?.(name);
+      if(!newEmulators && !ownedChildActive)return true;
+    } catch (_) {
+      // Never mark shutdown verified when ADB cannot be queried.
+    }
+    if(i+1<attempts)
+      await (options.shutdownDelay||delay)(SHUTDOWN_POLL_MS);
+  }
+  return false;
+}
+
 async function run(options={}) {
   const manager=options.manager||new AndroidManager();
   const name=options.name||requestedAvd([]);
@@ -108,17 +136,29 @@ async function run(options={}) {
   const begun=clock();
   const avds=await manager.avds();
   if(!avds.includes(name))throw Error('The specified Android Virtual Device is not installed.');
+  // Snapshot all preexisting emulators before launch. We never stop or claim
+  // ownership of devices visible in this list.
+  const existing=await manager.devices();
+  if(!Array.isArray(existing))throw Error('ADB did not list emulator devices');
+  if(existing.some(device=>device.kind==='emulator' && device.status!=='device'))
+    throw Error('An offline Android emulator is present; close it before isolated testing');
+  const beforeSerials=new Set(existing.filter(device=>device.kind==='emulator')
+    .map(device=>device.serial));
   if(await findByName(manager,name)) {
     throw Error('The target AVD is already running. Close it before an isolated live smoke test.');
   }
   const control=new AndroidControl(manager);
   const inspector=new AndroidUIInspector(control);
-  let started=false,serial=null,stopped=false;
+  let started=false,serial=null,shutdownRequested=false,receipt=null;
+  const timings={bootObservedMs:null,chromeForegroundObservedMs:null,
+    pageHeadingObservedMs:null,shutdownObservedMs:null};
   try {
+    const bootRequestedAt=clock();
     const launch=await manager.launchAvd(name);
     if(launch.state!=='starting')throw Error('Android Emulator did not accept the launch.');
     started=true;
     serial=await waitForBoot(manager,name,Date.now());
+    timings.bootObservedMs=Math.max(0,clock()-bootRequestedAt);
     await control.authorized(serial);
 
     const screen=await control.screenshot(serial);
@@ -132,6 +172,7 @@ async function run(options={}) {
       throw Error('Android UI hierarchy is unavailable.');
     let chrome=null, page=null;
     if(options.testChrome===true) {
+      const chromeRequestedAt=clock();
       const launchReceipt=await control.openBrowser(serial);
       if(launchReceipt.state!=='launch-requested')
         throw Error('Chrome did not accept a launcher event');
@@ -145,6 +186,7 @@ async function run(options={}) {
       }
       if(!focused)
         throw Error('Chrome did not become the foreground Android activity');
+      timings.chromeForegroundObservedMs=Math.max(0,clock()-chromeRequestedAt);
       const chromeShot=await control.screenshot(serial);
       if(!chromeShot.width || !chromeShot.height || !chromeShot.byteLength)
         throw Error('Chrome foreground screenshot unavailable');
@@ -168,20 +210,21 @@ async function run(options={}) {
         }
         if(!visible)
           throw Error('Public example.com page heading not visible in Android accessibility');
+        timings.pageHeadingObservedMs=Math.max(0,clock()-requestedAt);
         const pageShot=await control.screenshot(serial);
         if(!pageShot.width || !pageShot.height || !pageShot.byteLength)
           throw Error('Public page screenshot unavailable');
         page={
           state:'public-heading-observed',
           evidence:'chrome-foreground-accessibility-heading-and-png',
-          navigationObservationMs:Math.max(0,clock()-requestedAt),
+          navigationObservationMs:timings.pageHeadingObservedMs,
           frame:{width:pageShot.width,height:pageShot.height},
           // This is an accessibility probe, NOT a page/network/FPS benchmark.
           networkVerified:false,performanceVerified:false
         };
       }
     }
-    return {
+    receipt={
       status:'PASS',source:'live-adb',
       bootComplete:true,
       screenshot:{width:screen.width,height:screen.height,bytes:screen.byteLength},
@@ -190,28 +233,49 @@ async function run(options={}) {
       hierarchy:{nodeCount:inspect.totalNodes,
         actionableCount:inspect.actionableCount,privacy:inspect.privacy},
       elapsedMs:Math.max(0,clock()-begun),
+      timings,
       // No image bytes, node text, device identifiers or account data in logs.
-      shutdownRequestedInCleanup:true
+      shutdownRequestedInCleanup:false,
+      shutdownVerified:false
     };
+    return receipt;
   } finally {
     if(started) {
-      // Never stop unrelated Android devices; only the AVD we started.
+      const shutdownStartedAt=clock();
       try {
+        // Never send a stop command to unrelated emulators. The serial must
+        // be absent from the pre-launch baseline and match our named AVD.
         serial=serial||await findByName(manager,name);
-        if(serial) {
+        if(serial && !beforeSerials.has(serial)) {
           await manager.stopEmulator(serial);
-          stopped=true;
+          shutdownRequested=true;
         }
-      } catch(_) {/* Fall back to the child process we spawned below. */}
-      if(!stopped) {
-        const child=manager.launched.get(name);
+      } catch (_) { /* Try to terminate only the child launched by LHM. */ }
+      if(!shutdownRequested) {
+        const child=manager.launched?.get?.(name);
         if(child && typeof child.kill==='function') {
-          try {child.kill();stopped=true;} catch(_) {}
+          try {child.kill();shutdownRequested=true;} catch (_) {}
         }
       }
-      if(!stopped) {
-        // Cleanup uncertainty must fail, even when checks succeeded.
-        throw Error('Could not confirm shutdown request for the smoke-test AVD.');
+      let verified=await waitForShutdown(manager,name,beforeSerials,options);
+      if(!verified) {
+        // ADB kill may be accepted but the emulator process can remain alive.
+        // Fall back to our own child only; never kill arbitrary host PIDs.
+        const child=manager.launched?.get?.(name);
+        if(child && typeof child.kill==='function') {
+          try {child.kill();shutdownRequested=true;} catch (_) {}
+          verified=await waitForShutdown(manager,name,beforeSerials,options);
+        }
+      }
+      if(!verified) {
+        throw Error('Android shutdown not verified: check the test AVD locally before retrying');
+      }
+      timings.shutdownObservedMs=Math.max(0,clock()-shutdownStartedAt);
+      if(receipt) {
+        receipt.shutdownRequestedInCleanup=shutdownRequested;
+        receipt.shutdownVerified=true;
+        // Including teardown time gives an honest total end-to-end observation.
+        receipt.totalObservedMs=Math.max(0,clock()-begun);
       }
     }
   }
@@ -232,5 +296,5 @@ if(require.main===module) {
     });
 }
 
-module.exports={requestedAvd,findByName,waitForBoot,chromeForeground,
-  pageHeadingVisible,publicPageVisible,run};
+module.exports={requestedAvd,findByName,waitForBoot,waitForShutdown,
+  chromeForeground,pageHeadingVisible,publicPageVisible,run};
