@@ -70,6 +70,32 @@ Remove-Item Env:LHM_ANDROID_SERIAL_A,Env:LHM_ANDROID_AVD_A,Env:LHM_ANDROID_SERIA
 
 A repeated shell-visible Android ID triggers `FAIL`; an inconsistent/missing ID produces `NOT_VERIFIED`. Different observed IDs produce only `OS_ID_DISTINCT_OBSERVED`, **not** proof that browser fingerprints are unique or immune to correlation. Modern Android app-scoped `ANDROID_ID` can be scoped to app signer/user, so the shell result is **not** equivalent to an app-visible device ID. Identical system `ro.build.fingerprint` values are common for AVDs sharing an Android system image; this is noted but not itself a failure. Chrome Client Hints, User-Agent, Canvas, WebGL, WebAudio, advertising ID, GPU, DNS, IPv6 and cross-site fingerprint persistence remain **NOT_TESTED**. The regular CI tests this diagnostic with fake ADB only.
 
+### Per-AVD TCP proxy launch policy (owner opt-in; NOT an IP kill switch)
+
+Android SDK Emulator officially accepts `-http-proxy http://host:port` on launch; it redirects **TCP** connections (including HTTPS tunnels), **not UDP**. It is not a complete IP/DNS/WebRTC/IPv6 leak defense. Normal Android Emulator network access can otherwise share the Windows host's public IP. The desktop Chrome proxy configuration does **not** configure the Android Emulator.
+
+To require a **distinct explicit HTTP TCP proxy endpoint for each AVD created/launched by LHM**, set these process environment variables before opening the LHM Electron app:
+
+```powershell
+$env:LHM_ANDROID_NETWORK_MODE='isolated-tcp'
+$env:LHM_ANDROID_AVD_HTTP_PROXIES='{"Clean_A":"http://127.0.0.1:18080","Clean_B":"http://proxy-b.example:18081"}'
+# Start LHM from this same shell/session so it inherits these settings.
+```
+
+These addresses are **examples only**. Point each AVD to a working, independently routed HTTP CONNECT proxy owned/authorized by you; `127.0.0.1:18080` requires a compatible local proxy gateway running on the Windows host. Replace the other hostname with your actual proxy. The policy intentionally supports **credential-free HTTP endpoints only**: never put proxy usernames or passwords in command-line args or environment JSON. Use a separately authenticated loopback proxy gateway if your upstream requires credentials, after validating that gateway's safety.
+
+Security behavior:
+
+- `isolated-tcp` + a valid **unique endpoint per AVD**: passes launch configuration checks and starts `emulator -avd AVD_NAME -http-proxy http://host:port`. Missing/malformed/duplicated mapping **blocks** that AVD's launch. The endpoint is never returned to renderer/UI/logs, although process command lines on Windows can be inspected by sufficiently privileged local users.
+- LHM removes inherited `http_proxy`, `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` and `NO_PROXY` when spawning an emulator. This prevents a shared proxy from silently overriding profile intent. Do not use this mode unless you can operate without the inherited corporate proxy.
+- Under strict mode, LHM Chrome open and navigation actions also require the exact AVD name reported by ADB to match an **Emulator process launched by this LHM session** with a strict proxy binding. If the port is reused for another AVD, the action is refused.
+- Unset `LHM_ANDROID_NETWORK_MODE` is backwards-compatible `direct-unverified`: no forced per-AVD proxy and **no separate IP claim**. If proxy JSON is configured but strict mode is not enabled, launch is blocked rather than silently falling back to direct.
+- AVD settings changed in Android Studio or proxies added through Emulator Extended Controls can override assumptions. The app does not inspect the *effective* Android network path. A configured proxy may be offline, share an egress with another endpoint or fail unexpectedly.
+
+**Critical limits:** The emulator's official TCP proxy **does not redirect UDP**, does not establish a VPN kill switch and does not guarantee DNS, WebRTC/STUN, IPv6, Chrome QUIC or fingerprint independence. `TCP_PROXY_CONFIGURED_UNVERIFIED` is configuration evidence **only**. Run the owner-approved live Android Chrome IP audit and real host-level network inspection before any use with private customer accounts. Never claim zero leakage or 100% undetectability.
+
+Sources: https://developer.android.com/studio/run/emulator-networking-proxy and https://developer.android.com/studio/run/emulator-commandline
+
 ## Cross-profile privacy controls (defense in depth)
 
 - Android AVDs are independent Android emulator userdata directories. **Duplicate** only imports the installed system image configuration and creates empty userdata; it does not copy cookies, logged-in apps, accounts, keys, screenshots or AVD snapshots.

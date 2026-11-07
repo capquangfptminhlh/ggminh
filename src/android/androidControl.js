@@ -149,6 +149,11 @@ class AndroidControl {
       if (!/^package:\S+\.apk\s*$/m.test(installed)) {
         throw new Error('Chrome is not installed in this AVD; use an Android system image with Chrome');
       }
+      // When strict network mode is enabled, a Chrome command is allowed only
+      // for an AVD that THIS manager started with its own TCP proxy endpoint.
+      // This is a launch guard, not an IP/DNS/WebRTC leak certification.
+      if(typeof this.manager.assertChromeNetworkBound==='function')
+        await this.manager.assertChromeNetworkBound(serial);
       // One fixed launcher event. No arbitrary shell, URL, package selection,
       // profile cloning, or background browsing is exposed to the renderer.
       const result=await this.manager.run(adb,
@@ -188,6 +193,8 @@ class AndroidControl {
         ['-s',serial,'shell','pm','path','com.android.chrome']);
       if(!/^package:\S+\.apk\s*$/m.test(installed))
         throw new Error('Chrome is not installed on this Android emulator');
+      if(typeof this.manager.assertChromeNetworkBound==='function')
+        await this.manager.assertChromeNetworkBound(serial);
       let output;
       try {
         output=await this.manager.run(adb,
