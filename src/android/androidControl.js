@@ -91,6 +91,48 @@ class AndroidControl {
     } finally { this.busy.delete(serial); }
   }
 
+  async openBrowser(serial) {
+    // Deliberately Chrome-only on an Android *emulator*. The renderer cannot
+    // choose a package, URL, ADB command or physical phone. A native Electron
+    // approval dialog gates this entry point; this method also fails closed
+    // when called by a different in-process client.
+    if (typeof serial !== 'string' || !/^emulator-\d{4,5}$/.test(serial)) {
+      throw new Error('Chrome launch is limited to a dedicated Android emulator');
+    }
+    const adb=await this.authorized(serial);
+    if (this.busy.has(serial)) throw new Error('Device is busy; wait for the current Android action');
+    this.busy.add(serial);
+    try {
+      const devices=await this.manager.devices();
+      if (!devices.some(device => device.serial===serial &&
+          device.kind==='emulator' && device.status==='device')) {
+        throw new Error('The Android emulator is no longer authorized');
+      }
+      const boot=(await this.manager.run(adb,
+        ['-s',serial,'shell','getprop','sys.boot_completed'])).trim();
+      if (boot!=='1') throw new Error('Android has not finished booting');
+      const installed=await this.manager.run(adb,
+        ['-s',serial,'shell','pm','path','com.android.chrome']);
+      if (!/^package:\S+\.apk\s*$/m.test(installed)) {
+        throw new Error('Chrome is not installed in this AVD; use an Android system image with Chrome');
+      }
+      // One fixed launcher event. No arbitrary shell, URL, package selection,
+      // profile cloning, or background browsing is exposed to the renderer.
+      const result=await this.manager.run(adb,
+        ['-s',serial,'shell','monkey','-p','com.android.chrome',
+          '-c','android.intent.category.LAUNCHER','1']);
+      if (!/Events injected:\s*1\b/.test(result)) {
+        throw new Error('Android did not confirm the Chrome launch event');
+      }
+      return {
+        serial,app:'Chrome',state:'launch-requested',
+        // ADB injects a launcher event; actual foreground rendering is
+        // confirmed by viewing the local emulator, not invented here.
+        foregroundVerified:false
+      };
+    } finally { this.busy.delete(serial); }
+  }
+
   async screenshot(serial) {
     const adb=await this.authorized(serial);
     if (this.busy.has(serial)) throw new Error('Device is busy; retry screenshot');
