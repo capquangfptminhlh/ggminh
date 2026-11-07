@@ -425,6 +425,7 @@ function initIPC() {
   // scheduler or unauthenticated HTTP path to Android controls.
   const androidAgent = new AndroidAgentWorkflow(androidControl, aiAdvisor,{targetGuard:androidTargetGuard});
   const androidStepConfirmations = new Set();
+  const androidChromeConfirmations = new Set();
   ipcMain.handle('android-discover', async () => {
     const [devices, provisioning] = await Promise.all([androidManager.discover(), avdProvisioner.catalog()]);
     return {...devices, provisioning};
@@ -433,11 +434,40 @@ function initIPC() {
   ipcMain.handle('android-duplicate-avd', (_event, source, name) => avdProvisioner.duplicate(source, name));
   ipcMain.handle('android-launch-avd', (_event, name) => androidManager.launchAvd(name));
   ipcMain.handle('android-open-screen', (_event, serial) => androidManager.openScreen(serial));
-  ipcMain.handle('android-stop-emulator', (_event, serial) => androidManager.stopEmulator(serial));
+  ipcMain.handle('android-stop-emulator', async (_event, serial) => {
+    // AVD shutdown must not race an approved Chrome launch or other in-flight
+    // Android command. Sharing the local control busy set serializes both.
+    if (androidControl.busy.has(serial) || androidChromeConfirmations.has(serial))
+      throw new Error('Android is busy or waiting for approval; close that step before stopping');
+    androidControl.busy.add(serial);
+    try { return await androidManager.stopEmulator(serial); }
+    finally { androidControl.busy.delete(serial); }
+  });
   ipcMain.handle('android-control-action', (_event, serial, action, args) =>
     androidControl.execute(serial, action, args));
   ipcMain.handle('android-control-screenshot', (_event, serial) =>
     androidControl.screenshot(serial));
+  ipcMain.handle('android-open-chrome', async (_event, serial) => {
+    // This permission is separate from screenshots, taps, APK installs and
+    // the Robot's Android MCP. Never start a browser without owner approval.
+    if (typeof serial!=='string' || !/^emulator-\d{4,5}$/.test(serial))
+      throw new Error('Chrome is only available on an Android test emulator');
+    if (androidChromeConfirmations.has(serial))
+      throw new Error('Another Chrome confirmation is already open');
+    androidChromeConfirmations.add(serial);
+    try {
+      const confirm=await dialog.showMessageBox(mainWindow,{
+        type:'question',title:'Mở Chrome trong Android',
+        message:'Mở Chrome trên máy ảo ' + serial + '?',
+        detail:'Chỉ khởi chạy ứng dụng Chrome đã cài trong AVD này. ' +
+          'Không tự động truy cập website, gửi tin nhắn hay đăng nhập. ' +
+          'Nếu Chrome hiện màn hình thiết lập ban đầu, anh cần tự xác nhận.',
+        buttons:['Hủy','Mở Chrome'],defaultId:0,cancelId:0,noLink:true
+      });
+      if(confirm.response!==1)return {state:'cancelled'};
+      return androidControl.openBrowser(serial);
+    } finally { androidChromeConfirmations.delete(serial); }
+  });
   ipcMain.handle('android-ui-inspect', (_event, serial) => androidTargetGuard.scan(serial));
   ipcMain.handle('android-ui-invalidate', (_event, scanId) =>
     androidTargetGuard.invalidate(scanId));
