@@ -66,6 +66,8 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
     LHM_ANDROID_AVD_HTTP_PROXIES:entries
   }),/require isolated-tcp/);
   assert.deepEqual(sanitizedEmulatorEnv(strict).ANDROID_SDK_ROOT,'C:\\Sdk');
+  assert.equal(sanitizedEmulatorEnv(strict).LHM_ANDROID_AVD_HTTP_PROXIES,undefined);
+  assert.equal(sanitizedEmulatorEnv(strict).LHM_ANDROID_NETWORK_MODE,undefined);
   for(const key of Object.keys(sanitizedEmulatorEnv(strict)))
     assert(!/^(http_proxy|https_proxy|all_proxy|no_proxy)$/i.test(key));
 
@@ -132,6 +134,8 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
   for(const key of Object.keys(spawned.opts.env))
     assert(!/^(http_proxy|https_proxy|all_proxy|no_proxy)$/i.test(key));
   assert.equal(JSON.stringify(launched).includes('127.0.0.1'),false);
+  assert.equal(spawned.opts.env.LHM_ANDROID_AVD_HTTP_PROXIES,undefined);
+  assert.equal(spawned.opts.env.LHM_ANDROID_NETWORK_MODE,undefined);
   const proof=await manager.assertChromeNetworkBound('emulator-5554');
   assert.equal(proof.publicIpVerified,false);
   assert.equal(proof.status,'TCP_PROXY_CONFIGURED_UNVERIFIED');
