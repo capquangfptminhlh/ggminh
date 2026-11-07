@@ -119,7 +119,8 @@
       'parallel-limit':'PC đã đạt giới hạn chạy song song',
       'insufficient-free-memory':'Không đủ RAM trống để mở an toàn',
       'memory-unavailable':'Không đo được bộ nhớ máy',
-      'adb-unavailable':'Không tìm thấy ADB để xác nhận trạng thái máy ảo'
+      'adb-unavailable':'Không tìm thấy ADB để xác nhận trạng thái máy ảo',
+      'network-policy-invalid-or-unconfigured':'Chế độ IP riêng đang bật nhưng proxy TCP AVD chưa được cấu hình hợp lệ'
     };
     return messages[reason] || 'Chưa sẵn sàng';
   }
@@ -149,11 +150,19 @@
       const ram = readiness?.plannedRamMiB
         ? ' · RAM AVD dự tính ' + Math.round(readiness.plannedRamMiB / 1024 * 10) / 10 + ' GB'
         : '';
-      root.append(row(name, status + ram,
+      const network = readiness?.networkState==='TCP_PROXY_CONFIGURED_UNVERIFIED'
+        ? ' · Proxy TCP riêng: đã cấu hình, IP/DNS/WebRTC chưa xác minh'
+        : readiness?.networkState==='DIRECT_UNVERIFIED'
+          ? ' · Mạng trực tiếp: IP dùng chung/chưa xác minh'
+          : ' · Chính sách mạng: chưa hợp lệ';
+      root.append(row(name, status + network + ram,
         [action(running || starting ? 'Đang chạy' : 'Khởi chạy', async () => {
           const result = await window.api.androidLaunchAvd(name);
           return 'Đã gửi lệnh khởi chạy ' + result.name +
-            '. Màn hình Android sẽ xuất hiện khi emulator khởi động.';
+            '. ' + (result.networkState==='TCP_PROXY_CONFIGURED_UNVERIFIED'
+              ? 'Proxy TCP riêng được chỉ định; IP và UDP chưa kiểm chứng.'
+              : 'Mạng trực tiếp chưa được xác minh; có thể dùng chung IP PC.') +
+            ' Kiểm tra Android sau khi khởi động.';
         }, disabled)]));
     });
   }
