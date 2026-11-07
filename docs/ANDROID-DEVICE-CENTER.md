@@ -69,6 +69,19 @@ node tools/android-local-acceptance.js --avd LHM_Test_Pixel --mode page --ack-cl
 
 The `--ack-clean-avd` flag is an explicit operator acknowledgment; it **cannot verify** that an AVD contains no personal data. Do not select one with real accounts. For a downloadable EXE, this source-level acceptance helper does not replace testing the packaged Electron UI. Running this on a real Windows machine provides host evidence absent from normal GitHub CI.
 
+### Measured stage timings and verified emulator shutdown
+
+The Windows local acceptance and manual GitHub AVD workflow now collect **observation-only stage timings**:
+
+- `timings.bootObservedMs`: from the owner-approved emulator launch request until Android reports boot complete.
+- `timings.chromeForegroundObservedMs`: from the Chrome launcher request until the Chrome activity appears foreground, when Chrome testing is enabled.
+- `timings.pageHeadingObservedMs`: from the fixed public `example.com` navigation request until its exact heading is visible in Android accessibility, when page testing is enabled.
+- `timings.shutdownObservedMs`: elapsed time verifying teardown after the run, and `totalObservedMs`: full elapsed time including cleanup.
+
+These are wall-clock observations under one host's conditions, **not** FPS, CPU, memory, network speed, page onload, user interaction latency, multi-AVD capacity or a commercial performance pass. Values are `null` for skipped stages, and the run fails rather than fabricating measurements.
+
+**Important cleanup rule:** ADB's `emu kill` returns an acknowledgment while the emulator may remain running. The harness now waits for a positive ADB disappearance and the exit of the emulator process owned by LHM before returning PASS (`shutdownVerified: true`). ADB errors, lingering offline/emulator devices, or an owned child that refuses to exit invalidate the result; a controlled fallback kills **only** the child process this harness started. Unrelated pre-existing emulators are never stopped. An offline emulator visible before the test blocks the run to avoid ambiguous ownership. On uncertainty, inspect and close the dedicated test AVD manually; never assume an ambiguous run was clean.
+
 ### Real Windows AVD public website acceptance (explicitly opted in)
 
 The manual GitHub workflow `.github/workflows/android-live-windows.yml` can now check a **fixed public sample page** on a clean, dedicated AVD with Chrome already installed. It is not a performance certification. Configure a Windows 10/11 self-hosted runner with SDK, an existing accelerated AVD, and the `android-sdk` label. Select one of these gates:
@@ -77,7 +90,7 @@ The manual GitHub workflow `.github/workflows/android-live-windows.yml` can now 
 - `test_chrome=YES, test_page=NO`: additionally launch Chrome and observe a resumed Chrome foreground activity and PNG.
 - `test_chrome=YES, test_page=YES`: additionally send one HTTPS VIEW intent **only to `https://example.com/`**. Poll Chrome foreground and local UIAutomator XML until the exact public heading `Example Domain` is observed, then capture one local PNG and emit its dimensions and `navigationObservationMs`. The XML and PNG bytes remain on the runner and are **never logged or uploaded**. A missing heading, a lost foreground, missing Chrome or timeout fails the gate. No automatic retry of a potentially delivered navigation intent.
 
-`test_page=YES` without `test_chrome=YES` is explicitly rejected. The harness refuses a running target AVD and requests shutdown only for the emulator it started. The shutdown request is not proof that the OS process exited or that browser cookies were isolated. Do not use personal accounts on the test device.
+`test_page=YES` without `test_chrome=YES` is explicitly rejected. The harness refuses a running target AVD, stops only the emulator it started and now verifies ADB disappearance plus the owned process exit before reporting success. This does **not** prove that browser cookies were isolated or accounts are clean. Do not use personal accounts on the test device.
 
 **Evidence boundaries:** A public heading visible through the Android accessibility tree plus a screenshot is a stronger end-to-end smoke test than ADB intent injection, but does not measure network correctness, pixel-level rendering, interactive page responsiveness, JavaScript execution, FPS, CPU/RAM pressure, account isolation or multi-instance stability. On Android versions that do not expose web content in UIAutomator, this gate can fail even when the page looks correct. Such cases require human review and another inspected measurement, not lowering the acceptance threshold silently. `npm test` runs deterministic mock-ADB tests of the gate but is **not** the live Windows runner result.
 

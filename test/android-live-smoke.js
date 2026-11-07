@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {requestedAvd,findByName,chromeForeground,pageHeadingVisible,run}=require('../tools/android-live-smoke');
+const {requestedAvd,findByName,waitForShutdown,chromeForeground,pageHeadingVisible,run}=require('../tools/android-live-smoke');
 
 assert.equal(requestedAvd([],{LHM_ANDROID_AVD:'Test_AVD'}),'Test_AVD');
 assert.throws(()=>requestedAvd([],{LHM_ANDROID_AVD:'Bad & name'}),/safe existing/);
@@ -87,6 +87,12 @@ function fixture(external=false,chrome={},page={}) {
   assert.equal(result.hierarchy.actionableCount,1);
   assert.equal(result.hierarchy.privacy,'geometry-only');
   assert.equal(result.shutdownRequestedInCleanup,true);
+  assert.equal(result.shutdownVerified,true);
+  assert.equal(result.timings.bootObservedMs,0);
+  assert.equal(result.timings.chromeForegroundObservedMs,null);
+  assert.equal(result.timings.pageHeadingObservedMs,null);
+  assert.equal(result.timings.shutdownObservedMs,0);
+  assert.equal(result.totalObservedMs,0);
   assert(commands.some(args=>args.includes('screencap')));
   assert(commands.some(args=>args.includes('uiautomator')));
   assert(commands.some(args=>args.includes('keyevent')));
@@ -133,6 +139,95 @@ function fixture(external=false,chrome={},page={}) {
   await assert.rejects(run({manager:missingConsent.manager,name:'Test_AVD',
     testPage:true}),/separate Chrome opt-in/);
   assert.equal(missingConsent.state.launched,false);
+
+  const clocked=fixture();
+  let t=0;
+  const measured=await run({manager:clocked.manager,name:'Test_AVD',
+    clock:()=>{t+=100;return t;},testChrome:true,testPage:true,
+    delay:async()=>{},shutdownDelay:async()=>{}});
+  assert.equal(measured.shutdownVerified,true);
+  assert(measured.timings.bootObservedMs>=100);
+  assert(measured.timings.chromeForegroundObservedMs>=100);
+  assert(measured.timings.pageHeadingObservedMs>=100);
+  assert(measured.timings.shutdownObservedMs>=100);
+  assert(measured.totalObservedMs>=measured.elapsedMs);
+  assert.equal(measured.page.navigationObservationMs,measured.timings.pageHeadingObservedMs);
+
+  const delayed=fixture();
+  let stopCalled=false,remaining=2;
+  const delayedDevices=delayed.manager.devices;
+  delayed.manager.stopEmulator=async()=>{
+    stopCalled=true;return {state:'stopping'};
+  };
+  delayed.manager.devices=async()=>{
+    if(stopCalled && remaining--<=0)return [];
+    return delayedDevices();
+  };
+  const gradual=await run({manager:delayed.manager,name:'Test_AVD',
+    shutdownAttempts:4,shutdownDelay:async()=>{},clock:()=>1000});
+  assert.equal(gradual.shutdownVerified,true);
+  assert(stopCalled);
+
+  const hanging=fixture();
+  hanging.manager.stopEmulator=async()=>({state:'stopping'});
+  await assert.rejects(run({manager:hanging.manager,name:'Test_AVD',
+    shutdownAttempts:2,shutdownDelay:async()=>{}}),
+    /shutdown not verified/);
+  assert.equal(hanging.state.stopped,false);
+
+  const fallback=fixture();
+  let ownedKilled=false;
+  const originalLaunch=fallback.manager.launchAvd;
+  const originalDevices=fallback.manager.devices;
+  fallback.manager.launchAvd=async name=>{
+    const result=await originalLaunch(name);
+    fallback.manager.launched.set(name,{kill(){
+      ownedKilled=true;
+      fallback.manager.launched.delete(name);
+    }});
+    return result;
+  };
+  fallback.manager.stopEmulator=async()=>{throw Error('ADB kill unavailable');};
+  fallback.manager.devices=async()=>ownedKilled?[]:originalDevices();
+  const recovered=await run({manager:fallback.manager,name:'Test_AVD',
+    shutdownAttempts:2,shutdownDelay:async()=>{}});
+  assert.equal(recovered.shutdownVerified,true);
+  assert(ownedKilled);
+
+  const offline=fixture();
+  offline.manager.devices=async()=>[
+    {serial:'emulator-5558',kind:'emulator',status:'offline'}
+  ];
+  await assert.rejects(run({manager:offline.manager,name:'Test_AVD'}),
+    /offline Android emulator/);
+  assert.equal(offline.state.launched,false);
+
+  const external=fixture();
+  const externalDevices=external.manager.devices;
+  const externalRun=external.manager.run;
+  external.manager.run=async(executable,args)=>{
+    if(args.includes('emu') && args.includes('name') && args.includes('emulator-5556'))
+      return 'Other_AVD\nOK\n';
+    return externalRun(executable,args);
+  };
+  external.manager.devices=async()=>[
+    {serial:'emulator-5556',kind:'emulator',status:'device'},
+    ...await externalDevices()
+  ];
+  // The pre-existing emulator must never be stopped by this harness.
+  await run({manager:external.manager,name:'Test_AVD'});
+  assert.equal(external.commands.some(args=>args.includes('emulator-5556') &&
+    args.includes('kill')),false);
+  assert.equal(external.state.stopped,true);
+
+  assert.equal(await waitForShutdown({
+    devices:async()=>[{serial:'emulator-5554',kind:'emulator',status:'offline'}],
+    launched:new Map()
+  },'Test_AVD',new Set(),{shutdownAttempts:1}),false);
+  assert.equal(await waitForShutdown({
+    devices:async()=>{throw Error('ADB unavailable');},
+    launched:new Map()
+  },'Test_AVD',new Set(),{shutdownAttempts:1}),false);
 
   const missingChrome=fixture(false,{installed:false});
   await assert.rejects(run({manager:missingChrome.manager,name:'Test_AVD',
