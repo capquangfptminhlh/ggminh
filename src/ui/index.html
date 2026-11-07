@@ -1847,6 +1847,14 @@ run();
             </div>
             <div class="lhm-android-control-actions">
               <h4>Thao tác Android</h4>
+              <div class="lhm-android-url-control">
+                <label for="android-chrome-url">Mở website HTTPS trong Chrome Android</label>
+                <input type="url" id="android-chrome-url" maxlength="1024"
+                  inputmode="url" autocomplete="off" spellcheck="false"
+                  placeholder="https://example.com/products" aria-describedby="android-chrome-url-hint">
+                <button type="button" class="btn btn-secondary" id="android-chrome-navigate">Mở trang trên Android</button>
+                <small id="android-chrome-url-hint">Chỉ AVD đã khởi động có Chrome. Mỗi địa chỉ cần xác nhận riêng; không tự đăng nhập hoặc kiểm chứng tải trang.</small>
+              </div>
               <div class="lhm-android-control-buttons">
                 <button type="button" class="btn btn-secondary" id="android-control-back">Quay lại</button>
                 <button type="button" class="btn btn-secondary" id="android-control-home">Màn hình chính</button>
