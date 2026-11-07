@@ -1,0 +1,100 @@
+{
+  "schema": "lhm.ip-leak-measurement.gecko.v1",
+  "at": "2026-11-07T07:18:38.483Z",
+  "stun": [
+    "stun:stun.l.google.com:19302",
+    "stun:stun.cloudflare.com:3478"
+  ],
+  "firefox": [
+    {
+      "label": "proxied",
+      "launch": 1,
+      "gotResult": true,
+      "error": null,
+      "trackedWhileOpen": true,
+      "stopResult": "stopped",
+      "iceCandidateTypes": [],
+      "proxyRequests": 14,
+      "locallyResolvedHosts": []
+    },
+    {
+      "label": "proxied",
+      "launch": 2,
+      "gotResult": true,
+      "error": null,
+      "trackedWhileOpen": true,
+      "stopResult": "stopped",
+      "iceCandidateTypes": [],
+      "proxyRequests": 9,
+      "locallyResolvedHosts": []
+    },
+    {
+      "label": "direct",
+      "launch": 1,
+      "gotResult": true,
+      "error": null,
+      "trackedWhileOpen": true,
+      "stopResult": "stopped",
+      "iceCandidateTypes": [
+        "host",
+        "host",
+        "srflx"
+      ],
+      "proxyRequests": 0,
+      "locallyResolvedHosts": [
+        "location.services.mozilla.com",
+        "firefox.settings.services.mozilla.com",
+        "firefox-settings-attachments.cdn.mozilla.net",
+        "firefox-portal-detection.com",
+        "content-signature-2.cdn.mozilla.net",
+        "stun.l.google.com",
+        "stun.cloudflare.com",
+        "push.services.mozilla.com",
+        "aus5.mozilla.org",
+        "example.org",
+        "cloudflare-dns.com",
+        "ipv4only.arpa",
+        "normandy.cdn.mozilla.net",
+        "classify-client.services.mozilla.com",
+        "www.wikipedia.org"
+      ]
+    }
+  ],
+  "camoufox": [
+    {
+      "label": "proxied",
+      "gotResult": true,
+      "error": null,
+      "iceCandidateTypes": [],
+      "proxyRequests": 2,
+      "locallyResolvedHosts": []
+    },
+    {
+      "label": "direct",
+      "gotResult": true,
+      "error": null,
+      "iceCandidateTypes": [
+        "host",
+        "host",
+        "srflx"
+      ],
+      "proxyRequests": 0,
+      "locallyResolvedHosts": [
+        "example.org",
+        "cloudflare-dns.com",
+        "ipv4only.arpa",
+        "firefox-portal-detection.com",
+        "example.com",
+        "stun.l.google.com",
+        "stun.cloudflare.com",
+        "www.wikipedia.org",
+        "upload.wikimedia.org",
+        "en.wikipedia.org"
+      ]
+    }
+  ],
+  "verdict": {
+    "firefox": "PASS",
+    "camoufox": "PASS"
+  }
+}
