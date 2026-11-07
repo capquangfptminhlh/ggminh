@@ -98,7 +98,7 @@ async function firefox(exe, state, loopbackUrl, proxyPort) {
       await sleep(4000);
       const got = state.results.length > before ? state.results[state.results.length - 1] : null;
       const trackedWhileOpen = launcher.activeProcesses.has(profile.id);
-      const stopped = await launcher.stop(profile.id).catch(e => ({ error: String(e.message || e) })); await sleep(4000);
+      const stopped = await Promise.resolve().then(() => launcher.stop(profile.id)).catch(e => ({ error: String(e.message || e) })); await sleep(4000);
       runs.push({ label, launch: n, gotResult: !!got, error: got ? got.err : 'no result', trackedWhileOpen,
         stopResult: stopped && (stopped.success === true ? 'stopped' : JSON.stringify(stopped).slice(0, 160)),
         iceCandidateTypes: types(got), proxyRequests: state.log.length - logBefore,
@@ -160,6 +160,7 @@ async function camoufox(exe, state, proxyPort) {
   // Verdict: proxied runs must show no candidates and no local resolutions,
   // and the direct baseline must show srflx (proves STUN works on this network).
   const judge = runs => {
+    if (runs && runs.error) return 'ERROR: ' + runs.error;
     if (!Array.isArray(runs)) return 'NOT_RUN';
     const baseline = runs.find(r => r.label === 'direct');
     if (!baseline || !(baseline.iceCandidateTypes || []).includes('srflx')) return 'INCONCLUSIVE: baseline gathered no srflx';

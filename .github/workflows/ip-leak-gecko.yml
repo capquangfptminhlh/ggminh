@@ -53,6 +53,7 @@ jobs:
           $report = Get-Content "$env:RUNNER_TEMP\ip-leak-gecko\ip-leak-gecko-report.json" -Raw | ConvertFrom-Json
           "Firefox: $($report.verdict.firefox)  Camoufox: $($report.verdict.camoufox)" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
           if ($report.verdict.firefox -eq 'FAIL' -or $report.verdict.camoufox -eq 'FAIL') { throw 'IP leak found in a proxied Gecko profile' }
+          if ("$($report.verdict.firefox) $($report.verdict.camoufox)" -match 'ERROR') { throw 'IP leak measurement errored' }
       - name: Publish the measurement report (no browser binaries, no logs)
         if: always()
         uses: actions/upload-artifact@v4
