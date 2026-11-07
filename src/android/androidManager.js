@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 const { execFile, spawn } = require('child_process');
 const { configMemoryMiB, hostMemory, evaluateLaunch, emulatorAvdName, DEFAULT_AVD_RAM_MIB } = require('./fleetCapacity');
+const {avdNetworkMode,resolveAvdNetworkLaunch,sanitizedEmulatorEnv}=require('./avdNetworkPolicy');
 
 const SAFE_AVD = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
 const SAFE_SERIAL = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -44,6 +45,8 @@ class AndroidManager {
     this.execFile = options.execFile || execFile;
     this.spawn = options.spawn || spawn;
     this.launched = new Map();
+    // Owner-only in-memory AVD launch evidence; no network credentials.
+    this.networkLaunchBindings = new Map();
     this.os = options.os || os;
     this.path = this.platform === 'win32' ? path.win32 : path;
     this.pendingLaunches = new Set();
@@ -172,12 +175,18 @@ class AndroidManager {
       const estimateMiB = this.avdMemoryMiB(name);
       const policy = evaluateLaunch(host, activeCount, estimateMiB);
       const alreadyRunning = knownNames.has(name);
+      let route=null;
+      try {route=resolveAvdNetworkLaunch(name,this.env);}
+      catch (_) { /* Missing/invalid strict proxy policy blocks launch. */ }
       readiness[name] = {
         ...policy,
         plannedRamMiB: estimateMiB,
-        allowed: !!adb && !alreadyRunning && policy.allowed,
-        reason: !adb ? 'adb-unavailable'
-          : alreadyRunning ? 'already-running' : policy.reason
+        networkState:route?.status||'NETWORK_POLICY_BLOCKED',
+        udpProtected:false,publicIpVerified:false,
+        allowed:!!adb && !alreadyRunning && policy.allowed && !!route,
+        reason:!adb?'adb-unavailable':
+          alreadyRunning?'already-running':
+          !route?'network-policy-invalid-or-unconfigured':policy.reason
       };
     }
     const {freeBytes, ...publicHost} = host;
@@ -210,23 +219,59 @@ class AndroidManager {
         throw new Error('Android launch blocked by host preflight: ' +
           (readiness?.reason || 'resources-unavailable'));
       }
-      const child = this.spawn(emulator, ['-avd', name], {
-        shell:false, windowsHide:false, stdio:'ignore'
+      // No silent shared host http_proxy fallback: each strict AVD receives
+      // only its own explicit TCP proxy and never any username/password.
+      const route=resolveAvdNetworkLaunch(name,this.env);
+      const child = this.spawn(emulator, ['-avd',name,...route.argv], {
+        shell:false,windowsHide:false,stdio:'ignore',
+        env:sanitizedEmulatorEnv(this.env)
       });
       if (!child || !Number.isInteger(child.pid) || child.pid <= 0)
         throw new Error('Android Emulator could not start');
       this.launched.set(name, child);
-      child.once('exit', () => {
-        if (this.launched.get(name) === child) this.launched.delete(name);
-      });
-      child.once('error', () => {
-        if (this.launched.get(name) === child) this.launched.delete(name);
-      });
-      return {name, pid:child.pid, state:'starting'};
+      if(route.mode==='isolated-tcp')
+        this.networkLaunchBindings.set(name,{child,status:route.status});
+      const forget=()=>{
+        if(this.launched.get(name)===child)this.launched.delete(name);
+        if(this.networkLaunchBindings.get(name)?.child===child)
+          this.networkLaunchBindings.delete(name);
+      };
+      child.once('exit', forget);
+      child.once('error', forget);
+      return {name,pid:child.pid,state:'starting',
+        networkState:route.status,udpProtected:false,publicIpVerified:false};
     });
     this.launchQueue = task.catch(() => {});
     try { return await task; }
     finally { this.pendingLaunches.delete(name); }
+  }
+
+  async assertChromeNetworkBound(serial) {
+    // Strict policy forbids Chrome commands on an externally launched AVD or
+    // a recycled port. Actual proxy egress/DNS/WebRTC still need live audit.
+    if(avdNetworkMode(this.env)!=='isolated-tcp')return {
+      status:'DIRECT_UNVERIFIED',publicIpVerified:false
+    };
+    if(typeof serial!=='string'||!/^emulator-\\d{4,5}$/.test(serial))
+      throw Error('Android Chrome network identity could not be verified');
+    const adb=this.tool('adb');
+    const list=await this.devices();
+    const device=list.find(x=>x.serial===serial && x.kind==='emulator' &&
+      x.status==='device');
+    if(!adb||!device)
+      throw Error('Android Chrome network identity could not be verified');
+    let name=null;
+    try {name=emulatorAvdName(await this.run(adb,
+      ['-s',serial,'emu','avd','name']));}
+    catch(_) { /* Never fall back to trusting an emulator port number. */ }
+    const route=name?resolveAvdNetworkLaunch(name,this.env):null;
+    const bound=name?this.networkLaunchBindings.get(name):null;
+    if(!name||route?.mode!=='isolated-tcp' ||
+       !bound||bound.status!=='TCP_PROXY_CONFIGURED_UNVERIFIED' ||
+       bound.child!==this.launched.get(name)) {
+      throw Error('Android Chrome blocked: AVD-specific TCP proxy launch not verified');
+    }
+    return {status:bound.status,publicIpVerified:false,udpProtected:false};
   }
 
   async openScreen(serial) {
