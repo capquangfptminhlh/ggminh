@@ -57,6 +57,19 @@
   background:#f8fbff;border:1px solid #d9e5f2;border-radius:14px;padding:16px;
 }
 #modal-android-manager .lhm-android-control-actions h4 {font-size:15px;color:#24405f;}
+#modal-android-manager .lhm-android-url-control {
+  display:grid;gap:8px;padding:12px;border-radius:12px;
+  border:1px solid #d9e5f2;background:#fff;
+}
+#modal-android-manager .lhm-android-url-control input {
+  width:100%;min-width:0;padding:10px 12px;min-height:40px;
+  color:#243c59;background:#fff;border:1px solid #bdcee2;border-radius:9px;
+  font-size:13px;
+}
+#modal-android-manager .lhm-android-url-control small {
+  font-size:11px;line-height:1.5;color:#536d88;
+}
+#modal-android-manager .lhm-android-url-control button {min-height:40px;}
 #modal-android-manager .lhm-android-control-buttons {
   display:grid;grid-template-columns:1fr 1fr;gap:8px;
 }

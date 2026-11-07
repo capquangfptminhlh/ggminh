@@ -37,6 +37,16 @@ After an AVD reports `sys.boot_completed=1` in **Android Device Center**, its ro
 
 **Commercial gate remains OPEN:** no measured multi-AVD latency/CPU/RAM stability, no owner-endorsed physical Windows AVD acceptance, and no semantic browser interaction parity with competing Android platforms.
 
+### Open a requested HTTPS page in Android Chrome
+
+In **Android Control Studio**, choose a booted, ADB-authorized Android emulator, enter a public HTTPS address, and click **Mở trang trên Android**. Electron shows the exact URL in a **native per-site confirmation dialog** before dispatching a Chrome VIEW intent. The operation is manual and is **not an MCP tool or autonomous Agent command**.
+
+To avoid unsafe ADB remote-shell argument handling, the local validator deliberately supports only ordinary public ASCII DNS domains, HTTPS, paths and one simple query string. It rejects credential-bearing URLs, nonstandard ports, IP/local/private-style hostnames, fragments, ampersands, shell metacharacters, Unicode hostnames and oversized URLs. Some ordinary complex URLs will therefore be refused until a safer transport is implemented. It never executes arbitrary shell code.
+
+The result `intent-sent-unverified` means that Android accepted the intent request; it is **not proof** that the browser rendered, loaded the page, connected to the network, or preserved a login session. Check the Chrome window or capture a fresh local screenshot. A navigation action invalidates the previous screenshot in Control Studio to prevent tapping stale pixels. Any uncertain ADB timeout is **never automatically retried**; inspect the screen first.
+
+`test/android-browser-navigation.js` covers validation, concurrency, boot, package, renderer wiring, native approval and error redaction using mock ADB. The regular `npm test` runs it on Linux and Windows. Live AVD compatibility, website rendering, page-load metrics and concurrent-emulator benchmarks still need separate Windows owner acceptance.
+
 ## AI Agent MCP access (separate, read-only)
 
 LHM includes an opt-in **local MCP stdio server** at `bin/lhm-android-mcp.js`. It exposes only explicitly allowlisted ADB devices and sanitized UI metadata to a compatible local Agent client; no screenshots or Android write tools. It **does not** automatically connect to the 16-agent Robot Desktop app. See [ANDROID-MCP-BRIDGE.md](ANDROID-MCP-BRIDGE.md) for setup, permission controls and known limitations.
