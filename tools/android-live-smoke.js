@@ -19,6 +19,9 @@ const {emulatorAvdName}=require('../src/android/fleetCapacity');
 const SAFE_AVD=/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const MAX_BOOT_MS=5*60*1000;
 const POLL_MS=3000;
+// A public, non-account test URL only. No caller-controlled remote URLs.
+const PAGE_TEST_URL='https://example.com/';
+const MAX_PAGE_XML_BYTES=1024*1024;
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 function chromeForeground(output) {
@@ -28,6 +31,33 @@ function chromeForeground(output) {
   return String(output||'').split(/\r?\n/).some(line =>
     /\b(?:topResumedActivity|mResumedActivity|ResumedActivity|mFocusedApp|mCurrentFocus)\b/.test(line) &&
     /\bcom\.android\.chrome\//.test(line));
+}
+
+function pageHeadingVisible(raw) {
+  // Only a boolean is returned. The raw accessibility XML may contain
+  // private account or page text; never log, upload or include it in results.
+  if (typeof raw!=='string' || Buffer.byteLength(raw,'utf8')>MAX_PAGE_XML_BYTES ||
+      !raw.includes('<hierarchy') || !raw.includes('</hierarchy>'))return false;
+  // Use only the exact public landing-page heading, not the address bar URL.
+  return raw.split(/<node\b/).slice(1,3001).some(chunk => {
+    const tag=chunk.slice(0,chunk.indexOf('>')>=0?chunk.indexOf('>'):0);
+    return /(?:^|\s)text="Example Domain"(?=\s|\/|$)/.test(tag) &&
+      !/(?:^|\s)password="true"(?=\s|\/|$)/.test(tag);
+  });
+}
+
+async function publicPageVisible(manager,serial) {
+  const adb=manager.tool('adb');
+  if(!adb || typeof manager.execFile!=='function')return false;
+  return new Promise(resolve=>{
+    manager.execFile(adb,['-s',serial,'exec-out','uiautomator','dump','/dev/tty'],{
+      shell:false,windowsHide:true,encoding:'utf8',
+      timeout:20000,maxBuffer:MAX_PAGE_XML_BYTES
+    },(error,stdout)=>{
+      // Read-only probe: errors/oversized dumps are NOT_RUN/FAIL, never PASS.
+      resolve(!error && pageHeadingVisible(String(stdout||'')));
+    });
+  });
 }
 
 function requestedAvd(args,env=process.env) {
@@ -73,6 +103,8 @@ async function run(options={}) {
   const manager=options.manager||new AndroidManager();
   const name=options.name||requestedAvd([]);
   const clock=options.clock||Date.now;
+  if(options.testPage===true && options.testChrome!==true)
+    throw Error('Public Chrome page test requires the separate Chrome opt-in');
   const begun=clock();
   const avds=await manager.avds();
   if(!avds.includes(name))throw Error('The specified Android Virtual Device is not installed.');
@@ -98,7 +130,7 @@ async function run(options={}) {
     if(inspect.privacy!=='geometry-only' ||
       !Number.isInteger(inspect.totalNodes)||inspect.totalNodes<1)
       throw Error('Android UI hierarchy is unavailable.');
-    let chrome=null;
+    let chrome=null, page=null;
     if(options.testChrome===true) {
       const launchReceipt=await control.openBrowser(serial);
       if(launchReceipt.state!=='launch-requested')
@@ -118,13 +150,43 @@ async function run(options={}) {
         throw Error('Chrome foreground screenshot unavailable');
       chrome={state:'foreground-observed',frame:{width:chromeShot.width,
         height:chromeShot.height},verifiedBy:'adb-resumed-activity-and-png'};
+      if(options.testPage===true) {
+        const requestedAt=clock();
+        // The public fixed page must be explicitly opted in. This harness
+        // does not use a customer AVD or copy any Chrome user sessions.
+        const navigation=await control.navigateChrome(serial,PAGE_TEST_URL);
+        if(navigation.state!=='intent-sent-unverified')
+          throw Error('Android did not accept the public HTTPS page intent');
+        let visible=false;
+        for(let attempt=0;attempt<8 && !visible;attempt++) {
+          await (options.delay||delay)(1800);
+          const activity=await manager.run(adb,['-s',serial,'shell',
+            'dumpsys','activity','activities']);
+          if(!chromeForeground(activity))
+            throw Error('Chrome left the foreground during the public page test');
+          visible=await publicPageVisible(manager,serial);
+        }
+        if(!visible)
+          throw Error('Public example.com page heading not visible in Android accessibility');
+        const pageShot=await control.screenshot(serial);
+        if(!pageShot.width || !pageShot.height || !pageShot.byteLength)
+          throw Error('Public page screenshot unavailable');
+        page={
+          state:'public-heading-observed',
+          evidence:'chrome-foreground-accessibility-heading-and-png',
+          navigationObservationMs:Math.max(0,clock()-requestedAt),
+          frame:{width:pageShot.width,height:pageShot.height},
+          // This is an accessibility probe, NOT a page/network/FPS benchmark.
+          networkVerified:false,performanceVerified:false
+        };
+      }
     }
     return {
       status:'PASS',source:'live-adb',
       bootComplete:true,
       screenshot:{width:screen.width,height:screen.height,bytes:screen.byteLength},
       homeKey:'executed',
-      chrome,
+      chrome,page,
       hierarchy:{nodeCount:inspect.totalNodes,
         actionableCount:inspect.actionableCount,privacy:inspect.privacy},
       elapsedMs:Math.max(0,clock()-begun),
@@ -157,10 +219,12 @@ async function run(options={}) {
 
 if(require.main===module) {
   const consent=process.env.LHM_ANDROID_TEST_CHROME||'NO';
-  if(!['YES','NO'].includes(consent)) {
+  const pageConsent=process.env.LHM_ANDROID_TEST_PAGE||'NO';
+  if(!['YES','NO'].includes(consent) || !['YES','NO'].includes(pageConsent) ||
+      (pageConsent==='YES' && consent!=='YES')) {
     console.error('ANDROID LIVE SMOKE: FAIL - invalid Chrome test opt-in');
     process.exitCode=2;
-  } else run({testChrome:consent==='YES'})
+  } else run({testChrome:consent==='YES',testPage:pageConsent==='YES'})
     .then(summary=>console.log(JSON.stringify(summary,null,2)))
     .catch(error=>{
       console.error('ANDROID LIVE SMOKE: FAIL - '+String(error.message||error).slice(0,260));
@@ -168,4 +232,5 @@ if(require.main===module) {
     });
 }
 
-module.exports={requestedAvd,findByName,waitForBoot,chromeForeground,run};
+module.exports={requestedAvd,findByName,waitForBoot,chromeForeground,
+  pageHeadingVisible,publicPageVisible,run};

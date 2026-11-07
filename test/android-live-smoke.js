@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {requestedAvd,findByName,chromeForeground,run}=require('../tools/android-live-smoke');
+const {requestedAvd,findByName,chromeForeground,pageHeadingVisible,run}=require('../tools/android-live-smoke');
 
 assert.equal(requestedAvd([],{LHM_ANDROID_AVD:'Test_AVD'}),'Test_AVD');
 assert.throws(()=>requestedAvd([],{LHM_ANDROID_AVD:'Bad & name'}),/safe existing/);
@@ -9,6 +9,15 @@ assert(chromeForeground('topResumedActivity=ActivityRecord{123 u0 com.android.ch
 assert(chromeForeground('mResumedActivity: ActivityRecord{123 com.android.chrome/com.google.android.apps.chrome.Main}'));
 assert.equal(chromeForeground('Hist #0: ActivityRecord{u0 com.android.chrome/com.google.android.apps.chrome.Main}'),false);
 assert.equal(chromeForeground('topResumedActivity=ActivityRecord{u0 com.android.settings/.Settings}'),false);
+const publicXml='<hierarchy rotation="0"><node class="android.widget.TextView" '+
+  'text="Example Domain" password="false" clickable="false" /></hierarchy>';
+assert.equal(pageHeadingVisible(publicXml),true);
+assert.equal(pageHeadingVisible(publicXml.replace('Example Domain','example.com')),false);
+assert.equal(pageHeadingVisible(publicXml.replace('password="false"','password="true"')),false);
+assert.equal(pageHeadingVisible('text="Example Domain"'),false);
+assert.equal(pageHeadingVisible('<hierarchy><node text="Example Domain" /></hierarchy>'),true);
+assert.equal(pageHeadingVisible(null),false);
+
 
 
 const png=Buffer.alloc(32);
@@ -16,8 +25,8 @@ Buffer.from([137,80,78,71,13,10,26,10]).copy(png);
 png.write('IHDR',12,'ascii');
 png.writeUInt32BE(720,16);
 png.writeUInt32BE(1280,20);
-function fixture(external=false,chrome={}) {
-  let launched=external,stopped=false;
+function fixture(external=false,chrome={},page={}) {
+  let launched=external,stopped=false,navigated=false;
   const commands=[];
   const manager={
     launched:new Map(),
@@ -33,6 +42,7 @@ function fixture(external=false,chrome={}) {
       if(args.includes('pm')&&args.includes('path'))return chrome.installed===false
         ? '' : 'package:/data/app/com.android.chrome/base.apk\n';
       if(args.includes('monkey'))return 'Events injected: 1\n';
+      if(args.includes('am')){navigated=true;return 'Starting: Intent { act=android.intent.action.VIEW }\n';}
       if(args.includes('dumpsys'))return chrome.foreground===false
         ? 'topResumedActivity=ActivityRecord{u0 com.android.settings/.Settings}'
         : 'topResumedActivity=ActivityRecord{u0 com.android.chrome/com.google.android.apps.chrome.Main}';
@@ -43,10 +53,12 @@ function fixture(external=false,chrome={}) {
       assert.equal(opts.shell,false);
       if(args.includes('screencap'))return callback(null,png,Buffer.alloc(0));
       if(args.includes('uiautomator'))return callback(null,
-        '<hierarchy rotation="0"><node class="android.widget.Button" '+
-        'text="Private OTP 123456" content-desc="account@example.com" '+
-        'clickable="true" enabled="true" password="false" '+
-        'bounds="[10,20][120,100]" /></hierarchy>');
+        navigated && page.visible!==false
+          ? publicXml
+          : '<hierarchy rotation="0"><node class="android.widget.Button" '+
+            'text="Private OTP 123456" content-desc="account@example.com" '+
+            'clickable="true" enabled="true" password="false" '+
+            'bounds="[10,20][120,100]" /></hierarchy>');
       return callback(new Error('Unexpected ADB command'));
     },
     launchAvd:async name=>{
@@ -92,6 +104,35 @@ function fixture(external=false,chrome={}) {
   assert(withChrome.commands.some(args=>args.includes('dumpsys')));
   for(const secret of ['com.android.chrome/com.google.android.apps.chrome.Main','emulator-5554'])
     assert.equal(JSON.stringify(verified).includes(secret),false);
+
+  const withPage=fixture();
+  const pageVerified=await run({manager:withPage.manager,name:'Test_AVD',
+    clock:()=>1000,testChrome:true,testPage:true,delay:async()=>{}});
+  assert.equal(pageVerified.status,'PASS');
+  assert.equal(pageVerified.page.state,'public-heading-observed');
+  assert.equal(pageVerified.page.networkVerified,false);
+  assert.equal(pageVerified.page.performanceVerified,false);
+  assert.equal(pageVerified.page.frame.width,720);
+  assert.equal(pageVerified.page.navigationObservationMs,0);
+  assert(withPage.commands.some(args=>args.includes('am') &&
+    args.includes('https://example.com/')));
+  assert(withPage.commands.some(args=>args.includes('uiautomator')));
+  assert.equal(withPage.state.stopped,true);
+  const serialized=JSON.stringify(pageVerified);
+  for(const secret of ['Example Domain','Private OTP','account@example.com',
+    'emulator-5554','https://example.com/'])
+    assert(!serialized.includes(secret),'Raw page/device content escaped acceptance output');
+
+  const absentPage=fixture(false,{}, {visible:false});
+  await assert.rejects(run({manager:absentPage.manager,name:'Test_AVD',
+    testChrome:true,testPage:true,delay:async()=>{}}),
+    /page heading not visible/);
+  assert.equal(absentPage.state.stopped,true,'Failure must request AVD shutdown');
+
+  const missingConsent=fixture();
+  await assert.rejects(run({manager:missingConsent.manager,name:'Test_AVD',
+    testPage:true}),/separate Chrome opt-in/);
+  assert.equal(missingConsent.state.launched,false);
 
   const missingChrome=fixture(false,{installed:false});
   await assert.rejects(run({manager:missingChrome.manager,name:'Test_AVD',
