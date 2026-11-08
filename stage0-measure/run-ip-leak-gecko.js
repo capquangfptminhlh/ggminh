@@ -98,8 +98,12 @@ async function firefox(exe, state, loopbackUrl, proxyPort) {
       await sleep(4000);
       const got = state.results.length > before ? state.results[state.results.length - 1] : null;
       const trackedWhileOpen = launcher.activeProcesses.has(profile.id);
-      const stopped = await Promise.resolve().then(() => launcher.stop(profile.id)).catch(e => ({ error: String(e.message || e) })); await sleep(4000);
-      runs.push({ label, launch: n, gotResult: !!got, error: got ? got.err : 'no result', trackedWhileOpen,
+      const stopAt = Date.now();
+      const stopped = await Promise.resolve().then(() => launcher.stop(profile.id)).catch(e => ({ error: String(e.message || e) }));
+      for (let i = 0; i < 120 && launcher.activeProcesses.has(profile.id); i++) await sleep(250);
+      const stopToExitMs = Date.now() - stopAt;
+      await sleep(1500);
+      runs.push({ label, launch: n, gotResult: !!got, error: got ? got.err : 'no result', trackedWhileOpen, stopToExitMs,
         stopResult: stopped && (stopped.success === true ? 'stopped' : JSON.stringify(stopped).slice(0, 160)),
         iceCandidateTypes: types(got), proxyRequests: state.log.length - logBefore,
         locallyResolvedHosts: resolvedHosts(prefix) });
