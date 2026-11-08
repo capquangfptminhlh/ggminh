@@ -227,8 +227,10 @@ class AndroidManager {
       // only its own explicit TCP proxy and never any username/password.
       const route=resolveAvdNetworkLaunch(name,this.env);
       if(route.mode==='isolated-tcp') {
-        const reachable=await this.tcpProxyProbe(route.argv[1]);
-        if(reachable!==true)
+        let reachable=false;
+        try {reachable=await this.tcpProxyProbe(route.argv[1])===true;}
+        catch (_) { /* Never expose upstream proxy errors or credentials. */ }
+        if(!reachable)
           throw Error('Android launch blocked: configured TCP proxy did not complete an HTTPS CONNECT preflight');
       }
       const child = this.spawn(emulator, ['-avd',name,...route.argv], {
