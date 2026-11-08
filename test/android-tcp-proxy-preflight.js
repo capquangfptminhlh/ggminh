@@ -17,7 +17,12 @@ function fakeProxy({response='HTTP/1.1 200 Connection Established\r\n\r\n',
       process.nextTick(()=>{
         if(error)socket.emit('error',Error('Proxy password=secret'));
         else if(timeout)socket.emit('timeout');
-        else if(!neverReplies)socket.emit('data',Buffer.from(response));
+        else if(!neverReplies) {
+          socket.emit('data',Buffer.from(response));
+          // Simulate connection shutdown after incomplete proxy headers so
+          // the mocked test cannot exit with unresolved Promises.
+          socket.emit('end');
+        }
       });
       return true;
     };
@@ -64,6 +69,16 @@ function fakeProxy({response='HTTP/1.1 200 Connection Established\r\n\r\n',
     }),false);
     assert.equal(bad.calls.destroyed,1);
   }
+  // A proxy that holds the connection open without replying must not
+  // keep the application waiting forever, even if idle events fail.
+  const silent=fakeProxy({neverReplies:true});
+  const timed=Date.now();
+  assert.equal(await probeHttpConnect('http://127.0.0.1:18080',{
+    connect:silent.connect,timeoutMs:200
+  }),false);
+  assert(Date.now()-timed<1500,'Absolute proxy deadline was ignored');
+  assert.equal(silent.calls.destroyed,1);
+
   const wrong=fakeProxy();
   for(const bad of [
     'http://user:secret@proxy.example:3128',
