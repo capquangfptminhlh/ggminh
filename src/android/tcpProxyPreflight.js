@@ -23,13 +23,17 @@ function probeHttpConnect(rawEndpoint,options={}) {
     throw Error('Invalid Android proxy preflight timeout');
   const connect=options.connect||((address)=>net.createConnection(address));
   return new Promise(resolve=>{
-    let socket=null,settled=false,bytes=Buffer.alloc(0);
+    let socket=null,settled=false,bytes=Buffer.alloc(0),deadline=null;
     const finish=ok=>{
       if(settled)return;
       settled=true;
+      if(deadline!==null)clearTimeout(deadline);
       try {socket?.destroy?.();} catch (_) {}
       resolve(ok===true);
     };
+    // An absolute deadline prevents a hostile proxy from keeping the probe
+    // alive indefinitely by dribbling incomplete response headers.
+    deadline=setTimeout(()=>finish(false),timeoutMs);
     try {
       socket=connect({host:url.hostname,port:Number(url.port)});
       if(!socket||typeof socket.on!=='function'||
