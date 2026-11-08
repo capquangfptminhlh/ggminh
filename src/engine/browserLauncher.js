@@ -305,7 +305,7 @@ class BrowserLauncher {
     try {
       // Graceful close first so the browser flushes cookies/logins to disk;
       // force-terminate the process tree only after the grace period.
-      const sent = this.stopProcess(proc, { gracefulTree: active.engine === 'gecko' });
+      const sent = this.stopProcess(proc, { closeBrowserChild: active.engine === 'gecko' });
       if (sent === false) return { success: false, message: 'Could not stop browser process' };
       active.stopping = true;
       // Keep the profile locked until the child emits 'exit'.

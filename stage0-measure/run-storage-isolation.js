@@ -104,7 +104,9 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     // HTTP disk cache: A cached the asset, so B must fetch it itself, and A
     // must still serve it from its own cache after a restart.
     httpCacheNotSharedWithB: steps[0].httpCacheNetworkFetches === 1 && steps[1].httpCacheNetworkFetches === 1,
-    httpCachePersistsForA: steps[2].httpCacheNetworkFetches === 0
+    httpCachePersistsForA: steps[2].httpCacheNetworkFetches === 0,
+    // Stop must be a graceful shutdown (data flushed), not a kill at grace end.
+    stopIsGraceful: steps.every(s => s.exit && s.exit.code === 0 && s.stopToExitMs < 8000)
   };
   const report = { schema: 'lhm.storage-isolation.v1', at: new Date().toISOString(), engine, browser: bin || 'auto',
     sameOrigin: true, storesChecked: ['cookie (JS)', 'cookie (HttpOnly)', 'localStorage', 'IndexedDB', 'Cache Storage', 'HTTP disk cache'],

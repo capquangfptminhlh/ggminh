@@ -55,25 +55,32 @@ async function stopperTests() {
     await sleep(80);
     assert.deepStrictEqual(r.calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
   }
-  // Windows Firefox: the graceful close goes to the whole tree (the spawned
-  // launcher process has no window), still without /F.
+  // Windows Firefox: the spawned launcher has no window, so the graceful close
+  // goes straight to the browser child process (no /T, no /F).
   {
-    const proc = fakeProc(), r = recorder();
-    stopBrowserProcess(proc, { platform: 'win32', run: r.run, graceMs: 40, isChild, gracefulTree: true });
-    assert.deepStrictEqual(r.calls, [['taskkill', '/PID', '4242', '/T']]);
+    const proc = fakeProc(), calls = [];
+    const run = (cmd, args, _o, cb) => {
+      calls.push([cmd, ...args]);
+      setImmediate(() => cmd === 'powershell' ? cb(null, '5150\r\n') : cb(null, ''));
+    };
+    stopBrowserProcess(proc, { platform: 'win32', run, graceMs: 60, isChild, closeBrowserChild: true });
+    await sleep(20);
+    assert.strictEqual(calls[0][0], 'powershell');
+    assert(calls[0].join(' ').includes('ParentProcessId=4242'));
+    assert.deepStrictEqual(calls[1], ['taskkill', '/PID', '5150']);
     proc.exit(0);
     await sleep(80);
-    assert.strictEqual(r.calls.length, 1, 'no force after a clean exit');
+    assert.strictEqual(calls.length, 2, 'no force after a clean exit');
   }
-  // Windows Firefox: the tree close reports errors for windowless processes;
-  // that must not trigger an immediate force-kill, only the grace timer does.
+  // Windows Firefox: no browser child visible (still starting) -> grace timer forces the tree.
   {
-    const proc = fakeProc(), r = recorder({ failGraceful: true });
-    stopBrowserProcess(proc, { platform: 'win32', run: r.run, graceMs: 60, isChild, gracefulTree: true });
-    await sleep(25);
-    assert.strictEqual(r.calls.length, 1, 'no immediate force on a partial tree-close error');
-    await sleep(80);
-    assert.deepStrictEqual(r.calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
+    const proc = fakeProc(), calls = [];
+    const run = (cmd, args, _o, cb) => { calls.push([cmd, ...args]); setImmediate(() => cb(null, '')); };
+    stopBrowserProcess(proc, { platform: 'win32', run, graceMs: 40, isChild, closeBrowserChild: true });
+    await sleep(20);
+    assert.strictEqual(calls.length, 1, 'nothing to close gracefully yet');
+    await sleep(60);
+    assert.deepStrictEqual(calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
   }
   // Windows: no closable window (headless/starting) -> force at once.
   {

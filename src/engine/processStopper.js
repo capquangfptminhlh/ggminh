@@ -27,15 +27,26 @@ function hasExited(proc) {
     proc.signalCode !== null && proc.signalCode !== undefined;
 }
 
-// gracefulTree: send the graceful WM_CLOSE to the whole tree (/T, no /F).
-// Needed for Firefox on Windows: the spawned firefox.exe is a launcher
-// process (kept alive by --wait-for-browser) with no window of its own, so a
-// plain `taskkill /PID` failed and fell straight through to /T /F. That killed
-// the real browser before it flushed localStorage (measured on Windows CI:
-// cookies and IndexedDB survived a Stop, localStorage was lost).
+// Child process IDs of `pid` (Windows). pid is a validated integer.
+function listChildPids(pid, run, done) {
+  run('powershell', ['-NoProfile', '-NonInteractive', '-Command',
+    'Get-CimInstance Win32_Process -Filter "ParentProcessId=' + pid + '" | ForEach-Object { $_.ProcessId }'],
+  { windowsHide: true }, (error, stdout) => {
+    if (error) return done([]);
+    done(String(stdout || '').split(/\s+/).map(Number).filter(n => Number.isSafeInteger(n) && n > 0 && n !== pid));
+  });
+}
+
+// closeBrowserChild (Firefox on Windows): the spawned firefox.exe is a
+// windowless launcher kept alive by --wait-for-browser; the browser window
+// belongs to its child process. Measured on Windows CI:
+//   taskkill /PID <launcher>      -> fails (no window), app fell to /T /F
+//   taskkill /PID <launcher> /T   -> browser does NOT close, killed at grace end
+//   taskkill /PID <browser child> -> browser closes in 0.6 s, exit code 0
+// A forced kill lost localStorage written just before Stop.
 function stopBrowserProcess(proc, {
   platform = process.platform, run = execFile, graceMs = DEFAULT_GRACE_MS,
-  isChild = value => value instanceof ChildProcess, gracefulTree = false
+  isChild = value => value instanceof ChildProcess, closeBrowserChild = false
 } = {}) {
   if (!proc || typeof proc.kill !== 'function') return false;
   if (hasExited(proc)) return false;
@@ -62,14 +73,21 @@ function stopBrowserProcess(proc, {
     timer.unref?.();
   };
 
+  if (useTaskkill && closeBrowserChild) {
+    armForce();
+    listChildPids(pid, run, children => {
+      if (done || hasExited(proc)) return;
+      // Close the browser's own window gracefully; if no child is visible yet
+      // (still starting), the grace timer force-closes the tree.
+      if (children.length) run('taskkill', children.flatMap(c => ['/PID', String(c)]), { windowsHide: true }, () => {});
+    });
+    return true;
+  }
   if (useTaskkill) {
-    run('taskkill', ['/PID', String(pid), ...(gracefulTree ? ['/T'] : [])], { windowsHide: true }, error => {
+    run('taskkill', ['/PID', String(pid)], { windowsHide: true }, error => {
       // No closable window (headless, still starting): nothing will close
-      // gracefully, so do not wait out the grace period. A tree close always
-      // reports an error for the windowless processes in it (the launcher,
-      // content processes) while the browser window still closes normally,
-      // so there the grace timer decides instead.
-      if (error && !gracefulTree) force();
+      // gracefully, so do not wait out the grace period.
+      if (error) force();
     });
     armForce();
     return true;
