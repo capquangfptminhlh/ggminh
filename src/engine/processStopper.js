@@ -27,16 +27,26 @@ function hasExited(proc) {
     proc.signalCode !== null && proc.signalCode !== undefined;
 }
 
-// graceTree: the tracked PID is a launcher whose browser is its direct child,
-// e.g. Windows Firefox run with --wait-for-browser. The launcher owns no
-// window, so WM_CLOSE to it fails and the tree was force-killed (Firefox did
-// not shut down cleanly). `taskkill /T` without /F did not close Firefox
-// either (measured: forced after the full grace). WM_CLOSE to the launcher's
-// direct children (the browser; content processes are its own children)
-// closes Firefox cleanly in about 1 s.
+// Child process IDs of `pid` (Windows). pid is a validated integer.
+function listChildPids(pid, run, done) {
+  run('powershell', ['-NoProfile', '-NonInteractive', '-Command',
+    'Get-CimInstance Win32_Process -Filter "ParentProcessId=' + pid + '" | ForEach-Object { $_.ProcessId }'],
+  { windowsHide: true }, (error, stdout) => {
+    if (error) return done([]);
+    done(String(stdout || '').split(/\s+/).map(Number).filter(n => Number.isSafeInteger(n) && n > 0 && n !== pid));
+  });
+}
+
+// closeBrowserChild (Firefox on Windows): the spawned firefox.exe is a
+// windowless launcher kept alive by --wait-for-browser; the browser window
+// belongs to its child process. Measured on Windows CI:
+//   taskkill /PID <launcher>      -> fails (no window), app fell to /T /F
+//   taskkill /PID <launcher> /T   -> browser does NOT close, killed at grace end
+//   taskkill /PID <browser child> -> browser closes in 0.6 s, exit code 0
+// A forced kill lost localStorage written just before Stop.
 function stopBrowserProcess(proc, {
   platform = process.platform, run = execFile, graceMs = DEFAULT_GRACE_MS,
-  isChild = value => value instanceof ChildProcess, graceTree = false
+  isChild = value => value instanceof ChildProcess, closeBrowserChild = false
 } = {}) {
   if (!proc || typeof proc.kill !== 'function') return false;
   if (hasExited(proc)) return false;
@@ -63,23 +73,14 @@ function stopBrowserProcess(proc, {
     timer.unref?.();
   };
 
-  if (useTaskkill && graceTree) {
-    run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      'Get-CimInstance Win32_Process -Filter "ParentProcessId=' + pid + '" | ForEach-Object { $_.ProcessId }'],
-    { windowsHide: true }, (error, stdout) => {
-      const children = String(stdout || '').split(/\s+/).map(Number)
-        .filter(child => Number.isSafeInteger(child) && child > 0 && child !== pid);
-      if (error || !children.length) return force();
-      let pending = children.length, signalled = 0;
-      for (const child of children) {
-        run('taskkill', ['/PID', String(child)], { windowsHide: true }, closeError => {
-          if (!closeError) signalled++;
-          // No child had a closable window: do not wait out the grace period.
-          if (--pending === 0 && !signalled) force();
-        });
-      }
-    });
+  if (useTaskkill && closeBrowserChild) {
     armForce();
+    listChildPids(pid, run, children => {
+      if (done || hasExited(proc)) return;
+      // Close the browser's own window gracefully; if no child is visible yet
+      // (still starting), the grace timer force-closes the tree.
+      if (children.length) run('taskkill', children.flatMap(c => ['/PID', String(c)]), { windowsHide: true }, () => {});
+    });
     return true;
   }
   if (useTaskkill) {

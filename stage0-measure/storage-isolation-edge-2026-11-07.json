@@ -1,0 +1,107 @@
+{
+  "schema": "lhm.storage-isolation.v1",
+  "at": "2026-11-08T05:49:27.407Z",
+  "engine": "chromium",
+  "browser": "Microsoft Edge (installed)",
+  "sameOrigin": true,
+  "storesChecked": [
+    "cookie (JS)",
+    "cookie (HttpOnly)",
+    "localStorage",
+    "IndexedDB",
+    "Cache Storage",
+    "HTTP disk cache"
+  ],
+  "steps": [
+    {
+      "step": "A writes",
+      "mode": "set",
+      "err": null,
+      "cookie": "lhm_js=A",
+      "localStorage": "A",
+      "indexedDB": "A",
+      "cacheStorage": "A",
+      "cookieHeader": "lhm_http=A; lhm_js=A",
+      "httpCacheNetworkFetches": 1,
+      "stopToExitMs": 4728,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "step": "B reads (must be empty)",
+      "mode": "read",
+      "err": null,
+      "cookie": "",
+      "localStorage": null,
+      "indexedDB": null,
+      "cacheStorage": null,
+      "cookieHeader": "",
+      "httpCacheNetworkFetches": 1,
+      "stopToExitMs": 927,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "step": "A reads after restart (must be A)",
+      "mode": "read",
+      "err": null,
+      "cookie": "lhm_js=A",
+      "localStorage": "A",
+      "indexedDB": "A",
+      "cacheStorage": "A",
+      "cookieHeader": "lhm_http=A; lhm_js=A",
+      "httpCacheNetworkFetches": 0,
+      "stopToExitMs": 702,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "step": "B writes",
+      "mode": "set",
+      "err": null,
+      "cookie": "lhm_js=B",
+      "localStorage": "B",
+      "indexedDB": "B",
+      "cacheStorage": "B",
+      "cookieHeader": "lhm_http=B; lhm_js=B",
+      "httpCacheNetworkFetches": 0,
+      "stopToExitMs": 714,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "step": "A reads after B wrote (must be A only)",
+      "mode": "read",
+      "err": null,
+      "cookie": "lhm_js=A",
+      "localStorage": "A",
+      "indexedDB": "A",
+      "cacheStorage": "A",
+      "cookieHeader": "lhm_http=A; lhm_js=A",
+      "httpCacheNetworkFetches": 0,
+      "stopToExitMs": 953,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    }
+  ],
+  "checks": {
+    "profileBSeesNothingOfA": true,
+    "profileAPersistsAcrossRestart": true,
+    "profileANotPollutedByB": true,
+    "profileBWroteOwnValues": true,
+    "httpCacheNotSharedWithB": true,
+    "httpCachePersistsForA": true,
+    "stopIsGraceful": true
+  },
+  "verdict": "PASS"
+}

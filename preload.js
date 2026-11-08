@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('api', {
   androidDuplicateAvd: (source, name) => ipcRenderer.invoke('android-duplicate-avd', source, name),
   androidLaunchAvd: name => ipcRenderer.invoke('android-launch-avd', name),
   androidOpenScreen: serial => ipcRenderer.invoke('android-open-screen', serial),
+  androidOpenChrome: serial => ipcRenderer.invoke('android-open-chrome', serial),
+  androidChromeNavigate: (serial,url) => ipcRenderer.invoke('android-chrome-navigate',serial,url),
   androidStopEmulator: serial => ipcRenderer.invoke('android-stop-emulator', serial),
   androidControlAction: (serial,action,args) => ipcRenderer.invoke('android-control-action',serial,action,args),
   androidControlScreenshot: serial => ipcRenderer.invoke('android-control-screenshot',serial),

@@ -7,10 +7,43 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
+const {isIP} = require('node:net');
 const MAX_PNG_BYTES = 8 * 1024 * 1024;
 const MAX_APK_BYTES = 256 * 1024 * 1024;
 const SAFE_SERIAL = /^[A-Za-z0-9._:-]{1,128}$/;
 const MAX_PIXEL = 8192;
+
+// ADB uses a remote Android shell. Reject shell metacharacters rather than
+// assuming host execFile(shell:false) alone makes remote shell arguments safe.
+function safeChromeUrl(input) {
+  if (typeof input!=='string' || input.length<12 || input.length>1024 ||
+      input!==input.trim() || !/^[\x21-\x7e]+$/.test(input) ||
+      !/^https:\/\//i.test(input)) {
+    throw new Error('Enter a public HTTPS URL (up to 1024 characters)');
+  }
+  let url;
+  try { url=new URL(input); }
+  catch (_) { throw new Error('Enter a valid public HTTPS URL'); }
+  const host=url.hostname.toLowerCase();
+  if (url.protocol!=='https:' || url.username || url.password ||
+      url.port || url.hash || !/^[a-z0-9.-]+$/.test(host) ||
+      !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/.test(host) ||
+      host.split('.').some(part=>part.startsWith('xn--')) ||
+      isIP(host) || /(?:^|\.)(?:localhost|local|internal|lan|home|test|invalid|onion|localdomain)$/.test(host)) {
+    throw new Error('Only public HTTPS domain names are supported');
+  }
+  // Query strings with ampersands, fragments, shell operators or whitespace
+  // must not reach 'adb shell am start'. Ordinary product paths and a single
+  // simple query parameter work without unsafe remote-shell quoting.
+  const href=url.toString();
+  if (href.length>1024 ||
+      !/^[a-zA-Z0-9._~/%-]*$/.test(url.pathname) ||
+      !/^\??[a-zA-Z0-9._~/%=+?-]*$/.test(url.search) ||
+      /[\s'"&#;|<>(){}\\`$!\\]/.test(href)) {
+    throw new Error('URL contains unsupported or unsafe characters');
+  }
+  return href;
+}
 
 function point(value) {
   if (!Number.isInteger(value) || value < 0 || value > MAX_PIXEL) {
@@ -91,6 +124,96 @@ class AndroidControl {
     } finally { this.busy.delete(serial); }
   }
 
+  async openBrowser(serial) {
+    // Deliberately Chrome-only on an Android *emulator*. The renderer cannot
+    // choose a package, URL, ADB command or physical phone. A native Electron
+    // approval dialog gates this entry point; this method also fails closed
+    // when called by a different in-process client.
+    if (typeof serial !== 'string' || !/^emulator-\d{4,5}$/.test(serial)) {
+      throw new Error('Chrome launch is limited to a dedicated Android emulator');
+    }
+    const adb=await this.authorized(serial);
+    if (this.busy.has(serial)) throw new Error('Device is busy; wait for the current Android action');
+    this.busy.add(serial);
+    try {
+      const devices=await this.manager.devices();
+      if (!devices.some(device => device.serial===serial &&
+          device.kind==='emulator' && device.status==='device')) {
+        throw new Error('The Android emulator is no longer authorized');
+      }
+      const boot=(await this.manager.run(adb,
+        ['-s',serial,'shell','getprop','sys.boot_completed'])).trim();
+      if (boot!=='1') throw new Error('Android has not finished booting');
+      const installed=await this.manager.run(adb,
+        ['-s',serial,'shell','pm','path','com.android.chrome']);
+      if (!/^package:\S+\.apk\s*$/m.test(installed)) {
+        throw new Error('Chrome is not installed in this AVD; use an Android system image with Chrome');
+      }
+      // When strict network mode is enabled, a Chrome command is allowed only
+      // for an AVD that THIS manager started with its own TCP proxy endpoint.
+      // This is a launch guard, not an IP/DNS/WebRTC leak certification.
+      if(typeof this.manager.assertChromeNetworkBound==='function')
+        await this.manager.assertChromeNetworkBound(serial);
+      // One fixed launcher event. No arbitrary shell, URL, package selection,
+      // profile cloning, or background browsing is exposed to the renderer.
+      const result=await this.manager.run(adb,
+        ['-s',serial,'shell','monkey','-p','com.android.chrome',
+          '-c','android.intent.category.LAUNCHER','1']);
+      if (!/Events injected:\s*1\b/.test(result)) {
+        throw new Error('Android did not confirm the Chrome launch event');
+      }
+      return {
+        serial,app:'Chrome',state:'launch-requested',
+        // ADB injects a launcher event; actual foreground rendering is
+        // confirmed by viewing the local emulator, not invented here.
+        foregroundVerified:false
+      };
+    } finally { this.busy.delete(serial); }
+  }
+
+  async navigateChrome(serial, targetUrl) {
+    // URL validation is synchronous and happens before any ADB call. Renderer
+    // and in-process callers cannot issue arbitrary Android shell commands.
+    const href=safeChromeUrl(targetUrl);
+    if (typeof serial!=='string' || !/^emulator-\d{4,5}$/.test(serial))
+      throw new Error('Chrome navigation is limited to a dedicated Android emulator');
+    const adb=await this.authorized(serial);
+    if(this.busy.has(serial))
+      throw new Error('Device is busy; wait before opening another page');
+    this.busy.add(serial);
+    try {
+      const devices=await this.manager.devices();
+      if(!devices.some(device=>device.serial===serial &&
+          device.kind==='emulator' && device.status==='device'))
+        throw new Error('The Android emulator is no longer authorized');
+      const boot=(await this.manager.run(adb,
+        ['-s',serial,'shell','getprop','sys.boot_completed'])).trim();
+      if(boot!=='1')throw new Error('Android has not finished booting');
+      const installed=await this.manager.run(adb,
+        ['-s',serial,'shell','pm','path','com.android.chrome']);
+      if(!/^package:\S+\.apk\s*$/m.test(installed))
+        throw new Error('Chrome is not installed on this Android emulator');
+      if(typeof this.manager.assertChromeNetworkBound==='function')
+        await this.manager.assertChromeNetworkBound(serial);
+      let output;
+      try {
+        output=await this.manager.run(adb,
+          ['-s',serial,'shell','am','start','-a','android.intent.action.VIEW',
+            '-d',href,'-p','com.android.chrome']);
+      } catch (_) {
+        // ADB can time out *after* an intent was delivered: never auto retry.
+        // In particular, do not echo URL/query in exceptions or telemetry.
+        throw new Error('Chrome launch result is uncertain; inspect Android before retrying');
+      }
+      if(!/^(?:Starting: Intent|Warning: Activity not started)/m.test(output))
+        throw new Error('Android did not confirm the Chrome VIEW intent');
+      return {
+        serial,app:'Chrome',state:'intent-sent-unverified',
+        foregroundVerified:false,pageLoadedVerified:false
+      };
+    } finally {this.busy.delete(serial);}
+  }
+
   async screenshot(serial) {
     const adb=await this.authorized(serial);
     if (this.busy.has(serial)) throw new Error('Device is busy; retry screenshot');
@@ -145,4 +268,4 @@ class AndroidControl {
   }
 }
 
-module.exports={AndroidControl,validateAction,pngInfo,MAX_APK_BYTES};
+module.exports={AndroidControl,validateAction,pngInfo,MAX_APK_BYTES,safeChromeUrl};
