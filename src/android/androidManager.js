@@ -8,6 +8,7 @@ const path = require('path');
 const { execFile, spawn } = require('child_process');
 const { configMemoryMiB, hostMemory, evaluateLaunch, emulatorAvdName, DEFAULT_AVD_RAM_MIB } = require('./fleetCapacity');
 const {avdNetworkMode,resolveAvdNetworkLaunch,sanitizedEmulatorEnv}=require('./avdNetworkPolicy');
+const {probeHttpConnect}=require('./tcpProxyPreflight');
 
 const SAFE_AVD = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
 const SAFE_SERIAL = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -47,6 +48,9 @@ class AndroidManager {
     this.launched = new Map();
     // Owner-only in-memory AVD launch evidence; no network credentials.
     this.networkLaunchBindings = new Map();
+    // Test injection is local only. No proxy secrets or status are exposed
+    // to the Electron renderer or retained in persistent storage.
+    this.tcpProxyProbe=options.tcpProxyProbe||probeHttpConnect;
     this.os = options.os || os;
     this.path = this.platform === 'win32' ? path.win32 : path;
     this.pendingLaunches = new Set();
@@ -222,6 +226,13 @@ class AndroidManager {
       // No silent shared host http_proxy fallback: each strict AVD receives
       // only its own explicit TCP proxy and never any username/password.
       const route=resolveAvdNetworkLaunch(name,this.env);
+      if(route.mode==='isolated-tcp') {
+        let reachable=false;
+        try {reachable=await this.tcpProxyProbe(route.argv[1])===true;}
+        catch (_) { /* Never expose upstream proxy errors or credentials. */ }
+        if(!reachable)
+          throw Error('Android launch blocked: configured TCP proxy did not complete an HTTPS CONNECT preflight');
+      }
       const child = this.spawn(emulator, ['-avd',name,...route.argv], {
         shell:false,windowsHide:false,stdio:'ignore',
         env:sanitizedEmulatorEnv(this.env)
@@ -230,7 +241,9 @@ class AndroidManager {
         throw new Error('Android Emulator could not start');
       this.launched.set(name, child);
       if(route.mode==='isolated-tcp')
-        this.networkLaunchBindings.set(name,{child,status:route.status});
+        this.networkLaunchBindings.set(name,{
+          child,status:route.status,endpoint:route.argv[1]
+        });
       const forget=()=>{
         if(this.launched.get(name)===child)this.launched.delete(name);
         if(this.networkLaunchBindings.get(name)?.child===child)
@@ -268,10 +281,37 @@ class AndroidManager {
     const bound=name?this.networkLaunchBindings.get(name):null;
     if(!name||route?.mode!=='isolated-tcp' ||
        !bound||bound.status!=='TCP_PROXY_CONFIGURED_UNVERIFIED' ||
-       bound.child!==this.launched.get(name)) {
+       bound.child!==this.launched.get(name) ||
+       // Never let a changed proxy map inherit the original AVD's launch
+       // receipt and silently use a different or stale endpoint.
+       bound.endpoint!==route.argv[1]) {
       throw Error('Android Chrome blocked: AVD-specific TCP proxy launch not verified');
     }
-    return {status:bound.status,publicIpVerified:false,udpProtected:false};
+    let reachable=false;
+    try {reachable=await this.tcpProxyProbe(bound.endpoint)===true;}
+    catch (_) { /* An untrusted proxy error must not enter app logs. */ }
+    if(!reachable)
+      throw Error('Android Chrome blocked: its TCP proxy CONNECT preflight failed');
+    // An emulator serial or proxy map may change while the network handshake
+    // is in flight. Revalidate current ADB identity and exact launch binding
+    // before giving the Android Control Studio permission for this action.
+    let identityAfter=null;
+    try {
+      const current=(await this.devices()).find(x=>x.serial===serial &&
+        x.kind==='emulator' && x.status==='device');
+      if(current)identityAfter=emulatorAvdName(await this.run(adb,
+        ['-s',serial,'emu','avd','name']));
+    } catch (_) { /* Uncertain identity always fails closed. */ }
+    let routeAfter=null;
+    try {routeAfter=identityAfter?
+      resolveAvdNetworkLaunch(identityAfter,this.env):null;}
+    catch (_) {}
+    if(identityAfter!==name || routeAfter?.argv?.[1]!==bound.endpoint ||
+       this.networkLaunchBindings.get(name)!==bound ||
+       this.launched.get(name)!==bound.child)
+      throw Error('Android Chrome blocked: AVD/proxy identity changed during preflight');
+    return {status:bound.status,connectPreflight:'HTTP_CONNECT_REACHABLE_ONLY',
+      publicIpVerified:false,udpProtected:false};
   }
 
   async openScreen(serial) {

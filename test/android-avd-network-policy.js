@@ -76,7 +76,14 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
   const emulator=path.join(sdk,'emulator','emulator.exe');
   const invoked=[];
   let serialName='CleanA',started=false,child=null,online=false;
+  let proxyReachable=true,probeHook=null;
+  const proxyCalls=[];
   const manager=new AndroidManager({
+    tcpProxyProbe:async endpoint=>{
+      proxyCalls.push(endpoint);
+      if(probeHook)await probeHook();
+      return proxyReachable;
+    },
     platform:'win32',env:strict,home:'C:\\Users\\Local',
     fs:{
       statSync(file) {
@@ -123,7 +130,18 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
   assert.equal(started,false,'Missing per-AVD proxy cannot launch directly');
   await assert.rejects(manager.assertChromeNetworkBound('emulator-5554'),
     /identity could not be verified/);
+  proxyReachable=false;
+  await assert.rejects(manager.launchAvd('CleanA'),/CONNECT preflight/);
+  assert.equal(started,false,'A dead proxy cannot cause emulator spawn');
+  proxyReachable=true;
+  probeHook=async()=>{throw Error('private proxy token=NeverDisplay');};
+  await assert.rejects(manager.launchAvd('CleanA'),error=>
+    /CONNECT preflight/.test(error.message)&&
+      !/NeverDisplay|token=/.test(error.message));
+  assert.equal(started,false,'An upstream error must not start an AVD');
+  probeHook=null;
   const launched=await manager.launchAvd('CleanA');
+  assert.equal(proxyCalls.at(-1),'http://127.0.0.1:18080');
   assert.equal(launched.networkState,'TCP_PROXY_CONFIGURED_UNVERIFIED');
   assert.equal(launched.udpProtected,false);
   assert.equal(launched.publicIpVerified,false);
@@ -139,6 +157,7 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
   const proof=await manager.assertChromeNetworkBound('emulator-5554');
   assert.equal(proof.publicIpVerified,false);
   assert.equal(proof.status,'TCP_PROXY_CONFIGURED_UNVERIFIED');
+  assert.equal(proof.connectPreflight,'HTTP_CONNECT_REACHABLE_ONLY');
   const ctl=new AndroidControl(manager);
   const browser=await ctl.openBrowser('emulator-5554');
   assert.equal(browser.state,'launch-requested');
@@ -146,6 +165,45 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
   assert.equal(navigation.state,'intent-sent-unverified');
   const monkeyCount=invoked.filter(x=>x.args?.includes('monkey')).length;
   const amCount=invoked.filter(x=>x.args?.includes('am')).length;
+
+  // Proxy becomes unavailable AFTER AVD startup. New Chrome actions must
+  // fail before any monkey event or AM navigation reaches ADB.
+  proxyReachable=false;
+  await assert.rejects(manager.assertChromeNetworkBound('emulator-5554'),
+    /CONNECT preflight failed/);
+  await assert.rejects(ctl.openBrowser('emulator-5554'),
+    /CONNECT preflight failed/);
+  await assert.rejects(ctl.navigateChrome('emulator-5554','https://example.com/'),
+    /CONNECT preflight failed/);
+  assert.equal(invoked.filter(x=>x.args?.includes('monkey')).length,monkeyCount);
+  assert.equal(invoked.filter(x=>x.args?.includes('am')).length,amCount);
+  proxyReachable=true;
+
+  // A live proxy mapping changes while an AVD remains running: a prior
+  // launch receipt cannot authorize the new or the old endpoint.
+  const configured=strict.LHM_ANDROID_AVD_HTTP_PROXIES;
+  strict.LHM_ANDROID_AVD_HTTP_PROXIES=JSON.stringify({
+    CleanA:'http://127.0.0.1:19090',
+    CleanB:'http://proxy-b.example:18081'
+  });
+  await assert.rejects(manager.assertChromeNetworkBound('emulator-5554'),
+    /AVD-specific TCP proxy launch not verified/);
+  strict.LHM_ANDROID_AVD_HTTP_PROXIES=configured;
+
+  // A serial can be reassigned while the TCP handshake is in progress.
+  probeHook=async()=>{serialName='CleanB';};
+  await assert.rejects(manager.assertChromeNetworkBound('emulator-5554'),
+    /identity changed during preflight/);
+  serialName='CleanA';probeHook=null;
+
+  // Config can also change during the CONNECT preflight; fail closed.
+  probeHook=async()=>{strict.LHM_ANDROID_AVD_HTTP_PROXIES=JSON.stringify({
+    CleanA:'http://127.0.0.1:19090',
+    CleanB:'http://proxy-b.example:18081'
+  });};
+  await assert.rejects(manager.assertChromeNetworkBound('emulator-5554'),
+    /identity changed during preflight/);
+  strict.LHM_ANDROID_AVD_HTTP_PROXIES=configured;probeHook=null;
 
   // A different AVD inherits emulator-5554. It must never inherit permissions.
   serialName='CleanB';
