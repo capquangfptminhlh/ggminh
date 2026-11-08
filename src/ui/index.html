@@ -1823,7 +1823,7 @@ run();
           </section>
           <section class="lhm-android-panel" aria-labelledby="android-device-title">
             <div class="lhm-android-panel-heading"><span class="lhm-android-mark">02</span><h3 id="android-device-title">Thiết bị đã kết nối</h3></div>
-            <p>Dùng ADB để phát hiện máy ảo/điện thoại. Xem và thao tác bằng scrcpy khi đã được thiết bị cấp quyền.</p>
+            <p>ADB phát hiện thiết bị; scrcpy chỉ xem màn hình AVD, không đồng bộ clipboard hoặc âm thanh. Chạm, vuốt và gõ qua Android Control Studio.</p>
             <div id="android-device-list" class="lhm-android-list"></div>
           </section>
         </div>
@@ -1847,6 +1847,14 @@ run();
             </div>
             <div class="lhm-android-control-actions">
               <h4>Thao tác Android</h4>
+              <div class="lhm-android-url-control">
+                <label for="android-chrome-url">Mở website HTTPS trong Chrome Android</label>
+                <input type="url" id="android-chrome-url" maxlength="1024"
+                  inputmode="url" autocomplete="off" spellcheck="false"
+                  placeholder="https://example.com/products" aria-describedby="android-chrome-url-hint">
+                <button type="button" class="btn btn-secondary" id="android-chrome-navigate">Mở trang trên Android</button>
+                <small id="android-chrome-url-hint">Chỉ AVD đã khởi động có Chrome. Mỗi địa chỉ cần xác nhận riêng; không tự đăng nhập hoặc kiểm chứng tải trang.</small>
+              </div>
               <div class="lhm-android-control-buttons">
                 <button type="button" class="btn btn-secondary" id="android-control-back">Quay lại</button>
                 <button type="button" class="btn btn-secondary" id="android-control-home">Màn hình chính</button>

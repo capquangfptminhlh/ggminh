@@ -7,6 +7,18 @@ on:
         description: "Existing test AVD on the Windows self-hosted runner (no customer account)"
         required: true
         type: string
+      test_chrome:
+        description: "Explicitly test opening preinstalled Chrome and observing foreground state"
+        required: true
+        type: choice
+        default: 'NO'
+        options: ['NO', 'YES']
+      test_page:
+        description: "Explicitly navigate to public example.com and verify the page heading within a clean AVD (requires test_chrome=YES)"
+        required: true
+        type: choice
+        default: 'NO'
+        options: ['NO', 'YES']
 
 permissions:
   contents: read
@@ -23,6 +35,8 @@ jobs:
     timeout-minutes: 15
     env:
       LHM_ANDROID_AVD: ${{ inputs.avd_name }}
+      LHM_ANDROID_TEST_CHROME: ${{ inputs.test_chrome }}
+      LHM_ANDROID_TEST_PAGE: ${{ inputs.test_page }}
     steps:
       - name: Checkout this exact commit
         uses: actions/checkout@v4

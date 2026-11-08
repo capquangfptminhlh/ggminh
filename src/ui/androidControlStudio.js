@@ -4,7 +4,7 @@
   // No AI service calls or persistent screenshot storage. Every action comes
   // directly from a visible user control within Android Device Center.
   const $ = id => document.getElementById(id);
-  let selected='',shot=null,working=false,online=new Set(),shotVersion=0;
+  let selected='',shot=null,working=false,online=new Set(),bootedEmulators=new Set(),shotVersion=0;
 
   function note(message,error=false) {
     $('android-control-feedback').textContent=String(message || '');
@@ -13,6 +13,8 @@
   function selectionReady() { return !!selected && online.has(selected); }
   function toggleControls() {
     const ready=selectionReady() && !working;
+    $('android-chrome-url').disabled=!ready || !bootedEmulators.has(selected);
+    $('android-chrome-navigate').disabled=!ready || !bootedEmulators.has(selected);
     for(const id of ['android-control-capture','android-control-apk','android-control-back',
       'android-control-home','android-control-up','android-control-down',
       'android-control-send-text','android-control-text']) {
@@ -39,6 +41,14 @@
   }
 
   function render(state) {
+    // ADB emulator serials are recycled. An Android fleet refresh may now
+    // point the same serial at a DIFFERENT AVD/profile. Never leave a prior
+    // profile screenshot or tap coordinates active after rediscovery.
+    clearShot();
+    $('android-chrome-url').value='';
+    bootedEmulators=new Set((state?.fleet?.running || [])
+      .filter(device=>device.bootCompleted===true && /^emulator-\d{4,5}$/.test(device.serial))
+      .map(device=>device.serial));
     online=new Set((state?.devices || [])
       .filter(device=>device.status==='device').map(device=>device.serial));
     const select=$('android-control-serial');
@@ -76,7 +86,10 @@
     note('Đang thực hiện: '+label+'…');
     try {
       const result=await operation(selected);
-      note(result?.state==='cancelled'?'Đã hủy.':label+' thành công.');
+      note(result?.state==='cancelled'?'Đã hủy.':
+        result?.state==='intent-sent-unverified'
+          ? 'Đã gửi yêu cầu mở website. Kiểm tra Chrome trên màn hình Android để xác nhận tải trang.'
+          : label+' thành công.');
       return result;
     } catch(error) {
       note(error?.message || 'ADB không thực hiện được thao tác.',true);
@@ -135,6 +148,7 @@
 
   function clear() {
     clearShot();
+    $('android-chrome-url').value='';
     $('android-control-text').value='';
     note('');
   }
@@ -154,6 +168,17 @@
   window.addEventListener('DOMContentLoaded',()=>{
     $('android-control-serial').addEventListener('change',event=>setSelected(event.target.value));
     $('android-control-capture').addEventListener('click',screenshot);
+    $('android-chrome-navigate').addEventListener('click',async()=>{
+      if(!selectionReady() || !bootedEmulators.has(selected) || working)return;
+      const address=$('android-chrome-url').value;
+      if(!address || !address.startsWith('https://') || address.length>1024){
+        note('Nhập địa chỉ HTTPS hợp lệ; tối đa 1024 ký tự.',true);
+        return;
+      }
+      const result=await perform('Mở trang web',serial=>
+        window.api.androidChromeNavigate(serial,address));
+      if(result?.state==='intent-sent-unverified')clearShot();
+    });
     $('android-control-image').addEventListener('click',onImageTap);
     $('android-control-back').addEventListener('click',()=>perform('Quay lại',s=>
       window.api.androidControlAction(s,'key',{key:'BACK'})));

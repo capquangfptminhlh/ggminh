@@ -67,7 +67,21 @@ const mgr = new AndroidManager({
   await assert.rejects(mgr.openScreen(';rm -rf /'),/Invalid/);
   const screen = await mgr.openScreen('emulator-5554');
   assert.equal(screen.state,'opening');
-  assert.deepEqual(invoked.at(-1).args, ['-s','emulator-5554','--window-title','LHM Android - emulator-5554']);
+  assert.deepEqual(invoked.at(-1).args, [
+    '-s','emulator-5554',
+    '--no-control','--no-clipboard-autosync','--no-audio',
+    '--window-title','LHM Android - emulator-5554'
+  ]);
+  assert.equal(invoked.at(-1).opts.shell,false);
+  assert(!invoked.at(-1).args.includes('--tcpip'));
+  assert(!invoked.at(-1).args.includes('--record'));
+  assert(!invoked.at(-1).args.includes('--push-target'));
+  // Physical-phone displays remain inaccessible to the privacy mirror,
+  // even when ADB reports them as online.
+  const d=mgr.devices.bind(mgr);
+  mgr.devices=async()=>[...await d(),
+    {serial:'PHYSICAL',kind:'physical',status:'device'}];
+  await assert.rejects(mgr.openScreen('PHYSICAL'),/only for emulators/);
   await assert.rejects(mgr.stopEmulator('PHONE'),/Only Android emulators/);
   await mgr.stopEmulator('emulator-5554');
   assert.deepEqual(invoked.at(-1).args,['-s','emulator-5554','emu','kill']);

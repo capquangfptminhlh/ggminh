@@ -8,6 +8,7 @@
 const {AndroidManager} = require('./androidManager');
 const {AndroidControl} = require('./androidControl');
 const {AndroidUIInspector} = require('./uiInspector');
+const {parseAvdBindings,verifyBoundAvd}=require('./mcpAvdIdentity');
 
 const NAME='lhm-android-readonly';
 const VERSION='0.1.0';
@@ -28,7 +29,7 @@ const TOOLS=Object.freeze([
   {
     name:'android_list_avds',
     title:'List configured Android virtual devices',
-    description:'Read-only: list existing local Android Virtual Device names. Does not create, launch or stop them.',
+    description:'Read-only: list only identity-verified AVD names explicitly permitted to this MCP client. Other profile names remain hidden.',
     annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false},
     inputSchema:{
       type:'object',properties:{},additionalProperties:false
@@ -37,7 +38,7 @@ const TOOLS=Object.freeze([
   {
     name:'android_inspect_ui',
     title:'Inspect Android UI geometry',
-    description:'Read-only: inspect an ADB-authorized device and return bounded widget types, roles, safe navigation hints and screen bounds. Never returns UI text, passwords, screenshots or account identifiers. Android controls require separate human approval inside LHM.',
+    description:'Read-only: inspect geometry only after verifying the emulator serial still belongs to the exact allowlisted AVD name. Never returns UI text, passwords, screenshots or account identifiers.',
     annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false},
     inputSchema:{
       type:'object',
@@ -124,6 +125,14 @@ function createMcpHandler(options={}) {
   // environment. An unconfigured bridge sees ZERO Android devices.
   const approved=allowedSerials(options.allowedSerials===undefined?
     process.env.LHM_MCP_ALLOWED_SERIALS:options.allowedSerials);
+  // Serial alone is not an identity. Default zero-access until BOTH serial
+  // AND name are explicitly bound. This also blocks physical-phone reads.
+  const avdBindings=parseAvdBindings(options.avdBindings===undefined?
+    process.env.LHM_MCP_ALLOWED_AVD_BINDINGS:options.avdBindings);
+  const permitted=new Map([...avdBindings].filter(([serial])=>approved.has(serial)));
+  const bound=serial=>permitted.get(serial);
+  const verified=serial=>bound(serial)
+    ?verifyBoundAvd(manager,serial,bound(serial)):Promise.resolve(false);
   let initialized=false;
   let busy=false;
   let calls=0;
@@ -139,27 +148,45 @@ function createMcpHandler(options={}) {
           actions:'disabled',
           noScreenshots:true,
           noRemoteListener:true,
-          authorizedDeviceCount:approved.size,
-          deviceAccess:approved.size?'explicit-allowlist':'disabled-until-allowlisted',
+          authorizedDeviceCount:permitted.size,
+          deviceAccess:permitted.size?'serial-and-avd-identity-bound':
+            'disabled-until-serial-and-avd-name-are-allowlisted',
+          privateProfileNamesHidden:true,
           tools:TOOLS.map(x=>x.name)};
       }
       if(name==='android_list_avds') {
         paramsObject(args);
-        const names=await manager.avds();
-        return {avds:names.filter(n=>/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(n)).slice(0,50)};
+        if(!permitted.size)return {avds:[]};
+        // Do not enumerate or return profile names belonging to another AVD.
+        const accessible=[];
+        for(const [serial,avdName] of permitted) {
+          if(await verified(serial))accessible.push(avdName);
+        }
+        if(!accessible.length)return {avds:[]};
+        const installed=await manager.avds();
+        return {avds:accessible.filter(name=>installed.includes(name))};
       }
       if(name==='android_list_devices') {
         paramsObject(args);
+        if(!permitted.size)return {devices:[]};
         const devices=await manager.devices();
-        return {devices:devices.filter(d=>approved.has(d.serial))
-          .slice(0,8).map(redactDevice)};
+        const safe=[];
+        for(const d of devices) {
+          if(bound(d.serial) && d.kind==='emulator' && d.status==='device'
+              && await verified(d.serial))safe.push(redactDevice(d));
+        }
+        return {devices:safe.slice(0,8)};
       }
       const inputs=paramsObject(args,['serial']);
       if(typeof inputs.serial!=='string'||!SAFE_SERIAL.test(inputs.serial))
         throw Error('Specify one valid Android device serial');
-      if(!approved.has(inputs.serial))
+      if(!bound(inputs.serial) || !await verified(inputs.serial))
         throw Error('Device not explicitly authorized for MCP');
       const result=await inspector.inspect(inputs.serial);
+      // ADB serials can be recycled while an async UIAutomator read is in
+      // progress. Do not return any result after an identity switch.
+      if(!await verified(inputs.serial))
+        throw Error('Device not explicitly authorized for MCP');
       return redactUI(result);
     }finally {busy=false;calls++;}
   }
@@ -267,5 +294,5 @@ function startStdio({stdin=process.stdin,stdout=process.stdout,handler=createMcp
 
 module.exports={
   NAME,VERSION,PROTOCOL,TOOLS,createMcpHandler,startStdio,
-  redactUI,redactDevice,allowedSerials
+  redactUI,redactDevice,allowedSerials,parseAvdBindings
 };

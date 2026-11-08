@@ -6,7 +6,7 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 
 1. Install Android Studio with Android SDK Platform-Tools and Android Emulator.
 2. In Android Studio > SDK Manager install **SDK Command-Line Tools**, Android Emulator and one or more **Android system images**. Enable Intel VT-x / AMD-V and Windows Hypervisor Platform (reboot if required). You can now create AVDs within LHM; no need to pre-create them in Android Studio.
-3. Optionally install [scrcpy](https://github.com/Genymobile/scrcpy) for a dedicated mirrored-screen window, and add scrcpy's directory to PATH.
+3. Optionally install a recent [scrcpy](https://github.com/Genymobile/scrcpy) release (2.x or newer) for a **view-only** emulator window. LHM disables scrcpy control, clipboard autosync and audio to prevent host-to-profile leakage. Add scrcpy's directory to PATH.
 4. Set ANDROID_SDK_ROOT to the SDK folder if it is nonstandard. On most PCs the default is %LOCALAPPDATA%\Android\Sdk.
 5. Launch LHM Ads Browser and open **Android Device Center** from the sidebar.
 
@@ -18,12 +18,206 @@ This is a **real SDK integration**, not an HTML mock phone. It runs beside LHM A
 - Shows an optional disk-free preflight (6 GiB minimum when measurement is available), a 50-AVD creation limit, and clear missing-tool guidance.
 - Starts a selected existing AVD using the official Android Emulator. The UI reports **starting** until a connected device is detected; it never claims an AVD is booted immediately.
 - **Fleet Readiness:** shows measured free RAM / CPU threads, ADB-visible emulator names and Android boot-complete signals. Estimates per-AVD memory from its `config.ini` with a conservative 4 GiB fallback, honoring the API 37 minimum of 4 GiB. Launches are serialized and rejected if parallelism exceeds min(4, CPU threads / 2), if free RAM cannot cover estimated emulator RAM + 1 GiB overhead + 3 GiB reserved for Windows, or if ADB is unavailable. These are safety heuristics, not performance guarantees. Devices started outside LHM are counted when visible via ADB; unknown/offline devices count conservatively. Use **Làm mới thiết bị** to update measurements.
-- Opens a screen with scrcpy only after the device is online/authorized, and can stop an Android emulator through ADB.
+- Opens a **view-only emulator** screen via scrcpy with `--no-control --no-clipboard-autosync --no-audio` only after ADB authorization; physical phones are excluded. Use Android Control Studio for explicit local touch/key actions. Can stop an Android emulator through ADB.
 - **Manual Android Control Studio:** choose an ADB-authorized device, explicitly capture a PNG screen into the *local Electron view* (never uploaded or saved), click the scaled screenshot to tap, swipe up/down, send HOME/BACK key events, and type short basic Latin text into the focused Android app. The screenshot is cleared when the dialog closes.
 - **User-approved APK installation:** the Windows native file chooser opens for one .apk file, followed by a separate confirmation identifying the selected target device. The ADB install command does not include replace flags; existing installations are not silently overwritten. Only local regular files up to 256 MiB are accepted.
 - Commands are allowlisted and validated, require ADB status `device`, and run with shell:false. The UI exposes no arbitrary ADB shell, port forwarding, hidden monitoring, root, background agent execution or text history.
 - Includes strict input validation, shell-free subprocess launch, per-command timeout and maximum output size, and UI text rendering that does not execute device-supplied HTML.
 - No hidden downloads, cloud servers, remote ports, auto-root, IMEI changes, device-fingerprint evasion or auto-logins.
+
+### Manual Chrome Android public-IP egress audit (strictly opt-in)
+
+**Current network reality:** An Android Emulator does not automatically inherit the desktop Chrome/Edge profile proxy settings. Independent AVD userdata is **not** independent internet egress. Without explicit network routing, two AVDs may present the same Windows-host public IP. This project does not currently guarantee per-AVD VPN/proxy, DNS/WebRTC/IPv6 leak protection, or stable browser fingerprint traits.
+
+Use `tools/android-live-ip-audit.js` from a complete trusted source checkout only on a Windows PC with a **running, clean, disposable test AVD**, Android SDK/ADB and preinstalled Chrome. The test visits the fixed public IP-only service `https://api.ipify.org/` from Android Chrome and independently requests the public IP from the Windows host, then checks the Android result against the **owner-supplied expected public proxy/VPN IP**. The tool never returns or writes those addresses; the third-party IP-check service sees the request addresses as part of normal network diagnostics.
+
+PowerShell example (replace all three example identifiers with your dedicated test device's actual values):
+
+```powershell
+$env:LHM_ANDROID_SERIAL='emulator-5554'
+$env:LHM_ANDROID_AVD='Clean_IP_Test'
+$env:LHM_ANDROID_EXPECTED_IP='8.8.8.8'
+$env:LHM_ANDROID_IP_AUDIT_CONSENT='YES'
+node tools/android-live-ip-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL,Env:LHM_ANDROID_AVD,Env:LHM_ANDROID_EXPECTED_IP,Env:LHM_ANDROID_IP_AUDIT_CONSENT
+```
+
+Note: `8.8.8.8` is **only a syntax placeholder**, not an Android egress recommendation or an IP this tool creates. Enter the actual public IP of the intended Android route. This diagnostic does not set or change a proxy, VPN, DNS, firewall or system image. It does not start or stop an AVD.
+
+The tool checks that the ADB emulator serial still corresponds to the exact AVD name before, during and after the test; it also requires Android boot completion and a Chrome foreground UI. ADB port recycling or missing confirmation causes failure. It returns only:
+
+- `IP_ONLY_PASS` if a browser-visible public IP matches the expected public IP **and differs from the Windows host**.
+- `FAIL` if the Android result matches the Windows host or differs from the expected IP.
+- `NOT_VERIFIED` when host/Android public IP cannot be read reliably (including if Chrome does not expose web text to UIAutomator).
+
+All outputs are IP-redacted. This is **not** a full leak certificate: IPv4/IPv6 dual stack, DNS, WebRTC/STUN, browser UA, Canvas, WebGL, AudioContext and app-level sharing remain `NOT_TESTED`. A successful visible IP check also cannot prove a network kill switch or unspoofable site identity. Never put personal accounts inside diagnostic AVDs. For a commercial guarantee, use independently monitored Windows/Android network captures and separate host/VM isolation.
+
+### Owner-only two-AVD public egress collision audit
+
+Run `tools/android-two-avd-egress-audit.js` from a complete trusted Windows source checkout to compare **two running, clean, disposable Android Virtual Devices** with Chrome and their **expected, different public IP addresses**. This is an active network diagnostic: the fixed public HTTPS service `https://api.ipify.org/` sees each test request's source IP. The script never returns, logs or saves raw IPs, AVD names, serials, screenshots or UI content.
+
+Example (replace placeholders with your own real test environment; 8.8.8.8 and 9.9.9.9 are **illustrative only**, and this script does not configure routes or proxies):
+
+```powershell
+$env:LHM_ANDROID_SERIAL_A='emulator-5554'
+$env:LHM_ANDROID_AVD_A='Clean_A'
+$env:LHM_ANDROID_EXPECTED_IP_A='8.8.8.8'
+$env:LHM_ANDROID_SERIAL_B='emulator-5556'
+$env:LHM_ANDROID_AVD_B='Clean_B'
+$env:LHM_ANDROID_EXPECTED_IP_B='9.9.9.9'
+$env:LHM_ANDROID_TWO_IP_AUDIT_CONSENT='YES'
+node tools/android-two-avd-egress-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL_A,Env:LHM_ANDROID_AVD_A,Env:LHM_ANDROID_EXPECTED_IP_A,Env:LHM_ANDROID_SERIAL_B,Env:LHM_ANDROID_AVD_B,Env:LHM_ANDROID_EXPECTED_IP_B,Env:LHM_ANDROID_TWO_IP_AUDIT_CONSENT
+```
+
+The audit checks both AVD identities before/after each read, the Android boot state, Chrome foreground and an IP-only HTTPS page result. It aborts instead of touching another AVD on identity mismatch. It reports:
+
+- `FAIL`: both AVDs expose the same public IP, either matches the Windows host public IP, or an observed address differs from the corresponding expected IP.
+- `NOT_VERIFIED`: missing/inconclusive public IP evidence, or the expected IP addresses are identical.
+- `TWO_EGRESS_IPS_DISTINCT_OBSERVED`: both Android results match distinct expected public IPs and differ from the host **at the observation time**.
+
+Even a distinct observed IP pair proves **only** these two HTTP(S) browser egress observations. DNS, QUIC, WebRTC/STUN, UDP, IPv6 failover, system-wide VPN kill-switch, browser fingerprints, cookies and cross-account tracking remain **NOT_TESTED**. This is not a claim of complete network isolation or a replacement for an OS-level packet capture/network firewall. Standard Linux/Windows CI uses synthetic ADB fixtures, never real AVDs.
+
+### Manual two-AVD system fingerprint identity observation (strictly opt-in)
+
+The **read-only** `tools/android-live-fingerprint-audit.js` can compare two simultaneously online, disposable, clean AVDs on one Windows PC. It samples `settings get secure android_id` twice per AVD and checks whether the shell-visible value stayed stable in that short interval and differs between the two AVDs. It also checks whether the underlying Android OS build fingerprint strings match. Raw IDs and build strings are kept only in process memory and **never printed, stored, uploaded, or included in the result**. No fingerprint spoofing, device setting mutation, app account read, network request, AVD start/stop, or unattended automation is performed.
+
+Both running AVDs must have unique exact **serial + AVD name** combinations; the audit verifies each ADB association before/after the read. Example PowerShell (replace serials/names with your own clean AVDs):
+
+```powershell
+$env:LHM_ANDROID_SERIAL_A='emulator-5554'
+$env:LHM_ANDROID_AVD_A='Clean_A'
+$env:LHM_ANDROID_SERIAL_B='emulator-5556'
+$env:LHM_ANDROID_AVD_B='Clean_B'
+$env:LHM_ANDROID_FINGERPRINT_AUDIT_CONSENT='YES'
+node tools/android-live-fingerprint-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL_A,Env:LHM_ANDROID_AVD_A,Env:LHM_ANDROID_SERIAL_B,Env:LHM_ANDROID_AVD_B,Env:LHM_ANDROID_FINGERPRINT_AUDIT_CONSENT
+```
+
+A repeated shell-visible Android ID triggers `FAIL`; an inconsistent/missing ID produces `NOT_VERIFIED`. Different observed IDs produce only `OS_ID_DISTINCT_OBSERVED`, **not** proof that browser fingerprints are unique or immune to correlation. Modern Android app-scoped `ANDROID_ID` can be scoped to app signer/user, so the shell result is **not** equivalent to an app-visible device ID. Identical system `ro.build.fingerprint` values are common for AVDs sharing an Android system image; this is noted but not itself a failure. Chrome Client Hints, User-Agent, Canvas, WebGL, WebAudio, advertising ID, GPU, DNS, IPv6 and cross-site fingerprint persistence remain **NOT_TESTED**. The regular CI tests this diagnostic with fake ADB only.
+
+### Per-AVD TCP proxy launch policy (owner opt-in; NOT an IP kill switch)
+
+Android SDK Emulator officially accepts `-http-proxy http://host:port` on launch; it redirects **TCP** connections (including HTTPS tunnels), **not UDP**. It is not a complete IP/DNS/WebRTC/IPv6 leak defense. Normal Android Emulator network access can otherwise share the Windows host's public IP. The desktop Chrome proxy configuration does **not** configure the Android Emulator.
+
+To require a **distinct explicit HTTP TCP proxy endpoint for each AVD created/launched by LHM**, set these process environment variables before opening the LHM Electron app:
+
+```powershell
+$env:LHM_ANDROID_NETWORK_MODE='isolated-tcp'
+$env:LHM_ANDROID_AVD_HTTP_PROXIES='{"Clean_A":"http://127.0.0.1:18080","Clean_B":"http://proxy-b.example:18081"}'
+# Start LHM from this same shell/session so it inherits these settings.
+```
+
+These addresses are **examples only**. Point each AVD to a working, independently routed HTTP CONNECT proxy owned/authorized by you; `127.0.0.1:18080` requires a compatible local proxy gateway running on the Windows host. Replace the other hostname with your actual proxy. The policy intentionally supports **credential-free HTTP endpoints only**: never put proxy usernames or passwords in command-line args or environment JSON. Use a separately authenticated loopback proxy gateway if your upstream requires credentials, after validating that gateway's safety.
+
+Security behavior:
+
+- `isolated-tcp` + a valid **unique endpoint per AVD**: passes launch configuration checks and starts `emulator -avd AVD_NAME -http-proxy http://host:port`. Missing/malformed/duplicated mapping **blocks** that AVD's launch. The endpoint is never returned to renderer/UI/logs, although process command lines on Windows can be inspected by sufficiently privileged local users.
+- LHM removes inherited `http_proxy`, `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` and `NO_PROXY` when spawning an emulator. This prevents a shared proxy from silently overriding profile intent. Do not use this mode unless you can operate without the inherited corporate proxy.
+- Under strict mode, LHM Chrome open and navigation actions also require the exact AVD name reported by ADB to match an **Emulator process launched by this LHM session** with a strict proxy binding. If the port is reused for another AVD, the action is refused.
+- **New proxy health preflight:** before a strict-mode AVD is spawned, and again before every Chrome open / URL-navigation command, LHM opens a bounded host-side TCP socket to that AVD's exact configured proxy endpoint and requires an HTTP/1.1 or HTTP/1.0 **200 CONNECT** response to the fixed public `example.com:443` destination. HTTP 407/403, timeout, DNS/connection errors, unexpected responses and oversized headers all block the operation. LHM compares the current proxy mapping with the actual endpoint bound at AVD launch and rechecks the AVD identity after the probe; a proxy or serial switch mid-probe blocks the operation. Proxy addresses and raw responses are never returned to the UI or diagnostic logs. The proxy sees this fixed CONNECT request as expected.
+- **Scope warning:** the preflight verifies **only the host-side TCP proxy accepts a CONNECT request** at that instant; it does not prove the Android browser's current HTTPS egress, DNS, WebRTC, IPv6, UDP routing, proxy upstream public IP or proxy health after the check. A proxy may fail while a tab is already open. The app does not monitor all traffic, forcibly stop Chrome on a later failure, or establish an OS/network firewall kill-switch. Dedicated AVDs with real customer sessions must remain blocked from production until live packet capture and forced-proxy-outage tests pass.
+- Unset `LHM_ANDROID_NETWORK_MODE` is backwards-compatible `direct-unverified`: no forced per-AVD proxy and **no separate IP claim**. If proxy JSON is configured but strict mode is not enabled, launch is blocked rather than silently falling back to direct.
+- AVD settings changed in Android Studio or proxies added through Emulator Extended Controls can override assumptions. The app does not inspect the *effective* Android network path. A configured proxy may share an egress with another endpoint, become unavailable between health checks, or allow unexpected non-TCP networking.
+
+**Critical limits:** The emulator's official TCP proxy **does not redirect UDP**, does not establish a VPN kill switch and does not guarantee DNS, WebRTC/STUN, IPv6, Chrome QUIC or fingerprint independence. `TCP_PROXY_CONFIGURED_UNVERIFIED` is configuration evidence **only**. Run the owner-approved live Android Chrome IP audit and real host-level network inspection before any use with private customer accounts. Never claim zero leakage or 100% undetectability.
+
+Sources: https://developer.android.com/studio/run/emulator-networking-proxy and https://developer.android.com/studio/run/emulator-commandline
+
+## Cross-profile privacy controls (defense in depth)
+
+- Android AVDs are independent Android emulator userdata directories. **Duplicate** only imports the installed system image configuration and creates empty userdata; it does not copy cookies, logged-in apps, accounts, keys, screenshots or AVD snapshots.
+- The optional **scrcpy mirror is view-only**. LHM now launches it with `--no-control --no-clipboard-autosync --no-audio` to prevent automatic clipboard sharing, drag-and-drop/file transfer through the mirror, and profile audio forwarded to Windows. Use Android Control Studio for explicitly initiated taps/swipes. Do not use older scrcpy binaries that lack these flags.
+- The read-only MCP bridge now requires both `LHM_MCP_ALLOWED_SERIALS` and `LHM_MCP_ALLOWED_AVD_BINDINGS` (for example `emulator-5554=Pixel_Test_01`). It verifies the emulator's actual AVD name before **and after** a UI read. A reused serial cannot inherit access to a different profile; all unbound AVD names are hidden. MCP physical-device access is disabled.
+- These checks reduce software-level accidental sharing, **not** an absolute security guarantee. The same Windows account still owns ADB and can access multiple emulators, malware or another unrestricted ADB client can bypass LHM, and an app inside an AVD can still access services it is logged into. Use separate Windows user accounts/virtual machines or an isolated host for mutually untrusted customers; do not copy AVD data folders, snapshots or logged-in Android accounts between profiles. No cross-profile clipboard synchronization is performed by LHM.
+
+## Open Chrome inside a dedicated Android emulator (owner-approved)
+
+After an AVD reports `sys.boot_completed=1` in **Android Device Center**, its row now enables **Mở Chrome**. This asks for an Electron-native confirmation, verifies that the selected target is still an ADB-authorized `emulator-XXXX`, verifies boot completion, and checks that `com.android.chrome` is installed before sending one fixed `monkey` launcher event. If Chrome is missing, choose a suitable official Android system image with Chrome. No browser APK is silently downloaded or installed.
+
+- This button opens Chrome **inside Android**, not a desktop Chromium profile. The emulator window or optional scrcpy displays its screen. Chrome first-run prompts remain user-controlled. No automatic URL visits, cookie copying, profile cloning, or hidden browsing.
+- The command returns `launch-requested` when ADB confirms injection. This **does not prove Chrome is visibly in the foreground**; the operator should verify the window. Busy/booting/uninstalled/offline/physical-phone/uncertain command results fail closed; no blind retry.
+- The regular `npm test` includes `test/android-browser-launch.js` plus `test/android-live-smoke.js` (ADB fixtures, not Android hardware).
+- For **actual Windows AVD** validation, manually run workflow `.github/workflows/android-live-windows.yml` on a dedicated `[self-hosted, Windows, X64, android-sdk]` runner and select `test_chrome=YES` with a clean AVD with Chrome preinstalled. The harness checks a Chrome resumed/focused ActivityManager marker and a valid PNG screenshot, then requests AVD shutdown. If the foreground marker is not observed it reports FAIL. It does not prove page load, internet access, account behavior, performance or multi-instance stability.
+- An initial `test_chrome=NO` run remains the recommended read-only/basic HOME+snapshot preflight. Test only a clean AVD without personal accounts.
+
+**Commercial gate remains OPEN:** no measured multi-AVD latency/CPU/RAM stability, no owner-endorsed physical Windows AVD acceptance, and no semantic browser interaction parity with competing Android platforms.
+
+### Open a requested HTTPS page in Android Chrome
+
+In **Android Control Studio**, choose a booted, ADB-authorized Android emulator, enter a public HTTPS address, and click **Mở trang trên Android**. Electron shows the exact URL in a **native per-site confirmation dialog** before dispatching a Chrome VIEW intent. The operation is manual and is **not an MCP tool or autonomous Agent command**.
+
+To avoid unsafe ADB remote-shell argument handling, the local validator deliberately supports only ordinary public ASCII DNS domains, HTTPS, paths and one simple query string. It rejects credential-bearing URLs, nonstandard ports, IP/local/private-style hostnames, fragments, ampersands, shell metacharacters, Unicode hostnames and oversized URLs. Some ordinary complex URLs will therefore be refused until a safer transport is implemented. It never executes arbitrary shell code.
+
+The result `intent-sent-unverified` means that Android accepted the intent request; it is **not proof** that the browser rendered, loaded the page, connected to the network, or preserved a login session. Check the Chrome window or capture a fresh local screenshot. A navigation action invalidates the previous screenshot in Control Studio to prevent tapping stale pixels. Any uncertain ADB timeout is **never automatically retried**; inspect the screen first.
+
+`test/android-browser-navigation.js` covers validation, concurrency, boot, package, renderer wiring, native approval and error redaction using mock ADB. The regular `npm test` runs it on Linux and Windows. Live AVD compatibility, website rendering, page-load metrics and concurrent-emulator benchmarks still need separate Windows owner acceptance.
+
+### One-click real Windows AVD acceptance (no GitHub runner required)
+
+From a **complete, trusted `ggminh` source checkout**, with Node.js 22+, Android Studio SDK Platform-Tools, Android Emulator, a system image with Chrome, Windows virtualization (WHPX) enabled, and an already-created clean AVD:
+
+1. Double-click **`CHECK_ANDROID_WINDOWS.cmd`** in the repository root.
+2. The local diagnostic checks ADB + Emulator, lists existing AVDs, free host RAM, CPU threads, and launch-gate readiness.
+3. Type the exact name of a **dedicated disposable test AVD** (without personal accounts, banking, OTP, messages or customer data).
+4. Choose **1 = boot/screenshot**, **2 = Chrome foreground**, or **3 = Chrome foreground plus public `example.com` page heading**.
+5. Type the exact confirmation **YES** to authorize launching and stopping only the selected AVD. The harness refuses an already-running AVD and requests cleanup shutdown. Read the sanitized PASS/FAIL result in the local console.
+
+This is local execution, **not remote testing**: no screenshots, Android screen text, account records, device serials or raw UI XML are stored by the helper or uploaded. The result contains dimensions and observational timings only. The launcher does not install SDK tools, download system images, create/clone profiles, silently log in, or use existing active emulators. A failed acceptance must not be reinterpreted as a PASS.
+
+Alternatively, use PowerShell from the complete repository:
+
+```powershell
+node tools/android-local-acceptance.js --list
+node tools/android-local-acceptance.js --avd LHM_Test_Pixel --mode basic --ack-clean-avd
+node tools/android-local-acceptance.js --avd LHM_Test_Pixel --mode page --ack-clean-avd
+```
+
+The `--ack-clean-avd` flag is an explicit operator acknowledgment; it **cannot verify** that an AVD contains no personal data. Do not select one with real accounts. For a downloadable EXE, this source-level acceptance helper does not replace testing the packaged Electron UI. Running this on a real Windows machine provides host evidence absent from normal GitHub CI.
+
+### Two-AVD sequential Chrome stability check (Windows, manual)
+
+The operator can now run **`CHECK_ANDROID_2AVD_WINDOWS.cmd`** from a complete source checkout to compare TWO clean, independently created Android Virtual Devices on one Windows host **one after another**. This reuses the guarded single-AVD acceptance and requires Node.js 22+, a working Android SDK, installed Chrome in both AVD system images, hardware virtualization, adequate free RAM, and both AVDs shut down before the test.
+
+1. Double-click the command file; it lists AVD names and host readiness.
+2. Enter two **different dedicated test AVD names** (no personal accounts).
+3. Choose `chrome` to check foreground launch or `page` to also check the public `example.com` heading; default is `page`.
+4. Confirm **YES**. First AVD must PASS and verify complete shutdown before the second starts.
+5. The sanitized local report gives `timingRanges` for boot, Chrome foreground, public page observation and shutdown, including min/max/spread in milliseconds and no device names or screen content.
+
+PowerShell noninteractive example:
+
+```powershell
+node tools/android-two-avd-stability.js --list
+node tools/android-two-avd-stability.js --avds Clean_A,Clean_B --mode page --ack-clean-avds
+```
+
+The command **does not run two Android emulators concurrently**. It is a stability and device-compatibility check, not proof of parallel capacity, CPU/GPU/FPS stability, session isolation, network speed or Play Integrity. It refuses missing/duplicate AVD names, ambiguous capacity/SDK state and unconfirmed shutdown; it does not start a second AVD after the first fails. More demanding parallel load measurements require an explicitly scoped Windows acceptance harness and direct monitoring of host CPU, memory, GPU, thermals and active device health.
+
+### Measured stage timings and verified emulator shutdown
+
+The Windows local acceptance and manual GitHub AVD workflow now collect **observation-only stage timings**:
+
+- `timings.bootObservedMs`: from the owner-approved emulator launch request until Android reports boot complete.
+- `timings.chromeForegroundObservedMs`: from the Chrome launcher request until the Chrome activity appears foreground, when Chrome testing is enabled.
+- `timings.pageHeadingObservedMs`: from the fixed public `example.com` navigation request until its exact heading is visible in Android accessibility, when page testing is enabled.
+- `timings.shutdownObservedMs`: elapsed time verifying teardown after the run, and `totalObservedMs`: full elapsed time including cleanup.
+
+These are wall-clock observations under one host's conditions, **not** FPS, CPU, memory, network speed, page onload, user interaction latency, multi-AVD capacity or a commercial performance pass. Values are `null` for skipped stages, and the run fails rather than fabricating measurements.
+
+**Important cleanup rule:** ADB's `emu kill` returns an acknowledgment while the emulator may remain running. The harness now waits for a positive ADB disappearance and the exit of the emulator process owned by LHM before returning PASS (`shutdownVerified: true`). ADB errors, lingering offline/emulator devices, or an owned child that refuses to exit invalidate the result; a controlled fallback kills **only** the child process this harness started. Unrelated pre-existing emulators are never stopped. An offline emulator visible before the test blocks the run to avoid ambiguous ownership. On uncertainty, inspect and close the dedicated test AVD manually; never assume an ambiguous run was clean.
+
+### Real Windows AVD public website acceptance (explicitly opted in)
+
+The manual GitHub workflow `.github/workflows/android-live-windows.yml` can now check a **fixed public sample page** on a clean, dedicated AVD with Chrome already installed. It is not a performance certification. Configure a Windows 10/11 self-hosted runner with SDK, an existing accelerated AVD, and the `android-sdk` label. Select one of these gates:
+
+- `test_chrome=NO, test_page=NO`: basic AVD boot, HOME, local PNG and accessibility probe.
+- `test_chrome=YES, test_page=NO`: additionally launch Chrome and observe a resumed Chrome foreground activity and PNG.
+- `test_chrome=YES, test_page=YES`: additionally send one HTTPS VIEW intent **only to `https://example.com/`**. Poll Chrome foreground and local UIAutomator XML until the exact public heading `Example Domain` is observed, then capture one local PNG and emit its dimensions and `navigationObservationMs`. The XML and PNG bytes remain on the runner and are **never logged or uploaded**. A missing heading, a lost foreground, missing Chrome or timeout fails the gate. No automatic retry of a potentially delivered navigation intent.
+
+`test_page=YES` without `test_chrome=YES` is explicitly rejected. The harness refuses a running target AVD, stops only the emulator it started and now verifies ADB disappearance plus the owned process exit before reporting success. This does **not** prove that browser cookies were isolated or accounts are clean. Do not use personal accounts on the test device.
+
+**Evidence boundaries:** A public heading visible through the Android accessibility tree plus a screenshot is a stronger end-to-end smoke test than ADB intent injection, but does not measure network correctness, pixel-level rendering, interactive page responsiveness, JavaScript execution, FPS, CPU/RAM pressure, account isolation or multi-instance stability. On Android versions that do not expose web content in UIAutomator, this gate can fail even when the page looks correct. Such cases require human review and another inspected measurement, not lowering the acceptance threshold silently. `npm test` runs deterministic mock-ADB tests of the gate but is **not** the live Windows runner result.
 
 ## AI Agent MCP access (separate, read-only)
 
