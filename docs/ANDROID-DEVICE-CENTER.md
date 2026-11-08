@@ -52,6 +52,32 @@ The tool checks that the ADB emulator serial still corresponds to the exact AVD 
 
 All outputs are IP-redacted. This is **not** a full leak certificate: IPv4/IPv6 dual stack, DNS, WebRTC/STUN, browser UA, Canvas, WebGL, AudioContext and app-level sharing remain `NOT_TESTED`. A successful visible IP check also cannot prove a network kill switch or unspoofable site identity. Never put personal accounts inside diagnostic AVDs. For a commercial guarantee, use independently monitored Windows/Android network captures and separate host/VM isolation.
 
+### Owner-only two-AVD public egress collision audit
+
+Run `tools/android-two-avd-egress-audit.js` from a complete trusted Windows source checkout to compare **two running, clean, disposable Android Virtual Devices** with Chrome and their **expected, different public IP addresses**. This is an active network diagnostic: the fixed public HTTPS service `https://api.ipify.org/` sees each test request's source IP. The script never returns, logs or saves raw IPs, AVD names, serials, screenshots or UI content.
+
+Example (replace placeholders with your own real test environment; 8.8.8.8 and 9.9.9.9 are **illustrative only**, and this script does not configure routes or proxies):
+
+```powershell
+$env:LHM_ANDROID_SERIAL_A='emulator-5554'
+$env:LHM_ANDROID_AVD_A='Clean_A'
+$env:LHM_ANDROID_EXPECTED_IP_A='8.8.8.8'
+$env:LHM_ANDROID_SERIAL_B='emulator-5556'
+$env:LHM_ANDROID_AVD_B='Clean_B'
+$env:LHM_ANDROID_EXPECTED_IP_B='9.9.9.9'
+$env:LHM_ANDROID_TWO_IP_AUDIT_CONSENT='YES'
+node tools/android-two-avd-egress-audit.js
+Remove-Item Env:LHM_ANDROID_SERIAL_A,Env:LHM_ANDROID_AVD_A,Env:LHM_ANDROID_EXPECTED_IP_A,Env:LHM_ANDROID_SERIAL_B,Env:LHM_ANDROID_AVD_B,Env:LHM_ANDROID_EXPECTED_IP_B,Env:LHM_ANDROID_TWO_IP_AUDIT_CONSENT
+```
+
+The audit checks both AVD identities before/after each read, the Android boot state, Chrome foreground and an IP-only HTTPS page result. It aborts instead of touching another AVD on identity mismatch. It reports:
+
+- `FAIL`: both AVDs expose the same public IP, either matches the Windows host public IP, or an observed address differs from the corresponding expected IP.
+- `NOT_VERIFIED`: missing/inconclusive public IP evidence, or the expected IP addresses are identical.
+- `TWO_EGRESS_IPS_DISTINCT_OBSERVED`: both Android results match distinct expected public IPs and differ from the host **at the observation time**.
+
+Even a distinct observed IP pair proves **only** these two HTTP(S) browser egress observations. DNS, QUIC, WebRTC/STUN, UDP, IPv6 failover, system-wide VPN kill-switch, browser fingerprints, cookies and cross-account tracking remain **NOT_TESTED**. This is not a claim of complete network isolation or a replacement for an OS-level packet capture/network firewall. Standard Linux/Windows CI uses synthetic ADB fixtures, never real AVDs.
+
 ### Manual two-AVD system fingerprint identity observation (strictly opt-in)
 
 The **read-only** `tools/android-live-fingerprint-audit.js` can compare two simultaneously online, disposable, clean AVDs on one Windows PC. It samples `settings get secure android_id` twice per AVD and checks whether the shell-visible value stayed stable in that short interval and differs between the two AVDs. It also checks whether the underlying Android OS build fingerprint strings match. Raw IDs and build strings are kept only in process memory and **never printed, stored, uploaded, or included in the result**. No fingerprint spoofing, device setting mutation, app account read, network request, AVD start/stop, or unattended automation is performed.
