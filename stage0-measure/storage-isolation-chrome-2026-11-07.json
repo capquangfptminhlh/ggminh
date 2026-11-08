@@ -1,6 +1,6 @@
 {
   "schema": "lhm.storage-isolation.v1",
-  "at": "2026-11-07T07:45:49.301Z",
+  "at": "2026-11-08T05:40:27.236Z",
   "engine": "chromium",
   "browser": "Google Chrome (installed)",
   "sameOrigin": true,
@@ -22,7 +22,12 @@
       "indexedDB": "A",
       "cacheStorage": "A",
       "cookieHeader": "lhm_http=A; lhm_js=A",
-      "httpCacheNetworkFetches": 1
+      "httpCacheNetworkFetches": 1,
+      "stopToExitMs": 493,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
     },
     {
       "step": "B reads (must be empty)",
@@ -33,7 +38,12 @@
       "indexedDB": null,
       "cacheStorage": null,
       "cookieHeader": "",
-      "httpCacheNetworkFetches": 1
+      "httpCacheNetworkFetches": 1,
+      "stopToExitMs": 611,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
     },
     {
       "step": "A reads after restart (must be A)",
@@ -44,7 +54,12 @@
       "indexedDB": "A",
       "cacheStorage": "A",
       "cookieHeader": "lhm_http=A; lhm_js=A",
-      "httpCacheNetworkFetches": 0
+      "httpCacheNetworkFetches": 0,
+      "stopToExitMs": 367,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
     },
     {
       "step": "B writes",
@@ -55,7 +70,12 @@
       "indexedDB": "B",
       "cacheStorage": "B",
       "cookieHeader": "lhm_http=B; lhm_js=B",
-      "httpCacheNetworkFetches": 0
+      "httpCacheNetworkFetches": 0,
+      "stopToExitMs": 449,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
     },
     {
       "step": "A reads after B wrote (must be A only)",
@@ -66,7 +86,12 @@
       "indexedDB": "A",
       "cacheStorage": "A",
       "cookieHeader": "lhm_http=A; lhm_js=A",
-      "httpCacheNetworkFetches": 0
+      "httpCacheNetworkFetches": 0,
+      "stopToExitMs": 426,
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
     }
   ],
   "checks": {
@@ -75,7 +100,8 @@
     "profileANotPollutedByB": true,
     "profileBWroteOwnValues": true,
     "httpCacheNotSharedWithB": true,
-    "httpCachePersistsForA": true
+    "httpCachePersistsForA": true,
+    "stopIsGraceful": true
   },
   "verdict": "PASS"
 }
