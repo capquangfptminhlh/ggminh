@@ -134,6 +134,12 @@ function expectReject(f,part) {assert.throws(f,e=>String(e.message).includes(par
   await assert.rejects(manager.launchAvd('CleanA'),/CONNECT preflight/);
   assert.equal(started,false,'A dead proxy cannot cause emulator spawn');
   proxyReachable=true;
+  probeHook=async()=>{throw Error('private proxy token=NeverDisplay');};
+  await assert.rejects(manager.launchAvd('CleanA'),error=>
+    /CONNECT preflight/.test(error.message)&&
+      !/NeverDisplay|token=/.test(error.message));
+  assert.equal(started,false,'An upstream error must not start an AVD');
+  probeHook=null;
   const launched=await manager.launchAvd('CleanA');
   assert.equal(proxyCalls.at(-1),'http://127.0.0.1:18080');
   assert.equal(launched.networkState,'TCP_PROXY_CONFIGURED_UNVERIFIED');
