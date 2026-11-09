@@ -7,6 +7,9 @@
  */
 const STATES=new Set(['ready','warning','error','planned','unknown']);
 const MAX_COUNT=100000;
+// Fixed names for buildReadiness() item keys; item labels/details never leave main.
+const CHECK_NAMES={profiles:'cấu hình hồ sơ',browser:'browser engine',vault:'kho mật khẩu proxy',
+ 'auth-links':'liên kết proxy xác thực',native:'thông số trình duyệt gốc',network:'xác minh IP thoát'};
 function count(x){return Number.isSafeInteger(x)&&x>=0?Math.min(MAX_COUNT,x):0;}
 function buildCustomerHandoff({appInfo,license,update,upgrade,local,now=()=>new Date().toISOString()}={}){
  if(!appInfo||typeof appInfo.packaged!=='boolean'||!license||
@@ -40,12 +43,16 @@ function buildCustomerHandoff({appInfo,license,update,upgrade,local,now=()=>new 
    upgrade.status==='blocked'?'Kiểm tra dữ liệu cục bộ có lỗi; chưa được cài nâng cấp.':
    'Chỉ kiểm tra đọc dữ liệu; chưa sao lưu cookie/phiên hay xác minh installer trên máy khách.');
  const relevant=local.items.filter(x=>x&&x.status!=='planned');
- const errors=relevant.filter(x=>x.status==='error').length;
- const warnings=relevant.filter(x=>x.status==='warning'||!STATES.has(x.status)).length;
+ const errors=relevant.filter(x=>x.status==='error');
+ const warnings=relevant.filter(x=>x.status==='warning'||!STATES.has(x.status));
+ // Name the failing checks instead of counting them: one root cause (e.g. a
+ // missing browser) fails both "profiles" and "browser", and a count of 2
+ // contradicted the single config error shown beside it.
+ const where=list=>[...new Set(list.map(x=>CHECK_NAMES[x.key]||'mục khác'))].join(', ');
  add('profile-health','Hồ sơ, trình duyệt và proxy',
-   errors?'error':warnings?'warning':'ready',
-   errors?'Có '+count(errors)+' nhóm chẩn đoán cấu hình bị lỗi.':
-   warnings?'Có '+count(warnings)+' nhóm cần rà soát cấu hình.':
+   errors.length?'error':warnings.length?'warning':'ready',
+   errors.length?'Mục kiểm tra bị lỗi: '+where(errors)+'.':
+   warnings.length?'Mục cần rà soát: '+where(warnings)+'.':
    'Không thấy lỗi ở các chỉ số cấu hình cục bộ đã kiểm tra.');
  const blocked=checks.some(x=>x.state==='error');
  const attention=checks.some(x=>x.state==='warning');

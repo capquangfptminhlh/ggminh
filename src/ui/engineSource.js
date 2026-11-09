@@ -25,7 +25,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   return 'Chưa thể cài Camoufox: '+(raw||'điều kiện chạy chưa sẵn sàng')+
    '. Thử bấm Làm mới; nếu vẫn vậy, hãy liên hệ bên bán kèm theo thông báo này.';
  }
- window.LHMEngineGuidance={camoufoxRuntimeGuidance};
+ // The bundle check returns raw Node errors that carry install paths (and so
+ // the Windows user name); never show those, explain the state instead.
+ function bundledEngineGuidance(reason){
+  const raw=String(reason||'');
+  if(/ENOENT/.test(raw)&&/manifest\.json/i.test(raw))
+   return 'Bản cài này không kèm engine Chromium đóng gói. Chế độ System vẫn hoạt động: '+
+    'hồ sơ Chromium sẽ mở bằng Chrome hoặc Edge đã cài trên máy.';
+  const detail=raw.replace(/'[^']*[\\/][^']*'|"[^"]*[\\/][^"]*"|[A-Za-z]:\\\S+/g,'[đường dẫn]');
+  return 'Chưa có engine đóng gói được xác thực'+(detail?' ('+detail+')':'')+
+   '. Chế độ System vẫn hoạt động.';
+ }
+ window.LHMEngineGuidance={camoufoxRuntimeGuidance,bundledEngineGuidance};
  function busyState(value){
   busy=value;
   for(const id of ['engine-source-select','engine-source-save','engine-source-refresh',
@@ -58,8 +69,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    result.textContent=bundle.valid?
     'Engine đóng gói hợp lệ · phiên bản '+bundle.version+
      ' · '+bundle.fileCount+' tệp · SHA-256: '+bundle.sha256.slice(0,16)+'…':
-    'Chưa có engine đóng gói được xác thực: '+bundle.reason+
-     '. Chế độ System vẫn hoạt động.';
+    bundledEngineGuidance(bundle.reason);
   }catch(error){result.textContent='Không kiểm tra được Engine: '+error.message+
    '. Thử bấm Làm mới; nếu vẫn lỗi, hãy khởi động lại ứng dụng rồi thử lại.';}
   finally{busyState(false);}

@@ -10,7 +10,7 @@ const { stopBrowserProcess } = require('./processStopper');
 const { applyChromiumDownloadDir, applyGeckoDownloadDir } = require('./downloadDirectory');
 const { applyChromiumWebrtcPolicy } = require('./chromiumWebrtcPolicy');
 const { createPeerGuard } = require('../security/loopbackPeerGuard');
-const { optionsFor } = require('./browserDiagnostics');
+const { optionsFor, msixFirefoxPath, isWindowsAppsPath, MSIX_FIREFOX_MESSAGE } = require('./browserDiagnostics');
 const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
@@ -60,10 +60,11 @@ class BrowserLauncher {
          ...detected.find(x => x.id === 'edge').candidates];
 
     for (const bin of candidates) {
-      if (bin && fs.existsSync(bin)) {
+      if (bin && !isWindowsAppsPath(bin) && fs.existsSync(bin)) {
         return bin;
       }
     }
+    if (engine === 'gecko' && msixFirefoxPath(settings)) throw new Error(MSIX_FIREFOX_MESSAGE);
     throw new Error(engine === 'gecko'
       ? 'Cannot find Firefox/Gecko. Install Firefox or configure Gecko executable in settings.'
       : 'Cannot find Chromium/Chrome/Edge. Configure Chrome path in settings.');
