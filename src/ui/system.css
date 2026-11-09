@@ -113,6 +113,29 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--lhm-accent);width:
 .form-row>.form-group{flex:1;min-width:0}
 .lhm-bulk-help,.fp-mode-help,.fp-info{color:var(--lhm-muted);font-size:12.5px;line-height:1.55}
 
+/* Field helpers shared by the rebuilt dialogs. */
+.lhm-required{color:var(--lhm-danger);font-weight:700}
+.lhm-label-hint{margin-left:4px;font-weight:400;color:var(--lhm-faint);font-size:12px}
+.lhm-field-help{margin:2px 0 0;color:var(--lhm-muted);font-size:12.5px;line-height:1.5}
+.lhm-field-warn{margin:4px 0 0;padding:6px 10px;border-radius:var(--lhm-radius);background:var(--lhm-warn-soft);color:var(--lhm-warn);font-size:12.5px;line-height:1.5}
+.lhm-field-more{margin-top:2px;font-size:12.5px;color:var(--lhm-muted)}
+.lhm-field-more>summary{display:inline-block;color:var(--lhm-accent);font-weight:600}
+.lhm-field-more>summary::before{content:'▸ ';font-size:10px}
+.lhm-field-more[open]>summary::before{content:'▾ '}
+.lhm-field-more>p{margin:6px 0 0;line-height:1.55}
+.lhm-field-card{margin-top:4px;padding:12px 14px;border:1px solid var(--lhm-border);border-radius:10px;background:var(--lhm-subtle)}
+.lhm-field-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.lhm-field-card-head strong{color:var(--lhm-heading);font-size:13px}
+.form-row>.form-group.lhm-grow-2{flex:2}
+.lhm-dialog-title{min-width:0}
+.lhm-dialog-subtitle{margin:2px 0 0;color:var(--lhm-muted);font-size:12.5px}
+/* Step tabs: numbered segments for multi-part dialogs. */
+.tabs.lhm-steps{gap:6px;padding:4px;margin-bottom:16px;border:1px solid var(--lhm-border);border-radius:10px;background:var(--lhm-subtle)}
+.tabs.lhm-steps .tab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;margin:0;border:0;border-radius:7px;min-height:34px;color:var(--lhm-muted)}
+.tabs.lhm-steps .tab-btn.active{background:var(--lhm-surface);color:var(--lhm-heading);box-shadow:var(--lhm-shadow-card);border:1px solid var(--lhm-border)}
+.lhm-step-no{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#e2e8f0;color:var(--lhm-muted);font-size:11.5px;font-weight:700}
+.tabs.lhm-steps .tab-btn.active .lhm-step-no{background:var(--lhm-accent);color:#fff}
+
 /* 5. Tabs, pills, chips ---------------------------------------------------- */
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--lhm-border);margin-bottom:14px}
 .tab-btn{border:0;border-bottom:2px solid transparent;background:transparent;color:var(--lhm-muted);

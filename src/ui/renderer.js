@@ -545,7 +545,7 @@ async function openProfileModal(existingProfile = null) {
   profileCoverageOriginalEngine = existingProfile
     ? (existingProfile.engine_type === 'camoufox' ? 'camoufox' : existingProfile.engine === 'gecko' ? 'gecko' : 'chromium') : null;
   if (existingProfile) {
-    document.getElementById('modal-title').textContent = 'Chỉnh sửa Profile';
+    document.getElementById('modal-title').textContent = 'Sửa hồ sơ';
     fieldId.value = existingProfile.id;
     fieldBrowserEngine.value=(existingProfile.engine_type==='camoufox'||
       !existingProfile.engine_type&&existingProfile.engine==='gecko'&&
@@ -569,7 +569,7 @@ async function openProfileModal(existingProfile = null) {
     if (currentGeneratedFP.mode !== 'native') applyFingerprintToForm(currentGeneratedFP);
     setFingerprintMode(currentGeneratedFP.mode === 'native' ? 'native' : 'experimental');
   } else {
-    document.getElementById('modal-title').textContent = 'Tạo Profile Mới';
+    document.getElementById('modal-title').textContent = 'Tạo hồ sơ mới';
     fieldId.value = '';
     fieldBrowserEngine.value = 'chromium';
     fieldName.value = `Profile_${allProfiles.length + 1}`;
@@ -588,7 +588,11 @@ async function openProfileModal(existingProfile = null) {
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   updateCamoufoxFormHint();
   renderProfileSignalCoverage();
+  // Always start on the first tab with the name ready to type; the dialog
+  // used to reopen on whichever tab was left open last time.
+  modalProfile.querySelector('.tab-btn[data-tab="tab-general"]')?.click();
   openModal(modalProfile);
+  requestAnimationFrame(() => { fieldName.focus(); if (!existingProfile) fieldName.select(); });
 }
 
 function parseStartupUrls(value) {
