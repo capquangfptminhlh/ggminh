@@ -187,13 +187,17 @@ Mỗi mục: ghi lựa chọn + ngày; hồ sơ chi tiết ở `docs/decisions/`
 | QD-02 | Khóa publisher riêng cho cả hai engine (khuyến nghị: phương án 1) | ____ | ____ |
 | QD-03 | Cập nhật Hiến pháp Mục 4 + 17.2 theo bằng chứng đo (khuyến nghị: phương án 1) | ____ | ____ |
 | QD-04 | Áp workflow + bản sửa bước generate (liên quan Gate 2b) | ____ | ____ |
-| A12-D1 | Khi nào kiểm tra cập nhật (khuyến nghị: thủ công cho bản thương mại đầu) | ____ | ____ |
-| A12-D2 | Kênh manifest cập nhật (GitHub Releases / CDN riêng) | ____ | ____ |
-| A12-D3 | Khóa ký cập nhật dùng chung khóa publisher hay riêng (gắn với QD-02) | ____ | ____ |
-| A12-D4 | Luồng áp cập nhật: chỉ thông báo / tải khi người dùng bấm (cấm cài lặng) | ____ | ____ |
+| A12-D1 | Khi nào kiểm tra cập nhật (khuyến nghị: thủ công cho bản thương mại đầu) | Thủ công: chỉ khi khách bấm "Kiểm tra phiên bản online" — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| A12-D2 | Kênh manifest cập nhật (GitHub Releases / CDN riêng) | GitHub Releases, tag `lhm-updates` (app đã trỏ sẵn `stable.json`) — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| A12-D3 | Khóa ký cập nhật dùng chung khóa publisher hay riêng (gắn với QD-02) | Riêng: khóa cập nhật đã tạo 06/11 (`resources/update-publisher/…pub`, commit `8a76b43`), khác khóa license — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| A12-D4 | Luồng áp cập nhật: chỉ thông báo / tải khi người dùng bấm (cấm cài lặng) | Chỉ tải khi khách bấm; khách tự chạy bộ cài; cấm cài lặng — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
 | A17-F3 | Snapshot phiên do người dùng tạo có bị purge không + công bố trong UI | ____ | ____ |
 | A17-F4 | Workflow còn tham chiếu hồ sơ đã xoá: dọn tự động hay để nguyên | ____ | ____ |
 | Echo | Endpoint echo do LHM vận hành cho quan sát IP từ runtime (chưa có → tính năng giữ tắt) | ____ | ____ |
+| LIC-1 | Chế độ hết hạn license cho bản bán đầu | `strict` (khóa đúng hạn; không cần máy chủ). `owner-sweep` chỉ bật sau khi máy chủ license chạy — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| LIC-2 | Gói bán (tham số khi cấp, đổi được từng khách) | Đề xuất: Starter 20 hồ sơ; Pro 100 hồ sơ + API/RPA; Business 500 hồ sơ + API/RPA; thuê `--days 30`. Giá do chủ dự án định — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| LIC-3 | Bán bản đầu khi chưa có máy chủ license | Có — phương án A: license offline `strict` ký bằng khóa issuer 06/11 (vân tay `725db621…dff0`). Không thu hồi từ xa được; gia hạn bằng token mới — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| SIGN-1 | Authenticode cho EXE/bộ cài | Giữ quyết định 22/10: không mua; tài liệu khách hàng cảnh báo SmartScreen (`docs/customer/HUONG-DAN-KHACH-HANG.md`) — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
 
 ## Tài sản phát hành phải sẵn sàng trước Gate 4
 
