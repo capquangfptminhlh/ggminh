@@ -57,62 +57,72 @@ background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-
 .studio-graph-node[data-category="control"]{border-left-color:#34a9d0!important;background:#f6fbfd!important}
 .studio-graph-node.is-executing{box-shadow:0 0 0 3px #b6ecdd!important;border-color:#36b58f!important}
 
-/* LHM 2.6 — Proxy Center: data-first business table, matching reference */
-#modal-proxy-center .modal-dialog{width:min(1300px,97vw)!important;max-width:97vw!important;background:#fff!important}
-#modal-proxy-center .modal-header{padding:18px 23px;border-bottom:1px solid #e9edf2}
-#modal-proxy-center .modal-header h2{font-size:17px;color:#303e51;font-weight:720}
-#modal-proxy-center .pc-subtitle{color:#929fac;font-size:11px}
-#modal-proxy-center .modal-body{padding:18px 22px!important;overflow:auto;max-height:min(74vh,700px)}
-#modal-proxy-center .pc-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:17px}
-#modal-proxy-center .pc-stats>div{background:#f8fafb!important;border:1px solid #edf0f3!important;
- box-shadow:none!important;border-radius:9px;padding:12px 15px}
-#modal-proxy-center .pc-stats span{color:#8592a1;font-size:11px}
-#modal-proxy-center .pc-stats strong{font-size:22px;color:#334458}
-#modal-proxy-center .pc-columns{grid-template-columns:minmax(235px,260px) minmax(0,1fr);gap:14px}
-#modal-proxy-center .pc-form-panel,#modal-proxy-center .pc-list-panel{
- background:#fff!important;border:1px solid #e9edf1!important;border-radius:9px!important;padding:16px!important
-}
-#modal-proxy-center .pc-columns h3{font-size:13px;color:#39495d;font-weight:700;margin:0}
-#modal-proxy-center .pc-form-panel label{color:#84909e;font-size:11px;margin:13px 0 5px}
-#modal-proxy-center .pc-form-panel input,#modal-proxy-center .pc-form-panel select,
-#modal-proxy-center .pc-list-panel input{font-size:12px;border-radius:7px!important;color:#354357!important;
- background:#fff!important;border:1px solid #dce4ec!important;padding:9px 10px!important}
-#modal-proxy-center .pc-compact-fields{gap:8px}
-#modal-proxy-center .pc-form-actions{gap:8px;margin-top:18px}
-#modal-proxy-center .pc-form-actions .btn{font-size:11px;padding:8px 11px}
-#modal-proxy-center .pc-list-heading{margin:0 0 14px;gap:12px}
-#modal-proxy-center .pc-list-heading input{max-width:290px;background:#fcfdff!important}
-#modal-proxy-center .pc-list{max-height:510px;display:block;overflow:auto;border:1px solid #e9edf1;
- border-radius:8px;padding:0;background:#fff}
-#modal-proxy-center .pc-table{border-collapse:collapse;width:100%;min-width:650px;table-layout:auto;font-size:11px}
-#modal-proxy-center .pc-table th{position:sticky;top:0;z-index:1;background:#f9fafb;color:#8997a6;
- font-weight:700;text-align:left;border-bottom:1px solid #e9edf1;padding:12px 11px;white-space:nowrap}
-#modal-proxy-center .pc-table td{border-bottom:1px solid #f0f2f5;padding:11px;vertical-align:middle;color:#526274}
+/* Proxy Center (rebuild phase 3): the proxy list is the main area; the
+   add/edit form sits in a fixed right column with its Save button always
+   visible. Uses the system.css tokens. */
+#modal-proxy-center .modal-dialog{width:min(1180px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:min(760px,calc(100dvh - 24px))}
+#modal-proxy-center .modal-header{gap:16px}
+#modal-proxy-center .modal-header .lhm-dialog-title{margin-right:auto}
+#modal-proxy-center .pc-stats{display:flex;gap:8px;margin:0}
+#modal-proxy-center .pc-stats>div{display:flex;flex-direction:row;align-items:baseline;gap:5px;padding:4px 10px;border:1px solid var(--lhm-border);
+  border-radius:999px;background:var(--lhm-subtle);white-space:nowrap}
+#modal-proxy-center .pc-stats strong{font-size:14px;font-weight:700;color:var(--lhm-heading)}
+#modal-proxy-center .pc-stats span{font-size:12px;color:var(--lhm-muted)}
+#modal-proxy-center .modal-body{padding:14px 18px;overflow:hidden;display:flex;flex-direction:column}
+#modal-proxy-center .pc-columns{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+#modal-proxy-center .pc-list-panel,#modal-proxy-center .pc-form-panel{min-height:0;display:flex;flex-direction:column;
+  border:1px solid var(--lhm-border);border-radius:var(--lhm-radius-lg);background:var(--lhm-surface);padding:12px 14px}
+#modal-proxy-center .pc-columns h3{margin:0;font-size:14px;font-weight:700;color:var(--lhm-heading)}
+#modal-proxy-center .pc-list-heading{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+#modal-proxy-center .pc-list-heading h3{margin-right:auto}
+#modal-proxy-center .pc-list-heading input{width:240px}
+#modal-proxy-center .pc-import-section{margin-bottom:10px;padding:8px 12px;border:1px solid var(--lhm-border);border-radius:10px;background:var(--lhm-subtle)}
+#modal-proxy-center .pc-import-section summary{font-size:12.5px;font-weight:600;color:var(--lhm-accent)}
+#modal-proxy-center .pc-import-section p{margin:8px 0;font-size:12.5px;color:var(--lhm-muted);line-height:1.5}
+#modal-proxy-center .pc-import-section textarea{width:100%;min-height:80px;max-height:180px;resize:vertical;font-family:"Cascadia Code",Consolas,monospace;font-size:12px}
+#modal-proxy-center .pc-import-section button{margin-top:8px}
+#modal-proxy-center .pc-list{flex:1;min-height:0;overflow:auto;border:1px solid var(--lhm-border);border-radius:10px}
+#modal-proxy-center .pc-table{width:100%;min-width:620px;border-collapse:collapse;font-size:13px}
+#modal-proxy-center .pc-table th{position:sticky;top:0;z-index:1;padding:8px 10px;text-align:left;white-space:nowrap;
+  background:var(--lhm-subtle);border-bottom:1px solid var(--lhm-border);color:var(--lhm-muted);font-size:12px;font-weight:700}
+#modal-proxy-center .pc-table td{padding:7px 10px;border-bottom:1px solid #edf1f5;vertical-align:middle;color:var(--lhm-body)}
 #modal-proxy-center .pc-table tr:last-child td{border-bottom:0}
-#modal-proxy-center .pc-table tr:hover td{background:#f9fcfd}
-#modal-proxy-center .pc-name-cell strong,#modal-proxy-center .pc-endpoint-cell strong{display:block;
- color:#314257;font-size:11px;font-weight:700;white-space:nowrap}
+#modal-proxy-center .pc-table tbody tr:hover td{background:#f8fbff}
+#modal-proxy-center .pc-name-cell strong,#modal-proxy-center .pc-endpoint-cell strong{display:block;color:var(--lhm-heading);font-weight:700;white-space:nowrap}
 #modal-proxy-center .pc-name-cell small,#modal-proxy-center .pc-endpoint-cell small,
-#modal-proxy-center .pc-state-cell small{display:block;color:#9aa5b1;font-size:10px;margin-top:4px;overflow-wrap:anywhere}
-#modal-proxy-center .pc-check-badge{font-size:10px;font-weight:650;border-radius:18px;
- padding:4px 7px;background:#f3f5f6;color:#8795a3;white-space:nowrap}
-#modal-proxy-center .pc-check-badge.verified{color:#208f6f;background:#e4f7ef}
-#modal-proxy-center .pc-check-badge.failed{color:#b85b51;background:#fff0ef}
-#modal-proxy-center .pc-row-actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}
-#modal-proxy-center .pc-row-actions .btn{background:#fff!important;border:1px solid #e0e6ec!important;
- color:#657587!important;font-size:10px;padding:6px 8px}
-#modal-proxy-center .pc-row-actions .btn:hover{background:#f2f9fc!important;border-color:#bddfe9!important}
-#modal-proxy-center .pc-row-actions .pc-danger{color:#c15b5b!important}
-#modal-proxy-center .pc-no-results{padding:35px 12px;text-align:center;color:#93a0b0;font-size:12px}
-#modal-proxy-center .pc-info{border-top:1px solid #eef0f3;background:transparent!important;
- color:#8895a3!important;margin-top:20px;padding-top:12px;font-size:11px;line-height:1.65}
-#modal-proxy-center .pc-message{line-height:1.5;overflow-wrap:anywhere}
-#modal-proxy-center .pc-footer-note{font-size:10px;color:#9aa5b1;margin-top:13px}
-#modal-proxy-center .modal-footer{padding:12px 19px;background:#fff!important;border-top:1px solid #e9edf2}
-@media(max-width:920px){
- #modal-proxy-center .pc-columns{grid-template-columns:1fr}
- #modal-proxy-center .pc-list{max-height:320px}
- #modal-proxy-center .pc-stats{grid-template-columns:1fr 1fr 1fr}
+#modal-proxy-center .pc-state-cell small{display:block;margin-top:1px;font-size:12px;color:var(--lhm-muted);overflow-wrap:anywhere}
+#modal-proxy-center .pc-check-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;background:#eef1f5;color:var(--lhm-muted)}
+#modal-proxy-center .pc-check-badge.verified{background:var(--lhm-ok-soft);color:var(--lhm-ok)}
+#modal-proxy-center .pc-check-badge.failed{background:var(--lhm-danger-soft);color:var(--lhm-danger)}
+#modal-proxy-center .pc-row-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+#modal-proxy-center .pc-row-actions .btn{min-height:28px;padding:0 9px;font-size:12px}
+#modal-proxy-center .pc-row-actions .pc-danger{color:var(--lhm-danger)}
+#modal-proxy-center .pc-row-actions .pc-danger:hover{background:var(--lhm-danger-soft);border-color:#f0bdb7}
+#modal-proxy-center tr.is-editing td{background:var(--lhm-accent-soft)}
+#modal-proxy-center .pc-no-results{padding:30px 12px;text-align:center;color:var(--lhm-muted);font-size:13px}
+#modal-proxy-center .pc-footer-note{margin:8px 0 0;font-size:12px;color:var(--lhm-faint);line-height:1.5}
+#modal-proxy-center .pc-form-panel{padding:12px 0 12px 14px}
+#modal-proxy-center .pc-form-panel h3{padding-right:14px;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#modal-proxy-center .pc-form-scroll{flex:1;min-height:0;overflow:auto;padding-right:14px}
+#modal-proxy-center .pc-form-panel .form-group{margin-bottom:10px}
+#modal-proxy-center .pc-form-panel label{margin:0;font-size:12.5px;color:var(--lhm-heading);font-weight:600}
+#modal-proxy-center .pc-compact-fields{display:flex;gap:10px}
+#modal-proxy-center .pc-compact-fields .form-group:last-child{flex:0 0 96px}
+#modal-proxy-center .pc-credential-fields{margin:4px 0 10px;padding:8px 12px 10px;border:1px solid var(--lhm-border);border-radius:10px;background:var(--lhm-subtle);min-width:0}
+#modal-proxy-center .pc-credential-fields legend{padding:0 4px;font-size:12px;font-weight:700;color:var(--lhm-muted)}
+#modal-proxy-center .pc-credential-fields .pc-credential-clear{display:flex;align-items:center;gap:8px;font-weight:500;line-height:1.5}
+#modal-proxy-center .pc-info{margin:0}
+#modal-proxy-center .pc-message{margin:8px 14px 0 0;min-height:0;font-size:12.5px;line-height:1.45;overflow-wrap:anywhere}
+#modal-proxy-center .pc-message:empty{display:none}
+#modal-proxy-center .pc-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;padding:10px 14px 0 0;border-top:1px solid var(--lhm-border)}
+#modal-proxy-center .modal-footer{justify-content:flex-end}
+#modal-proxy-center .pc-selection-info{margin-right:auto;font-size:12.5px}
+@media(max-width:940px){
+  #modal-proxy-center .modal-dialog{height:calc(100dvh - 24px)}
+  #modal-proxy-center .modal-body{overflow:auto}
+  #modal-proxy-center .pc-columns{display:flex;flex-direction:column}
+  #modal-proxy-center .pc-list{min-height:240px}
+  #modal-proxy-center .pc-stats{display:none}
 }
 
 /* LHM Automation Studio — quiet, reference-aligned 2.6 */
@@ -171,25 +181,6 @@ background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-
  #modal-studio .studio-grid{grid-template-columns:1fr!important}
  #modal-studio .studio-saved-list{max-height:170px}
 }
-
-/* v2.7 — local OS-backed HTTP proxy credentials */
-#modal-proxy-center .pc-credential-fields{border:1px solid #e5ebf1;background:#fafcff;border-radius:8px;padding:10px 12px;margin:15px 0 8px;min-width:0}
-#modal-proxy-center .pc-credential-fields legend{font-size:11px;color:#48637d;font-weight:700;padding:0 5px}
-#modal-proxy-center .pc-credential-fields label{display:block;font-size:11px;margin:10px 0 5px}
-#modal-proxy-center .pc-credential-fields .pc-credential-clear{display:flex;align-items:center;gap:8px;line-height:1.5}
-#modal-proxy-center .pc-credential-clear input{width:14px!important;accent-color:#25acd2}
-#modal-proxy-center .pc-credential-fields .pc-inline-hint{font-size:10px;color:#8b9aad;line-height:1.6;margin:8px 0 0}
-
-/* 2.8 — restrained bulk proxy tools */
-#modal-proxy-center .pc-batch-row{display:flex;align-items:center;gap:10px;margin:0 0 12px}
-#modal-proxy-center .pc-batch-row span{font-size:10px;color:#96a6b4}
-#modal-proxy-center .pc-batch-row button{font-size:11px}
-#modal-proxy-center .pc-import-section{border:1px solid #e7edf2;border-radius:8px;padding:11px 13px;margin-bottom:12px;background:#fbfdfe}
-#modal-proxy-center .pc-import-section summary{cursor:pointer;font-size:11px;font-weight:700;color:#416077}
-#modal-proxy-center .pc-import-section p{font-size:10px;color:#8798a8;line-height:1.6;margin:10px 0}
-#modal-proxy-center .pc-import-section textarea{font-family:ui-monospace,Consolas,monospace;width:100%;resize:vertical;min-height:85px;max-height:180px;border:1px solid #dfe8ee;border-radius:7px;background:white;padding:9px;font-size:11px;color:#36495e}
-#modal-proxy-center .pc-import-section button{margin-top:8px;font-size:11px}
-
 
 /* Release readiness: source-grounded operational checklist */
 .health-readiness{border:1px solid #e5ebf0;border-radius:9px;padding:15px;margin:17px 0;background:#fff}
