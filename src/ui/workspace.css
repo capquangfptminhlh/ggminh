@@ -218,7 +218,6 @@ background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-
 #modal-studio .studio-step-block{background:#f7fbfd!important;border-left:2px solid #52b5d1!important}
 #modal-studio .studio-step.graph-selected{border-color:#27aed3!important;box-shadow:0 0 0 2px #b7eaf7!important}
 #modal-studio .studio-branch-guide{color:#8193a5;background:#f9fbfd!important;border-color:#e7edf2!important}
-#modal-studio .studio-action-row{border-top:1px solid #eef0f3;padding-top:13px;margin-top:16px}
 #modal-studio .studio-recorder{border-radius:9px!important;border:1px solid #e7edf2!important;
  background:#fff!important;padding:15px!important;margin-top:12px!important}
 #modal-studio .studio-log,#modal-studio .studio-record-events{border:1px solid #e8edf2!important;
