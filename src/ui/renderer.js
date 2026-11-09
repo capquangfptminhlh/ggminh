@@ -822,15 +822,21 @@ function renderProfiles() {
       try {
         if (isRunning) await window.api.stopBrowser(profile.id);
         else {
-          const confirmed = await window.LHMLaunchReadiness.confirm(profile.id);
-          if (confirmed) {
-            const resourceApproval=await window.LHMResourceGuard.confirmLaunch(profile);
-            if(resourceApproval.approved)await window.api.startBrowser(profile.id,{
-              allowResourceReview:resourceApproval.allowResourceReview===true
-            });
+          const licensed=await window.LHMLicenseCenter.ensureProfilesAllowed();
+          if(licensed){
+            const confirmed = await window.LHMLaunchReadiness.confirm(profile.id);
+            if (confirmed) {
+              const resourceApproval=await window.LHMResourceGuard.confirmLaunch(profile);
+              if(resourceApproval.approved)await window.api.startBrowser(profile.id,{
+                allowResourceReview:resourceApproval.allowResourceReview===true
+              });
+            }
           }
         }
-      } catch (error) { alert('Không thể mở/đóng hồ sơ: ' + error.message); }
+      } catch (error) {
+        const handled=await window.LHMLicenseCenter.handleOperationError(error);
+        if(!handled)alert('Không thể mở/đóng hồ sơ: ' + error.message);
+      }
       await loadProfiles();
       await refreshBehaviorAlerts();
     });

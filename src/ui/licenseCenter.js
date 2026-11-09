@@ -2,6 +2,7 @@
 window.addEventListener('DOMContentLoaded',()=>{
  const el=id=>document.getElementById(id),modal=el('modal-license-center');
  const msg=el('license-message'),code=el('license-token');
+ const {messageForBlockedLicense}=window.LHMLicenseBlockMessage;
  const statusText={active:'Đang hiệu lực',expired:'Hết hạn',inactive:'Chưa kích hoạt',
   invalid:'License không hợp lệ',different_installation:'Sai mã cài đặt',
   clock_error:'Đồng hồ hệ thống bất thường',not_yet_valid:'Chưa đến ngày bắt đầu',
@@ -40,12 +41,17 @@ window.addEventListener('DOMContentLoaded',()=>{
      (remote.graceExpiresAt?' · hạn offline '+new Date(remote.graceExpiresAt).toLocaleString('vi-VN'):'')
      :'Giấy phép chưa có biên nhận online.');
   el('license-verify-online').disabled=!service.canVerifyNow;
+  return state;
  }
- async function show(){
+ async function show(announcement=''){
   modal.classList.add('open');msg.textContent='';
-  try{await refresh();}catch(error){msg.textContent='Không đọc được trạng thái: '+error.message;}
+  try{
+   const state=await refresh();
+   if(announcement)msg.textContent=announcement;
+   return state;
+  }catch(error){msg.textContent='Không đọc được trạng thái: '+error.message;return null;}
  }
- el('btn-license-center').addEventListener('click',show);
+ el('btn-license-center').addEventListener('click',()=>show());
  function close(){code.value='';modal.classList.remove('open');}
  for(const id of ['license-center-close','license-done'])el(id).addEventListener('click',close);
  el('license-refresh').addEventListener('click',()=>refresh().catch(e=>{msg.textContent=e.message;}));
@@ -79,4 +85,29 @@ window.addEventListener('DOMContentLoaded',()=>{
    code.value='';msg.textContent='Đã xóa license cục bộ.';await refresh();
   }catch(error){msg.textContent=error.message;}
  });
+ async function ensureProfilesAllowed(){
+  try{
+   const state=await window.api.getLicenseStatus();
+   if(state?.allowed===true)return true;
+   await show(messageForBlockedLicense(state));
+   code.focus();
+   return false;
+  }catch(error){
+   await show('Không kiểm tra được giấy phép: '+error.message);
+   return false;
+  }
+ }
+ async function handleOperationError(error){
+  const detail=String(error?.message||error||'');
+  if(!/Giấy phép hết hạn|bị thu hồi|chưa được máy chủ xác minh|license/i.test(detail))
+   return false;
+  try{
+   const state=await window.api.getLicenseStatus();
+   if(state?.allowed===true)return false;
+   await show(messageForBlockedLicense(state));
+   code.focus();
+   return true;
+  }catch(_){return false;}
+ }
+ window.LHMLicenseCenter = {show,refresh,ensureProfilesAllowed,handleOperationError};
 });
