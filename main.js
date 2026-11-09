@@ -97,6 +97,7 @@ let bundledEngine = null;
 let camoufoxAdapter = null;
 let camoufoxInstall = null;
 let camoufoxApprovedRelease = null;
+let publisherKey = null;
 let behaviorMonitor = null;
 let warningService = null;
 let warningHistory = null;
@@ -751,8 +752,15 @@ function initIPC() {
     camoufox:camoufoxAdapter.status()
   }));
   ipcMain.handle('camoufox-install-status',()=>{
+    const adapterStatus=camoufoxAdapter.status();
     const runtime=assessRuntime({
-      verifiedBundle:camoufoxAdapter.status().binaryVerified
+      publisherTrusted:!!publisherKey,
+      releaseConfigured:!!camoufoxApprovedRelease,
+      verifiedBundle:adapterStatus.binaryVerified,
+      version:adapterStatus.version,
+      manualApproved:adapterStatus.ready,
+      approvedProxyTypes:adapterStatus.approvedProxyTypes,
+      evidence:adapterStatus.evidence
     });
     return {
       available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.canInstall,
@@ -768,7 +776,8 @@ function initIPC() {
   ipcMain.handle('camoufox-install',async()=>{
     if(!camoufoxApprovedRelease||!camoufoxInstall)
       throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
-    const runtime=assessRuntime();
+    const runtime=assessRuntime({publisherTrusted:!!publisherKey,
+      releaseConfigured:!!camoufoxApprovedRelease});
     if(!runtime.canInstall)throw Error(runtime.reason);
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả browser trước khi cài engine');
@@ -1461,7 +1470,7 @@ app.whenReady().then(async () => {
   // Never use the app-license signing key to trust a downloadable browser.
   // Without a separately provisioned publisher-ed25519.pub the entire
   // Camoufox install/launch path remains disabled and fails closed.
-  let publisherKey=null;
+  publisherKey=null;
   try{
     publisherKey=loadCamoufoxPublisherKey(releaseAssets,{
       licenseKey:LICENSE_PUBLIC_KEY
