@@ -36,6 +36,9 @@ biết rõ giới hạn hiện tại trước khi đưa vào vận hành quan tr
 8. [Local API an toàn](08-local-api-an-toan.md) — bật API theo phiên,
    dùng khóa xác thực trên loopback, kết nối Chromium CDP và xử lý lỗi
    401/403/409 mà không lộ thông tin đăng nhập.
+9. [Cập nhật phiên bản, quyền riêng tư và hỗ trợ](09-cap-nhat-quyen-rieng-tu-ho-tro.md) —
+   cập nhật có chữ ký chỉ khi bạn bấm, dữ liệu nào rời máy (AI Advisor,
+   GitHub) và cần gửi gì khi nhờ hỗ trợ.
 
 ## Quy ước trong tài liệu này
 

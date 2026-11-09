@@ -66,7 +66,7 @@ nhận `XOA CACHE` và không hoàn tác được.
    hoặc shortcut gỡ cài đặt đi kèm.
 3. Thư mục dữ liệu của ứng dụng **không tự biến mất** theo thao tác
    gỡ cài đặt thông thường. Muốn xóa sạch, tự xóa thư mục:
-   `C:\Users\<tên người dùng>\AppData\Roaming\LHM Ads Browser`
+   `C:\Users\<tên người dùng>\AppData\Roaming\power-browser`
    Thư mục con `storage` bên trong chứa toàn bộ dữ liệu của ứng
    dụng trên máy này: hồ sơ và dữ liệu trình duyệt của từng hồ sơ
    (`storage\profiles`), cấu hình, kho proxy đã mã hóa, quan sát IP
