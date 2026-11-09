@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="androidControlStudio.css">
   <link rel="stylesheet" href="androidAgentStudio.css">
   <link rel="stylesheet" href="androidUIInspector.css">
+  <link rel="stylesheet" href="compactWorkspace.css">
 </head>
 <body data-view="profiles">
 
@@ -31,16 +32,16 @@
       <div class="lhm-nav-identity-text"><strong>LHM Browser</strong><small>Workspace</small></div>
     </div>
     <div class="lhm-nav-heading">QUẢN LÝ</div>
-    <button type="button" class="lhm-nav-btn is-current" data-lhm-target="profiles"><span data-lhm-icon="panels-top-left" class="lhm-nav-icon"></span><span class="lhm-nav-label">Hồ sơ trình duyệt</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="dashboard"><span data-lhm-icon="layout-dashboard" class="lhm-nav-icon"></span><span class="lhm-nav-label">Tổng quan</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="proxy"><span data-lhm-icon="network" class="lhm-nav-icon"></span><span class="lhm-nav-label">Proxy Center</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="automation"><span data-lhm-icon="workflow" class="lhm-nav-icon"></span><span class="lhm-nav-label">Automation Studio</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="android"><span data-lhm-icon="smartphone" class="lhm-nav-icon"></span><span class="lhm-nav-label">Android Device Center</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="tower"><span data-lhm-icon="layers" class="lhm-nav-icon"></span><span class="lhm-nav-label">Control Tower</span></button>
+    <button type="button" class="lhm-nav-btn is-current" data-lhm-target="profiles" data-short="Hồ sơ"><span data-lhm-icon="panels-top-left" class="lhm-nav-icon"></span><span class="lhm-nav-label">Hồ sơ trình duyệt</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="dashboard" data-short="Tổng quan"><span data-lhm-icon="layout-dashboard" class="lhm-nav-icon"></span><span class="lhm-nav-label">Tổng quan</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="proxy" data-short="Proxy"><span data-lhm-icon="network" class="lhm-nav-icon"></span><span class="lhm-nav-label">Proxy Center</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="automation" data-short="Tự động"><span data-lhm-icon="workflow" class="lhm-nav-icon"></span><span class="lhm-nav-label">Automation Studio</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="android" data-short="Android"><span data-lhm-icon="smartphone" class="lhm-nav-icon"></span><span class="lhm-nav-label">Android Device Center</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="tower" data-short="Điều phối"><span data-lhm-icon="layers" class="lhm-nav-icon"></span><span class="lhm-nav-label">Control Tower</span></button>
     <div class="lhm-nav-heading">BẢO MẬT & DỮ LIỆU</div>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="health"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="behavior"><span data-lhm-icon="activity" class="lhm-nav-icon"></span><span class="lhm-nav-label">Nhật ký hoạt động</span></button>
-    <button type="button" class="lhm-nav-btn" data-lhm-target="backup"><span data-lhm-icon="database-backup" class="lhm-nav-icon"></span><span class="lhm-nav-label">Sao lưu dữ liệu</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="health" data-short="Kiểm tra"><span data-lhm-icon="shield-check" class="lhm-nav-icon"></span><span class="lhm-nav-label">Kiểm tra hồ sơ</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="behavior" data-short="Nhật ký"><span data-lhm-icon="activity" class="lhm-nav-icon"></span><span class="lhm-nav-label">Nhật ký hoạt động</span></button>
+    <button type="button" class="lhm-nav-btn" data-lhm-target="backup" data-short="Sao lưu"><span data-lhm-icon="database-backup" class="lhm-nav-icon"></span><span class="lhm-nav-label">Sao lưu dữ liệu</span></button>
     <div class="lhm-nav-bottom"><span class="lhm-nav-local"><span class="lhm-local-dot"></span> Dữ liệu lưu cục bộ</span><small>LHM Ads Browser · <span id="lhm-nav-version" aria-label="Phiên bản">Đang tải…</span></small></div>
   </aside>
 
@@ -183,8 +184,6 @@
           <p>Tất cả hồ sơ, kết nối và công cụ trong một không gian làm việc.</p>
         </div>
         <div class="lhm-v6-intro-actions">
-          <button type="button" class="lhm-v6-quiet-action lhm-commercial-quickaction" id="lhm-open-ads-review" title="Kiểm tra landing page, UTM và QA trước khi chạy quảng cáo"><span data-lhm-icon="shield-check" aria-hidden="true"></span><span>Kiểm tra quảng cáo</span></button>
-          <button type="button" id="lhm-v7-show-rail" class="lhm-v6-quiet-action lhm-v7-show-rail" aria-controls="lhm-profile-panel" aria-expanded="true" title="Hiện hoặc thu gọn AI Control Center"><span data-lhm-icon="panel-right" aria-hidden="true"></span><span id="lhm-v7-rail-label">Thu gọn bảng AI</span></button>
           <span class="lhm-v6-local"><span class="lhm-v6-dot"></span> Dữ liệu trên thiết bị</span>
           <button type="button" class="lhm-v6-quiet-action" id="lhm-v6-refresh" aria-label="Làm mới số liệu"><span data-lhm-icon="refresh-cw"></span> Làm mới</button>
         </div>
@@ -288,12 +287,11 @@
         <span><strong id="lhm-profiles-total">0</strong> hồ sơ</span>
         <span><span class="lhm-status-dot"></span> <strong id="lhm-profiles-running">0</strong> đang chạy</span>
       </div>
+      <div class="lhm-profiles-actions" id="lhm-profiles-actions" aria-label="Thao tác nhanh">
+        <button type="button" class="lhm-v6-quiet-action lhm-commercial-quickaction" id="lhm-open-ads-review" title="Kiểm tra landing page, UTM và QA trước khi chạy quảng cáo"><span data-lhm-icon="shield-check" aria-hidden="true"></span><span>Kiểm tra quảng cáo</span></button>
+        <button type="button" id="lhm-v7-show-rail" class="lhm-v6-quiet-action lhm-v7-show-rail" aria-controls="lhm-profile-panel" aria-expanded="true" title="Hiện hoặc thu gọn AI Control Center"><span data-lhm-icon="panel-right" aria-hidden="true"></span><span id="lhm-v7-rail-label">Thu gọn bảng AI</span></button>
+      </div>
     </section>
-    <div class="lhm-list-tabs" role="group" aria-label="Bộ lọc trạng thái hồ sơ">
-      <button type="button" class="lhm-list-tab is-current" data-lhm-status="all">Tất cả hồ sơ</button>
-      <button type="button" class="lhm-list-tab" data-lhm-status="running">Đang chạy</button>
-      <button type="button" class="lhm-list-tab" data-lhm-status="stopped">Đã dừng</button>
-    </div>
     <div class="lhm-v6-shortcuts" aria-label="Lối tắt thao tác">
       <span class="lhm-v6-table-label">Danh sách hồ sơ <span>· Dữ liệu thực</span></span>
       <button type="button" id="lhm-v6-import" class="lhm-v6-small-link"><span data-lhm-icon="layers"></span> Nhập CSV</button>
@@ -302,33 +300,46 @@
     </div>
     <!-- Toolbar / Filter Bar -->
     <section class="toolbar">
+      <div class="lhm-list-tabs" role="group" aria-label="Bộ lọc trạng thái hồ sơ">
+        <button type="button" class="lhm-list-tab is-current" data-lhm-status="all">Tất cả hồ sơ</button>
+        <button type="button" class="lhm-list-tab" data-lhm-status="running">Đang chạy</button>
+        <button type="button" class="lhm-list-tab" data-lhm-status="stopped">Đã dừng</button>
+      </div>
       <div class="search-box">
         <span data-lhm-icon="search" class="search-icon"></span>
         <input type="text" id="search-input" placeholder="Tìm theo tên, ID, nhóm hoặc proxy...">
       </div>
       <div class="filters">
-        <select id="filter-group">
-          <option value="all">Tất cả Nhóm</option>
-        </select>
-        <select id="filter-tag" aria-label="Lọc theo tag">
-          <option value="all">Tất cả Tag</option>
-        </select>
-        <select id="filter-engine" aria-label="Lọc engine">
-          <option value="all">Mọi trình duyệt</option>
-          <option value="chromium">Chrome / Edge</option>
-          <option value="gecko">Firefox / Gecko</option>
-        </select>
-        <select id="filter-proxy" aria-label="Lọc theo mạng">
-          <option value="all">Mọi kết nối</option>
-          <option value="direct">Mạng trực tiếp</option>
-          <option value="proxy">Có proxy</option>
-        </select>
-        <select id="filter-status">
+        <details class="lhm-filter-menu" id="lhm-filter-menu">
+          <summary class="btn btn-secondary" aria-label="Lọc theo nhóm, tag, trình duyệt hoặc kết nối">Lọc <span class="lhm-filter-count" id="lhm-filter-count" hidden>0</span> <span class="lhm-tools-chevron" aria-hidden="true">▾</span></summary>
+          <div class="lhm-filter-panel">
+            <label>Nhóm<select id="filter-group">
+              <option value="all">Tất cả Nhóm</option>
+            </select></label>
+            <label>Tag<select id="filter-tag" aria-label="Lọc theo tag">
+              <option value="all">Tất cả Tag</option>
+            </select></label>
+            <label>Trình duyệt<select id="filter-engine" aria-label="Lọc engine">
+              <option value="all">Mọi trình duyệt</option>
+              <option value="chromium">Chrome / Edge</option>
+              <option value="gecko">Firefox / Gecko</option>
+            </select></label>
+            <label>Kết nối<select id="filter-proxy" aria-label="Lọc theo mạng">
+              <option value="all">Mọi kết nối</option>
+              <option value="direct">Mạng trực tiếp</option>
+              <option value="proxy">Có proxy</option>
+            </select></label>
+            <div class="lhm-filter-panel-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="lhm-filter-clear">Bỏ lọc</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-table-options" aria-expanded="false" aria-controls="table-options-panel">Tùy biến bảng</button>
+            </div>
+          </div>
+        </details>
+        <select id="filter-status" aria-label="Lọc trạng thái">
           <option value="all">Tất cả Trạng thái</option>
           <option value="running">Đang chạy</option>
           <option value="stopped">Đã dừng</option>
         </select>
-        <button type="button" class="btn btn-secondary" id="btn-table-options" aria-expanded="false" aria-controls="table-options-panel">Tùy biến bảng</button>
         <button class="btn btn-icon" id="btn-refresh" title="Làm mới" aria-label="Làm mới danh sách"><span data-lhm-icon="refresh-cw"></span></button>
         <span id="lhm-profile-sync-status" class="lhm-profile-sync-status" data-state="idle" role="status" aria-live="polite">Đang kết nối trạng thái…</span>
       </div>
@@ -1960,5 +1971,6 @@ run();
   <script src="androidAgentStudio.js"></script>
   <script src="androidUIInspector.js"></script>
   <script src="profilePanel.js"></script>
+  <script src="compactWorkspace.js"></script>
 </body>
 </html>

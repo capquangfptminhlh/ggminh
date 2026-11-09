@@ -29,6 +29,7 @@
     'folder': '<path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>',
     'check-circle': '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     'info': '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+    'smartphone': '<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>',
     'filter': '<path d="M4 4h16l-6.5 7.5V20l-3-2v-6.5L4 4Z"/>',
     'globe': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18M12 3c5 5 5 13 0 18"/>'
   });
