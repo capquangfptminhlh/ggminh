@@ -155,6 +155,7 @@
       if(ok) {
         $('android-agent-goal').value='';
         $('android-agent-consent').checked=false;
+        document.querySelector('#modal-android-manager .tab-btn[data-tab="android-tab-agent"]')?.click();
         $('android-agent-title').scrollIntoView({behavior:'smooth',block:'start'});
         $('android-agent-next').focus();
       }

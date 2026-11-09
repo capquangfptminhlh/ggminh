@@ -138,3 +138,34 @@
 @media(max-width:760px) {
   #modal-android-manager .lhm-android-provision-grid {grid-template-columns:1fr;}
 }
+
+/* Rebuild phase 6: device lists first; create, control, inspector, agent
+   and setup are tabs. The runtime status, device selector and feedback stay
+   above the tabs so every tab acts on the same visible device. */
+#modal-android-manager .lhm-android-dialog { height: min(860px, calc(100dvh - 24px)); max-height: calc(100dvh - 24px); width: min(1100px, calc(100vw - 24px)); }
+#modal-android-manager .lhm-android-dialog .modal-body.lhm-android-content { display: flex; flex-direction: column; overflow: hidden; padding: 12px 18px 0; }
+#modal-android-manager .lhm-android-dialog .lhm-android-toolbar {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 14px; margin: 0;
+  padding: 10px 14px; border-radius: 10px; border: 1px solid var(--lhm-border); background: var(--lhm-subtle); color: var(--lhm-body);
+}
+#modal-android-manager .lhm-android-runtime { flex: 1 1 auto; min-width: 0; }
+#modal-android-manager .lhm-android-runtime strong { font-size: 13px; color: var(--lhm-heading); }
+#modal-android-manager .lhm-android-dialog .lhm-android-toolbar p { margin: 2px 0 0; font-size: 12px; color: var(--lhm-muted); }
+#modal-android-manager .lhm-android-serial { display: flex; align-items: center; gap: 8px; flex: 0 1 380px; min-width: 0; }
+#modal-android-manager .lhm-android-serial label { font-size: 12px; font-weight: 600; color: var(--lhm-heading); white-space: nowrap; }
+#modal-android-manager .lhm-android-serial #android-control-serial { flex: 1; min-width: 150px; max-width: none; min-height: 34px; padding: 6px 10px; }
+#modal-android-manager .lhm-android-dialog .lhm-android-feedback { flex: 0 0 auto; min-height: 0; margin: 6px 2px 0; font-size: 12.5px; color: var(--lhm-accent); }
+#modal-android-manager .lhm-android-dialog .lhm-android-feedback:empty { display: none; }
+#modal-android-manager .lhm-android-dialog .lhm-android-feedback[data-state="error"] { color: var(--lhm-danger); }
+#modal-android-manager .lhm-android-tabs { flex: 0 0 auto; margin: 10px 0 0; }
+#modal-android-manager .lhm-android-tabs .tab-btn { flex: 1 1 auto; min-height: 32px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
+#modal-android-manager .lhm-android-pane { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 12px 2px 16px; }
+#modal-android-manager .lhm-android-pane.active { display: block; }
+#modal-android-manager .lhm-android-pane > section { margin-top: 0; }
+#modal-android-manager .lhm-android-subtitle { color: var(--lhm-muted); }
+#modal-android-manager .lhm-android-footnote { color: var(--lhm-muted); font-size: 12px; }
+@media (max-width: 860px) {
+  #modal-android-manager .lhm-android-dialog .lhm-android-toolbar { flex-wrap: wrap; }
+  #modal-android-manager .lhm-android-serial { flex-basis: 100%; }
+  #modal-android-manager .lhm-android-tabs { overflow-x: auto; }
+}
