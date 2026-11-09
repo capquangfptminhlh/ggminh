@@ -233,6 +233,12 @@ function createWindow() {
             capturedFrames.set(digest, name);
             fs.writeFileSync(path.join(captureDir, name), bytes);
           };
+          // Entrance fades still running at capture time saved a washed-out
+          // workspace (measured on a cold Electron 44 start); wait for finite
+          // animations, bounded so an endless one cannot hang the capture.
+          const settleAnimations = () => mainWindow.webContents.executeJavaScript(
+            "Promise.race([Promise.all(document.getAnimations().filter(a=>a.effect&&Number.isFinite(a.effect.getComputedTiming().endTime)).map(a=>a.finished.catch(()=>null))),new Promise(r=>setTimeout(r,3000))]).then(()=>true)",true);
+          await settleAnimations();
           const png = await mainWindow.webContents.capturePage();
           fs.mkdirSync(captureDir, { recursive: true });
           writeCapture('workspace-preview.png', png);
@@ -405,9 +411,8 @@ function createWindow() {
           // Control Tower closes and the table re-renders only on a later paint;
           // capturing at once re-saved the agency handoff frame as this screenshot.
           await new Promise(resolve=>setTimeout(resolve,280));
-          // Rows fade in after re-render; wait for finite animations (bounded).
-          await mainWindow.webContents.executeJavaScript(
-            "Promise.race([Promise.all(document.getAnimations().filter(a=>a.effect&&Number.isFinite(a.effect.getComputedTiming().endTime)).map(a=>a.finished.catch(()=>null))),new Promise(r=>setTimeout(r,3000))]).then(()=>true)",true);
+          // Rows fade in after re-render.
+          await settleAnimations();
           const pagerView=await mainWindow.webContents.executeJavaScript(
             "(() => { const body=document.getElementById('profile-list-body'); return {towerOpen:document.getElementById('modal-control-tower').classList.contains('open'),rows:body.querySelectorAll('tr').length,first:body.querySelector('tr')?.dataset.profileId||''}; })()",true);
           if(pagerView.towerOpen||pagerView.rows!==100||!pagerView.first.startsWith('qa_'))
