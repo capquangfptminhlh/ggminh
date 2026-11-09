@@ -197,7 +197,7 @@ Mỗi mục: ghi lựa chọn + ngày; hồ sơ chi tiết ở `docs/decisions/`
 | LIC-1 | Chế độ hết hạn license cho bản bán đầu | `strict` (khóa đúng hạn; không cần máy chủ). `owner-sweep` chỉ bật sau khi máy chủ license chạy — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
 | LIC-2 | Gói bán (tham số khi cấp, đổi được từng khách) | Đề xuất: Starter 20 hồ sơ; Pro 100 hồ sơ + API/RPA; Business 500 hồ sơ + API/RPA; thuê `--days 30`. Giá do chủ dự án định — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
 | LIC-3 | Bán bản đầu khi chưa có máy chủ license | Có — phương án A: license offline `strict` ký bằng khóa issuer 06/11 (vân tay `725db621…dff0`). Không thu hồi từ xa được; gia hạn bằng token mới — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
-| SIGN-1 | Authenticode cho EXE/bộ cài | Giữ quyết định 22/10: không mua; tài liệu khách hàng cảnh báo SmartScreen (`docs/customer/HUONG-DAN-KHACH-HANG.md`) — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
+| SIGN-1 | Authenticode cho EXE/bộ cài | Giữ quyết định 22/10: không mua; tài liệu khách hàng cảnh báo SmartScreen (`docs/customer-guide/01-cai-dat-va-kich-hoat.md`) — trợ lý chốt theo khuyến nghị, chủ dự án giao ("bạn làm hết đi") | 2026-11-09 |
 
 ## Tài sản phát hành phải sẵn sàng trước Gate 4
 
