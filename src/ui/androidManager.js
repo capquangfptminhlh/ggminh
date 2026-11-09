@@ -260,6 +260,8 @@
   function open() {
     lastFocus = document.activeElement;
     $('modal-android-manager').classList.add('open');
+    // Rebuild phase 6: sections are tabs; reopen on the device list.
+    document.querySelector('#modal-android-manager .tab-btn[data-tab="android-tab-devices"]')?.click();
     $('android-refresh').focus();
     notice('');
     refresh();

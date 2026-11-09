@@ -1517,99 +1517,116 @@ run();
   <div class="modal-overlay" id="modal-health">
     <div class="modal-dialog modal-lg health-dialog" role="dialog" aria-modal="true" aria-labelledby="health-title">
       <div class="modal-header">
-        <div>
-          <h2 id="health-title">Profile Health Center</h2>
-          <p class="health-intro">Chẩn đoán cấu hình, không phải điểm đánh giá Google Ads.</p>
+        <div class="lhm-dialog-title">
+          <h2 id="health-title">Kiểm tra hồ sơ</h2>
+          <p class="health-intro lhm-dialog-subtitle">Chẩn đoán cấu hình, không phải điểm đánh giá Google Ads.</p>
         </div>
+        <section class="health-metrics" aria-label="Kết quả kiểm tra">
+          <div class="health-kpi"><strong id="health-total">0</strong><span>hồ sơ</span></div>
+          <div class="health-kpi is-error"><strong id="health-errors">0</strong><span>cần xử lý</span></div>
+          <div class="health-kpi is-warning"><strong id="health-warnings">0</strong><span>cảnh báo</span></div>
+        </section>
         <button class="btn-close" id="health-close" aria-label="Đóng">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="health-metrics">
-          <div><span>Hồ sơ</span><strong id="health-total">0</strong></div>
-          <div><span>Cần xử lý</span><strong id="health-errors">0</strong></div>
-          <div><span>Cảnh báo</span><strong id="health-warnings">0</strong></div>
+      <div class="modal-body health-body">
+        <div class="tabs lhm-steps health-tabs" role="tablist" aria-label="Phần kiểm tra">
+          <button type="button" class="tab-btn active" role="tab" data-tab="health-tab-profiles">Hồ sơ</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="health-tab-criteria">Bảng kiểm tiêu chí</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="health-tab-system">Hệ thống &amp; engine</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="health-tab-network">IP / subnet</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="health-tab-drift">Lịch sử</button>
         </div>
-        <section class="health-readiness" aria-labelledby="health-readiness-title">
-          <div class="isolation-audit-head">
-            <strong id="health-readiness-title">Kiểm tra trước khi sử dụng</strong>
-            <div class="health-readiness-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="health-readiness-refresh">Kiểm tra cấu hình</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="health-support-export">Xuất báo cáo hỗ trợ</button>
-            </div>
-          </div>
-          <div id="health-readiness-summary" class="health-readiness-summary" role="status">Nhấn kiểm tra để xem trạng thái hệ thống.</div>
-          <div id="health-readiness-items" class="health-readiness-items"></div>
-        </section>
-        <section class="health-readiness" aria-labelledby="local-drift-title">
-          <div class="isolation-audit-head">
-            <strong id="local-drift-title">Theo dõi thay đổi chất lượng cấu hình (chỉ lưu máy)</strong>
-            <div class="health-readiness-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-record">Lưu lượt kiểm tra</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-refresh">Xem xu hướng</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-export">Xuất JSON</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="local-drift-clear">Xóa lịch sử</button>
-            </div>
-          </div>
-          <p class="health-footnote">Chỉ lưu tổng số hồ sơ lỗi/cảnh báo, số đang chạy và phiên bản LHM khi bạn bấm lưu. Không thu thập phím, chuột, vị trí trang, cookie, IP hay điểm CAPTCHA; không gửi về máy chủ.</p>
-          <div id="local-drift-results" role="status" aria-live="polite">Chưa đọc lịch sử kiểm tra.</div>
-        </section>
-        <section class="health-readiness" aria-labelledby="agency-controls-title">
-          <div class="isolation-audit-head">
-            <strong id="agency-controls-title">Kiểm tra IP / subnet của hồ sơ</strong>
-          </div>
-          <p class="health-footnote">Chỉ kiểm tra tài nguyên do agency được phép quản lý. Không phân tích cách Google liên kết tài khoản, không lưu IP người dùng, thông tin thẻ hoặc giả lập lịch sử tài khoản.</p>
-          <div class="form-group">
-            <label for="agency-profile">Hồ sơ nội bộ</label>
-            <select id="agency-profile"></select>
-          </div>
-          <div class="form-group">
-            <label for="agency-egress-ip">IPv4 exit đã kiểm tra thủ công</label>
-            <input id="agency-egress-ip" type="text" maxlength="45" placeholder="198.51.100.25" autocomplete="off" spellcheck="false">
-          </div>
-          <div class="form-group">
-            <label for="agency-network-entries">Các IP exit khác của profile bạn quản lý (mỗi dòng: profile_id|IPv4)</label>
-            <textarea id="agency-network-entries" rows="3" maxlength="4000" placeholder="profile_a|198.51.100.12"></textarea>
-          </div>
-          <button type="button" class="btn btn-sm btn-secondary" id="agency-network-check">Kiểm tra trùng subnet /24</button>
-          <div id="agency-network-result" role="status" aria-live="polite">Đây là kiểm tra xung đột tài nguyên, không phải công cụ tránh liên kết tài khoản.</div>
-        </section>
-        <div id="health-items" class="health-list"></div>
-        <section class="criteria-checklist-section">
-          <div class="isolation-audit-head">
-            <strong>Bảng kiểm theo tiêu chí của hồ sơ</strong>
-          </div>
-          <p class="health-footnote">Mỗi tiêu chí chỉ hiển thị một trong ba trạng thái — ĐẠT, KHÔNG ĐẠT, CHƯA ĐO — kèm bằng chứng quan sát, giới hạn của kết luận và bước xử lý tiếp theo. Trạng thái chỉ đến từ dữ liệu đo của ứng dụng; chưa có dữ liệu đo thì tiêu chí là CHƯA ĐO.</p>
-          <div id="criteria-checklist" class="criteria-checklist" role="status"></div>
-          <div class="lhm-batch-actions">
-            <button type="button" class="btn btn-sm btn-secondary" id="criteria-checklist-sample">Xem ví dụ hiển thị (dữ liệu mẫu)</button>
-            <button type="button" class="btn btn-sm btn-secondary" id="criteria-checklist-live" hidden>Quay lại trạng thái theo dữ liệu đo</button>
-          </div>
-        </section>
-        <section class="engine-diagnostics">
-          <div class="isolation-audit-head">
-            <strong>Browser Engine Diagnostics</strong>
-            <button type="button" class="btn btn-sm btn-secondary" id="health-check-engines">Kiểm tra Chrome / Edge / Firefox</button>
-          </div>
-          <div id="health-engines-results" role="status" class="engine-diagnostics-results">Bấm kiểm tra để đọc phiên bản trình duyệt đang cài trên máy.</div>
-          <div class="lhm-runtime-manager">
-            <p class="health-footnote">Ghim engine cài trên máy bằng SHA-256, kiểm tra lại mỗi lần mở. Sau khi Chrome/Firefox cập nhật, hãy xác nhận và ghim lại phiên bản. Đây là kiểm tra toàn vẹn file, <strong>không thay thế chữ ký xác thực nhà phát hành</strong>.</p>
-            <div class="lhm-batch-actions">
-              <button type="button" class="btn btn-sm btn-secondary" id="runtime-register-chromium">Ghim Chrome / Edge</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="runtime-register-gecko">Ghim Firefox</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="runtime-check">Kiểm tra SHA-256</button>
-            </div>
-            <div id="runtime-status" class="engine-diagnostics-results" role="status">Chưa kiểm tra engine được ghim.</div>
-          </div>
-          <p class="health-footnote">Kiểm tra chỉ dùng lệnh --version với chương trình tìm được, không mở website hoặc đăng nhập tài khoản.</p>
-        </section>
-        <div class="isolation-audit">
-          <div class="isolation-audit-head">
-            <strong>Kiểm tra cách ly dữ liệu cục bộ</strong>
-            <button class="btn btn-sm btn-secondary" id="health-isolation-audit">Quét thư mục hồ sơ</button>
-          </div>
-          <div id="isolation-audit-results" role="status" class="isolation-audit-results">Chưa chạy kiểm tra. Chỉ kiểm tra việc tách thư mục lưu trữ, không kiểm tra danh tính Google.</div>
+        <div class="tab-content health-pane active" id="health-tab-profiles" role="tabpanel">
+          <div id="health-items" class="health-list"></div>
+          <p class="health-footnote">Đây chỉ là kiểm tra cấu hình: binary, URL, proxy, engine và User-Agent. Không khẳng định vô danh hoặc tránh bị phát hiện. Để đo IP thoát, bấm Kiểm tra proxy trong phần sửa hồ sơ.</p>
         </div>
-        <p class="health-footnote">Đây chỉ là kiểm tra cấu hình: binary, URL, proxy, engine và User-Agent. Không khẳng định vô danh hoặc tránh bị phát hiện. Để đo IP thoát, bấm Kiểm tra proxy trong phần sửa hồ sơ.</p>
+        <div class="tab-content health-pane" id="health-tab-criteria" role="tabpanel">
+          <section class="criteria-checklist-section">
+            <div class="isolation-audit-head">
+              <strong>Bảng kiểm theo tiêu chí của hồ sơ</strong>
+            </div>
+            <p class="health-footnote">Mỗi tiêu chí chỉ hiển thị một trong ba trạng thái — ĐẠT, KHÔNG ĐẠT, CHƯA ĐO — kèm bằng chứng quan sát, giới hạn của kết luận và bước xử lý tiếp theo. Trạng thái chỉ đến từ dữ liệu đo của ứng dụng; chưa có dữ liệu đo thì tiêu chí là CHƯA ĐO.</p>
+            <div class="lhm-batch-actions criteria-checklist-actions">
+              <button type="button" class="btn btn-sm btn-secondary" id="criteria-checklist-sample">Xem ví dụ hiển thị (dữ liệu mẫu)</button>
+              <button type="button" class="btn btn-sm btn-secondary" id="criteria-checklist-live" hidden>Quay lại trạng thái theo dữ liệu đo</button>
+            </div>
+            <div id="criteria-checklist" class="criteria-checklist" role="status"></div>
+          </section>
+        </div>
+        <div class="tab-content health-pane" id="health-tab-system" role="tabpanel">
+          <section class="health-readiness" aria-labelledby="health-readiness-title">
+            <div class="isolation-audit-head">
+              <strong id="health-readiness-title">Kiểm tra trước khi sử dụng</strong>
+              <div class="health-readiness-buttons">
+                <button type="button" class="btn btn-sm btn-secondary" id="health-readiness-refresh">Kiểm tra cấu hình</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="health-support-export">Xuất báo cáo hỗ trợ</button>
+              </div>
+            </div>
+            <div id="health-readiness-summary" class="health-readiness-summary" role="status">Nhấn kiểm tra để xem trạng thái hệ thống.</div>
+            <div id="health-readiness-items" class="health-readiness-items"></div>
+          </section>
+          <section class="engine-diagnostics">
+            <div class="isolation-audit-head">
+              <strong>Browser Engine Diagnostics</strong>
+              <button type="button" class="btn btn-sm btn-secondary" id="health-check-engines">Kiểm tra Chrome / Edge / Firefox</button>
+            </div>
+            <div id="health-engines-results" role="status" class="engine-diagnostics-results">Bấm kiểm tra để đọc phiên bản trình duyệt đang cài trên máy.</div>
+            <div class="lhm-runtime-manager">
+              <p class="health-footnote">Ghim engine cài trên máy bằng SHA-256, kiểm tra lại mỗi lần mở. Sau khi Chrome/Firefox cập nhật, hãy xác nhận và ghim lại phiên bản. Đây là kiểm tra toàn vẹn file, <strong>không thay thế chữ ký xác thực nhà phát hành</strong>.</p>
+              <div class="lhm-batch-actions">
+                <button type="button" class="btn btn-sm btn-secondary" id="runtime-register-chromium">Ghim Chrome / Edge</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="runtime-register-gecko">Ghim Firefox</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="runtime-check">Kiểm tra SHA-256</button>
+              </div>
+              <div id="runtime-status" class="engine-diagnostics-results" role="status">Chưa kiểm tra engine được ghim.</div>
+            </div>
+            <p class="health-footnote">Kiểm tra chỉ dùng lệnh --version với chương trình tìm được, không mở website hoặc đăng nhập tài khoản.</p>
+          </section>
+          <div class="isolation-audit">
+            <div class="isolation-audit-head">
+              <strong>Kiểm tra cách ly dữ liệu cục bộ</strong>
+              <button class="btn btn-sm btn-secondary" id="health-isolation-audit">Quét thư mục hồ sơ</button>
+            </div>
+            <div id="isolation-audit-results" role="status" class="isolation-audit-results">Chưa chạy kiểm tra. Chỉ kiểm tra việc tách thư mục lưu trữ, không kiểm tra danh tính Google.</div>
+          </div>
+        </div>
+        <div class="tab-content health-pane" id="health-tab-network" role="tabpanel">
+          <section class="health-readiness" aria-labelledby="agency-controls-title">
+            <div class="isolation-audit-head">
+              <strong id="agency-controls-title">Kiểm tra IP / subnet của hồ sơ</strong>
+            </div>
+            <p class="health-footnote">Chỉ kiểm tra tài nguyên do agency được phép quản lý. Không phân tích cách Google liên kết tài khoản, không lưu IP người dùng, thông tin thẻ hoặc giả lập lịch sử tài khoản.</p>
+            <div class="form-group">
+              <label for="agency-profile">Hồ sơ nội bộ</label>
+              <select id="agency-profile"></select>
+            </div>
+            <div class="form-group">
+              <label for="agency-egress-ip">IPv4 exit đã kiểm tra thủ công</label>
+              <input id="agency-egress-ip" type="text" maxlength="45" placeholder="198.51.100.25" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="form-group">
+              <label for="agency-network-entries">Các IP exit khác của profile bạn quản lý (mỗi dòng: profile_id|IPv4)</label>
+              <textarea id="agency-network-entries" rows="3" maxlength="4000" placeholder="profile_a|198.51.100.12"></textarea>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" id="agency-network-check">Kiểm tra trùng subnet /24</button>
+            <div id="agency-network-result" role="status" aria-live="polite">Đây là kiểm tra xung đột tài nguyên, không phải công cụ tránh liên kết tài khoản.</div>
+          </section>
+        </div>
+        <div class="tab-content health-pane" id="health-tab-drift" role="tabpanel">
+          <section class="health-readiness" aria-labelledby="local-drift-title">
+            <div class="isolation-audit-head">
+              <strong id="local-drift-title">Theo dõi thay đổi chất lượng cấu hình (chỉ lưu máy)</strong>
+              <div class="health-readiness-buttons">
+                <button type="button" class="btn btn-sm btn-secondary" id="local-drift-record">Lưu lượt kiểm tra</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="local-drift-refresh">Xem xu hướng</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="local-drift-export">Xuất JSON</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="local-drift-clear">Xóa lịch sử</button>
+              </div>
+            </div>
+            <p class="health-footnote">Chỉ lưu tổng số hồ sơ lỗi/cảnh báo, số đang chạy và phiên bản LHM khi bạn bấm lưu. Không thu thập phím, chuột, vị trí trang, cookie, IP hay điểm CAPTCHA; không gửi về máy chủ.</p>
+            <div id="local-drift-results" role="status" aria-live="polite">Chưa đọc lịch sử kiểm tra.</div>
+          </section>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="health-refresh">Quét lại</button>
@@ -1842,139 +1859,162 @@ run();
   <div class="modal-overlay" id="modal-android-manager">
     <div class="modal-dialog modal-lg lhm-android-dialog" role="dialog" aria-modal="true" aria-labelledby="android-dialog-title">
       <div class="modal-header">
-        <div><h2 id="android-dialog-title">Android Device Center</h2><p class="lhm-android-subtitle">Điều khiển máy Android ảo và máy thật trên Windows</p></div>
+        <div class="lhm-dialog-title"><h2 id="android-dialog-title">Android Device Center</h2><p class="lhm-android-subtitle lhm-dialog-subtitle">Điều khiển máy Android ảo và máy thật trên Windows</p></div>
         <button type="button" class="btn-close" id="android-close" aria-label="Đóng Android Device Center">&times;</button>
       </div>
       <div class="modal-body lhm-android-content">
         <div class="lhm-android-toolbar">
-          <div><strong>Local Android Runtime</strong><p id="android-sdk-status" role="status" aria-live="polite">Chưa kiểm tra môi trường Android.</p><p id="android-host-status" role="status" aria-live="polite">Chưa đo tài nguyên PC.</p></div>
-          <button type="button" class="btn btn-secondary" id="android-refresh">Làm mới thiết bị</button>
-        </div>
-        <section class="lhm-android-provision" aria-labelledby="android-provision-title">
-          <div class="lhm-android-provision-heading"><h3 id="android-provision-title">Tạo điện thoại Android</h3><span id="android-storage-status">Kiểm tra dung lượng…</span></div>
-          <div class="lhm-android-provision-grid">
-            <form id="android-create-form" class="lhm-android-form">
-              <h4>Tạo máy Android mới</h4>
-              <label for="android-create-name">Tên máy</label>
-              <input id="android-create-name" name="name" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="LHM_Pixel_01" required autocomplete="off">
-              <label for="android-create-image">Android system image đã cài</label>
-              <select id="android-create-image" required></select>
-              <button id="android-create-submit" class="btn btn-primary" type="submit">Tạo Android ảo</button>
-            </form>
-            <form id="android-duplicate-form" class="lhm-android-form">
-              <h4>Nhân bản cấu hình máy</h4>
-              <label for="android-duplicate-source">Máy gốc</label>
-              <select id="android-duplicate-source" required></select>
-              <label for="android-duplicate-name">Tên máy mới</label>
-              <input id="android-duplicate-name" name="newName" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="LHM_Pixel_02" required autocomplete="off">
-              <button id="android-duplicate-submit" class="btn btn-secondary" type="submit">Nhân bản cấu hình</button>
-              <small>Máy mới sử dụng system image tương tự; dữ liệu ứng dụng và đăng nhập không sao chép.</small>
-            </form>
-          </div>
-          <p id="android-provision-hint">Chỉ tạo được từ Android system image đã cài. Không tải hoặc cài đặt phần mềm ngầm.</p>
-        </section>
-        <div class="lhm-android-grid">
-          <section class="lhm-android-panel" aria-labelledby="android-avd-title">
-            <div class="lhm-android-panel-heading"><span class="lhm-android-mark">01</span><h3 id="android-avd-title">Điện thoại Android ảo</h3></div>
-            <p>Đọc AVD có thật từ Android SDK. Khởi chạy bằng engine chính thức, không phải hồ sơ Chrome giả lập điện thoại.</p>
-            <div id="android-avd-list" class="lhm-android-list"></div>
-          </section>
-          <section class="lhm-android-panel" aria-labelledby="android-device-title">
-            <div class="lhm-android-panel-heading"><span class="lhm-android-mark">02</span><h3 id="android-device-title">Thiết bị đã kết nối</h3></div>
-            <p>ADB phát hiện thiết bị; scrcpy chỉ xem màn hình AVD, không đồng bộ clipboard hoặc âm thanh. Chạm, vuốt và gõ qua Android Control Studio.</p>
-            <div id="android-device-list" class="lhm-android-list"></div>
-          </section>
-        </div>
-
-        <section class="lhm-android-control" id="android-control-panel" aria-labelledby="android-control-title">
-          <div class="lhm-android-control-head">
-            <div><h3 id="android-control-title">Android Control Studio</h3><p>Thao tác thủ công trên thiết bị ADB đã cấp quyền. Không gửi ảnh lên máy chủ.</p></div>
-            <span class="lhm-android-control-local">LOCAL ADB</span>
-          </div>
-          <div class="lhm-android-control-select">
+          <div class="lhm-android-runtime"><strong>Môi trường Android</strong><p id="android-sdk-status" role="status" aria-live="polite">Chưa kiểm tra môi trường Android.</p><p id="android-host-status" role="status" aria-live="polite">Chưa đo tài nguyên PC.</p></div>
+          <div class="lhm-android-serial">
             <label for="android-control-serial">Thiết bị điều khiển</label>
             <select id="android-control-serial" aria-label="Chọn thiết bị Android"></select>
-            <button type="button" class="btn btn-secondary" id="android-control-capture">Chụp màn hình</button>
-            <button type="button" class="btn btn-secondary" id="android-control-apk">Cài APK…</button>
           </div>
-          <div class="lhm-android-control-layout">
-            <div class="lhm-android-preview" aria-label="Ảnh màn hình thiết bị Android">
-              <p id="android-control-placeholder">Chọn máy đang kết nối và bấm Chụp màn hình. Chạm trực tiếp lên ảnh để gửi lệnh chạm đến máy.</p>
-              <img id="android-control-image" alt="Ảnh màn hình Android mới chụp, có thể chạm vào ảnh để điều khiển" draggable="false" hidden>
-              <small id="android-control-shot-info"></small>
-            </div>
-            <div class="lhm-android-control-actions">
-              <h4>Thao tác Android</h4>
-              <div class="lhm-android-url-control">
-                <label for="android-chrome-url">Mở website HTTPS trong Chrome Android</label>
-                <input type="url" id="android-chrome-url" maxlength="1024"
-                  inputmode="url" autocomplete="off" spellcheck="false"
-                  placeholder="https://example.com/products" aria-describedby="android-chrome-url-hint">
-                <button type="button" class="btn btn-secondary" id="android-chrome-navigate">Mở trang trên Android</button>
-                <small id="android-chrome-url-hint">Chỉ AVD đã khởi động có Chrome. Mỗi địa chỉ cần xác nhận riêng; không tự đăng nhập hoặc kiểm chứng tải trang.</small>
-              </div>
-              <div class="lhm-android-control-buttons">
-                <button type="button" class="btn btn-secondary" id="android-control-back">Quay lại</button>
-                <button type="button" class="btn btn-secondary" id="android-control-home">Màn hình chính</button>
-                <button type="button" class="btn btn-secondary" id="android-control-up">Vuốt lên</button>
-                <button type="button" class="btn btn-secondary" id="android-control-down">Vuốt xuống</button>
-              </div>
-              <label for="android-control-text">Gõ chữ vào ô đang chọn trên Android</label>
-              <input type="text" id="android-control-text" maxlength="120" autocomplete="off" placeholder="Chữ Latin đơn giản, không nhập mật khẩu">
-              <button type="button" class="btn btn-secondary" id="android-control-send-text">Gõ vào thiết bị</button>
-              <p>Ảnh chụp chỉ tạo khi anh chủ động yêu cầu. Không có thao tác tự động hoặc gửi dữ liệu cho AI ở giai đoạn này.</p>
-            </div>
-          </div>
-          <p id="android-control-feedback" role="status" aria-live="polite"></p>
-        </section>
-        <section class="lhm-android-inspector" aria-labelledby="android-inspector-title">
-          <div class="lhm-android-inspector-head">
-            <div><h3 id="android-inspector-title">Android UI Inspector</h3>
-              <p>Đọc vùng nút bấm từ Android UIAutomator. Ẩn toàn bộ nội dung chữ, tên tài khoản và trường mật khẩu.</p>
-            </div>
-            <button type="button" class="btn btn-secondary" id="android-inspector-scan">Quét giao diện</button>
-          </div>
-          <p id="android-inspector-status" role="status" aria-live="polite">Chọn máy Android đã kết nối, rồi chủ động quét giao diện.</p>
-          <div id="android-inspector-nodes" class="lhm-android-inspector-nodes"></div>
-          <p class="lhm-android-inspector-notice">Chỉ dữ liệu hình học của nút bấm được hiển thị tại máy. Tọa độ có thể thay đổi khi ứng dụng chuyển màn hình. LHM không tự gửi kết quả quét cho AI.</p>
-        </section>
-        <section class="lhm-android-agent" aria-labelledby="android-agent-title">
-          <div class="lhm-android-agent-heading">
-            <div>
-              <h3 id="android-agent-title">Android Agent Workflow</h3>
-              <p>AI đề xuất bước → Anh duyệt từng bước → LHM điều khiển Android → Chụp ảnh kiểm tra.</p>
-            </div>
-            <span class="lhm-android-agent-tag">REVIEW EACH STEP</span>
-          </div>
-          <label for="android-agent-goal">Mục tiêu thao tác</label>
-          <textarea id="android-agent-goal" rows="2" maxlength="300" placeholder="Ví dụ: về màn hình chính, sau đó chụp ảnh kiểm tra. Không nhập thông tin cá nhân."></textarea>
-          <label class="lhm-android-agent-consent">
-            <input type="checkbox" id="android-agent-consent">
-            Chỉ gửi mô tả mục tiêu ở trên tới OpenRouter để AI đề xuất kế hoạch. Không gửi ảnh màn hình, dữ liệu ứng dụng hay hồ sơ thiết bị.
-          </label>
-          <div class="lhm-android-agent-buttons">
-            <button type="button" class="btn btn-secondary" id="android-agent-offline">Mẫu thử không dùng AI</button>
-            <button type="button" class="btn btn-primary" id="android-agent-propose">AI đề xuất kế hoạch</button>
-            <button type="button" class="btn btn-secondary" id="android-agent-next" disabled>Phê duyệt bước kế</button>
-            <button type="button" class="btn btn-secondary" id="android-agent-cancel" disabled>Hủy kế hoạch</button>
-          </div>
-          <p id="android-agent-status" role="status" aria-live="polite">Chọn thiết bị Android đã được ADB cấp quyền phía trên để bắt đầu.</p>
-          <div id="android-agent-plan" class="lhm-android-agent-plan" aria-live="polite"></div>
-          <div class="lhm-android-agent-result">
-            <img id="android-agent-screenshot" alt="Ảnh màn hình Android sau bước vừa thực hiện" hidden>
-            <p id="android-agent-review">Sau mỗi bước, đối chiếu ảnh để quyết định có phê duyệt bước tiếp theo không.</p>
-          </div>
-        </section>
-        <section class="lhm-android-setup" aria-labelledby="android-setup-title">
-          <h3 id="android-setup-title">Thiết lập lần đầu trên Windows</h3>
-          <p>Cài Android Studio + Android SDK (Platform Tools, Emulator, một system image và AVD). Bật VT-x/AMD-V, Windows Hypervisor Platform. Để xem màn hình thiết bị qua ADB, cài thêm scrcpy và thêm vào PATH. Ứng dụng không tự cài SDK hay tự tạo máy khi chưa có tài nguyên thật.</p>
-        </section>
+          <button type="button" class="btn btn-secondary" id="android-refresh">Làm mới thiết bị</button>
+        </div>
         <p class="lhm-android-feedback" id="android-feedback" role="status" aria-live="polite"></p>
+        <div class="tabs lhm-steps lhm-android-tabs" role="tablist" aria-label="Phần của Android Device Center">
+          <button type="button" class="tab-btn active" role="tab" data-tab="android-tab-devices">Thiết bị</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="android-tab-create">Tạo máy</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="android-tab-control">Điều khiển</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="android-tab-inspector">Đọc giao diện</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="android-tab-agent">Agent AI</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="android-tab-setup">Thiết lập</button>
+        </div>
+        <div class="tab-content lhm-android-pane active" id="android-tab-devices" role="tabpanel">
+          <div class="lhm-android-grid">
+            <section class="lhm-android-panel" aria-labelledby="android-avd-title">
+              <div class="lhm-android-panel-heading"><span class="lhm-android-mark">01</span><h3 id="android-avd-title">Điện thoại Android ảo</h3></div>
+              <p>Đọc AVD có thật từ Android SDK. Khởi chạy bằng engine chính thức, không phải hồ sơ Chrome giả lập điện thoại.</p>
+              <div id="android-avd-list" class="lhm-android-list"></div>
+            </section>
+            <section class="lhm-android-panel" aria-labelledby="android-device-title">
+              <div class="lhm-android-panel-heading"><span class="lhm-android-mark">02</span><h3 id="android-device-title">Thiết bị đã kết nối</h3></div>
+              <p>ADB phát hiện thiết bị; scrcpy chỉ xem màn hình AVD, không đồng bộ clipboard hoặc âm thanh. Chạm, vuốt và gõ qua Android Control Studio.</p>
+              <div id="android-device-list" class="lhm-android-list"></div>
+            </section>
+          </div>
+        </div>
+        <div class="tab-content lhm-android-pane" id="android-tab-create" role="tabpanel">
+          <section class="lhm-android-provision" aria-labelledby="android-provision-title">
+            <div class="lhm-android-provision-heading"><h3 id="android-provision-title">Tạo điện thoại Android</h3><span id="android-storage-status">Kiểm tra dung lượng…</span></div>
+            <div class="lhm-android-provision-grid">
+              <form id="android-create-form" class="lhm-android-form">
+                <h4>Tạo máy Android mới</h4>
+                <label for="android-create-name">Tên máy</label>
+                <input id="android-create-name" name="name" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="LHM_Pixel_01" required autocomplete="off">
+                <label for="android-create-image">Android system image đã cài</label>
+                <select id="android-create-image" required></select>
+                <button id="android-create-submit" class="btn btn-primary" type="submit">Tạo Android ảo</button>
+              </form>
+              <form id="android-duplicate-form" class="lhm-android-form">
+                <h4>Nhân bản cấu hình máy</h4>
+                <label for="android-duplicate-source">Máy gốc</label>
+                <select id="android-duplicate-source" required></select>
+                <label for="android-duplicate-name">Tên máy mới</label>
+                <input id="android-duplicate-name" name="newName" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="LHM_Pixel_02" required autocomplete="off">
+                <button id="android-duplicate-submit" class="btn btn-secondary" type="submit">Nhân bản cấu hình</button>
+                <small>Máy mới sử dụng system image tương tự; dữ liệu ứng dụng và đăng nhập không sao chép.</small>
+              </form>
+            </div>
+            <p id="android-provision-hint">Chỉ tạo được từ Android system image đã cài. Không tải hoặc cài đặt phần mềm ngầm.</p>
+          </section>
+        </div>
+        <div class="tab-content lhm-android-pane" id="android-tab-control" role="tabpanel">
+          <section class="lhm-android-control" id="android-control-panel" aria-labelledby="android-control-title">
+            <div class="lhm-android-control-head">
+              <div><h3 id="android-control-title">Android Control Studio</h3><p>Thao tác thủ công trên thiết bị ADB đã cấp quyền. Không gửi ảnh lên máy chủ.</p></div>
+              <span class="lhm-android-control-local">ADB trên máy</span>
+            </div>
+            <div class="lhm-android-control-select">
+              <button type="button" class="btn btn-secondary" id="android-control-capture">Chụp màn hình</button>
+              <button type="button" class="btn btn-secondary" id="android-control-apk">Cài APK…</button>
+            </div>
+            <div class="lhm-android-control-layout">
+              <div class="lhm-android-preview" aria-label="Ảnh màn hình thiết bị Android">
+                <p id="android-control-placeholder">Chọn máy đang kết nối và bấm Chụp màn hình. Chạm trực tiếp lên ảnh để gửi lệnh chạm đến máy.</p>
+                <img id="android-control-image" alt="Ảnh màn hình Android mới chụp, có thể chạm vào ảnh để điều khiển" draggable="false" hidden>
+                <small id="android-control-shot-info"></small>
+              </div>
+              <div class="lhm-android-control-actions">
+                <h4>Thao tác Android</h4>
+                <div class="lhm-android-url-control">
+                  <label for="android-chrome-url">Mở website HTTPS trong Chrome Android</label>
+                  <input type="url" id="android-chrome-url" maxlength="1024"
+                    inputmode="url" autocomplete="off" spellcheck="false"
+                    placeholder="https://example.com/products" aria-describedby="android-chrome-url-hint">
+                  <button type="button" class="btn btn-secondary" id="android-chrome-navigate">Mở trang trên Android</button>
+                  <small id="android-chrome-url-hint">Chỉ AVD đã khởi động có Chrome. Mỗi địa chỉ cần xác nhận riêng; không tự đăng nhập hoặc kiểm chứng tải trang.</small>
+                </div>
+                <div class="lhm-android-control-buttons">
+                  <button type="button" class="btn btn-secondary" id="android-control-back">Quay lại</button>
+                  <button type="button" class="btn btn-secondary" id="android-control-home">Màn hình chính</button>
+                  <button type="button" class="btn btn-secondary" id="android-control-up">Vuốt lên</button>
+                  <button type="button" class="btn btn-secondary" id="android-control-down">Vuốt xuống</button>
+                </div>
+                <label for="android-control-text">Gõ chữ vào ô đang chọn trên Android</label>
+                <input type="text" id="android-control-text" maxlength="120" autocomplete="off" placeholder="Chữ Latin đơn giản, không nhập mật khẩu">
+                <button type="button" class="btn btn-secondary" id="android-control-send-text">Gõ vào thiết bị</button>
+                <p>Ảnh chụp chỉ tạo khi anh chủ động yêu cầu. Không có thao tác tự động hoặc gửi dữ liệu cho AI ở giai đoạn này.</p>
+              </div>
+            </div>
+            <p id="android-control-feedback" role="status" aria-live="polite"></p>
+          </section>
+        </div>
+        <div class="tab-content lhm-android-pane" id="android-tab-inspector" role="tabpanel">
+          <section class="lhm-android-inspector" aria-labelledby="android-inspector-title">
+            <div class="lhm-android-inspector-head">
+              <div><h3 id="android-inspector-title">Android UI Inspector</h3>
+                <p>Đọc vùng nút bấm từ Android UIAutomator. Ẩn toàn bộ nội dung chữ, tên tài khoản và trường mật khẩu.</p>
+              </div>
+              <button type="button" class="btn btn-secondary" id="android-inspector-scan">Quét giao diện</button>
+            </div>
+            <p id="android-inspector-status" role="status" aria-live="polite">Chọn máy Android đã kết nối, rồi chủ động quét giao diện.</p>
+            <div id="android-inspector-nodes" class="lhm-android-inspector-nodes"></div>
+            <p class="lhm-android-inspector-notice">Chỉ dữ liệu hình học của nút bấm được hiển thị tại máy. Tọa độ có thể thay đổi khi ứng dụng chuyển màn hình. LHM không tự gửi kết quả quét cho AI.</p>
+          </section>
+        </div>
+        <div class="tab-content lhm-android-pane" id="android-tab-agent" role="tabpanel">
+          <section class="lhm-android-agent" aria-labelledby="android-agent-title">
+            <div class="lhm-android-agent-heading">
+              <div>
+                <h3 id="android-agent-title">Android Agent Workflow</h3>
+                <p>AI đề xuất bước → Anh duyệt từng bước → LHM điều khiển Android → Chụp ảnh kiểm tra.</p>
+              </div>
+              <span class="lhm-android-agent-tag">Duyệt từng bước</span>
+            </div>
+            <label for="android-agent-goal">Mục tiêu thao tác</label>
+            <textarea id="android-agent-goal" rows="2" maxlength="300" placeholder="Ví dụ: về màn hình chính, sau đó chụp ảnh kiểm tra. Không nhập thông tin cá nhân."></textarea>
+            <label class="lhm-android-agent-consent">
+              <input type="checkbox" id="android-agent-consent">
+              Chỉ gửi mô tả mục tiêu ở trên tới OpenRouter để AI đề xuất kế hoạch. Không gửi ảnh màn hình, dữ liệu ứng dụng hay hồ sơ thiết bị.
+            </label>
+            <div class="lhm-android-agent-buttons">
+              <button type="button" class="btn btn-secondary" id="android-agent-offline">Mẫu thử không dùng AI</button>
+              <button type="button" class="btn btn-primary" id="android-agent-propose">AI đề xuất kế hoạch</button>
+              <button type="button" class="btn btn-secondary" id="android-agent-next" disabled>Phê duyệt bước kế</button>
+              <button type="button" class="btn btn-secondary" id="android-agent-cancel" disabled>Hủy kế hoạch</button>
+            </div>
+            <p id="android-agent-status" role="status" aria-live="polite">Chọn thiết bị Android đã được ADB cấp quyền ở thanh phía trên để bắt đầu.</p>
+            <div id="android-agent-plan" class="lhm-android-agent-plan" aria-live="polite"></div>
+            <div class="lhm-android-agent-result">
+              <img id="android-agent-screenshot" alt="Ảnh màn hình Android sau bước vừa thực hiện" hidden>
+              <p id="android-agent-review">Sau mỗi bước, đối chiếu ảnh để quyết định có phê duyệt bước tiếp theo không.</p>
+            </div>
+          </section>
+        </div>
+        <div class="tab-content lhm-android-pane" id="android-tab-setup" role="tabpanel">
+          <section class="lhm-android-setup" aria-labelledby="android-setup-title">
+            <h3 id="android-setup-title">Thiết lập lần đầu trên Windows</h3>
+            <p>Cài Android Studio + Android SDK (Platform Tools, Emulator, một system image và AVD). Bật VT-x/AMD-V, Windows Hypervisor Platform. Để xem màn hình thiết bị qua ADB, cài thêm scrcpy và thêm vào PATH. Ứng dụng không tự cài SDK hay tự tạo máy khi chưa có tài nguyên thật.</p>
+          </section>
+        </div>
       </div>
       <div class="modal-footer">
         <span class="lhm-android-footnote">Mọi lệnh chạy trên máy của anh. Không tự động root, đổi ID thiết bị hay vượt kiểm tra ứng dụng.</span>
         <button type="button" id="android-done" class="btn btn-primary">Đóng</button>
       </div>
+    </div>
+  </div>
     </div>
   </div>
 

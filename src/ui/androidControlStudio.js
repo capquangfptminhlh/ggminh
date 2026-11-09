@@ -161,6 +161,7 @@
         return;
       }
       setSelected(serial);
+      document.querySelector('#modal-android-manager .tab-btn[data-tab="android-tab-control"]')?.click();
       $('android-control-panel').scrollIntoView({behavior:'smooth',block:'start'});
       $('android-control-capture').focus();
     }

@@ -515,3 +515,38 @@ background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-
 #modal-studio .studio-template-row select{flex:1 1 100%}
 #modal-studio .lhm-batch-profiles label{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;padding:8px 10px;background:var(--lhm-surface)}
 #modal-studio .lhm-batch-profiles label input{width:auto;flex:0 0 auto}
+
+/* Profile health (rebuild phase 6): KPIs are header chips; the per-profile
+   results are the first tab, the other checks (criteria, system & engines,
+   IP/subnet, history) get their own tabs. Uses the system.css tokens. */
+#modal-health .health-dialog{width:min(1000px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:min(820px,calc(100dvh - 24px));max-height:calc(100dvh - 24px)}
+#modal-health .modal-header{gap:16px}
+#modal-health .modal-header .lhm-dialog-title{margin-right:auto}
+#modal-health .health-intro{margin:2px 0 0}
+#modal-health .health-metrics{display:flex;gap:8px;margin:0}
+#modal-health .health-metrics>.health-kpi{display:flex;flex-direction:row;align-items:baseline;gap:5px;padding:4px 10px;border:1px solid var(--lhm-border);border-radius:999px;background:var(--lhm-subtle);white-space:nowrap}
+#modal-health .health-kpi strong{font-size:14px;line-height:1.2;font-weight:700;color:var(--lhm-heading)}
+#modal-health .health-kpi span{font-size:12px;font-weight:500;color:var(--lhm-muted)}
+#modal-health .health-kpi.is-error{border-color:#f0bdb7;background:var(--lhm-danger-soft)}
+#modal-health .health-kpi.is-error strong{color:var(--lhm-danger)}
+#modal-health .health-kpi.is-warning{border-color:#efcf9c;background:var(--lhm-warn-soft)}
+#modal-health .health-kpi.is-warning strong{color:var(--lhm-warn)}
+#modal-health .health-body{display:flex;flex-direction:column;overflow:hidden;padding:12px 18px 0}
+#modal-health .health-tabs{flex:0 0 auto;margin:0}
+#modal-health .health-tabs .tab-btn{flex:1 1 auto;min-height:32px;padding:0 10px;font-size:12.5px;white-space:nowrap}
+#modal-health .health-pane{display:none;flex:1;min-height:0;overflow-y:auto;padding:12px 2px 16px}
+#modal-health .health-pane.active{display:block}
+#modal-health .health-list{max-height:none;overflow:visible;gap:8px}
+#modal-health .health-item{padding:10px 12px;border-radius:10px}
+#modal-health .health-issue{color:var(--lhm-body);font-size:12.5px}
+#modal-health .health-issue.error{color:var(--lhm-danger)}
+#modal-health .health-footnote{margin:10px 0 0;font-size:12px;line-height:1.55;color:var(--lhm-muted);background:none;border:0;padding:0}
+#modal-health .health-readiness,#modal-health .engine-diagnostics,#modal-health .isolation-audit,#modal-health .criteria-checklist-section{margin:0 0 12px;padding:14px;border:1px solid var(--lhm-border);border-radius:var(--lhm-radius-lg);background:var(--lhm-surface)}
+#modal-health .isolation-audit-head{margin-bottom:8px}
+#modal-health .isolation-audit-head strong{font-size:13.5px;color:var(--lhm-heading)}
+#modal-health .health-readiness-label strong{font-size:12px;color:var(--lhm-heading)}
+#modal-health .health-readiness-summary,#modal-health .health-readiness-detail{font-size:12px;color:var(--lhm-muted)}
+#modal-health .health-readiness .form-group{margin-bottom:10px}
+@media(max-width:820px){#modal-health .health-metrics{display:none}#modal-health .health-tabs{overflow-x:auto}}
+#modal-health .health-intro{background:none;padding:0;border:0}
+#modal-health .criteria-checklist-actions{margin:10px 0 2px}

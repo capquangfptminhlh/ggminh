@@ -117,6 +117,8 @@
   async function showHealth(profileId = null) {
     selectedProfile = profileId;
     open('modal-health');
+    // Rebuild phase 6: sections are tabs; always reopen on the profile results.
+    document.querySelector('#modal-health .health-tabs .tab-btn')?.click();
     // Khung bảng kiểm theo tiêu chí: làm mới về trạng thái theo dữ liệu đo
     // (nguồn đo theo hồ sơ đã nối — tiêu chí nào chưa có bản ghi đo hợp lệ
     // vẫn là CHƯA ĐO kèm lý do cụ thể, không tự suy thành đạt).
