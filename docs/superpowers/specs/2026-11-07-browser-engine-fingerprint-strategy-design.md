@@ -4,7 +4,8 @@
 
 **Phạm vi:** Chromium, Firefox và Camoufox trong LHM Ads Browser
 
-**Trạng thái:** Thiết kế đề xuất chờ chủ dự án duyệt
+**Trạng thái:** Đã được chủ dự án duyệt; đối chiếu lại với `main` tại
+`82b6cd8` ngày 2026-11-09
 
 ## 1. Mục tiêu
 
@@ -25,33 +26,40 @@ Fingerprint phải nhất quán với khả năng thật của từng engine:
 
 ### Chromium
 
-`src/engine/fingerprint.js` sinh UA, platform, màn hình, WebGL, CPU, RAM,
-ngôn ngữ, timezone, Canvas seed, Audio seed và một số metadata khác.
-`src/engine/extensionGenerator.js` chỉ áp một phần các trường này bằng JavaScript.
-Timezone, Client Hints/brands, fonts và nhiều tín hiệu mạng/native không được áp
-nhất quán. UA mẫu chỉ bao phủ Chrome 131–134. Repo đã tự phân loại đường này là
-thử nghiệm và chưa kiểm chứng đầy đủ ở runtime.
+`src/engine/fingerprint.js` vẫn có đường cấu hình thử nghiệm cho hồ sơ cũ, nhưng
+hồ sơ mới mặc định dùng native. `src/privacy/fingerprintAudit.js` và UI hiện đã
+ghi rõ đây là kiểm tra cấu hình, không phải điểm chống nhận diện. Bộ đo runtime
+đã có đầu đo WebGL, Canvas, Audio, fonts, voices và Client Hints trong
+`stage0-measure/core.js`; bằng chứng chỉ có giá trị khi được chạy trên engine
+thật và gắn đúng commit, engine hash và profile.
 
 ### Firefox
 
 UI bắt buộc Gecko dùng `fingerprint.mode = native`. Đường launch Firefox không
-áp extension fingerprint Chromium. Firefox hiện có cô lập profile và chính sách
-proxy/WebRTC/DNS, nhưng không có danh tính fingerprint riêng theo hồ sơ.
+áp extension fingerprint Chromium. Cô lập cookie, HttpOnly cookie,
+localStorage, IndexedDB, Cache Storage và HTTP cache đã đo đạt trên Firefox thật;
+Firefox vẫn dùng tín hiệu native, không giả vờ có danh tính tùy chỉnh riêng.
 
 ### Camoufox
 
 Repo đã có:
 
-- profile directory riêng trong `camoufox-profiles/<profile-id>`;
+- profile directory riêng trong `camoufox-profiles/{profile-id}`;
 - danh tính `CAMOU_CONFIG` do generator chính thức tạo và ghim theo hồ sơ;
 - kiểm tra blob, expectation và mâu thuẫn OS/UA/platform/timezone/screen;
 - kiểm tra chữ ký publisher, manifest và SHA-256 cho engine;
 - bài đo cách ly dữ liệu và bài đo WebRTC/DNS trên Windows CI;
 - native adapter cho cửa sổ Camoufox thủ công.
+- chuỗi cung ứng hoàn chỉnh ở mức code/test: trust anchor riêng, ký manifest,
+  descriptor tải HTTPS ghim nguồn/hash/dung lượng, staging, kiểm toàn bộ cây và
+  rollback khi lỗi;
+- đầu đo mở rộng và kho bản ghi phép đo theo hồ sơ.
 
-Các chặn production còn lại là khóa publisher engine chưa tồn tại, gói engine
-chưa được ký/phân phối, proxy vẫn phụ thuộc cờ lab và Playwright controller bị
-khóa trong packaged app.
+Các chặn production còn lại là **artifact thật** của publisher chưa tồn tại
+trong repo (`resources/camoufox-engine` mới có README), chưa có archive/release
+descriptor thật để phân phối, proxy native vẫn phụ thuộc cờ lab trong dev, và
+chưa có nghiệm thu tài nguyên/Windows sạch cho bản đóng gói. Playwright
+controller tiếp tục bị khóa trong packaged app theo quyết định thiết kế.
 
 ## 3. Quyết định thiết kế
 
@@ -89,8 +97,9 @@ Thiếu bất kỳ điều kiện nào phải fail closed với mã lỗi và h�
 
 Tạo một cặp Ed25519 dành riêng cho **engine publisher**, dùng cho các engine LHM
 phát hành. Khóa này tách khỏi khóa license và khóa cập nhật ứng dụng. Private key
-được mã hóa, lưu ngoài repo và ngoài máy build thường ngày. Repo chỉ chứa public
-key và fingerprint SPKI được test ghim cứng.
+được mã hóa, lưu ngoài repo và ngoài máy build thường ngày. Code ký, xác minh,
+tải và cài đã có; việc còn lại là nghi thức tạo khóa thật, đưa public key vào
+trust anchor, ghim fingerprint SPKI bằng test và phát hành artifact thật.
 
 Camoufox được phát hành dưới dạng archive tải theo yêu cầu:
 
@@ -164,8 +173,9 @@ Mỗi engine hiển thị ba loại trạng thái tách biệt:
 
 Các trường runtime tối thiểu cho Camoufox GA: UA, platform, language(s), timezone,
 screen, DPR, hardwareConcurrency, WebGL vendor/renderer, Canvas hash, Audio hash,
-WebRTC candidates, DNS observation và IP egress. Một giá trị ghim không được tự
-động coi là giá trị đã quan sát.
+WebRTC candidates, DNS observation và IP egress. Đầu đo trình duyệt đã có phần
+thiết bị/rendering; DNS/IP/WebRTC vẫn phải lấy từ phép đo mạng thật. Một giá trị
+ghim không được tự động coi là giá trị đã quan sát.
 
 ## 4. Luồng chính
 
@@ -240,26 +250,26 @@ artifact EXE, engine version và môi trường đo.
 
 ## 7. Triển khai theo giai đoạn
 
-### Giai đoạn A — Trung thực hóa engine hiện có
+### Giai đoạn A — Trung thực hóa engine hiện có (đã có trong `main`)
 
 - Chromium/Firefox mặc định native.
 - Hạ cấp nhãn custom Chromium thành experimental; giữ tương thích hồ sơ cũ.
 - UI tách cấu hình khỏi phép đo và không dùng điểm "anti-detection".
 
-### Giai đoạn B — Chuỗi cung ứng Camoufox
+### Giai đoạn B — Chuỗi cung ứng Camoufox (code/test xong, thiếu artifact thật)
 
-- Tạo engine publisher key.
-- Thêm public trust anchor và test ghim cứng.
-- Dựng, ký, phát hành descriptor/archive và luồng tải theo yêu cầu.
+- Chủ dự án tạo engine publisher key thật ngoài repo.
+- Đưa public trust anchor vào repo và ghim fingerprint SPKI.
+- Dựng, ký và phát hành descriptor/archive thật qua luồng tải đã có.
 
-### Giai đoạn C — Mở native Camoufox production
+### Giai đoạn C — Mở native Camoufox production (còn phải làm)
 
 - Thay lab proxy flag bằng capability policy đã nghiệm thu.
 - Mở native adapter trong packaged app khi trust và policy đạt.
 - Giữ Playwright/automation lab-only.
 - Hoàn thiện provisioning, lỗi và UI trạng thái.
 
-### Giai đoạn D — Đo và kiểm soát tài nguyên
+### Giai đoạn D — Đo và kiểm soát tài nguyên (đầu đo có, Resource Guard còn thiếu)
 
 - Thêm Resource Guard và telemetry cục bộ không gửi server.
 - Chạy benchmark 8/16/32 GB.
