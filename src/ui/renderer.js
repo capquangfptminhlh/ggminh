@@ -791,11 +791,16 @@ function renderProfiles() {
       <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
-        <button type="button" class="btn btn-sm btn-secondary btn-health lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Kiểm tra cấu hình" aria-label="Kiểm tra cấu hình"><span data-lhm-icon="shield-check"></span></button>
-        ${profile.engine_type === 'camoufox' && !fp.identity ? '<button type="button" class="btn btn-sm btn-secondary btn-provision" data-id="' + escapeHtml(profile.id) + '" title="Cấp danh tính đã ghim cho hồ sơ Camoufox này">Cấp danh tính</button>' : ''}
-        <button type="button" class="btn btn-sm btn-secondary btn-copy-rpa lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Tùy chọn RPA" aria-label="Tùy chọn RPA"><span data-lhm-icon="terminal"></span></button>
-        <button type="button" class="btn btn-sm btn-secondary btn-edit lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Sửa hồ sơ" aria-label="Sửa hồ sơ"><span data-lhm-icon="edit"></span></button>
-        <button type="button" class="btn btn-sm btn-secondary btn-delete lhm-row-icon" data-id="${escapeHtml(profile.id)}" title="Xóa hồ sơ" aria-label="Xóa hồ sơ"><span data-lhm-icon="trash"></span></button>
+        <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="${escapeHtml(profile.id)}" title="Sửa hồ sơ"><span data-lhm-icon="edit"></span>Sửa</button>
+        <details class="lhm-row-more">
+          <summary class="btn btn-sm btn-secondary" title="Thêm thao tác" aria-label="Thêm thao tác cho ${escapeHtml(profile.name)}">⋯</summary>
+          <div class="lhm-row-menu">
+            <button type="button" class="btn btn-sm btn-secondary btn-health" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="shield-check"></span>Kiểm tra cấu hình</button>
+            ${profile.engine_type === 'camoufox' && !fp.identity ? '<button type="button" class="btn btn-sm btn-secondary btn-provision" data-id="' + escapeHtml(profile.id) + '" title="Cấp danh tính đã ghim cho hồ sơ Camoufox này">Cấp danh tính</button>' : ''}
+            <button type="button" class="btn btn-sm btn-secondary btn-copy-rpa" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="terminal"></span>Tùy chọn RPA</button>
+            <button type="button" class="btn btn-sm btn-secondary btn-delete" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="trash"></span>Xóa hồ sơ</button>
+          </div>
+        </details>
       </div></td>
     `;
     window.LHMIcons?.decorate(tr);
