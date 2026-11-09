@@ -81,6 +81,7 @@ const {resolveLicenseEndpoint}=require('./src/licensing/authorityConfig');
 const {getLicenseServiceStatus}=require('./src/licensing/serviceDiagnostics');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
+const {createResourceGuard}=require('./src/ops/resourceGuard');
 
 process.on('uncaughtException', (err) => {
   console.error('[CRITICAL] Uncaught exception in main process:', err);
@@ -92,6 +93,7 @@ process.on('unhandledRejection', (reason) => {
 let mainWindow = null;
 let store = null;
 let launcher = null;
+let resourceGuard = null;
 let runtimeRegistry = null;
 let bundledEngine = null;
 let camoufoxAdapter = null;
@@ -889,6 +891,15 @@ function initIPC() {
       behavior: behaviorMonitor.getReport()
     });
   });
+  ipcMain.handle('resource-guard-status', async (_event,profileId) => {
+    const active=launcher.listActive();
+    if(typeof profileId==='string'&&profileId){
+      const profile=store.getProfile(profileId);
+      if(!profile)throw Error('Profile not found: '+profileId);
+      return resourceGuard.assess({profile,active});
+    }
+    return resourceGuard.status(active);
+  });
   ipcMain.handle('control-tower-triage', () => {
     const profiles=store.getProfiles();
     const settings=store.getSettings();
@@ -1260,8 +1271,10 @@ function initIPC() {
     if (deleted) behaviorMonitor.record('profile_delete', id, 'manual');
     return deleted;
   });
-  ipcMain.handle('start-browser', async (_, id) => {
-    const opened = await launcher.start(id);
+  ipcMain.handle('start-browser', async (_, id, options) => {
+    const opened = await launcher.start(id,null,{
+      allowResourceReview:options?.allowResourceReview===true
+    });
     behaviorMonitor.record('profile_open', id, 'manual');
     // Exit-IP observation (Constitution s.19/22): record what the
     // profile's configured proxy actually exits as, feeding the
@@ -1457,7 +1470,8 @@ app.whenReady().then(async () => {
   store.licensePolicy = licensePolicy;
   // Per-profile download folders live where customers look for files.
   const downloadsRoot = path.join(app.getPath('downloads'), 'LHM Ads Browser');
-  launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot});
+  resourceGuard=createResourceGuard();
+  launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot,resourceGuard});
   bundledEngine=new BundledEngineManager(app.isPackaged
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));

@@ -114,7 +114,50 @@
       list.append(row);
     }
   }
-  function render(snapshot) {
+  function bytes(value) {
+    const number=Number(value);
+    if(!Number.isFinite(number)||number<0)return 'Chưa đo';
+    return (number/1024/1024/1024).toLocaleString('vi-VN',{
+      maximumFractionDigits:1,minimumFractionDigits:1
+    })+' GB';
+  }
+  function renderResources(snapshot) {
+    text('lhm-resource-total',bytes(snapshot?.totalBytes));
+    text('lhm-resource-available',bytes(snapshot?.availableBytes));
+    text('lhm-resource-processes',Number(snapshot?.totalProcessCount)||0);
+    text('lhm-resource-sample',snapshot?.sampledAt?
+      new Date(snapshot.sampledAt).toLocaleTimeString('vi-VN'):'Chưa đo');
+    const list=$('lhm-resource-profiles');
+    list.replaceChildren();
+    const profiles=Array.isArray(snapshot?.profiles)?snapshot.profiles:[];
+    if(!profiles.length){
+      list.append(element('p','lhm-empty','Chưa có trình duyệt đang chạy để đo cây tiến trình.'));
+      return;
+    }
+    for(const profile of profiles){
+      const row=element('div','lhm-activity-item');
+      row.append(element('span','',profile.profileId+' · '+profile.engine));
+      row.append(element('small','',bytes(profile.workingSetBytes)+' · '+
+        (Number(profile.processCount)||0)+' PID'));
+      list.append(row);
+    }
+  }
+  async function confirmLaunch(profile) {
+    const assessment=await api.resourceGuardStatus(profile.id);
+    if(!assessment?.allowed){
+      alert('Không thể mở hồ sơ vì giới hạn RAM an toàn 20%.\n\n'+
+        String(assessment?.reason||'Không đọc được trạng thái tài nguyên.'));
+      return {approved:false,allowResourceReview:false};
+    }
+    if(assessment.code==='RESOURCE_UNMEASURED'||assessment.reviewRequired){
+      const approved=confirm('Chưa có phép đo P95 cho engine/workload này. '+
+        'RAM khả dụng hiện tại: '+bytes(assessment.snapshot?.availableBytes)+'.\n\n'+
+        'Bạn có muốn mở một hồ sơ trong lần này và tự theo dõi tài nguyên không?');
+      return {approved,allowResourceReview:approved};
+    }
+    return {approved:true,allowResourceReview:false};
+  }
+  function render(snapshot,resourceSnapshot) {
     const p = snapshot.profiles;
     text('lhm-kpi-total', p.total);
     text('lhm-kpi-active', p.active);
@@ -139,6 +182,7 @@
     renderWarnings(snapshot.warnings || []);
     renderGroups(snapshot.groups || []);
     renderEvents(snapshot.activity.recentEvents || []);
+    renderResources(resourceSnapshot);
     text('lhm-dashboard-status',
       'Đồng bộ số liệu cục bộ lúc ' + new Date().toLocaleTimeString('vi-VN') +
       ' · Không đo khả năng Google nhận diện tài khoản');
@@ -148,11 +192,13 @@
     working = true;
     $('lhm-dashboard-refresh').disabled = true;
     try {
-      const snapshot = await api.dashboardOverview();
+      const [snapshot,resourceSnapshot] = await Promise.all([
+        api.dashboardOverview(),api.resourceGuardStatus()
+      ]);
       if (!snapshot || !snapshot.profiles || !snapshot.proxies || !snapshot.activity) {
         throw new Error('Dữ liệu dashboard không hợp lệ');
       }
-      render(snapshot);
+      render(snapshot,resourceSnapshot);
     } catch (error) {
       text('lhm-dashboard-status', 'Không đọc được số liệu cục bộ: ' + error.message);
     } finally {
@@ -174,6 +220,7 @@
     }, 9000);
   }
   window.LHMMissionControl = { refresh, switchView };
+  window.LHMResourceGuard = { confirmLaunch };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();

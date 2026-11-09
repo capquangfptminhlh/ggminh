@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   androidAgentNext: sessionId => ipcRenderer.invoke('android-agent-next',sessionId),
   androidAgentCancel: sessionId => ipcRenderer.invoke('android-agent-cancel',sessionId),
   dashboardOverview: () => ipcRenderer.invoke('dashboard-overview'),
+  resourceGuardStatus: id => ipcRenderer.invoke('resource-guard-status',id),
   runPerformanceLab: () => ipcRenderer.invoke('performance-lab-run'),
   exportPerformanceLab: () => ipcRenderer.invoke('performance-lab-export'),
   onlineUpdateStatus: () => ipcRenderer.invoke('app-online-update-status'),
@@ -145,7 +146,9 @@ contextBridge.exposeInMainWorld('api', {
   restoreTrashedProfile: id => ipcRenderer.invoke('restore-trashed-profile',id),
   purgeTrashedProfile: id => ipcRenderer.invoke('purge-trashed-profile',id),
   purgeExpiredTrash: () => ipcRenderer.invoke('purge-expired-trash'),
-  startBrowser: (id) => ipcRenderer.invoke('start-browser', id),
+  startBrowser: (id,options={}) => ipcRenderer.invoke('start-browser', id,{
+    allowResourceReview:options?.allowResourceReview===true
+  }),
   stopBrowser: (id) => ipcRenderer.invoke('stop-browser', id),
   getActiveBrowsers: () => ipcRenderer.invoke('get-active-browsers'),
   previewProfileCache: ids => ipcRenderer.invoke('cache-manager-preview',ids),

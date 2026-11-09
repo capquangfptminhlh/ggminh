@@ -823,7 +823,12 @@ function renderProfiles() {
         if (isRunning) await window.api.stopBrowser(profile.id);
         else {
           const confirmed = await window.LHMLaunchReadiness.confirm(profile.id);
-          if (confirmed) await window.api.startBrowser(profile.id);
+          if (confirmed) {
+            const resourceApproval=await window.LHMResourceGuard.confirmLaunch(profile);
+            if(resourceApproval.approved)await window.api.startBrowser(profile.id,{
+              allowResourceReview:resourceApproval.allowResourceReview===true
+            });
+          }
         }
       } catch (error) { alert('Không thể mở/đóng hồ sơ: ' + error.message); }
       await loadProfiles();

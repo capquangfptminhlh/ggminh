@@ -59,7 +59,11 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
     next();
   });
   function fail(res, error) {
-    return res.status(400).json({ code: -1, msg: error.message || String(error) });
+    const resourceCodes=new Set(['RESOURCE_LIMIT','RESOURCE_UNMEASURED','RESOURCE_STATUS_INVALID']);
+    const resourceCode=resourceCodes.has(error?.code)?error.code:null;
+    return res.status(resourceCode?409:400).json({ code: -1,
+      msg: error.message || String(error),
+      ...(resourceCode?{data:{reason_code:resourceCode}}:{}) });
   }
   service.get('/status', (_, res) => res.json({ status: 'ok', app: 'LHM Ads Browser API', version: require('../../package.json').version }));
   service.get('/api/v1/browser/start', async (req, res) => {
@@ -70,7 +74,9 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       if(profile&&resolveEngineType(profile,store.getSettings())==='camoufox'){
         const controller=launcher.camoufoxPlaywrightController;
         if(controller?.enabled===true){
-          const instance=await launcher.start(id,req.query.open_url);
+          const instance=await launcher.start(id,req.query.open_url,{
+            allowResourceReview:req.query.allow_resource_unmeasured==='true'
+          });
           if(instance.protocol!=='playwright-internal'||!controller.contextFor(id))
             throw Error('Playwright BrowserContext was not established');
           if(behaviorMonitor)behaviorMonitor.record('profile_open',id,'api');
@@ -91,7 +97,9 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
       // opt-in because it is unauthenticated for every local process.
       if (!cdpAllowed(store.getSettings())) return res.status(409).json({ code: -1, msg: CDP_DISABLED_MESSAGE,
         data: { cdp: 'disabled', debug_port: null, ws: { puppeteer: null, selenium: null } } });
-      const instance = await launcher.start(id, req.query.open_url);
+      const instance = await launcher.start(id, req.query.open_url,{
+        allowResourceReview:req.query.allow_resource_unmeasured==='true'
+      });
       if (!instance.port) return res.status(409).json({ code: -1,
         msg: 'Hồ sơ đang mở từ trước khi bật Tự động hoá (CDP). Đóng rồi mở lại hồ sơ.',
         data: { cdp: 'unavailable', debug_port: null, ws: { puppeteer: null, selenium: null } } });

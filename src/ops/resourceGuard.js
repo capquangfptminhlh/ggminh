@@ -1,4 +1,6 @@
 'use strict';
+const os=require('node:os');
+const {collectProcessTreeResources}=require('./windowsProcessResources');
 const MIN_HEADROOM_RATIO=0.20;
 
 function result(allowed,code,reason,details,reviewRequired=false){
@@ -27,4 +29,50 @@ function assessLaunch(input){
  return result(true,'RESOURCE_OK','Projected RAM headroom remains at or above 20%',details);
 }
 
-module.exports={assessLaunch,MIN_HEADROOM_RATIO};
+function safeEngine(item){
+ const value=item?.engineType||item?.engine_type||item?.provider||item?.engine||'unknown';
+ return typeof value==='string'?value.slice(0,40):'unknown';
+}
+function createResourceGuard({
+ totalMemory=()=>os.totalmem(),availableMemory=()=>os.freemem(),
+ collectResources=collectProcessTreeResources,predictionFor=()=>null,
+ now=()=>new Date()
+}={}){
+ async function status(activeInstances=[]){
+  const active=Array.isArray(activeInstances)?activeInstances:[];
+  const roots=active.map(item=>Number(item?.pid))
+   .filter(pid=>Number.isSafeInteger(pid)&&pid>0);
+  let processes;
+  try{processes=await collectResources(roots)}
+  catch(error){processes={status:'ERROR',reason:String(error.message||error).slice(0,220)}}
+  const trees=new Map((Array.isArray(processes?.trees)?processes.trees:[])
+   .map(tree=>[tree.rootPid,tree]));
+  const profiles=active.map(item=>{
+   const rootPid=Number.isSafeInteger(Number(item?.pid))&&Number(item.pid)>0?
+    Number(item.pid):null;
+   const tree=trees.get(rootPid);
+   return {profileId:String(item?.profileId||'').slice(0,64),engine:safeEngine(item),rootPid,
+    processCount:tree?.processCount||0,workingSetBytes:tree?.workingSetBytes||0};
+  });
+  let sampledAt;
+  try{sampledAt=now().toISOString()}catch(_){sampledAt=new Date().toISOString()}
+  return {schema:1,sampledAt,totalBytes:Number(totalMemory()),
+   availableBytes:Number(availableMemory()),processStatus:processes?.status||'ERROR',
+   processReason:processes?.reason||null,totalProcessCount:processes?.totalProcessCount||0,
+   totalWorkingSetBytes:processes?.totalWorkingSetBytes||0,profiles};
+ }
+ async function assess({profile,active=[]}={}){
+  const snapshot=await status(active);
+  let predictedBytes=null;
+  try{
+   const predicted=await predictionFor({profile,engine:safeEngine(profile),snapshot});
+   if(typeof predicted==='number'&&Number.isFinite(predicted)&&predicted>=0)
+    predictedBytes=predicted;
+  }catch(_){}
+  return {...assessLaunch({totalBytes:snapshot.totalBytes,
+   availableBytes:snapshot.availableBytes,predictedBytes}),snapshot};
+ }
+ return {status,assess};
+}
+
+module.exports={assessLaunch,createResourceGuard,MIN_HEADROOM_RATIO};
