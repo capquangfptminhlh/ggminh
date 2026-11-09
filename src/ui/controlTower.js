@@ -31,7 +31,9 @@
   function status(message, error = false) {
     const display = byId('tower-status');
     display.textContent = message;
-    display.style.color = error ? '#fda4af' : '#a3c9f0';
+    // Colour comes from the stylesheet (system.css tokens); the old inline
+    // values were for the dark theme and unreadable on white.
+    display.classList.toggle('is-error', error);
   }
   let triageLoading=false;
   function openTriageTool(action) {

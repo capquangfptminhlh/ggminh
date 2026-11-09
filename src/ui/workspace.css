@@ -125,6 +125,53 @@ background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-
   #modal-proxy-center .pc-stats{display:none}
 }
 
+/* Control Tower (rebuild phase 4): groups and the profiles that need work
+   come first; cause analysis, activity log and the agency handoff follow.
+   KPIs are header chips. Uses the system.css tokens. */
+#modal-control-tower .tower-dialog{width:min(1120px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}
+#modal-control-tower .modal-header{gap:16px}
+#modal-control-tower .tower-heading{margin-right:auto}
+#modal-control-tower .tower-subtitle{margin-top:2px;color:var(--lhm-muted)}
+#modal-control-tower .tower-kpis{display:flex;gap:8px;margin:0}
+#modal-control-tower .tower-kpi{display:flex;flex-direction:row;align-items:baseline;gap:5px;padding:4px 10px;border:1px solid var(--lhm-border);
+  border-radius:999px;background:var(--lhm-subtle);white-space:nowrap}
+#modal-control-tower .tower-kpi strong{font-size:14px;line-height:1.2;letter-spacing:0;font-weight:700;color:var(--lhm-heading)}
+#modal-control-tower .tower-kpi span{font-size:12px;font-weight:500;color:var(--lhm-muted)}
+#modal-control-tower .tower-kpi.is-error{border-color:#f0bdb7;background:var(--lhm-danger-soft)}
+#modal-control-tower .tower-kpi.is-error strong{color:var(--lhm-danger)}
+#modal-control-tower .tower-kpi.is-warning{border-color:#efcf9c;background:var(--lhm-warn-soft)}
+#modal-control-tower .tower-kpi.is-warning strong{color:var(--lhm-warn)}
+#modal-control-tower .tower-content{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+#modal-control-tower .tower-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;margin:0}
+#modal-control-tower .tower-panel{margin:0;padding:12px 14px;background:var(--lhm-surface);border:1px solid var(--lhm-border);border-radius:var(--lhm-radius-lg);color:var(--lhm-body)}
+#modal-control-tower .tower-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+#modal-control-tower .tower-panel-header h3{margin:0;font-size:14px;font-weight:700;color:var(--lhm-heading)}
+#modal-control-tower .tower-muted{margin:2px 0 0;font-size:12px;color:var(--lhm-muted)}
+#modal-control-tower .tower-group-list,#modal-control-tower .tower-attention-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto}
+#modal-control-tower .tower-group{display:flex;flex-direction:column;gap:6px;padding:9px 11px;border:1px solid var(--lhm-border);border-radius:10px;
+  background:var(--lhm-surface);color:var(--lhm-body);text-align:left;cursor:pointer}
+#modal-control-tower .tower-group:hover,#modal-control-tower .tower-group:focus-visible{border-color:var(--lhm-accent);background:var(--lhm-hover)}
+#modal-control-tower .tower-group-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+#modal-control-tower .tower-group-top strong{color:var(--lhm-heading)}
+#modal-control-tower .tower-group-top small{color:var(--lhm-muted);font-size:12px}
+#modal-control-tower .tower-bar{height:5px;border-radius:999px;background:#e6ebf2;overflow:hidden}
+#modal-control-tower .tower-bar-fill{height:100%;border-radius:999px;background:var(--lhm-accent)}
+#modal-control-tower .tower-attention{display:flex;flex-direction:column;gap:2px;padding:8px 11px;border:1px solid var(--lhm-border);border-radius:10px;background:var(--lhm-subtle)}
+#modal-control-tower .tower-attention.is-error{border-left:3px solid var(--lhm-danger)}
+#modal-control-tower .tower-attention.is-warning{border-left:3px solid #d99a1e}
+#modal-control-tower .tower-attention strong{font-size:13px;color:var(--lhm-heading)}
+#modal-control-tower .tower-attention p{margin:0;font-size:12.5px;color:var(--lhm-body);line-height:1.5}
+#modal-control-tower .tower-events{display:flex;flex-direction:column;max-height:160px;overflow-y:auto}
+#modal-control-tower .tower-event{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:7px 4px;border-top:1px solid var(--lhm-border);font-size:12.5px;color:var(--lhm-body)}
+#modal-control-tower .tower-event:first-child{border-top:0}
+#modal-control-tower .tower-event small{color:var(--lhm-muted);white-space:nowrap}
+#modal-control-tower .tower-empty{padding:10px 4px;font-size:12.5px;color:var(--lhm-muted)}
+#modal-control-tower .lhm-triage-panel,#modal-control-tower .lhm-agency-panel{margin:0}
+#modal-control-tower .tower-disclaimer{margin:0;font-size:12px;line-height:1.5;color:var(--lhm-faint)}
+#modal-control-tower .tower-footer p{flex:1;margin:0;font-size:12.5px;color:var(--lhm-muted)}
+#modal-control-tower .tower-footer p.is-error{color:var(--lhm-danger)}
+@media(max-width:950px){#modal-control-tower .tower-columns{grid-template-columns:1fr}#modal-control-tower .tower-kpis{display:none}}
+
 /* LHM Automation Studio — quiet, reference-aligned 2.6 */
 #modal-studio .studio-dialog{width:min(1280px,97vw)!important;max-width:97vw!important;background:#fff!important}
 #modal-studio .modal-header{padding:17px 23px!important;border-color:#e7ebf0!important}

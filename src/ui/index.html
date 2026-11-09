@@ -1622,26 +1622,39 @@ run();
   <div class="modal-overlay" id="modal-control-tower">
     <div class="modal-dialog tower-dialog" role="dialog" aria-modal="true" aria-labelledby="tower-title">
       <div class="modal-header">
-        <div class="tower-heading">
-          <div class="tower-logo">◈</div>
-          <div>
-            <h2 id="tower-title">LHM Control Tower</h2>
-            <p class="tower-subtitle">Trung tâm vận hành đa hồ sơ · dữ liệu cục bộ</p>
-          </div>
+        <div class="tower-heading lhm-dialog-title">
+          <h2 id="tower-title">Control Tower</h2>
+          <p class="tower-subtitle lhm-dialog-subtitle">Trung tâm vận hành đa hồ sơ · dữ liệu cục bộ</p>
         </div>
+        <section class="tower-kpis" aria-label="Chỉ số vận hành">
+          <div class="tower-kpi"><strong id="tower-total">0</strong><span>hồ sơ</span></div>
+          <div class="tower-kpi"><strong id="tower-active">0</strong><span>đang mở</span></div>
+          <div class="tower-kpi is-error"><strong id="tower-errors">0</strong><span>lỗi cấu hình</span></div>
+          <div class="tower-kpi is-warning"><strong id="tower-warnings">0</strong><span>cảnh báo</span></div>
+        </section>
         <button class="btn-close" id="tower-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body tower-content">
-        <section class="tower-kpis" aria-label="Chỉ số vận hành">
-          <div class="tower-kpi"><span>Hồ sơ</span><strong id="tower-total">0</strong><small>Đã tạo</small></div>
-          <div class="tower-kpi"><span>Đang mở</span><strong id="tower-active">0</strong><small>Browser sessions</small></div>
-          <div class="tower-kpi is-error"><span>Cần xử lý</span><strong id="tower-errors">0</strong><small>Lỗi cấu hình</small></div>
-          <div class="tower-kpi is-warning"><span>Cảnh báo</span><strong id="tower-warnings">0</strong><small>Health + hành vi</small></div>
-        </section>
+        <div class="tower-columns">
+          <section class="tower-panel" aria-labelledby="tower-groups-title">
+            <div class="tower-panel-header">
+              <h3 id="tower-groups-title">Nhóm &amp; trạng thái</h3>
+              <span class="tower-muted">Bấm một nhóm để lọc bảng hồ sơ</span>
+            </div>
+            <div id="tower-groups" class="tower-group-list"></div>
+          </section>
+          <section class="tower-panel" aria-labelledby="tower-attention-title">
+            <div class="tower-panel-header">
+              <h3 id="tower-attention-title">Hồ sơ cần xử lý</h3>
+              <button class="btn btn-sm btn-secondary" id="tower-open-health">Xem Health Check</button>
+            </div>
+            <div id="tower-attention" class="tower-attention-list"></div>
+          </section>
+        </div>
         <section class="tower-panel lhm-triage-panel" aria-label="Fleet Triage: các nhóm lỗi ưu tiên">
           <div class="tower-panel-header">
-            <div><span class="lhm-triage-eyebrow">FLEET OPERATIONS · LIVE CONFIG CHECKS</span>
-              <h3>Ưu tiên xử lý toàn bộ hồ sơ</h3>
+            <div><span class="lhm-triage-eyebrow">Kiểm tra cấu hình · toàn bộ hồ sơ</span>
+              <h3>Lỗi theo nguyên nhân</h3>
               <p class="lhm-triage-desc">Tổng hợp lỗi cùng nguyên nhân, không phải điểm tín nhiệm Google/Meta. Không tự chỉnh sửa cấu hình.</p>
             </div>
             <button type="button" class="btn btn-sm btn-secondary" id="tower-triage-refresh">Phân tích lại</button>
@@ -1649,10 +1662,17 @@ run();
           <p class="lhm-triage-status" id="tower-triage-status" role="status" aria-live="polite">Chưa chạy phân tích.</p>
           <div id="tower-triage-list" class="lhm-triage-list"></div>
         </section>
+        <section class="tower-panel tower-log-panel" aria-labelledby="tower-events-title">
+          <div class="tower-panel-header">
+            <h3 id="tower-events-title">Nhật ký hoạt động gần đây</h3>
+            <span class="tower-muted">Chỉ thao tác trong LHM, không đọc lịch sử trang web</span>
+          </div>
+          <div id="tower-events" class="tower-events"></div>
+        </section>
         <section class="tower-panel lhm-agency-panel" aria-label="Bàn giao mẫu hồ sơ mã hóa">
           <div class="tower-panel-header">
             <div>
-              <span class="lhm-agency-eyebrow">AGENCY OPERATIONS · ENCRYPTED OFFLINE</span>
+              <span class="lhm-agency-eyebrow">Chuyển cấu hình · mã hóa ngoại tuyến</span>
               <h3>Bàn giao mẫu hồ sơ cho nhân viên</h3>
               <p class="lhm-agency-help">Chỉ chuyển tên, nhóm, nhãn, loại engine và tên miền mở đầu. Mật khẩu AES-256-GCM; không chuyển cookie, đăng nhập, proxy, identity hoặc thao tác AI.</p>
             </div>
@@ -1668,29 +1688,6 @@ run();
           </div>
           <p class="lhm-agency-status" id="tower-agency-status" role="status" aria-live="polite">Chọn 1–50 hồ sơ trên bảng, nhập mật khẩu rồi xuất. Khi nhận gói, xem trước trước khi xác nhận nhập.</p>
           <p class="lhm-agency-fineprint">Đây là chuyển mẫu cấu hình giữa các máy theo thao tác người dùng, <strong>không phải</strong> đồng bộ đa máy hoặc phân quyền tài khoản. Gói chia sẻ không bao gồm dữ liệu phiên. Hãy gửi mật khẩu bằng kênh khác với tệp.</p>
-        </section>
-        <div class="tower-columns">
-          <section class="tower-panel">
-            <div class="tower-panel-header">
-              <h3>Nhóm & trạng thái</h3>
-              <span class="tower-muted">Chọn nhóm để lọc</span>
-            </div>
-            <div id="tower-groups" class="tower-group-list"></div>
-          </section>
-          <section class="tower-panel">
-            <div class="tower-panel-header">
-              <h3>Ưu tiên xử lý</h3>
-              <button class="btn btn-sm btn-secondary" id="tower-open-health">Xem Health Check</button>
-            </div>
-            <div id="tower-attention" class="tower-attention-list"></div>
-          </section>
-        </div>
-        <section class="tower-panel tower-log-panel">
-          <div class="tower-panel-header">
-            <h3>Nhật ký hoạt động gần đây</h3>
-            <span class="tower-muted">Chỉ thao tác trong LHM, không đọc lịch sử trang web</span>
-          </div>
-          <div id="tower-events" class="tower-events"></div>
         </section>
         <p class="tower-disclaimer">Các chỉ số này phản ánh vận hành của LHM Browser, không thể kết luận Google đã phát hiện hay đánh giá các tài khoản Google Ads.</p>
       </div>
