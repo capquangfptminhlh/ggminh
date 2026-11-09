@@ -27,7 +27,13 @@
       value ? 'Đang xử lý yêu cầu…'
         : selectedIds().length + ' hồ sơ được chọn trong bảng chính';
   }
+  // The form title and reset label say whether the form adds or edits.
+  function formMode(proxy) {
+    el('pc-form-title').textContent = proxy ? 'Sửa proxy: ' + proxy.name : 'Thêm proxy mới';
+    el('pc-reset').textContent = proxy ? 'Hủy sửa' : 'Làm trống';
+  }
   function clearForm() {
+    formMode(null);
     for (const key of ['pc-id','pc-name','pc-tag','pc-host','pc-port']) el(key).value = '';
     el('pc-type').value = 'http';
     activeId = null;
@@ -38,6 +44,7 @@
     notice('');
   }
   function fillForm(proxy) {
+    formMode(proxy);
     activeId = proxy.id;
     el('pc-id').value = proxy.id;
     el('pc-name').value = proxy.name;
@@ -49,7 +56,8 @@
     el('pc-auth-pass').value='';
     el('pc-clear-auth').checked=false;
     el('pc-credential-info').textContent=proxy.hasCredentials ? 'Đã có mật khẩu mã hóa. Để trống sẽ giữ nguyên; nhập cả hai để thay.' : 'Chưa lưu mật khẩu.';
-    notice('Đang sửa: ' + proxy.name);
+    notice('');
+    render();
     el('pc-name').focus();
   }
   function action(label, className, callback) {
@@ -68,6 +76,7 @@
   function makeRow(proxy) {
     const row = cell('tr', 'pc-table-row');
     row.dataset.proxyId = proxy.id;
+    if (proxy.id === activeId) row.classList.add('is-editing');
     const name = cell('td', 'pc-name-cell');
     const title = cell('strong', '', proxy.name);
     const tag = cell('small', '', (proxy.tag || 'Chưa phân nhóm') + (proxy.hasCredentials ? ' · Có mật khẩu' : ''));
@@ -131,7 +140,7 @@
     for(const p of items)list.append(makeRow(p));
     el('pc-no-results').hidden = items.length>0;
     el('pc-no-results').textContent = cached.length ?
-      'Không có proxy nào khớp từ khóa.' : 'Chưa có proxy. Thêm kết nối ở bảng bên trái.';
+      'Không có proxy nào khớp từ khóa.' : 'Chưa có proxy. Thêm kết nối ở khung bên phải.';
     el('pc-total').textContent=cached.length;
     el('pc-verified').textContent=cached.filter(p=>p.check?.verified).length;
     el('pc-used').textContent=cached.reduce((sum,p)=>sum+(p.usageCount||0),0);
