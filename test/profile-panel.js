@@ -4,7 +4,7 @@ const path=require('path');
 const root=path.join(__dirname,'../src/ui');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const js=fs.readFileSync(path.join(root,'profilePanel.js'),'utf8');
-const css=fs.readFileSync(path.join(root,'workspace.css'),'utf8');
+const css=fs.readFileSync(path.join(root,'system.css'),'utf8');
 const renderer=fs.readFileSync(path.join(root,'renderer.js'),'utf8');
 for(const id of ['lhm-profile-panel','lhm-context-empty','lhm-context-content','lhm-context-title',
  'lhm-detail-name','lhm-detail-group','lhm-detail-id','lhm-detail-engine',
@@ -24,7 +24,10 @@ assert(js.includes("button.click()"),'Actions must reuse original row handlers')
 assert(js.includes('textContent'),'No dynamic unsafe HTML from profile data');
 assert(!js.includes('innerHTML'),'Never insert profile data as HTML');
 for(const status of ['all','running','stopped'])assert(html.includes('data-lhm-status="'+status+'"'));
-assert(css.includes('.lhm-context-panel'));
-assert(css.includes('.lhm-nav-label,.lhm-nav-bottom{display:none!important}'));
-assert(css.includes('body[data-view="dashboard"] .lhm-context-panel{display:none!important}'));
+assert(css.includes('#lhm-profile-panel.lhm-context-panel{'));
+// Side navigation: the long labels stay in the DOM; a short visible label
+// (data-short) is shown under each icon.
+assert(css.includes('.lhm-nav-identity-text,.lhm-nav-heading,.lhm-nav-label,.lhm-nav-bottom{display:none}'));
+assert(css.includes('.lhm-nav-btn::after{content:attr(data-short)'));
+assert(css.includes('body[data-view="dashboard"] #lhm-profile-panel.lhm-context-panel{display:none}'));
 console.log('Clean reference-inspired workspace: functional profile pane, filter tabs and UI safety tests passed');

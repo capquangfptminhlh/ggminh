@@ -4,6 +4,8 @@ const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'src/ui/index.html'),'utf8');
 const js=fs.readFileSync(path.join(root,'src/ui/workspaceInteractions.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'src/ui/workspaceInteractions.css'),'utf8');
+// The rail and motion layout rules moved to the design system.
+const systemCss=fs.readFileSync(path.join(root,'src/ui/system.css'),'utf8');
 for(const id of ['lhm-v7-command-open','lhm-v7-command-palette','lhm-v7-command-input',
  'lhm-v7-command-search','lhm-v7-command-list','lhm-v7-command-close',
  'lhm-v7-show-rail','lhm-v7-hide-rail','lhm-v7-rail-label'].filter(x=>x!=='lhm-v7-command-input'))
@@ -19,13 +21,14 @@ assert(js.includes("key==='b'"));
 assert(js.includes("document.body.dataset.lhmRail=visible?'open':'closed'"));
 assert(js.includes('window.LHMMissionControl?.switchView'));
 assert(js.includes('trigger?.click()'));
-assert(css.includes('data-lhm-rail="closed"'));
-assert(css.includes('prefers-reduced-motion:reduce'));
+assert(systemCss.includes('body[data-lhm-rail="closed"]{--lhm-rail-space:0px}'),'Closing the rail must free its width');
+assert(systemCss.includes('body[data-lhm-rail="closed"] #lhm-profile-panel.lhm-context-panel{display:none}'));
+assert(systemCss.includes('prefers-reduced-motion:reduce'));
 assert(html.includes('id="lhm-v7-motion-toggle"'));
 assert(js.includes("document.body.dataset.lhmMotion=enabled?'on':'off'"));
 assert(js.includes('panel.inert=!visible'));
 assert(js.includes("event.key==='Tab'"));
 assert(js.includes('window.innerWidth>1270'));
 assert(js.includes("localStorage.setItem(MOTION_KEY"));
-assert(css.includes('data-lhm-motion="off"'));
+assert(css.includes('data-lhm-motion="off"')&&systemCss.includes('body[data-lhm-motion="off"] *'));
 console.log('v5.7 command palette keyboard, safe profile lookup, active rail, responsive & reduced-motion supported');

@@ -1,18 +1,7 @@
 /* LHM commercial preview polish
    UI-only final cascade for the existing light workspace design.
    No change to product security, network, fingerprint, license, or release gates. */
-:root{
-  --lhm-surface:#ffffff;
-  --lhm-subtle:#f5f8fe;
-  --lhm-border:#dce5f2;
-  --lhm-heading:#162a48;
-  --lhm-body:#3c526d;
-  --lhm-muted:#526986;
-  --lhm-focus:#3468d9;
-  --lhm-danger:#a52532;
-  --lhm-warn:#8a4d0a;
-  --lhm-ok:#176746;
-}
+/* Tokens (--lhm-surface, --lhm-border, --lhm-heading, ...) are defined in system.css. */
 #modal-ads-launch-guard .modal-dialog,
 #modal-performance-lab .modal-dialog,
 #modal-launch-readiness .modal-dialog,
