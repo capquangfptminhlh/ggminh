@@ -479,3 +479,9 @@ body[data-lhm-motion="off"] *,body[data-lhm-motion="off"] *::before,body[data-lh
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+/* Rebuild phase 8: long dialogs split into tabs (Ads Guard, AI Advisor, About). */
+.tabs.lhm-dialog-tabs{margin:0 0 14px}
+.tabs.lhm-dialog-tabs .tab-btn{min-height:32px;font-size:12.5px;white-space:nowrap}
+.lhm-dialog-pane{display:none}
+.lhm-dialog-pane.active{display:block}
+.lhm-dialog-pane>:first-child{margin-top:0}

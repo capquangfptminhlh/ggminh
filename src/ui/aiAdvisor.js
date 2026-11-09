@@ -13,6 +13,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   keyStatus.textContent=state.configured?'API key đã lưu (được mã hóa)':'Chưa có API key';
   if(!state.encryptionAvailable)keyStatus.textContent='Mã hóa hệ điều hành chưa khả dụng';
   send.disabled=state.busy||!state.configured;
+  if(!state.configured&&!state.busy)status.textContent='Cần lưu API key ở tab Cấu hình & hạn mức trước khi hỏi.';
+  else if(status.textContent.startsWith('Cần lưu API key'))status.textContent='';
   stop.disabled=!state.busy;
   const budget=state.budget;
   if(budget?.available){
@@ -25,6 +27,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   }else{
    budgetStatus.textContent=budget?.error || 'Chưa tải được sổ sử dụng AI.';
   }
+  return state;
  }
  async function refreshDraftProfiles(){
   const select=el('ai-draft-profile');
@@ -37,7 +40,11 @@ window.addEventListener('DOMContentLoaded',()=>{
  }
  el('btn-ai-advisor').addEventListener('click',async()=>{
   modal.classList.add('open');
-  try{await Promise.all([refresh(),refreshDraftProfiles()]);}
+  try{
+   const [state]=await Promise.all([refresh(),refreshDraftProfiles()]);
+   // Rebuild phase 8: without a saved key the settings tab is the useful one.
+   if(!state?.configured)modal.querySelector('.tab-btn[data-tab="ai-tab-settings"]')?.click();
+  }
   catch(e){keyStatus.textContent=e.message;}
  });
  for(const id of ['ai-advisor-close','ai-advisor-done'])

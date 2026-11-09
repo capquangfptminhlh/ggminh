@@ -668,8 +668,8 @@ select {
   font-size: 12px;
 }
 .behavior-event-item small { color: #9ca3af; }
-.behavior-empty { color: #9ca3af; font-size: 13px; padding: 16px 0; }
-.behavior-footnote { font-size: 12px; color: #9ca3af; line-height: 1.55; margin-top: 18px; }
+.behavior-empty { color: var(--lhm-muted, #4f5e72); font-size: 13px; padding: 16px 0; }
+.behavior-footnote { font-size: 12px; color: var(--lhm-muted, #4f5e72); line-height: 1.55; margin-top: 18px; }
 @media (max-width: 1120px) {
   .app-header { flex-wrap: wrap; gap: 12px; }
   .header-actions { flex-wrap: wrap; }
