@@ -211,12 +211,14 @@ function createWindow() {
             throw Error('UI screenshot version mismatch: '+JSON.stringify(shown));
           // Real Electron acceptance: the prior light-theme screenshot showed
           // white/dim AI text over a nearly-white panel. Ensure readable
-          // computed colors and that the rail fits the viewport.
+          // computed colors and that the rail fits the viewport. Expected
+          // values are the system.css tokens --lhm-heading (#0f1d30) and
+          // --lhm-accent (#1d6fd8) on the white rail.
           const readability=await mainWindow.webContents.executeJavaScript(
             "(() => { const panel=document.getElementById('lhm-profile-panel'); const title=panel.querySelector('.lhm-v6-assistant h3'); const sub=panel.querySelector('.lhm-v6-assistant h3 em'); const secondary=panel.querySelector('.lhm-v6-ai-button:not(.primary)'); const box=panel.getBoundingClientRect(); const metric=document.querySelector('.lhm-v6-metric'); return {heading:getComputedStyle(title).color,emphasis:getComputedStyle(sub).color,action:getComputedStyle(secondary).color,cardHeight:metric.getBoundingClientRect().height,railLeft:box.left,railRight:box.right,viewport:innerWidth}; })()",true);
-          if(readability.heading!=='rgb(32, 55, 81)'||
-             readability.emphasis!=='rgb(37, 107, 186)'||
-             readability.action!=='rgb(36, 73, 103)'||
+          if(readability.heading!=='rgb(15, 29, 48)'||
+             readability.emphasis!=='rgb(29, 111, 216)'||
+             readability.action!=='rgb(15, 29, 48)'||
              readability.cardHeight>135||
              readability.railLeft<0||readability.railRight>readability.viewport+1)
             throw Error('Full-window AI panel contrast/layout regression: '+JSON.stringify(readability));
@@ -301,7 +303,8 @@ function createWindow() {
             "document.getElementById('btn-cancel-modal').click()",true);
           const adsCheck=await mainWindow.webContents.executeJavaScript(
             "(() => { document.getElementById('btn-ads-launch-guard').click(); const modal=document.getElementById('modal-ads-launch-guard'); const url=document.getElementById('ads-guard-urls'); url.value='https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=ci-demo'; document.getElementById('ads-guard-inspect').click(); return {open:modal.classList.contains('open'),bg:getComputedStyle(modal.querySelector('.lhm-ads-guard-section')).backgroundColor,input:getComputedStyle(url).backgroundColor,scroll:getComputedStyle(modal.querySelector('.modal-body')).overflowY}; })()",true);
-          if(!adsCheck.open||adsCheck.bg!=='rgb(245, 248, 254)'||
+          // Section uses the system.css --lhm-subtle token (#f7f9fc); URL field stays white.
+          if(!adsCheck.open||adsCheck.bg!=='rgb(247, 249, 252)'||
              adsCheck.input!=='rgb(255, 255, 255)'||adsCheck.scroll!=='auto')
             throw Error('Ads Launch Guard theme/modal failed: '+JSON.stringify(adsCheck));
           await new Promise(resolve=>setTimeout(resolve,800));
@@ -328,8 +331,9 @@ function createWindow() {
 
           const aboutCheck=await mainWindow.webContents.executeJavaScript(
             "(() => { document.getElementById('btn-app-about').click(); const modal=document.getElementById('modal-app-about'); const center=modal.querySelector('.lhm-update-center'); return {open:modal.classList.contains('open'),update:!!center,background:getComputedStyle(center).backgroundColor,check:!!document.getElementById('lhm-update-check')}; })()",true);
+          // Update Center uses the --lhm-subtle token (#f7f9fc, system.css).
           if(!aboutCheck.open||!aboutCheck.update||!aboutCheck.check||
-             aboutCheck.background!=='rgb(245, 248, 254)')
+             aboutCheck.background!=='rgb(247, 249, 252)')
             throw Error('About/Update Center UI failed: '+JSON.stringify(aboutCheck));
           await new Promise(resolve=>setTimeout(resolve,350));
           writeCapture('workspace-about-update-preview.png',await mainWindow.webContents.capturePage());

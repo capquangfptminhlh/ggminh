@@ -2,7 +2,8 @@
 const assert=require('assert'),fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'src/ui/index.html'),'utf8');
-const css=fs.readFileSync(path.join(root,'src/ui/premiumWorkspace.css'),'utf8');
+// The v5.6 skin (premiumWorkspace.css) was replaced by the design system.
+const css=fs.readFileSync(path.join(root,'src/ui/system.css'),'utf8');
 const js=fs.readFileSync(path.join(root,'src/ui/premiumWorkspace.js'),'utf8');
 const renderer=fs.readFileSync(path.join(root,'src/ui/renderer.js'),'utf8');
 const dashboard=fs.readFileSync(path.join(root,'src/ui/dashboard.js'),'utf8');
@@ -17,13 +18,12 @@ for(const id of ['btn-ai-advisor','btn-open-studio','btn-import-profiles','btn-b
  'search-input','btn-create-profile','profile-list-body','lhm-context-content']){
  assert(html.includes('id="'+id+'"'),'Legacy operation must survive redesign: '+id);
 }
-assert(html.includes('<link rel="stylesheet" href="premiumWorkspace.css">'));
+assert(!html.includes('premiumWorkspace.css'),'The replaced skin must not be loaded again');
 assert(html.includes('<script src="premiumWorkspace.js"></script>'));
 assert(css.includes('@media(prefers-reduced-motion:reduce)'));
-assert(css.includes('lhm-v6-arrive'));
-assert(css.includes('lhm-v6-row'));
-assert(css.includes('lhm-v6-count'));
-assert(css.includes('lhm-v6-metric:hover'));
+assert(css.includes('body[data-lhm-motion="off"] *'));
+// The metric cards stay in the DOM for live data but are not shown above the table.
+assert(css.includes('.lhm-v6-overview,.lhm-profile-crumbs,.lhm-v6-shortcuts{display:none!important}'));
 assert(js.includes('window.api.dashboardOverview()'));
 assert(!js.includes('innerHTML'));
 assert(js.includes('window.LHMMissionControl?.switchView'));

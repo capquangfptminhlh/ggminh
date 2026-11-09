@@ -42,16 +42,6 @@
 .lhm-v7-command-footer{border-top:1px solid #eaeef3;display:flex;justify-content:center;flex-wrap:wrap;gap:7px;padding:14px;font-size:10px;color:#8695aa}
 .lhm-v7-command-footer span{color:#c1c7d0}
 @keyframes lhm-v7-palette{from{opacity:0;transform:translateY(-13px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-body[data-view="profiles"][data-lhm-rail="closed"] .lhm-v6-overview{padding-right:27px!important}
-body[data-view="profiles"][data-lhm-rail="closed"] .lhm-profiles-heading{margin-right:0!important}
-body[data-view="profiles"][data-lhm-rail="closed"] .lhm-list-tabs{margin-right:27px!important}
-body[data-view="profiles"][data-lhm-rail="closed"] .lhm-v6-shortcuts{margin-right:27px!important}
-body[data-view="profiles"][data-lhm-rail="closed"] .toolbar{margin-right:0!important}
-body[data-view="profiles"][data-lhm-rail="closed"] .content-view{margin-right:0!important}
-body[data-view="profiles"][data-lhm-rail="closed"] .selection-toolbar,
-body[data-view="profiles"][data-lhm-rail="closed"] .lhm-table-options{margin-right:27px!important}
-body[data-lhm-rail="closed"] #lhm-profile-panel.lhm-context-panel{display:none!important}
-body[data-lhm-rail="closed"] .lhm-v7-show-rail{background:#e9f0ff;border-color:#b7cef8;color:#2c65d4}
 @media(max-width:1480px){.lhm-v7-command-open{padding:0 8px;font-size:10px}}
 @media(max-width:1130px){.lhm-v7-command-open span:not(.lhm-icon){display:none}.lhm-v7-show-rail{font-size:10px}}
 @media(max-width:760px){.lhm-v7-command-open{height:34px}.lhm-v7-show-rail{font-size:0}.lhm-v7-show-rail .lhm-icon{width:15px}}
@@ -73,12 +63,3 @@ body[data-lhm-motion="off"] *::after {
 }
 
 
-/* v5.7 final: larger desktop grid typography, no decorative controls on narrow displays */
-body[data-view="profiles"] .profile-table th{font-size:11px!important;color:#66758c!important}
-body[data-view="profiles"] .profile-table td{font-size:12px!important;line-height:1.5}
-body[data-view="profiles"] .profile-name-box .p-name{font-size:12px!important}
-body[data-view="profiles"] .profile-name-box .p-group{font-size:11px!important}
-body[data-view="profiles"] .lhm-v6-metric-label,
-body[data-view="profiles"] .lhm-v6-metric-bottom{font-size:11px!important}
-body[data-view="profiles"] .lhm-list-tab{font-size:12px!important}
-@media(max-width:1270px){#lhm-v7-show-rail,#lhm-v7-hide-rail{display:none!important}}

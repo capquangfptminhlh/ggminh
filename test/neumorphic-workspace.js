@@ -4,14 +4,19 @@ const fs=require('node:fs');
 const path=require('node:path');
 const base=path.resolve(__dirname,'../src/ui');
 const html=fs.readFileSync(path.join(base,'index.html'),'utf8');
-const css=fs.readFileSync(path.join(base,'neumorphicWorkspace.css'),'utf8');
+// The neumorphic skin was replaced by system.css; the signed-license card and
+// its 3D flip moved verbatim to licenseCenter.css.
+const licenseCss=fs.readFileSync(path.join(base,'licenseCenter.css'),'utf8');
+const systemCss=fs.readFileSync(path.join(base,'system.css'),'utf8');
+const css=[licenseCss,systemCss].join('\n');
 const js=fs.readFileSync(path.join(base,'neumorphicWorkspace.js'),'utf8');
 const {init,setMode}=require('../src/ui/neumorphicWorkspace');
 
-assert(html.includes('<link rel="stylesheet" href="neumorphicWorkspace.css">'));
+assert(html.includes('<link rel="stylesheet" href="licenseCenter.css">'));
+assert(!html.includes('neumorphicWorkspace.css'),'The replaced skin must not be loaded again');
 assert(html.includes('<script src="neumorphicWorkspace.js"></script>'));
-assert(html.indexOf('commercialPolish.css')<html.indexOf('neumorphicWorkspace.css'),
- '3D skin must load after previous workspace styles');
+assert(html.indexOf('commercialPolish.css')<html.indexOf('licenseCenter.css'),
+ 'License card styles load after the dialog polish they refine');
 assert(html.indexOf('licenseCenter.js')<html.indexOf('neumorphicWorkspace.js'),
  'License control remains owned by the real signed-license script');
 
@@ -26,7 +31,7 @@ for(const id of [
  'lhm-v7-motion-toggle'
 ])assert.equal(html.split('id="'+id+'"').length,2,'Missing or duplicate action: '+id);
 assert(html.includes('id="lhm-nm-license-activate-face" class="lhm-nm-license-face back" aria-label="Kích hoạt giấy phép" aria-hidden="true" inert'));
-assert(css.includes('#modal-ads-launch-guard #ads-guard-urls{background-color:#fff!important}'),
+assert(systemCss.includes('#modal-ads-launch-guard #ads-guard-urls{background-color:#fff}'),
  'Component-specific Ads Guard input must retain existing release-verified white background');
 // Regression from inspected Windows screenshot: pale right rail previously
 // inherited white text, making its heading, KPIs and secondary action unreadable.
@@ -36,7 +41,6 @@ for(const contract of [
  '#lhm-profile-panel .lhm-v6-ai-health strong{',
  '#lhm-profile-panel .lhm-v6-ai-button:not(.primary){',
  '#lhm-profile-panel .lhm-v6-assistant small{',
- 'body[data-view="profiles"] .lhm-v6-metric{',
  '#modal-license-center .modal-body>.lhm-bulk-help{'
 ])assert(css.includes(contract),'Full UI density/contrast contract missing: '+contract);
 const main=fs.readFileSync(path.join(base,'../../main.js'),'utf8');
@@ -50,7 +54,7 @@ assert(!js.includes('fetch(')&&!js.includes('window.api')&&!js.includes('localSt
 for(const signature of [
  'perspective:1500px','transform:rotateY(180deg)','backface-visibility:hidden',
  'box-shadow:var(--nm-in)','linear-gradient(135deg,#2ab0ff,#0675e8)',
- '.app-container',' .lhm-v6-metric','.profile-table',' .modal-dialog',
+ '.app-container','.profile-table',' .modal-dialog',
  'prefers-reduced-motion:reduce','data-lhm-motion="off"'
 ])assert(css.includes(signature),'Video visual / accessibility rule missing: '+signature);
 
