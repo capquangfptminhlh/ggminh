@@ -9,7 +9,10 @@ for(const id of ['studio-graph','studio-graph-scroll','studio-graph-refresh','st
   assert(html.includes('id="'+id+'"'),'Missing visual editor UI: '+id);
   assert(js.includes("'"+id+"'"),'Missing renderer binding: '+id);
 }
-assert(html.indexOf('id="studio-graph"') < html.indexOf('id="studio-steps"'));
+// Rebuild phase 5: the graph has its own tab next to the steps tab.
+assert(html.indexOf('id="studio-tab-graph"') < html.indexOf('id="studio-graph"'));
+assert(html.indexOf('id="studio-tab-steps"') < html.indexOf('id="studio-steps"'));
+assert(html.indexOf('id="studio-steps"') < html.indexOf('id="studio-tab-graph"'));
 assert(js.includes('api.studioGraphPreview(current.steps)'));
 assert(js.includes("row.dataset.stepIndex=String(i)"));
 assert(js.includes('queueGraph();'));
