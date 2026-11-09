@@ -44,6 +44,19 @@ Có workflow chạy thủ công `.github/workflows/profile-performance-evidence.
 cho phép điều chỉnh số profile (1–5 mốc, mỗi mốc 1–5.000) và
 số mẫu (5–30) trên Windows.
 
+## Benchmark tài nguyên browser thật
+
+Runner `tools/browser-resource-benchmark.js` mở các profile tạm với workload
+loopback cố định `light`, `medium`, `heavy`; không dùng profile khách, proxy,
+cookie hoặc tài khoản thật. Mỗi tổ hợp có warmup và tối thiểu 10 sample, đo
+startup, working set của toàn bộ cây process, CPU đỉnh, crash và cleanup.
+
+Hướng dẫn và ma trận evidence 8/16/32 GB nằm tại
+`docs/acceptance/BROWSER_RESOURCE_BENCHMARK.md`. Mọi hàng hiện giữ
+`UNMEASURED` cho tới khi được chạy trên đúng máy và đúng engine. Không nội suy
+số liệu còn thiếu; Resource Guard tiếp tục yêu cầu xác nhận rõ ràng khi chưa có
+P95 hợp lệ.
+
 ## Quy trình benchmark công bằng với đối thủ (chưa thực hiện)
 
 1. Chọn một máy Windows chuẩn, cùng hệ điều hành và engine cập nhật.
