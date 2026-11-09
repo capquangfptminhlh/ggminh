@@ -44,3 +44,19 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(filterMenu?.open){filterMenu.open=false;filterMenu.querySelector('summary')?.focus();}
  });
 });
+
+// UI rebuild phase 8: dialogs split into tabs (.lhm-dialog-tabs) reopen on
+// their first tab. A dialog's own script may pick another tab afterwards
+// (AI Advisor opens its settings when no API key is saved).
+window.addEventListener('DOMContentLoaded',()=>{
+ for(const overlay of document.querySelectorAll('.modal-overlay')){
+  const first=overlay.querySelector('.lhm-dialog-tabs .tab-btn');
+  if(!first)continue;
+  let wasOpen=overlay.classList.contains('open');
+  new MutationObserver(()=>{
+   const open=overlay.classList.contains('open');
+   if(open&&!wasOpen)first.click();
+   wasOpen=open;
+  }).observe(overlay,{attributes:true,attributeFilter:['class']});
+ }
+});

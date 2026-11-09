@@ -706,45 +706,56 @@
         <div class="lhm-ads-guard-head">
           <span>Kiểm tra trên máy</span><span>Không lưu URL · Không gọi mạng</span>
         </div>
-        <section class="lhm-ads-guard-section" aria-label="Kiểm tra link quảng cáo">
-          <h3>01 / Kiểm tra link quảng cáo</h3>
-          <label for="ads-guard-urls">Mỗi dòng một URL (tối đa 20)</label>
-          <textarea id="ads-guard-urls" rows="4" maxlength="32000" placeholder="https://example.com/san-pham?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=demo"></textarea>
-          <div class="lhm-ads-guard-actions">
-            <button type="button" class="btn btn-primary" id="ads-guard-inspect">Kiểm tra link</button>
-            <span id="ads-guard-inspect-status" role="status" aria-live="polite">Chưa kiểm tra</span>
-          </div>
-          <div class="lhm-ads-guard-results" id="ads-guard-results" aria-live="polite"></div>
-        </section>
-        <section class="lhm-ads-guard-section" aria-label="Tạo link UTM">
-          <h3>02 / Tạo link theo dõi UTM</h3>
-          <label for="ads-guard-base">Link gốc</label>
-          <input id="ads-guard-base" type="url" maxlength="4096" placeholder="https://example.com/san-pham" autocomplete="off">
-          <div class="lhm-ads-guard-grid">
-            <label>utm_source <input id="ads-guard-source" maxlength="100" placeholder="google"></label>
-            <label>utm_medium <input id="ads-guard-medium" maxlength="100" placeholder="cpc"></label>
-            <label>utm_campaign <input id="ads-guard-campaign" maxlength="100" placeholder="thang_10"></label>
-            <label>utm_content (tùy chọn) <input id="ads-guard-content" maxlength="100" placeholder="banner_a"></label>
-            <label>utm_term (tùy chọn) <input id="ads-guard-term" maxlength="100" placeholder="tu_khoa"></label>
-          </div>
-          <div class="lhm-ads-guard-actions">
-            <button type="button" class="btn btn-secondary" id="ads-guard-build">Tạo link UTM</button>
-            <span id="ads-guard-build-status" role="status" aria-live="polite"></span>
-          </div>
-          <label for="ads-guard-output">Link tạo mới (chọn và Ctrl+C để sao chép)</label>
-          <textarea id="ads-guard-output" rows="3" readonly spellcheck="false" aria-label="Link UTM kết quả"></textarea>
-        </section>
-        <section class="lhm-ads-guard-section" aria-label="Báo cáo QA chiến dịch cho khách hàng">
-          <h3>03 / Báo cáo kiểm tra chiến dịch</h3>
-          <p class="lhm-bulk-help">Chọn trạng thái do người phụ trách tự xác nhận cho từng mục. LHM chỉ xác minh cú pháp URL/UTM, không tự chứng thực Pixel, chuyển đổi hay quyền truy cập tài khoản.</p>
-          <div id="ads-qa-checklist" class="lhm-ads-qa-checklist" aria-label="Các mục kiểm tra thủ công"></div>
-          <div class="lhm-ads-guard-actions">
-            <button type="button" class="btn btn-secondary" id="ads-qa-preview">Xem tổng hợp</button>
-            <button type="button" class="btn btn-primary" id="ads-qa-export">Lưu báo cáo JSON</button>
-          </div>
-          <p id="ads-qa-status" class="lhm-bulk-help" role="status" aria-live="polite">Chưa có báo cáo. Mọi mục mặc định chưa kiểm tra.</p>
-          <p class="lhm-bulk-help">Báo cáo chỉ chứa tên miền, mã lỗi, trạng thái thủ công và checksum SHA-256, không chứa URL gốc, path, query, email, cookie hay token. File chỉ được lưu sau khi bạn bấm chọn nơi lưu. Checksum không phải chữ ký xác thực.</p>
-        </section>
+        <div class="tabs lhm-steps lhm-dialog-tabs" role="tablist" aria-label="Phần của Ads Launch Guard">
+          <button type="button" class="tab-btn active" role="tab" data-tab="ads-tab-check">Kiểm tra link</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="ads-tab-utm">Tạo link UTM</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="ads-tab-report">Báo cáo chiến dịch</button>
+        </div>
+        <div class="tab-content lhm-dialog-pane active" id="ads-tab-check" role="tabpanel">
+          <section class="lhm-ads-guard-section" aria-label="Kiểm tra link quảng cáo">
+            <h3>Kiểm tra link quảng cáo</h3>
+            <label for="ads-guard-urls">Mỗi dòng một URL (tối đa 20)</label>
+            <textarea id="ads-guard-urls" rows="4" maxlength="32000" placeholder="https://example.com/san-pham?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=demo"></textarea>
+            <div class="lhm-ads-guard-actions">
+              <button type="button" class="btn btn-primary" id="ads-guard-inspect">Kiểm tra link</button>
+              <span id="ads-guard-inspect-status" role="status" aria-live="polite">Chưa kiểm tra</span>
+            </div>
+            <div class="lhm-ads-guard-results" id="ads-guard-results" aria-live="polite"></div>
+          </section>
+        </div>
+        <div class="tab-content lhm-dialog-pane" id="ads-tab-utm" role="tabpanel">
+          <section class="lhm-ads-guard-section" aria-label="Tạo link UTM">
+            <h3>Tạo link theo dõi UTM</h3>
+            <label for="ads-guard-base">Link gốc</label>
+            <input id="ads-guard-base" type="url" maxlength="4096" placeholder="https://example.com/san-pham" autocomplete="off">
+            <div class="lhm-ads-guard-grid">
+              <label>utm_source <input id="ads-guard-source" maxlength="100" placeholder="google"></label>
+              <label>utm_medium <input id="ads-guard-medium" maxlength="100" placeholder="cpc"></label>
+              <label>utm_campaign <input id="ads-guard-campaign" maxlength="100" placeholder="thang_10"></label>
+              <label>utm_content (tùy chọn) <input id="ads-guard-content" maxlength="100" placeholder="banner_a"></label>
+              <label>utm_term (tùy chọn) <input id="ads-guard-term" maxlength="100" placeholder="tu_khoa"></label>
+            </div>
+            <div class="lhm-ads-guard-actions">
+              <button type="button" class="btn btn-secondary" id="ads-guard-build">Tạo link UTM</button>
+              <span id="ads-guard-build-status" role="status" aria-live="polite"></span>
+            </div>
+            <label for="ads-guard-output">Link tạo mới (chọn và Ctrl+C để sao chép)</label>
+            <textarea id="ads-guard-output" rows="3" readonly spellcheck="false" aria-label="Link UTM kết quả"></textarea>
+          </section>
+        </div>
+        <div class="tab-content lhm-dialog-pane" id="ads-tab-report" role="tabpanel">
+          <section class="lhm-ads-guard-section" aria-label="Báo cáo QA chiến dịch cho khách hàng">
+            <h3>Báo cáo kiểm tra chiến dịch</h3>
+            <p class="lhm-bulk-help">Chọn trạng thái do người phụ trách tự xác nhận cho từng mục. LHM chỉ xác minh cú pháp URL/UTM, không tự chứng thực Pixel, chuyển đổi hay quyền truy cập tài khoản.</p>
+            <div id="ads-qa-checklist" class="lhm-ads-qa-checklist" aria-label="Các mục kiểm tra thủ công"></div>
+            <div class="lhm-ads-guard-actions">
+              <button type="button" class="btn btn-secondary" id="ads-qa-preview">Xem tổng hợp</button>
+              <button type="button" class="btn btn-primary" id="ads-qa-export">Lưu báo cáo JSON</button>
+            </div>
+            <p id="ads-qa-status" class="lhm-bulk-help" role="status" aria-live="polite">Chưa có báo cáo. Mọi mục mặc định chưa kiểm tra.</p>
+            <p class="lhm-bulk-help">Báo cáo chỉ chứa tên miền, mã lỗi, trạng thái thủ công và checksum SHA-256, không chứa URL gốc, path, query, email, cookie hay token. File chỉ được lưu sau khi bạn bấm chọn nơi lưu. Checksum không phải chữ ký xác thực.</p>
+          </section>
+        </div>
         <p class="lhm-bulk-help"><strong>Giới hạn:</strong> Kiểm tra offline không xác nhận HTTP status, redirect, Meta Pixel, GA4, GTM, chuyển đổi thực tế hoặc việc Google/Meta phê duyệt quảng cáo. Thiếu UTM chưa chắc là lỗi khi đã dùng auto-tagging.</p>
       </div>
       <div class="modal-footer">
@@ -782,66 +793,77 @@
         <button class="btn-close" type="button" id="ai-advisor-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="lhm-bulk-help">Trợ lý tư vấn vận hành profile. AI trả lời và đề xuất, không tự chạy lệnh hoặc thao tác quảng cáo. Câu hỏi sẽ được gửi qua Internet tới OpenRouter và nhà cung cấp model; có thể phát sinh chi phí API.</p>
-        <div class="form-row">
+        <div class="tabs lhm-steps lhm-dialog-tabs" role="tablist" aria-label="Phần của AI Advisor">
+          <button type="button" class="tab-btn active" role="tab" data-tab="ai-tab-ask">Hỏi AI</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="ai-tab-draft">Phác thảo quy trình</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="ai-tab-settings">Cấu hình &amp; hạn mức</button>
+        </div>
+        <div class="tab-content lhm-dialog-pane active" id="ai-tab-ask" role="tabpanel">
+          <p class="lhm-bulk-help">Trợ lý tư vấn vận hành profile. AI trả lời và đề xuất, không tự chạy lệnh hoặc thao tác quảng cáo. Câu hỏi sẽ được gửi qua Internet tới OpenRouter và nhà cung cấp model; có thể phát sinh chi phí API.</p>
           <div class="form-group">
-            <label for="ai-advisor-model">Model OpenRouter (provider/model)</label>
-            <input id="ai-advisor-model" type="text" maxlength="100" value="openai/gpt-4o-mini" spellcheck="false">
+            <label for="ai-advisor-question">Câu hỏi (tối đa 2.000 ký tự)</label>
+            <textarea id="ai-advisor-question" rows="4" maxlength="2000" placeholder="Ví dụ: Nên phân nhóm và kiểm tra cấu hình profile ra sao để dễ quản lý?"></textarea>
           </div>
-          <div class="form-group">
-            <label for="ai-advisor-key">API key (mã hóa bằng Windows)</label>
-            <input id="ai-advisor-key" type="password" maxlength="300" autocomplete="off" placeholder="Để trống nếu đã lưu">
-          </div>
-        </div>
-        <div class="lhm-ai-toolbar">
-          <button class="btn btn-secondary" type="button" id="ai-advisor-save-key">Lưu cấu hình</button>
-          <button class="btn btn-secondary" type="button" id="ai-advisor-forget-key">Xóa API key</button>
-          <span id="ai-advisor-key-status" role="status"></span>
-        </div>
-        <section class="lhm-ai-budget-panel" aria-label="Hạn mức sử dụng AI">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="ai-advisor-monthly-budget">Giới hạn yêu cầu AI mỗi tháng (0 = không giới hạn)</label>
-              <input id="ai-advisor-monthly-budget" type="number" min="0" max="1000" step="1" value="0">
-            </div>
-            <div class="form-group">
-              <label for="ai-advisor-save-budget">Bảo vệ hạn mức</label>
-              <button class="btn btn-secondary" type="button" id="ai-advisor-save-budget">Áp dụng hạn mức</button>
-            </div>
-          </div>
-          <p id="ai-advisor-budget-status" class="lhm-bulk-help" role="status" aria-live="polite">Đang kiểm tra lượt dùng AI tháng này…</p>
-          <p class="lhm-bulk-help">Đếm số yêu cầu AI (kể cả lần thất bại/đã dừng) trên máy này, không phải hạn mức USD hay số token bảo đảm. Dữ liệu chỉ gồm số đếm và tổng token khi nhà cung cấp trả về; không lưu câu hỏi hoặc khóa API.</p>
-        </section>
-        <div class="form-group">
-          <label for="ai-advisor-question">Câu hỏi (tối đa 2.000 ký tự)</label>
-          <textarea id="ai-advisor-question" rows="4" maxlength="2000" placeholder="Ví dụ: Nên phân nhóm và kiểm tra cấu hình profile ra sao để dễ quản lý?"></textarea>
-        </div>
-        <label class="lhm-ai-optin"><input type="checkbox" id="ai-advisor-share-stats">
-          Cho phép gửi số lượng tổng hợp profile, engine, nhóm và proxy (không gửi tên, địa chỉ proxy, URL hoặc dữ liệu phiên)
-        </label>
-        <div class="lhm-ai-toolbar">
-          <button class="btn btn-primary" type="button" id="ai-advisor-ask">Hỏi AI</button>
-          <button class="btn btn-secondary" type="button" id="ai-advisor-stop">Dừng</button>
-          <span id="ai-advisor-request-status" role="status" aria-live="polite"></span>
-        </div>
-        <div class="lhm-ai-answer" id="ai-advisor-answer" aria-live="polite">Câu trả lời sẽ hiển thị ở đây. Nội dung không được tự động đưa vào workflow.</div>
-        <p class="lhm-bulk-help">LHM không tự gửi dữ liệu trình duyệt, cookies, mật khẩu, token, tên hồ sơ hay proxy host. Không chia sẻ thông tin nhạy cảm trong câu hỏi. Model có thể trả lời sai; hãy xác minh trước khi áp dụng.</p>
-        <div class="lhm-ai-draft-panel">
-          <h3>AI hỗ trợ phác thảo quy trình Automation Studio</h3>
-          <p class="lhm-bulk-help">Chỉ tạo bản nháp và kiểm tra bước, không chạy. Sau khi xem trước, bạn có thể lưu thủ công vào Studio. Chỉ dùng với website bạn có quyền tự động hóa; không dùng Google Ads, trang đăng nhập hoặc thanh toán.</p>
-          <div class="form-row">
-            <div class="form-group"><label for="ai-draft-profile">Profile đích (giữ cục bộ)</label><select id="ai-draft-profile"><option value="">Chọn profile Chromium</option></select></div>
-            <div class="form-group"><label for="ai-draft-hosts">Tên miền được phép (cách nhau dấu phẩy)</label><input id="ai-draft-hosts" placeholder="example.com" maxlength="300"></div>
-          </div>
-          <div class="form-group"><label for="ai-draft-objective">Mô tả mục tiêu (10–450 ký tự)</label>
-            <textarea id="ai-draft-objective" rows="3" maxlength="450" placeholder="Ví dụ: Kiểm tra trang giới thiệu và xác nhận có nút gửi liên hệ"></textarea>
-          </div>
-          <label class="lhm-ai-optin"><input id="ai-draft-consent" type="checkbox"> Tôi đồng ý gửi mô tả và tên miền ở trên tới OpenRouter; mã profile và dữ liệu phiên vẫn ở máy.</label>
+          <label class="lhm-ai-optin"><input type="checkbox" id="ai-advisor-share-stats">
+            Cho phép gửi số lượng tổng hợp profile, engine, nhóm và proxy (không gửi tên, địa chỉ proxy, URL hoặc dữ liệu phiên)
+          </label>
           <div class="lhm-ai-toolbar">
-            <button class="btn btn-secondary" type="button" id="ai-draft-generate">Tạo bản nháp</button>
-            <button class="btn btn-primary" type="button" id="ai-draft-save" disabled>Lưu bản nháp vào Studio</button>
+            <button class="btn btn-primary" type="button" id="ai-advisor-ask">Hỏi AI</button>
+            <button class="btn btn-secondary" type="button" id="ai-advisor-stop">Dừng</button>
+            <span id="ai-advisor-request-status" role="status" aria-live="polite"></span>
           </div>
-          <pre id="ai-draft-preview" class="lhm-ai-draft-preview" aria-live="polite">Chưa tạo bản nháp.</pre>
+          <div class="lhm-ai-answer" id="ai-advisor-answer" aria-live="polite">Câu trả lời sẽ hiển thị ở đây. Nội dung không được tự động đưa vào workflow.</div>
+          <p class="lhm-bulk-help">LHM không tự gửi dữ liệu trình duyệt, cookies, mật khẩu, token, tên hồ sơ hay proxy host. Không chia sẻ thông tin nhạy cảm trong câu hỏi. Model có thể trả lời sai; hãy xác minh trước khi áp dụng.</p>
+        </div>
+        <div class="tab-content lhm-dialog-pane" id="ai-tab-draft" role="tabpanel">
+          <div class="lhm-ai-draft-panel">
+            <h3>AI hỗ trợ phác thảo quy trình Automation Studio</h3>
+            <p class="lhm-bulk-help">Chỉ tạo bản nháp và kiểm tra bước, không chạy. Sau khi xem trước, bạn có thể lưu thủ công vào Studio. Chỉ dùng với website bạn có quyền tự động hóa; không dùng Google Ads, trang đăng nhập hoặc thanh toán.</p>
+            <div class="form-row">
+              <div class="form-group"><label for="ai-draft-profile">Profile đích (giữ cục bộ)</label><select id="ai-draft-profile"><option value="">Chọn profile Chromium</option></select></div>
+              <div class="form-group"><label for="ai-draft-hosts">Tên miền được phép (cách nhau dấu phẩy)</label><input id="ai-draft-hosts" placeholder="example.com" maxlength="300"></div>
+            </div>
+            <div class="form-group"><label for="ai-draft-objective">Mô tả mục tiêu (10–450 ký tự)</label>
+              <textarea id="ai-draft-objective" rows="3" maxlength="450" placeholder="Ví dụ: Kiểm tra trang giới thiệu và xác nhận có nút gửi liên hệ"></textarea>
+            </div>
+            <label class="lhm-ai-optin"><input id="ai-draft-consent" type="checkbox"> Tôi đồng ý gửi mô tả và tên miền ở trên tới OpenRouter; mã profile và dữ liệu phiên vẫn ở máy.</label>
+            <div class="lhm-ai-toolbar">
+              <button class="btn btn-secondary" type="button" id="ai-draft-generate">Tạo bản nháp</button>
+              <button class="btn btn-primary" type="button" id="ai-draft-save" disabled>Lưu bản nháp vào Studio</button>
+            </div>
+            <pre id="ai-draft-preview" class="lhm-ai-draft-preview" aria-live="polite">Chưa tạo bản nháp.</pre>
+          </div>
+        </div>
+        <div class="tab-content lhm-dialog-pane" id="ai-tab-settings" role="tabpanel">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ai-advisor-model">Model OpenRouter (provider/model)</label>
+              <input id="ai-advisor-model" type="text" maxlength="100" value="openai/gpt-4o-mini" spellcheck="false">
+            </div>
+            <div class="form-group">
+              <label for="ai-advisor-key">API key (mã hóa bằng Windows)</label>
+              <input id="ai-advisor-key" type="password" maxlength="300" autocomplete="off" placeholder="Để trống nếu đã lưu">
+            </div>
+          </div>
+          <div class="lhm-ai-toolbar">
+            <button class="btn btn-secondary" type="button" id="ai-advisor-save-key">Lưu cấu hình</button>
+            <button class="btn btn-secondary" type="button" id="ai-advisor-forget-key">Xóa API key</button>
+            <span id="ai-advisor-key-status" role="status"></span>
+          </div>
+          <section class="lhm-ai-budget-panel" aria-label="Hạn mức sử dụng AI">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="ai-advisor-monthly-budget">Giới hạn yêu cầu AI mỗi tháng (0 = không giới hạn)</label>
+                <input id="ai-advisor-monthly-budget" type="number" min="0" max="1000" step="1" value="0">
+              </div>
+              <div class="form-group">
+                <label for="ai-advisor-save-budget">Bảo vệ hạn mức</label>
+                <button class="btn btn-secondary" type="button" id="ai-advisor-save-budget">Áp dụng hạn mức</button>
+              </div>
+            </div>
+            <p id="ai-advisor-budget-status" class="lhm-bulk-help" role="status" aria-live="polite">Đang kiểm tra lượt dùng AI tháng này…</p>
+            <p class="lhm-bulk-help">Đếm số yêu cầu AI (kể cả lần thất bại/đã dừng) trên máy này, không phải hạn mức USD hay số token bảo đảm. Dữ liệu chỉ gồm số đếm và tổng token khi nhà cung cấp trả về; không lưu câu hỏi hoặc khóa API.</p>
+          </section>
         </div>
       </div>
       <div class="modal-footer"><button class="btn btn-primary" type="button" id="ai-advisor-done">Đóng</button></div>
@@ -952,50 +974,58 @@
         <button type="button" class="btn-close" id="lhm-about-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="lhm-bulk-help">Thông số được lấy trực tiếp từ chương trình đang chạy, không dựa trên số phiên bản viết sẵn trong giao diện.</p>
-        <dl class="lhm-about-metrics">
-          <div><dt>Phiên bản đang chạy</dt><dd id="lhm-about-version">Đang tải…</dd></div>
-          <div><dt>Nền tảng</dt><dd id="lhm-about-platform">—</dd></div>
-          <div><dt>Bản phát hành</dt><dd id="lhm-about-build">—</dd></div>
-          <div><dt>Chế độ cấp phép</dt><dd id="lhm-about-license">—</dd></div>
-        </dl>
-        <section class="lhm-customer-handoff" aria-label="Báo cáo sẵn sàng bàn giao khách hàng">
-          <div class="lhm-customer-heading">
-            <div><span class="lhm-customer-eyebrow">Bàn giao khách hàng · kiểm tra trên máy</span>
-              <h3>Kiểm tra trước khi bàn giao khách hàng</h3>
-              <p>Đối chiếu license, cập nhật, dữ liệu và hồ sơ từ trạng thái thật trên máy. Không thay thế nghiệm thu phát hành.</p>
+        <div class="tabs lhm-steps lhm-dialog-tabs" role="tablist" aria-label="Phần của Thông tin LHM">
+          <button type="button" class="tab-btn active" role="tab" data-tab="about-tab-version">Phiên bản &amp; cập nhật</button>
+          <button type="button" class="tab-btn" role="tab" data-tab="about-tab-handoff">Bàn giao khách hàng</button>
+        </div>
+        <div class="tab-content lhm-dialog-pane active" id="about-tab-version" role="tabpanel">
+          <p class="lhm-bulk-help">Thông số được lấy trực tiếp từ chương trình đang chạy, không dựa trên số phiên bản viết sẵn trong giao diện.</p>
+          <dl class="lhm-about-metrics">
+            <div><dt>Phiên bản đang chạy</dt><dd id="lhm-about-version">Đang tải…</dd></div>
+            <div><dt>Nền tảng</dt><dd id="lhm-about-platform">—</dd></div>
+            <div><dt>Bản phát hành</dt><dd id="lhm-about-build">—</dd></div>
+            <div><dt>Chế độ cấp phép</dt><dd id="lhm-about-license">—</dd></div>
+          </dl>
+          <section class="lhm-update-center" aria-label="Cập nhật phần mềm online">
+            <h3><span data-lhm-icon="refresh-cw" aria-hidden="true"></span> Cập nhật phiên bản online</h3>
+            <p class="lhm-bulk-help">Chỉ kiểm tra khi bạn bấm; ứng dụng không tải ngầm và không tự chạy EXE. Bộ cài không cần ký Authenticode nhưng manifest cập nhật phải có chữ ký Ed25519 hợp lệ, và file tải về phải đúng SHA-256.</p>
+            <p id="lhm-update-status" role="status" aria-live="polite">Đang kiểm tra cấu hình cập nhật…</p>
+            <div id="lhm-update-offer" class="lhm-update-offer" hidden></div>
+            <div class="lhm-update-actions">
+              <button type="button" class="btn btn-secondary" id="lhm-update-check">Kiểm tra phiên bản online</button>
+              <button type="button" class="btn btn-primary" id="lhm-update-download" disabled>Tải bản cập nhật đã xác minh</button>
+              <button type="button" class="btn btn-secondary" id="lhm-update-folder" disabled>Mở thư mục bộ cài</button>
             </div>
-            <span id="lhm-customer-label" class="lhm-customer-label" data-state="unknown">CHƯA KIỂM TRA</span>
-          </div>
-          <div class="lhm-customer-actions">
-            <button type="button" class="btn btn-primary" id="lhm-customer-check">Chạy kiểm tra cục bộ</button>
-            <button type="button" class="btn btn-secondary" id="lhm-customer-export" disabled>Xuất báo cáo hỗ trợ JSON</button>
-          </div>
-          <p id="lhm-customer-status" role="status" aria-live="polite">Chưa có bằng chứng cho phiên làm việc này.</p>
-          <div id="lhm-customer-checks" class="lhm-customer-checks" aria-live="polite"></div>
-          <p class="lhm-customer-disclaimer">Bốn điều kiện phát hành vẫn cần nghiệm thu riêng: Windows máy khách, cập nhật có chữ ký thật, hạ tầng gia hạn/thanh toán và chủ dự án phê duyệt. Báo cáo không lưu mã cài đặt, URL, token, cookie hay dữ liệu phiên.</p>
-        </section>
-        <section class="lhm-update-center" aria-label="Cập nhật phần mềm online">
-          <h3><span data-lhm-icon="refresh-cw" aria-hidden="true"></span> Cập nhật phiên bản online</h3>
-          <p class="lhm-bulk-help">Chỉ kiểm tra khi bạn bấm; ứng dụng không tải ngầm và không tự chạy EXE. Bộ cài không cần ký Authenticode nhưng manifest cập nhật phải có chữ ký Ed25519 hợp lệ, và file tải về phải đúng SHA-256.</p>
-          <p id="lhm-update-status" role="status" aria-live="polite">Đang kiểm tra cấu hình cập nhật…</p>
-          <section class="lhm-upgrade-readiness" aria-label="Kiểm tra bảo toàn dữ liệu khi nâng cấp">
-            <h4>Kiểm tra dữ liệu trước nâng cấp</h4>
-            <p class="lhm-bulk-help">Kiểm tra cục bộ, chỉ đọc: hồ sơ, workflow, tình trạng license/proxy vault và các phiên đang chạy. Không truy cập website, không đổi hay sao lưu cookie.</p>
-            <button type="button" class="btn btn-secondary" id="lhm-upgrade-safety-check">Kiểm tra an toàn nâng cấp</button>
-            <p id="lhm-upgrade-safety-status" role="status" aria-live="polite">Chưa thực hiện kiểm tra.</p>
-            <div id="lhm-upgrade-safety-report" class="lhm-upgrade-safety-report"></div>
-            <p class="lhm-bulk-help">Sao lưu cấu hình .lhmbak <strong>không</strong> chứa cookie hay toàn bộ dữ liệu phiên; khi cần hãy sử dụng Session Snapshots trước khi cài bản mới. Chạy lại bài kiểm tra sau khi nâng cấp để đối chiếu.</p>
+            <p class="lhm-bulk-help">Nếu chưa có khóa nhà phát hành hoặc manifest hợp lệ, chức năng tải bị khóa an toàn. Kiểm tra online có thể tiết lộ IP tới máy chủ GitHub. Bản tải về cần được người dùng chủ động cài và có thể thấy cảnh báo SmartScreen.</p>
+            <section class="lhm-upgrade-readiness" aria-label="Kiểm tra bảo toàn dữ liệu khi nâng cấp">
+              <h4>Kiểm tra dữ liệu trước nâng cấp</h4>
+              <p class="lhm-bulk-help">Kiểm tra cục bộ, chỉ đọc: hồ sơ, workflow, tình trạng license/proxy vault và các phiên đang chạy. Không truy cập website, không đổi hay sao lưu cookie.</p>
+              <button type="button" class="btn btn-secondary" id="lhm-upgrade-safety-check">Kiểm tra an toàn nâng cấp</button>
+              <p id="lhm-upgrade-safety-status" role="status" aria-live="polite">Chưa thực hiện kiểm tra.</p>
+              <div id="lhm-upgrade-safety-report" class="lhm-upgrade-safety-report"></div>
+              <p class="lhm-bulk-help">Sao lưu cấu hình .lhmbak <strong>không</strong> chứa cookie hay toàn bộ dữ liệu phiên; khi cần hãy sử dụng Session Snapshots trước khi cài bản mới. Chạy lại bài kiểm tra sau khi nâng cấp để đối chiếu.</p>
+            </section>
           </section>
-          <div id="lhm-update-offer" class="lhm-update-offer" hidden></div>
-          <div class="lhm-update-actions">
-            <button type="button" class="btn btn-secondary" id="lhm-update-check">Kiểm tra phiên bản online</button>
-            <button type="button" class="btn btn-primary" id="lhm-update-download" disabled>Tải bản cập nhật đã xác minh</button>
-            <button type="button" class="btn btn-secondary" id="lhm-update-folder" disabled>Mở thư mục bộ cài</button>
-          </div>
-          <p class="lhm-bulk-help">Nếu chưa có khóa nhà phát hành hoặc manifest hợp lệ, chức năng tải bị khóa an toàn. Kiểm tra online có thể tiết lộ IP tới máy chủ GitHub. Bản tải về cần được người dùng chủ động cài và có thể thấy cảnh báo SmartScreen.</p>
-        </section>
-        <p class="lhm-bulk-help">Ứng dụng quản lý hồ sơ trình duyệt cục bộ, proxy và các quy trình được phê duyệt. Việc kiểm thử đóng gói không chứng minh phần mềm có khả năng vượt qua phát hiện của website hoặc đầy đủ tính năng của sản phẩm khác.</p>
+          <p class="lhm-bulk-help">Ứng dụng quản lý hồ sơ trình duyệt cục bộ, proxy và các quy trình được phê duyệt. Việc kiểm thử đóng gói không chứng minh phần mềm có khả năng vượt qua phát hiện của website hoặc đầy đủ tính năng của sản phẩm khác.</p>
+        </div>
+        <div class="tab-content lhm-dialog-pane" id="about-tab-handoff" role="tabpanel">
+          <section class="lhm-customer-handoff" aria-label="Báo cáo sẵn sàng bàn giao khách hàng">
+            <div class="lhm-customer-heading">
+              <div><span class="lhm-customer-eyebrow">Bàn giao khách hàng · kiểm tra trên máy</span>
+                <h3>Kiểm tra trước khi bàn giao khách hàng</h3>
+                <p>Đối chiếu license, cập nhật, dữ liệu và hồ sơ từ trạng thái thật trên máy. Không thay thế nghiệm thu phát hành.</p>
+              </div>
+              <span id="lhm-customer-label" class="lhm-customer-label" data-state="unknown">CHƯA KIỂM TRA</span>
+            </div>
+            <div class="lhm-customer-actions">
+              <button type="button" class="btn btn-primary" id="lhm-customer-check">Chạy kiểm tra cục bộ</button>
+              <button type="button" class="btn btn-secondary" id="lhm-customer-export" disabled>Xuất báo cáo hỗ trợ JSON</button>
+            </div>
+            <p id="lhm-customer-status" role="status" aria-live="polite">Chưa có bằng chứng cho phiên làm việc này.</p>
+            <div id="lhm-customer-checks" class="lhm-customer-checks" aria-live="polite"></div>
+            <p class="lhm-customer-disclaimer">Bốn điều kiện phát hành vẫn cần nghiệm thu riêng: Windows máy khách, cập nhật có chữ ký thật, hạ tầng gia hạn/thanh toán và chủ dự án phê duyệt. Báo cáo không lưu mã cài đặt, URL, token, cookie hay dữ liệu phiên.</p>
+          </section>
+        </div>
         <p id="lhm-about-message" role="status" aria-live="polite"></p>
       </div>
       <div class="modal-footer">

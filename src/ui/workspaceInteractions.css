@@ -19,7 +19,7 @@
 .lhm-v7-command-top{display:flex;align-items:center;gap:13px;padding:20px 24px 10px}
 .lhm-v7-command-top>.lhm-icon{width:25px;height:25px;color:#5a7de9}
 .lhm-v7-command-top h2{font-size:17px;font-weight:780;letter-spacing:-.04em;color:#212b41}
-.lhm-v7-command-top p{color:#9ca6b9;margin-top:3px;font-size:11px}
+.lhm-v7-command-top p{color:var(--lhm-muted,#4f5e72);margin-top:3px;font-size:12px}
 #lhm-v7-command-close{margin-left:auto;border:1px solid #e7eaf0;border-radius:8px;background:#fafbfd;padding:7px 9px;cursor:pointer;font-size:10px;color:#64758f}
 .lhm-v7-command-search{margin:11px 18px 4px;display:flex;align-items:center;gap:10px;border:1px solid #dee5f0;background:#f7f9fc;border-radius:13px;padding:0 13px;height:47px}
 .lhm-v7-command-search:focus-within{border-color:#9db6fa;box-shadow:0 0 0 3px #6486f41a}
@@ -36,11 +36,11 @@
 .lhm-v7-command-item-mark{width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:#e8edff;color:#5779db;font-size:16px}
 .lhm-v7-command-item-copy{display:grid;gap:3px;flex:1;min-width:0}
 .lhm-v7-command-item-copy strong{font-size:12px;font-weight:690;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lhm-v7-command-item-copy small{font-size:10px;color:#8b9aaf}
+.lhm-v7-command-item-copy small{font-size:11px;color:var(--lhm-muted,#4f5e72)}
 .lhm-v7-command-arrow{font-size:13px;color:#a9b5c8}
-.lhm-v7-command-empty{font-size:12px;color:#8899ae;text-align:center;padding:28px}
-.lhm-v7-command-footer{border-top:1px solid #eaeef3;display:flex;justify-content:center;flex-wrap:wrap;gap:7px;padding:14px;font-size:10px;color:#8695aa}
-.lhm-v7-command-footer span{color:#c1c7d0}
+.lhm-v7-command-empty{font-size:12px;color:var(--lhm-muted,#4f5e72);text-align:center;padding:28px}
+.lhm-v7-command-footer{border-top:1px solid #eaeef3;display:flex;justify-content:center;flex-wrap:wrap;gap:7px;padding:14px;font-size:11px;color:var(--lhm-muted,#4f5e72)}
+.lhm-v7-command-footer span{color:#9aa6b6}
 @keyframes lhm-v7-palette{from{opacity:0;transform:translateY(-13px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:1480px){.lhm-v7-command-open{padding:0 8px;font-size:10px}}
 @media(max-width:1130px){.lhm-v7-command-open span:not(.lhm-icon){display:none}.lhm-v7-show-rail{font-size:10px}}

@@ -340,7 +340,7 @@ function createWindow() {
           // Read-only commercial handoff: assert actual main-process signal
           // collection and that no owner-approval claims are made.
           await mainWindow.webContents.executeJavaScript(
-            "document.getElementById('lhm-customer-check').click()",true);
+            "document.querySelector('#modal-app-about .tab-btn[data-tab=\"about-tab-handoff\"]')?.click(); document.getElementById('lhm-customer-check').click()",true);
           await new Promise(resolve=>setTimeout(resolve,900));
           const handoffCheck=await mainWindow.webContents.executeJavaScript(
             "(() => ({cards:document.querySelectorAll('#lhm-customer-checks .lhm-customer-check').length,label:document.getElementById('lhm-customer-label').textContent,status:document.getElementById('lhm-customer-status').textContent,pending:document.getElementById('lhm-customer-checks').textContent.includes('chưa xác minh')}))()",true);
