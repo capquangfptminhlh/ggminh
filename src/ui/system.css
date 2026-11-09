@@ -61,6 +61,9 @@ button[disabled],.btn[disabled]{opacity:.5;cursor:not-allowed}
 .lhm-icon{width:16px;height:16px;display:inline-block;flex-shrink:0;vertical-align:middle}
 button:has(>.lhm-icon),button:has(>span>.lhm-icon),summary:has(>.lhm-icon){display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .lhm-hidden-actions{display:none!important}
+/* The app shows/hides with the hidden attribute; component display rules
+   (e.g. .form-group{display:flex}) must never override it. */
+[hidden]{display:none!important}
 code,.profile-id{font-family:"Cascadia Code",Consolas,monospace}
 
 /* 3. Buttons --------------------------------------------------------------- */
