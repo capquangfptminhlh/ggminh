@@ -13,7 +13,6 @@ const {inspectBinary}=require('./runtimeRegistry');
 const DOMAIN='LHM_BROWSER_ENGINE_BUNDLE_V1\n';
 const SHA=/^[a-f0-9]{64}$/;
 const VERSION=/^\d{1,3}\.\d{1,5}\.\d{1,5}(?:\.\d{1,6})?$/;
-const RELATIVE=/^[a-zA-Z0-9_][a-zA-Z0-9_.-]*(?:\/[a-zA-Z0-9_][a-zA-Z0-9_.-]*)*$/;
 const MAX_FILES=10000;
 const MAX_FILE_SIZE=512*1024*1024;
 const MAX_TOTAL_SIZE=3*1024*1024*1024;
@@ -35,12 +34,20 @@ function containsPrivateKeyMaterial(buffer){
  const text=Buffer.isBuffer(buffer)?buffer.toString('latin1'):String(buffer);
  return PRIVATE_KEY_MARKERS.some(marker=>text.includes(marker));
 }
-function fileName(name){
- if(typeof name!=='string'||name.length>240||!RELATIVE.test(name)||
-    name.split('/').some(part=>part==='.'||part==='..'))
+function normalizeEngineRelativePath(input){
+ if(typeof input!=='string'||!input)throw Error('Unsafe bundled engine relative file path');
+ const name=input.normalize('NFC');
+ if(name.length>240||name.startsWith('/')||name.includes('\\')||
+    /[\u0000-\u001f\u007f<>:"|?*]/.test(name))
   throw Error('Unsafe bundled engine relative file path');
- return name;
+ const parts=name.split('/');
+ if(parts.some(part=>!part||part==='.'||part==='..'||part.length>180||
+    /[. ]$/.test(part)||
+    /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part)))
+  throw Error('Unsafe bundled engine relative file path');
+ return parts.join('/');
 }
+const fileName=normalizeEngineRelativePath;
 function canonicalManifest(payload){
  if(!payload||typeof payload!=='object'||Array.isArray(payload)||
     Object.keys(payload).sort().join(',')!=='engine,entry,files,schema,version'||
@@ -57,9 +64,11 @@ function canonicalManifest(payload){
      !fileName(f.path)||!SHA.test(f.sha256)||!Number.isSafeInteger(f.bytes)||
      f.bytes<1||f.bytes>MAX_FILE_SIZE)
    throw Error('Invalid bundled engine file at index '+i);
-  if(names.has(f.path.toLowerCase()))throw Error('Duplicate bundled engine file');
-  names.add(f.path.toLowerCase());
-  return {path:f.path,bytes:f.bytes,sha256:f.sha256};
+  const canonical=fileName(f.path);
+  const key=canonical.toLowerCase();
+  if(names.has(key))throw Error('Duplicate bundled engine file');
+  names.add(key);
+  return {path:canonical,bytes:f.bytes,sha256:f.sha256};
  });
  if(!names.has(payload.entry.toLowerCase()))
   throw Error('Manifest omits the browser executable');
@@ -118,6 +127,7 @@ function sha256File(filename){
 }
 function listFiles(root){
  const files=[];
+ const names=new Set();
  function visit(directory){
   for(const name of fs.readdirSync(directory)){
    const full=path.join(directory,name);
@@ -126,7 +136,13 @@ function listFiles(root){
    if(stat.isDirectory())visit(full);
    else if(stat.isFile()){
     const rel=path.relative(root,full).split(path.sep).join('/');
-    if(rel!=='manifest.json')files.push(fileName(rel));
+    if(rel!=='manifest.json'){
+     const canonical=fileName(rel);
+     if(canonical!==rel)throw Error('Bundled engine path must use Unicode NFC');
+     const key=canonical.toLowerCase();
+     if(names.has(key))throw Error('Duplicate bundled engine file');
+     names.add(key);files.push(canonical);
+    }
    }else throw Error('Unsupported engine resource file');
    if(files.length>MAX_FILES)throw Error('Too many bundled engine files');
   }
@@ -199,5 +215,5 @@ class BundledEngineManager{
  }
 }
 module.exports={BundledEngineManager,canonicalManifest,signedPayload,
- decodeSignature,fileName,listFiles,sha256File,DOMAIN,
+ decodeSignature,fileName,normalizeEngineRelativePath,listFiles,sha256File,DOMAIN,
  containsPrivateKeyMaterial,PRIVATE_KEY_MARKERS};
