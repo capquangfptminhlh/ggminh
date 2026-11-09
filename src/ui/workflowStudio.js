@@ -2,6 +2,9 @@
   'use strict';
   const api = window.api;
   const el = id => document.getElementById(id);
+  // Editor tabs (steps, graph, recorder, schedule, batch, log): the generic
+  // .tabs handler in renderer.js switches panes; this opens one from code.
+  const showTab = name => document.querySelector('#modal-studio .studio-tabs .tab-btn[data-tab="studio-tab-' + name + '"]')?.click();
   let workflows = [];
   let starterTemplates = [];
   let current = null;
@@ -159,6 +162,7 @@
   function selectGraphStep(index) {
     if (!current || index >= current.steps.length || index < 0) return;
     graphSelection = index;
+    showTab('steps');
     for (const node of el('studio-graph').querySelectorAll('[data-step-index]')) {
       node.classList.toggle('is-current', Number(node.dataset.stepIndex) === index);
     }
@@ -433,6 +437,7 @@
       delete current.id;
       el('studio-hosts').value = draft.hosts;
       el('studio-profile').value = draft.profileId;
+      showTab('steps');
       el('studio-name').value = 'Bản ghi ' + new Date().toLocaleDateString('vi-VN');
       renderSteps();
       alert('Đã nhập ' + draft.steps.length + ' bước. Hãy kiểm tra selector, điền nội dung phù hợp và bấm Lưu.');
@@ -530,7 +535,7 @@
       try { await save(); alert('Đã lưu quy trình'); } catch (error) { alert('Không thể lưu: ' + error.message); }
     });
     el('studio-run').addEventListener('click', async () => {
-      try { const item = await save(); await api.studioRun(item.id); await updateStatus(); }
+      try { const item = await save(); await api.studioRun(item.id); showTab('log'); await updateStatus(); }
       catch (error) { alert('Không thể chạy: ' + error.message); }
     });
     el('studio-stop').addEventListener('click', async () => {

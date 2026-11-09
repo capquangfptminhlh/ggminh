@@ -1348,141 +1348,169 @@ run();
   <div class="modal-overlay" id="modal-studio">
     <div class="modal-dialog studio-dialog" role="dialog" aria-modal="true" aria-labelledby="studio-heading">
       <div class="modal-header">
-        <div>
+        <div class="lhm-dialog-title">
           <h2 id="studio-heading">Automation Studio</h2>
-          <p class="studio-sub">Thiết kế & chạy quy trình web được cấp quyền ngay trong ứng dụng</p>
+          <p class="studio-sub lhm-dialog-subtitle">Thiết kế &amp; chạy quy trình web được cấp quyền ngay trong ứng dụng</p>
         </div>
         <button class="btn-close" id="studio-close" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body studio-content">
-        <p class="studio-warning">Studio chạy trong cửa sổ Electron có phiên độc lập; không chia sẻ cookie với Chrome/Gecko. Không tự động hóa Google Ads, đăng nhập Google, thanh toán hoặc CAPTCHA. Không lưu mật khẩu/OTP vào quy trình.</p>
         <div class="studio-grid">
-          <aside class="studio-sidebar">
+          <aside class="studio-sidebar" aria-label="Thư viện quy trình">
             <div class="studio-toolbar">
               <strong>Thư viện quy trình</strong>
               <button class="btn btn-sm btn-primary" id="studio-new">Tạo mới</button>
             </div>
-            <label class="studio-search-label" for="studio-workflow-search">Tìm quy trình</label>
-            <input id="studio-workflow-search" class="studio-workflow-search" type="search" maxlength="100" placeholder="Tên quy trình..." autocomplete="off">
-            <label class="studio-search-label" for="studio-template-select">Mẫu quy trình có sẵn</label>
-            <select id="studio-template-select" aria-label="Chọn mẫu quy trình">
-              <option value="">Chọn một mẫu để bắt đầu</option>
-            </select>
-            <button type="button" class="btn btn-sm btn-secondary" id="studio-template-load" disabled>Dùng mẫu</button>
-            <p class="studio-muted" id="studio-template-description" role="status" aria-live="polite">Mẫu hoạt động cục bộ, không tự chạy. Hãy sửa URL, tên miền, kiểm tra bước và lưu trước khi sử dụng.</p>
+            <label class="studio-search-label lhm-sr-only" for="studio-workflow-search">Tìm quy trình</label>
+            <input id="studio-workflow-search" class="studio-workflow-search" type="search" maxlength="100" placeholder="Tìm quy trình…" autocomplete="off">
             <div id="studio-workflows" class="studio-saved-list" aria-live="polite"></div>
+            <div class="studio-templates">
+              <label class="studio-search-label" for="studio-template-select">Bắt đầu từ mẫu có sẵn</label>
+              <div class="studio-template-row">
+                <select id="studio-template-select" aria-label="Chọn mẫu quy trình">
+                  <option value="">Chọn một mẫu để bắt đầu</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-secondary" id="studio-template-load" disabled>Dùng mẫu</button>
+              </div>
+              <p class="studio-muted" id="studio-template-description" role="status" aria-live="polite">Mẫu hoạt động cục bộ, không tự chạy. Hãy sửa URL, tên miền, kiểm tra bước và lưu trước khi sử dụng.</p>
+            </div>
+            <details class="studio-warning">
+              <summary>Giới hạn an toàn</summary>
+              <p>Studio chạy trong cửa sổ Electron có phiên độc lập; không chia sẻ cookie với Chrome/Gecko. Không tự động hóa Google Ads, đăng nhập Google, thanh toán hoặc CAPTCHA. Không lưu mật khẩu/OTP vào quy trình.</p>
+            </details>
           </aside>
           <section id="studio-editor" class="studio-editor" aria-label="Thiết kế quy trình">
-            <div class="studio-form-row">
+            <div class="studio-form-row studio-form-main">
               <label>Tên quy trình<input id="studio-name" type="text" maxlength="100" placeholder="Ví dụ: Kiểm tra website"></label>
               <label>Hồ sơ<select id="studio-profile"></select></label>
+              <label class="studio-domain-label"><span>Tên miền được phép <span class="lhm-label-hint">· phân cách bằng dấu phẩy</span></span>
+                <input id="studio-hosts" type="text" placeholder="example.com, mysite.vn">
+              </label>
             </div>
-            <label class="studio-domain-label">Tên miền được phép, phân cách bằng dấu phẩy
-              <input id="studio-hosts" type="text" placeholder="example.com, mysite.vn">
-            </label>
-            <section class="studio-visual-section" aria-labelledby="studio-visual-heading">
-              <div class="studio-visual-heading">
-                <div><strong id="studio-visual-heading">Sơ đồ quy trình</strong><p>Sơ đồ đọc trực tiếp từ các bước đã tạo. Chọn một node để sửa bước tương ứng.</p></div>
-                <button type="button" class="btn btn-sm btn-secondary" id="studio-graph-refresh">Cập nhật sơ đồ</button>
+            <div class="tabs lhm-steps studio-tabs" role="tablist" aria-label="Phần của quy trình">
+              <button type="button" class="tab-btn active" role="tab" data-tab="studio-tab-steps">Các bước</button>
+              <button type="button" class="tab-btn" role="tab" data-tab="studio-tab-graph">Sơ đồ</button>
+              <button type="button" class="tab-btn" role="tab" data-tab="studio-tab-record">Ghi thao tác</button>
+              <button type="button" class="tab-btn" role="tab" data-tab="studio-tab-schedule">Lịch chạy</button>
+              <button type="button" class="tab-btn" role="tab" data-tab="studio-tab-batch">Chạy nhiều hồ sơ</button>
+              <button type="button" class="tab-btn" role="tab" data-tab="studio-tab-log">Nhật ký</button>
+            </div>
+            <div class="tab-content studio-pane active" id="studio-tab-steps" role="tabpanel">
+              <div class="studio-toolbar studio-step-header">
+                <div><strong>Các bước thực hiện</strong> <span class="studio-muted">Kéo để sắp xếp lại</span></div>
+                <div class="studio-add-row">
+                  <select id="studio-add-type" aria-label="Loại bước">
+                    <option value="navigate">Mở URL</option>
+                    <option value="wait">Chờ</option>
+                    <option value="wait_for">Chờ phần tử xuất hiện</option>
+                    <option value="click">Nhấn phần tử</option>
+                    <option value="fill">Điền trường</option>
+                    <option value="assert_text">Kiểm tra văn bản</option>
+                    <option value="approval">Xác nhận thủ công</option>
+                    <option value="if_exists">Nếu phần tử tồn tại</option>
+                    <option value="else">Nếu không</option>
+                    <option value="end_if">Kết thúc nếu</option>
+                    <option value="repeat">Lặp 2–5 lần</option>
+                    <option value="end_repeat">Kết thúc lặp</option>
+                  </select>
+                  <button class="btn btn-sm btn-primary" id="studio-add-step">+ Thêm bước</button>
+                </div>
               </div>
-              <div class="studio-graph-scroll" id="studio-graph-scroll" tabindex="0" aria-label="Sơ đồ node có thể cuộn">
-                <div class="studio-graph" id="studio-graph" role="group" aria-label="Sơ đồ các bước"></div>
-              </div>
-              <p id="studio-graph-status" class="studio-graph-status" role="status">Đang chuẩn bị sơ đồ…</p>
-            </section>
-            <div class="studio-toolbar studio-step-header">
-              <strong>Các bước thực hiện</strong>
-              <span class="studio-muted">Các bước có thể sắp xếp lại</span>
+              <div id="studio-steps" class="studio-steps"></div>
+              <details class="studio-branch-help">
+                <summary>Cách dùng điều kiện và vòng lặp</summary>
+                <p class="studio-branch-guide">Điều kiện: <strong>Nếu phần tử tồn tại → [bước] → Nếu không (tùy chọn) → [bước] → Kết thúc nếu</strong>. Vòng lặp: <strong>Lặp → [bước] → Kết thúc lặp</strong>. Tối đa 2 tầng và 160 lượt xử lý. Các thao tác nhấn/điền phải có bước xác nhận nằm bên ngoài, trước các nhánh.</p>
+              </details>
             </div>
-            <div id="studio-steps" class="studio-steps"></div><p class="studio-branch-guide">Điều kiện: <strong>Nếu phần tử tồn tại → [bước] → Nếu không (tùy chọn) → [bước] → Kết thúc nếu</strong>. Vòng lặp: <strong>Lặp → [bước] → Kết thúc lặp</strong>. Tối đa 2 tầng và 160 lượt xử lý. Các thao tác nhấn/điền phải có bước xác nhận nằm bên ngoài, trước các nhánh.</p>
-            <div class="studio-toolbar studio-add-row">
-              <select id="studio-add-type" aria-label="Loại bước">
-                <option value="navigate">Mở URL</option>
-                <option value="wait">Chờ</option>
-                <option value="wait_for">Chờ phần tử xuất hiện</option>
-                <option value="click">Nhấn phần tử</option>
-                <option value="fill">Điền trường</option>
-                <option value="assert_text">Kiểm tra văn bản</option>
-                <option value="approval">Xác nhận thủ công</option>
-                <option value="if_exists">Nếu phần tử tồn tại</option>
-                <option value="else">Nếu không</option>
-                <option value="end_if">Kết thúc nếu</option>
-                <option value="repeat">Lặp 2–5 lần</option>
-                <option value="end_repeat">Kết thúc lặp</option>
-              </select>
-              <button class="btn btn-secondary" id="studio-add-step">Thêm bước</button>
+            <div class="tab-content studio-pane" id="studio-tab-graph" role="tabpanel">
+              <section class="studio-visual-section" aria-labelledby="studio-visual-heading">
+                <div class="studio-visual-heading">
+                  <div><strong id="studio-visual-heading">Sơ đồ quy trình</strong><p>Sơ đồ đọc trực tiếp từ các bước đã tạo. Chọn một node để sửa bước tương ứng.</p></div>
+                  <button type="button" class="btn btn-sm btn-secondary" id="studio-graph-refresh">Cập nhật sơ đồ</button>
+                </div>
+                <div class="studio-graph-scroll" id="studio-graph-scroll" tabindex="0" aria-label="Sơ đồ node có thể cuộn">
+                  <div class="studio-graph" id="studio-graph" role="group" aria-label="Sơ đồ các bước"></div>
+                </div>
+                <p id="studio-graph-status" class="studio-graph-status" role="status">Đang chuẩn bị sơ đồ…</p>
+              </section>
             </div>
-            <section class="studio-schedule-panel" aria-labelledby="studio-schedule-heading">
+            <div class="tab-content studio-pane" id="studio-tab-record" role="tabpanel">
+              <section class="studio-recorder">
+                <div class="studio-toolbar">
+                  <div class="studio-recorder-heading">
+                    <strong>Ghi thao tác</strong>
+                    <small>Ghi thao tác mẫu vào quy trình — bản thử nghiệm</small>
+                  </div>
+                  <span class="studio-recorder-indicator" id="studio-record-state">Chưa ghi</span>
+                </div>
+                <p class="studio-recorder-note">Chọn hồ sơ, nhập tên miền và URL ở bước Mở URL. LHM mở một cửa sổ tạm thời để ghi nút nhấn, trường nhập và trang điều hướng. Không ghi nội dung nhập hoặc thông tin đăng nhập.</p>
+                <div class="studio-record-actions">
+                  <button class="btn btn-secondary" id="studio-record-start">Bắt đầu ghi</button>
+                  <button class="btn btn-danger" id="studio-record-stop" disabled>Dừng ghi</button>
+                  <button class="btn btn-primary" id="studio-record-import" disabled>Đưa vào Studio</button>
+                </div>
+                <div class="studio-record-events" id="studio-record-events" aria-live="polite">Chưa có thao tác được ghi.</div>
+              </section>
+            </div>
+            <div class="tab-content studio-pane" id="studio-tab-schedule" role="tabpanel">
+              <section class="studio-schedule-panel" aria-labelledby="studio-schedule-heading">
               <div class="studio-schedule-title"><strong id="studio-schedule-heading">Lập lịch kiểm tra website</strong>
-                <span>Chỉ chạy quy trình chỉ đọc khi phần mềm đang mở</span></div>
+              <span>Chỉ chạy quy trình chỉ đọc khi phần mềm đang mở</span></div>
               <div class="studio-schedule-controls">
-                <label>Lần chạy tiếp theo <input type="datetime-local" id="studio-schedule-at"></label>
-                <label>Lặp lại <select id="studio-schedule-interval">
-                  <option value="0">Một lần</option><option value="15">15 phút</option>
-                  <option value="60">Mỗi giờ</option><option value="360">6 giờ</option>
-                  <option value="1440">Hằng ngày</option><option value="10080">Hằng tuần</option>
-                </select></label>
-                <button id="studio-schedule-add" type="button" class="btn btn-secondary">Tạo lịch</button>
+              <label>Lần chạy tiếp theo <input type="datetime-local" id="studio-schedule-at"></label>
+              <label>Lặp lại <select id="studio-schedule-interval">
+              <option value="0">Một lần</option><option value="15">15 phút</option>
+              <option value="60">Mỗi giờ</option><option value="360">6 giờ</option>
+              <option value="1440">Hằng ngày</option><option value="10080">Hằng tuần</option>
+              </select></label>
+              <button id="studio-schedule-add" type="button" class="btn btn-secondary">Tạo lịch</button>
               </div>
               <p class="studio-schedule-help">Các quy trình có nhấn nút, điền biểu mẫu hoặc xác nhận thủ công không được tự chạy theo lịch. Thời gian sử dụng theo đồng hồ máy.</p>
               <div id="studio-schedule-list" class="studio-schedule-list" role="region" aria-label="Danh sách lịch đã tạo"></div>
-            </section>
-            <section class="lhm-batch-panel" aria-labelledby="lhm-batch-title">
+              </section>
+            </div>
+            <div class="tab-content studio-pane" id="studio-tab-batch" role="tabpanel">
+              <section class="lhm-batch-panel" aria-labelledby="lhm-batch-title">
               <div class="studio-schedule-title">
-                <strong id="lhm-batch-title">RPA Plus · Chạy lần lượt nhiều hồ sơ</strong>
-                <span>Chỉ chạy khi bạn bấm bắt đầu; từng hồ sơ vẫn cần xác nhận trước thao tác nhấn/nhập.</span>
+              <strong id="lhm-batch-title">RPA Plus · Chạy lần lượt nhiều hồ sơ</strong>
+              <span>Chỉ chạy khi bạn bấm bắt đầu; từng hồ sơ vẫn cần xác nhận trước thao tác nhấn/nhập.</span>
               </div>
               <div class="studio-form-row">
-                <label>Quy trình đã lưu <select id="studio-batch-flow"></select></label>
-                <label>Khi một hồ sơ lỗi <select id="studio-batch-error">
-                  <option value="stop">Dừng hàng đợi</option>
-                  <option value="continue">Tiếp tục hồ sơ tiếp theo</option>
-                </select></label>
+              <label>Quy trình đã lưu <select id="studio-batch-flow"></select></label>
+              <label>Khi một hồ sơ lỗi <select id="studio-batch-error">
+              <option value="stop">Dừng hàng đợi</option>
+              <option value="continue">Tiếp tục hồ sơ tiếp theo</option>
+              </select></label>
               </div>
               <p class="studio-schedule-help">Chọn 1–20 hồ sơ Chromium có quyền sử dụng ở dưới. Các lần chạy thực hiện tuần tự trong sandbox riêng, không chia sẻ cookie hay điều khiển cửa sổ Chrome đang mở.</p>
               <div id="studio-batch-profiles" class="lhm-batch-profiles"></div>
               <div class="lhm-batch-actions">
-                <button type="button" class="btn btn-secondary" id="studio-batch-refresh">Tải lại danh sách</button>
-                <button type="button" class="btn btn-secondary" id="studio-batch-preview">Xem trước</button>
-                <button type="button" class="btn btn-primary" id="studio-batch-run" disabled>Bắt đầu hàng đợi</button>
-                <button type="button" class="btn btn-danger" id="studio-batch-stop" disabled>Dừng hàng đợi</button>
+              <button type="button" class="btn btn-secondary" id="studio-batch-refresh">Tải lại danh sách</button>
+              <button type="button" class="btn btn-secondary" id="studio-batch-preview">Xem trước</button>
+              <button type="button" class="btn btn-primary" id="studio-batch-run" disabled>Bắt đầu hàng đợi</button>
+              <button type="button" class="btn btn-danger" id="studio-batch-stop" disabled>Dừng hàng đợi</button>
               </div>
               <p id="studio-batch-state" class="studio-schedule-help" role="status" aria-live="polite">Chưa có hàng đợi.</p>
               <div id="studio-batch-results" class="lhm-batch-results" aria-live="polite"></div>
-            </section>
-            <div class="studio-action-row">
-              <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>
-              <button class="btn btn-primary" id="studio-run">Lưu và chạy</button>
-              <button class="btn btn-danger" id="studio-stop" disabled>Dừng khẩn cấp</button>
+              </section>
+            </div>
+            <div class="tab-content studio-pane" id="studio-tab-log" role="tabpanel">
+              <div class="studio-log" id="studio-log" aria-live="polite">Nhật ký sẽ xuất hiện tại đây.</div>
             </div>
           </section>
         </div>
-        <section class="studio-recorder">
-          <div class="studio-toolbar">
-            <div class="studio-recorder-heading">
-              <strong>Ghi thao tác</strong>
-              <small>Ghi thao tác mẫu vào quy trình — bản thử nghiệm</small>
-            </div>
-            <span class="studio-recorder-indicator" id="studio-record-state">Chưa ghi</span>
-          </div>
-          <p class="studio-recorder-note">Chọn hồ sơ, nhập tên miền và URL ở bước Mở URL. LHM mở một cửa sổ tạm thời để ghi nút nhấn, trường nhập và trang điều hướng. Không ghi nội dung nhập hoặc thông tin đăng nhập.</p>
-          <div class="studio-record-actions">
-            <button class="btn btn-secondary" id="studio-record-start">Bắt đầu ghi</button>
-            <button class="btn btn-danger" id="studio-record-stop" disabled>Dừng ghi</button>
-            <button class="btn btn-primary" id="studio-record-import" disabled>Đưa vào Studio</button>
-          </div>
-          <div class="studio-record-events" id="studio-record-events" aria-live="polite">Chưa có thao tác được ghi.</div>
-        </section>
-        <div class="studio-run-info">
-          <div class="studio-toolbar">
-            <strong>Trạng thái: <span id="studio-run-state">Chưa chạy</span></strong>
-            <button class="btn btn-success" id="studio-approve" hidden>Xác nhận tiếp tục</button>
-          </div>
-          <p id="studio-approval-prompt" class="studio-muted" hidden></p>
-          <div class="studio-log" id="studio-log" aria-live="polite">Nhật ký sẽ xuất hiện tại đây.</div>
-        </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" id="studio-done">Đóng</button></div>
+      <div class="modal-footer studio-footer">
+        <div class="studio-run-bar" role="status">
+          <strong>Trạng thái: <span id="studio-run-state">Chưa chạy</span></strong>
+          <p id="studio-approval-prompt" class="studio-muted" hidden></p>
+          <button class="btn btn-sm btn-success" id="studio-approve" hidden>Xác nhận tiếp tục</button>
+        </div>
+        <button class="btn btn-danger" id="studio-stop" disabled>Dừng khẩn cấp</button>
+        <button class="btn btn-secondary" id="studio-done">Đóng</button>
+        <button class="btn btn-secondary" id="studio-save">Lưu quy trình</button>
+        <button class="btn btn-primary" id="studio-run">Lưu và chạy</button>
+      </div>
     </div>
   </div>
 

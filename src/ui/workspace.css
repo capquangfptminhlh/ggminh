@@ -451,3 +451,67 @@ background-image:radial-gradient(circle,#dbe2eb 1px,transparent 1px);background-
 .lhm-profile-sync-status[data-state="error"]{color:#9b3740}
 .lhm-profile-sync-status[data-state="error"]::before{background:#c33e4b}
 @media(max-width:760px){.lhm-profile-sync-status{max-width:none;flex:1 1 100%}}
+
+/* Automation Studio (rebuild phase 5): library on the left, the workflow
+   editor on the right split into tabs (steps, graph, recorder, schedule,
+   batch, log). Save / run / stop and the run status live in the footer so
+   they are always on screen. Uses the system.css tokens. */
+#modal-studio .studio-dialog{width:min(1180px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}
+#modal-studio .studio-content{padding:0;overflow:hidden;display:flex}
+#modal-studio .studio-grid{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr);gap:0}
+#modal-studio .studio-sidebar{display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto;margin:0;padding:14px;border:0;border-right:1px solid var(--lhm-border);border-radius:0;background:var(--lhm-subtle)}
+#modal-studio .studio-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0}
+#modal-studio .studio-toolbar strong{font-size:13px;color:var(--lhm-heading)}
+#modal-studio .studio-saved-list{flex:1 1 auto;min-height:90px;max-height:none;overflow-y:auto;gap:6px}
+#modal-studio .studio-saved-item{background:var(--lhm-surface);border:1px solid var(--lhm-border);border-radius:8px;padding:3px}
+#modal-studio .studio-templates{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--lhm-border)}
+#modal-studio .studio-search-label{font-size:12px;font-weight:600;color:var(--lhm-heading)}
+#modal-studio .studio-template-row{display:flex;gap:6px}
+#modal-studio .studio-template-row select{flex:1;min-width:0}
+#modal-studio .studio-muted{font-size:12px;line-height:1.5;color:var(--lhm-muted);margin:0}
+#modal-studio .studio-warning{margin:0;padding:8px 10px;border:1px solid #efcf9c;border-radius:8px;background:var(--lhm-warn-soft);color:var(--lhm-body);font-size:12px;line-height:1.5}
+#modal-studio .studio-warning summary{cursor:pointer;font-weight:600;color:var(--lhm-warn)}
+#modal-studio .studio-warning p{margin:6px 0 0}
+#modal-studio .studio-editor{display:flex;flex-direction:column;min-height:0;margin:0;padding:14px 18px 0;border:0;border-radius:0;background:var(--lhm-surface)}
+#modal-studio .studio-form-main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr) minmax(0,1.2fr);gap:12px}
+#modal-studio .studio-editor label{display:flex;flex-direction:column;gap:5px;margin:0}
+#modal-studio .studio-tabs{display:flex;margin:12px 0 0}
+#modal-studio .studio-tabs .tab-btn{flex:1 1 auto;min-height:32px;padding:0 10px;font-size:12.5px;white-space:nowrap}
+#modal-studio .studio-pane{display:none;flex:1;min-height:0;overflow-y:auto;padding:12px 2px 14px}
+#modal-studio .studio-pane.active{display:block}
+#modal-studio .studio-steps{max-height:none;overflow:visible;gap:8px;padding:0}
+#modal-studio .studio-step{background:var(--lhm-surface);border:1px solid var(--lhm-border);border-radius:10px;padding:10px;color:var(--lhm-body)}
+#modal-studio .studio-step-main strong{color:var(--lhm-heading)}
+#modal-studio .studio-step-header{position:sticky;top:-12px;z-index:2;margin:-12px -2px 8px;padding:12px 2px 8px;background:var(--lhm-surface)}
+#modal-studio .studio-add-row{display:flex;align-items:center;gap:6px;margin:0}
+#modal-studio .studio-steps+.studio-branch-help{margin-top:12px}
+#modal-studio .studio-add-row select{max-width:240px}
+#modal-studio .studio-branch-help summary{cursor:pointer;font-size:12.5px;color:var(--lhm-accent)}
+#modal-studio .studio-branch-guide{margin:8px 0 0;font-size:12px;color:var(--lhm-body);background:var(--lhm-subtle);border-color:var(--lhm-border)}
+#modal-studio .studio-branch-guide strong{color:var(--lhm-heading)}
+#modal-studio .studio-visual-section{margin:0;border-color:var(--lhm-border)}
+#modal-studio .studio-graph-scroll{height:min(430px,calc(100dvh - 380px))}
+#modal-studio .studio-visual-heading strong{color:var(--lhm-heading)}
+#modal-studio .studio-visual-heading p,#modal-studio .studio-graph-status{font-size:12px;color:var(--lhm-muted)}
+#modal-studio .studio-recorder,#modal-studio .studio-schedule-panel,#modal-studio .lhm-batch-panel{margin:0;padding:14px;border:1px solid var(--lhm-border);border-radius:var(--lhm-radius-lg);background:var(--lhm-surface)}
+#modal-studio .studio-recorder-note{margin:10px 0 12px;font-size:12.5px;line-height:1.6;color:var(--lhm-body);background:none;border:0;padding:0}
+#modal-studio .studio-schedule-title{font-size:13px;color:var(--lhm-heading)}
+#modal-studio .studio-schedule-title span,#modal-studio .studio-schedule-help{font-size:12px;color:var(--lhm-muted)}
+#modal-studio .studio-schedule-item strong{font-size:12.5px;color:var(--lhm-heading)}
+#modal-studio .studio-schedule-item small{font-size:11.5px;color:var(--lhm-muted)}
+#modal-studio .lhm-batch-profiles label{color:var(--lhm-body);border-color:var(--lhm-border)}
+#modal-studio .lhm-batch-result{color:var(--lhm-body);border-color:var(--lhm-border)}
+#modal-studio .studio-log{min-height:220px;max-height:none;height:100%;margin:0;padding:10px 12px;border:1px solid var(--lhm-border);border-radius:8px;
+  font:12px/1.65 Consolas,monospace;white-space:pre-wrap;word-break:break-word;background:#f1f4f8;color:var(--lhm-body)}
+#modal-studio .studio-footer{align-items:center}
+#modal-studio .studio-run-bar{display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:auto}
+#modal-studio .studio-run-bar strong{font-size:13px;color:var(--lhm-heading);white-space:nowrap}
+#modal-studio .studio-run-bar strong span{font-weight:600;color:var(--lhm-accent)}
+#modal-studio #studio-approval-prompt{margin:0;color:var(--lhm-warn);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:920px){#modal-studio .studio-grid{grid-template-columns:1fr}#modal-studio .studio-sidebar{border-right:0;border-bottom:1px solid var(--lhm-border);max-height:200px}
+  #modal-studio .studio-form-main{grid-template-columns:1fr}#modal-studio .studio-tabs{overflow-x:auto}}
+#modal-studio .studio-domain-label .lhm-label-hint{font-weight:400;color:var(--lhm-muted)}
+#modal-studio .studio-template-row{flex-wrap:wrap}
+#modal-studio .studio-template-row select{flex:1 1 100%}
+#modal-studio .lhm-batch-profiles label{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;padding:8px 10px;background:var(--lhm-surface)}
+#modal-studio .lhm-batch-profiles label input{width:auto;flex:0 0 auto}
