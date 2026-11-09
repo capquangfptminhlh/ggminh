@@ -1,7 +1,7 @@
 /* Constitution v1.4: read-only signal inventory within the real profile editor.
    No controls here claim to change a signal or measure Google-side behavior. */
 #modal-profile .lhm-profile-setup-dialog{
-  width:min(1060px,calc(100vw - 28px));
+  width:min(820px,calc(100vw - 28px));
   max-width:calc(100vw - 28px);
   max-height:calc(100dvh - 32px);
   display:flex;
@@ -13,7 +13,7 @@
 #modal-profile .lhm-profile-setup-dialog>.modal-header,
 #modal-profile .lhm-profile-setup-dialog>.modal-footer{flex:0 0 auto}
 #modal-profile .lhm-profile-setup-dialog .tabs{
-  display:flex;flex-wrap:wrap;gap:6px;
+  display:flex;flex-wrap:wrap;
 }
 #modal-profile .lhm-profile-setup-dialog .tab-btn{
   white-space:normal;line-height:1.4;min-height:38px;

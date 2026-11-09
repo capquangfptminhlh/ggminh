@@ -1036,94 +1036,110 @@
   <div class="modal-overlay" id="modal-profile">
     <div class="modal-dialog modal-lg lhm-profile-setup-dialog">
       <div class="modal-header">
-        <h2 id="modal-title">Tạo Profile Mới</h2>
-        <button class="btn-close" id="btn-close-modal">&times;</button>
+        <div class="lhm-dialog-title">
+          <h2 id="modal-title">Tạo hồ sơ mới</h2>
+          <p class="lhm-dialog-subtitle">Mỗi hồ sơ có dữ liệu trình duyệt riêng, lưu trên máy này.</p>
+        </div>
+        <button class="btn-close" id="btn-close-modal" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="tabs">
-          <button class="tab-btn active" data-tab="tab-general">1. Thông tin chung</button>
-          <button class="tab-btn" data-tab="tab-proxy">2. Proxy & Mạng</button>
-          <button class="tab-btn" data-tab="tab-fingerprint">3. Vân tay phần cứng</button>
+        <div class="tabs lhm-steps" aria-label="Các bước thiết lập hồ sơ">
+          <button class="tab-btn active" data-tab="tab-general"><span class="lhm-step-no">1</span>Thông tin</button>
+          <button class="tab-btn" data-tab="tab-proxy"><span class="lhm-step-no">2</span>Kết nối mạng</button>
+          <button class="tab-btn" data-tab="tab-fingerprint"><span class="lhm-step-no">3</span>Thông số trình duyệt</button>
         </div>
 
         <!-- Tab 1: General -->
         <div class="tab-content active" id="tab-general">
+          <input type="hidden" id="field-id">
           <div class="form-group">
-            <label for="field-browser-engine">Công nghệ trình duyệt</label>
+            <label for="field-name">Tên hồ sơ <span class="lhm-required" aria-hidden="true">*</span></label>
+            <input type="text" id="field-name" placeholder="Ví dụ: Google Ads - Công ty A" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="field-group">Nhóm</label>
+              <input type="text" id="field-group" placeholder="Default" value="Default">
+            </div>
+            <div class="form-group">
+              <label for="field-tags">Tag <span class="lhm-label-hint">tối đa 8, cách nhau bằng dấu phẩy</span></label>
+              <input type="text" id="field-tags" placeholder="Khách hàng A, Đang vận hành">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="field-browser-engine">Trình duyệt</label>
             <select id="field-browser-engine">
               <option value="chromium">Chrome / Edge — tương thích bản hiện tại</option>
               <option value="gecko">Firefox / Gecko — browser cài trên máy</option>
               <option value="camoufox">Camoufox / Gecko — thử nghiệm riêng từng profile</option>
             </select>
-            <p style="margin-top:7px;font-size:12px;color:#9ca3af">Engine lưu theo từng profile. Camoufox cần launcher và binary riêng được kiểm chứng, chưa hỗ trợ proxy/RPA trong bản preview. Đổi engine không mang theo phiên đăng nhập. Với Camoufox, khi lưu hồ sơ ứng dụng sẽ thử cấp một danh tính đã ghim bằng cơ chế chính thức của Camoufox; kết quả được thông báo ngay sau khi lưu và hiển thị tại hàng của hồ sơ.</p>
-            <p id="camoufox-form-hint" role="status" style="margin-top:6px;font-size:12px;color:#dba66f" hidden></p>
+            <p class="lhm-field-help">Lưu riêng cho từng hồ sơ. Đổi trình duyệt không mang theo phiên đăng nhập.</p>
+            <details class="lhm-field-more">
+              <summary>Chi tiết về các loại trình duyệt</summary>
+              <p>Engine lưu theo từng profile. Camoufox cần launcher và binary riêng được kiểm chứng, chưa hỗ trợ proxy/RPA trong bản preview. Đổi engine không mang theo phiên đăng nhập. Với Camoufox, khi lưu hồ sơ ứng dụng sẽ thử cấp một danh tính đã ghim bằng cơ chế chính thức của Camoufox; kết quả được thông báo ngay sau khi lưu và hiển thị tại hàng của hồ sơ.</p>
+            </details>
+            <p id="camoufox-form-hint" class="lhm-field-warn" role="status" hidden></p>
           </div>
           <div class="form-group" id="gecko-path-control" hidden>
-            <label for="field-gecko-path">Đường dẫn Firefox / Gecko exe (có thể để trống nếu cài đặt chuẩn)</label>
+            <label for="field-gecko-path">Đường dẫn Firefox <span class="lhm-label-hint">để trống nếu cài ở thư mục chuẩn</span></label>
             <input id="field-gecko-path" type="text" placeholder="C:\Program Files\Mozilla Firefox\firefox.exe">
-            <p style="margin-top:6px;font-size:12px;color:#dba66f">Gecko hỗ trợ sử dụng thủ công và proxy HTTP/SOCKS5 không mật khẩu. CDP/RPA chưa được hỗ trợ.</p>
-          </div>
-          <input type="hidden" id="field-id">
-          <div class="form-group">
-            <label>Tên Profile:</label>
-            <input type="text" id="field-name" placeholder="Ví dụ: Google Ads - Công ty A" required>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Nhóm (Group):</label>
-              <input type="text" id="field-group" placeholder="Default" value="Default">
-            </div>
-            <div class="form-group">
-              <label>Trang khởi động (1–5 URL, mỗi dòng một URL):</label>
-              <textarea id="field-starturl" rows="3" placeholder="https://ads.google.com/">https://ads.google.com/</textarea>
-            </div>
+            <p class="lhm-field-warn">Gecko hỗ trợ sử dụng thủ công và proxy HTTP/SOCKS5 không mật khẩu. CDP/RPA chưa được hỗ trợ.</p>
           </div>
           <div class="form-group">
-            <label for="field-tags">Tag (tối đa 8, ngăn cách bằng dấu phẩy)</label>
-            <input type="text" id="field-tags" placeholder="Khách hàng A, Đang vận hành">
+            <label for="field-starturl">Trang khởi động <span class="lhm-label-hint">1–5 URL, mỗi dòng một URL</span></label>
+            <textarea id="field-starturl" rows="3" placeholder="https://ads.google.com/">https://ads.google.com/</textarea>
           </div>
           <div class="form-group">
-            <label>Ghi chú:</label>
+            <label for="field-notes">Ghi chú</label>
             <textarea id="field-notes" rows="2" placeholder="Ghi chú thêm về tài khoản này..."></textarea>
           </div>
         </div>
 
         <!-- Tab 2: Proxy -->
         <div class="tab-content" id="tab-proxy">
-          <div class="form-group"><label for="field-proxy-preset">Chọn từ kho Proxy đã lưu</label><select id="field-proxy-preset"><option value="">— Tự nhập cấu hình —</option></select><p class="pc-inline-hint">Chọn một mục đã lưu để điền thông số. Để quản lý kho, dùng nút Proxy Center trên thanh công cụ.</p></div>
-          <div class="form-group">
-            <label>Loại Proxy:</label>
-            <select id="field-proxy-type">
-              <option value="direct">Không dùng Proxy (Direct Connection)</option>
-              <option value="http">HTTP Proxy</option>
-              <option value="socks5">SOCKS5 Proxy</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="field-proxy-preset">Lấy từ kho proxy đã lưu</label>
+              <select id="field-proxy-preset"><option value="">— Tự nhập cấu hình —</option></select>
+              <p class="lhm-field-help">Chọn một mục đã lưu để điền thông số. Để quản lý kho, dùng nút Proxy Center trên thanh công cụ.</p>
+            </div>
+            <div class="form-group">
+              <label for="field-proxy-type">Loại kết nối</label>
+              <select id="field-proxy-type">
+                <option value="direct">Không dùng Proxy (Direct Connection)</option>
+                <option value="http">HTTP Proxy</option>
+                <option value="socks5">SOCKS5 Proxy</option>
+              </select>
+            </div>
           </div>
           <div id="proxy-fields" style="display: none;">
             <div class="form-row">
-              <div class="form-group" style="flex: 2;">
-                <label>Host / IP:</label>
+              <div class="form-group lhm-grow-2">
+                <label for="field-proxy-host">Host / IP</label>
                 <input type="text" id="field-proxy-host" placeholder="127.0.0.1 hoặc proxy.domain.com">
               </div>
-              <div class="form-group" style="flex: 1;">
-                <label>Port:</label>
+              <div class="form-group">
+                <label for="field-proxy-port">Port</label>
                 <input type="number" id="field-proxy-port" placeholder="8080">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label>Tài khoản proxy</label>
+                <label for="field-proxy-user">Tài khoản proxy</label>
                 <input type="text" id="field-proxy-user" placeholder="Quản lý tại Proxy Center" disabled>
               </div>
               <div class="form-group">
-                <label>Mật khẩu proxy</label>
+                <label for="field-proxy-pass">Mật khẩu proxy</label>
                 <input type="password" id="field-proxy-pass" placeholder="Quản lý tại Proxy Center" disabled>
               </div>
             </div>
           </div>
-          <div class="proxy-test-box">
-              <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">Kiểm tra IP thoát bằng HTTPS qua api.ipify.org, so sánh IP trực tiếp nếu có thể. Proxy HTTP có mật khẩu: tạo trong Proxy Center, sau đó gán từ danh sách hồ sơ.</p>
-            <button type="button" class="btn btn-secondary" id="btn-test-proxy">Kiểm tra kết nối Proxy</button>
+          <div class="proxy-test-box lhm-field-card">
+            <div class="lhm-field-card-head">
+              <strong>Kiểm tra kết nối</strong>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-test-proxy">Kiểm tra kết nối Proxy</button>
+            </div>
+            <p class="lhm-field-help">Kiểm tra IP thoát bằng HTTPS qua api.ipify.org, so sánh IP trực tiếp nếu có thể. Proxy HTTP có mật khẩu: tạo trong Proxy Center, sau đó gán từ danh sách hồ sơ.</p>
             <div id="proxy-test-result" class="test-result"></div>
           </div>
         </div>
@@ -1220,7 +1236,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="btn-cancel-modal">Hủy</button>
-        <button class="btn btn-primary" id="btn-save-profile">Lưu Profile</button>
+        <button class="btn btn-primary" id="btn-save-profile">Lưu hồ sơ</button>
       </div>
     </div>
   </div>
