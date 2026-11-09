@@ -225,6 +225,7 @@ function spawnFactory(procs){
      return true;
     },
     bundleVerifier:{resolve:()=>binary,status:()=>({valid:true,version:'test'})},
+    capabilityResolver:()=>({manual:true,proxyTypes:[],evidence:'test',reason:null}),
     prepareProxy:async()=>({mode:'direct',close:async()=>{proxyCloses++;}})});
    const profile={id:'nativefox',name:'Native',engine:'gecko',
     fingerprint:{mode:'native'},proxy:{type:'direct'},

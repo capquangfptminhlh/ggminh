@@ -59,6 +59,8 @@ const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
 const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
+const {loadCapabilityPolicy,evaluateCapabilities}=
+ require('./src/engine/camoufoxCapabilityPolicy');
 const {assessRuntime}=require('./src/engine/camoufoxRuntimeGate');
 const {PUBLIC_KEY:LICENSE_PUBLIC_KEY}=require('./src/licensing/manager');
 const {resolveEngineType}=require('./src/engine/EngineFactory');
@@ -1454,6 +1456,8 @@ app.whenReady().then(async () => {
   const releaseAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-camoufox')
     :path.join(__dirname,'resources','camoufox-engine');
+  const camoufoxCapabilityPolicy=loadCapabilityPolicy(
+    path.join(releaseAssets,'capabilities.json'));
   // Never use the app-license signing key to trust a downloadable browser.
   // Without a separately provisioned publisher-ed25519.pub the entire
   // Camoufox install/launch path remains disabled and fails closed.
@@ -1508,9 +1512,12 @@ app.whenReady().then(async () => {
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
-    // Explicit operator-only opt-in. Production defaults fail closed until
-    // independently verified proxy/DNS/WebRTC lab acceptance.
-    allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+    capabilityResolver:({engineVersion})=>evaluateCapabilities({
+      engineVersion,policy:camoufoxCapabilityPolicy
+    }),
+    // Development lab may exercise a candidate before its exact version is
+    // admitted to the packaged capability policy. Packaged builds cannot.
+    labProxyOverride:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
   });
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the

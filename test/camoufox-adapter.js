@@ -39,6 +39,10 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   },status:()=>({valid:true,version:'156.0.1'})};
   const adapter=new CamoufoxAdapter(base,{
    bundleVerifier,spawnProcess:mockSpawn,platform:'win32',
+   capabilityResolver:({engineVersion})=>({
+    manual:engineVersion==='156.0.1',proxyTypes:[],
+    evidence:'stage0-measure/manual-release.json',reason:null
+   }),
    windowProbe:async()=>true,
    closeWindow:async pid=>{const p=processes.find(x=>x.pid===pid);p.kill('SIGTERM');return true;}
   });
@@ -98,10 +102,20 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   await assert.rejects(()=>adapter.connectPlaywright(9222),/no supported Playwright websocket/);
   const noRelease=new CamoufoxAdapter(base,{spawnProcess:mockSpawn,platform:'win32'});
   await assert.rejects(()=>noRelease.start(a),/trusted, release-signed/);
+  const unapprovedVersion=new CamoufoxAdapter(base,{
+   bundleVerifier:{...bundleVerifier,status:()=>({valid:true,version:'156.0.2'})},
+   capabilityResolver:()=>({manual:false,proxyTypes:[],evidence:null,
+    reason:'No approved capability policy'}),
+   spawnProcess:mockSpawn,platform:'win32',windowProbe:async()=>true
+  });
+  const beforeUnapproved=processes.length;
+  await assert.rejects(()=>unapprovedVersion.start(a),/not approved for manual release/);
+  assert.strictEqual(processes.length,beforeUnapproved,'Unapproved version must not spawn');
   const failures=processes.length;
   const neverReady=new CamoufoxAdapter(base,{
    bundleVerifier,spawnProcess:mockSpawn,windowProbe:async()=>false,
-   platform:'win32',startupTimeoutMs:1000
+   platform:'win32',startupTimeoutMs:1000,
+   capabilityResolver:()=>({manual:true,proxyTypes:[],evidence:'test',reason:null})
   });
   await assert.rejects(()=>neverReady.start(a),/window not confirmed/);
   assert.strictEqual(processes.length,failures+1);

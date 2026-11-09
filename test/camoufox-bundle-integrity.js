@@ -72,6 +72,7 @@ function peFixture(destination){
   assert(!fs.existsSync(path.join(base,'camoufox-profiles','testcamoufox')));
   const mock=new CamoufoxAdapter(base,{
    bundleVerifier:manager,platform:'win32',
+   capabilityResolver:()=>({manual:true,proxyTypes:[],evidence:'test',reason:null}),
    windowProbe:async()=>true,
    closeWindow:async()=>false,
    spawnProcess:(executable,args)=>{

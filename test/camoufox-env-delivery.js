@@ -187,7 +187,8 @@ function assertDeliveredEnv(delivered,profile){
   const adapterExe=path.join(root,'signed','camoufox.exe');
   const makeAdapter=()=>new CamoufoxAdapter(root,{
    bundleVerifier:{resolve:engine=>{assert.equal(engine,'camoufox');
-    return adapterExe;}},
+    return adapterExe;},status:()=>({valid:true,version:'156.0.1'})},
+   capabilityResolver:()=>({manual:true,proxyTypes:[],evidence:'test',reason:null}),
    spawnProcess:mockSpawn,platform:'win32',
    windowProbe:async()=>true,closeWindow:async()=>true,
    prepareProxy:async()=>({mode:'direct',close:async()=>{}})

@@ -60,7 +60,7 @@ const NetworkSafetyCheck=require('../../src/engine/NetworkSafetyCheck');
   const bad={...profile,id:'bad',proxy:{type:'socks5',host:'bad.example',
    port:1080,authProxyId:'missing'}};
   await assert.rejects(()=>controller.launch(bad),e=>
-   e.code==='NETWORK_BLOCKED'&&/lab/.test(e.message));
+   e.code==='NETWORK_BLOCKED'&&/approved/.test(e.message));
   assert.equal(launches,1);
   assert.equal(NetworkSafetyCheck.inspectContext?true:false,true);
   console.log('Gated persistent Playwright controller: context API, profile directory, no fake WS and proxy fail-closed passed (mock test)');
