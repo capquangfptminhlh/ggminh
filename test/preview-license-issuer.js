@@ -288,6 +288,27 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
 }
 
 {
+ const ordinaryRoot=makeTempDir();
+ try{
+  fs.writeFileSync(path.join(ordinaryRoot,'HEAD'),'ordinary include lookalike\n');
+  fs.mkdirSync(path.join(ordinaryRoot,'objects'));
+  fs.mkdirSync(path.join(ordinaryRoot,'refs'));
+  fs.writeFileSync(path.join(ordinaryRoot,'ordinary.conf'),'[core]\nbare = false\n');
+  fs.writeFileSync(path.join(ordinaryRoot,'config'),'[include]\npath = ordinary.conf\n');
+  const probe=spawnSync('git',['-C',ordinaryRoot,'rev-parse','--git-dir'],{
+   encoding:'utf8',env:{...process.env,LC_ALL:'C'}
+  });
+  assert.strictEqual(probe.status,128,probe.stderr);
+  assert.match(probe.stderr,/\bnot a git repository\b/i);
+  const output=path.join(ordinaryRoot,'issuer');
+  const result=setupPreviewIssuer(output,{passphrase});
+  assert.strictEqual(fs.existsSync(result.publicKeyFile),true);
+ }finally{
+  fs.rmSync(ordinaryRoot,{recursive:true,force:true});
+ }
+}
+
+{
  const emptyFalseRoot=makeTempDir();
  try{
   fs.writeFileSync(path.join(emptyFalseRoot,'HEAD'),'ordinary file, not a Git repository\n');

@@ -89,17 +89,22 @@ function gitProbeEnvironment(){
  return env;
 }
 
-function gitPlumbingDetectsRepository(location){
+function gitPlumbingRepositoryState(location){
  const probe=spawnSync('git',['-C',path.resolve(location),'rev-parse','--git-dir'],{
-  env:gitProbeEnvironment(),stdio:['ignore','ignore','ignore'],windowsHide:true,
-  timeout:5000,maxBuffer:1024
+  encoding:'utf8',env:gitProbeEnvironment(),stdio:['ignore','ignore','pipe'],
+  windowsHide:true,timeout:5000,maxBuffer:1024
  });
- return probe.status===0&&!probe.error;
+ if(probe.error||probe.signal||probe.status===null)return 'indeterminate';
+ if(probe.status===0)return 'repository';
+ if(probe.status===128&&/\bnot a git repository\b/i.test(probe.stderr||''))
+  return 'not-repository';
+ return 'indeterminate';
 }
 
 function findGitRoot(location){
  let current=path.resolve(location);
- if(gitPlumbingDetectsRepository(current))return current;
+ const plumbingState=gitPlumbingRepositoryState(current);
+ if(plumbingState==='repository')return current;
  while(true){
   const marker=path.join(current,'.git');
   try{
@@ -110,18 +115,20 @@ function findGitRoot(location){
   }catch(error){
    if(error.code!=='ENOENT')throw error;
   }
-  try{
-   const head=fs.lstatSync(path.join(current,'HEAD'));
-   const objects=fs.lstatSync(path.join(current,'objects'));
-   const refs=fs.lstatSync(path.join(current,'refs'));
-   const configFile=path.join(current,'config');
-   const config=fs.lstatSync(configFile);
-   if(head.isFile()&&objects.isDirectory()&&refs.isDirectory()&&
-      (config.isFile()||config.isSymbolicLink())&&
-      (config.isSymbolicLink()||configDeclaresBare(configFile)||configUsesIncludes(configFile)))
-    return current;
-  }catch(error){
-   if(error.code!=='ENOENT')throw error;
+  if(plumbingState==='indeterminate'){
+   try{
+    const head=fs.lstatSync(path.join(current,'HEAD'));
+    const objects=fs.lstatSync(path.join(current,'objects'));
+    const refs=fs.lstatSync(path.join(current,'refs'));
+    const configFile=path.join(current,'config');
+    const config=fs.lstatSync(configFile);
+    if(head.isFile()&&objects.isDirectory()&&refs.isDirectory()&&
+       (config.isFile()||config.isSymbolicLink())&&
+       (config.isSymbolicLink()||configDeclaresBare(configFile)||configUsesIncludes(configFile)))
+     return current;
+   }catch(error){
+    if(error.code!=='ENOENT')throw error;
+   }
   }
   const parent=path.dirname(current);
   if(parent===current)return null;
