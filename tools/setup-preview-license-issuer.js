@@ -30,6 +30,14 @@ function findGitRoot(location){
   }catch(error){
    if(error.code!=='ENOENT')throw error;
   }
+  try{
+   const head=fs.lstatSync(path.join(current,'HEAD'));
+   const objects=fs.lstatSync(path.join(current,'objects'));
+   const refs=fs.lstatSync(path.join(current,'refs'));
+   if(head.isFile()&&objects.isDirectory()&&refs.isDirectory())return current;
+  }catch(error){
+   if(error.code!=='ENOENT')throw error;
+  }
   const parent=path.dirname(current);
   if(parent===current)return null;
   current=parent;

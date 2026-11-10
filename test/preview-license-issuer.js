@@ -110,6 +110,32 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
 }
 
 {
+ const bareRoot=makeTempDir();
+ try{
+  const initialized=spawnSync('git',['init','--bare','--quiet',bareRoot],{encoding:'utf8'});
+  assert.strictEqual(initialized.status,0,initialized.stderr);
+  const output=path.join(bareRoot,'issuer');
+  assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/Git repository/);
+  assert.strictEqual(fs.existsSync(output),false);
+ }finally{
+  fs.rmSync(bareRoot,{recursive:true,force:true});
+ }
+}
+
+{
+ const ordinaryRoot=makeTempDir();
+ try{
+  fs.writeFileSync(path.join(ordinaryRoot,'HEAD'),'ordinary file, not a Git repository\n');
+  fs.mkdirSync(path.join(ordinaryRoot,'objects'));
+  const output=path.join(ordinaryRoot,'issuer');
+  const result=setupPreviewIssuer(output,{passphrase});
+  assert.strictEqual(fs.existsSync(result.publicKeyFile),true);
+ }finally{
+  fs.rmSync(ordinaryRoot,{recursive:true,force:true});
+ }
+}
+
+{
  const parent=makeTempDir();
  const output=path.join(parent,'issuer-created-before-recheck');
  const originalMkdirSync=fs.mkdirSync;
