@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('api', {
+const api = {
   androidDiscover: () => ipcRenderer.invoke('android-discover'),
   androidCreateAvd: (name, image) => ipcRenderer.invoke('android-create-avd', name, image),
   androidDuplicateAvd: (source, name) => ipcRenderer.invoke('android-duplicate-avd', source, name),
@@ -162,4 +162,26 @@ contextBridge.exposeInMainWorld('api', {
   selectBundledEngine: source => ipcRenderer.invoke('bundled-engine-select',source),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings)
-});
+};
+
+// Electron prefixes every error thrown in the main process with
+// "Error invoking remote method '<channel>': Error: ". Customers saw that
+// technical English in alerts and the License screen, so strip it here once
+// for every call; the message written by the main process is kept as is.
+const IPC_PREFIX = /^Error invoking remote method '[^']*': (?:[A-Za-z]*Error: )?/;
+function cleanIpcError(error) {
+  if (!error || typeof error.message !== 'string' || !IPC_PREFIX.test(error.message)) return error;
+  const clean = new Error(error.message.replace(IPC_PREFIX, ''));
+  if (error.code) clean.code = error.code;
+  return clean;
+}
+for (const [name, fn] of Object.entries(api)) {
+  api[name] = (...args) => {
+    const result = fn(...args);
+    return result && typeof result.then === 'function'
+      ? result.catch(error => { throw cleanIpcError(error); })
+      : result;
+  };
+}
+
+contextBridge.exposeInMainWorld('api', api);

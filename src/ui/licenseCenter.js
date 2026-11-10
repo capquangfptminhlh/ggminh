@@ -8,6 +8,25 @@ window.addEventListener('DOMContentLoaded',()=>{
   owner_sweep_pending:'Đã hết kỳ thuê · chờ lần quét có chữ ký của chủ sở hữu',
   owner_sweep_unenrolled:'Chưa đăng ký license thuê với máy chủ chủ sở hữu',
   owner_sweep_authority_unconfigured:'Chưa cấu hình máy chủ xác minh license thuê'};
+ // Activation errors come from src/licensing/manager.js in English; show the
+ // customer what happened and what to do next. Unknown messages pass through.
+ const activationHelp=[
+  [/License format not recognized|Invalid license encoding|License JSON is invalid|Invalid license fields|Unexpected license claims|Invalid license entitlements|Invalid license period/,
+   'Mã license không đúng định dạng. Hãy dán lại đầy đủ mã bên bán gửi, không thừa hoặc thiếu ký tự.'],
+  [/Invalid license signature|License signature mismatch/,
+   'Mã license không có chữ ký hợp lệ của bên phát hành. Hãy xin lại mã từ bên bán.'],
+  [/different installation ID/,
+   'Mã license này được cấp cho một mã cài đặt khác. Gửi đúng mã cài đặt của máy này cho bên bán để cấp lại.'],
+  [/License expired/,'Mã license đã hết hạn. Liên hệ bên bán để gia hạn.'],
+  [/License is not active yet/,'Mã license chưa đến ngày hiệu lực. Kiểm tra lại ngày giờ của máy.'],
+  [/clock|System clock/i,'Ngày giờ của máy có vẻ bị chỉnh lùi hoặc không hợp lệ. Đặt lại ngày giờ đúng rồi thử lại.'],
+  [/Installation identity requires manual repair|Trial state invalid/,
+   'Dữ liệu cài đặt cần bên bán hỗ trợ. Gửi mã cài đặt và ảnh chụp màn hình này cho bên bán.']
+ ];
+ const explainActivation=message=>{
+  const hit=activationHelp.find(([pattern])=>pattern.test(String(message||'')));
+  return hit?hit[1]:String(message||'Lỗi không xác định');
+ };
  async function refresh(){
   const [state,service]=await Promise.all([
    window.api.getLicenseStatus(),window.api.getLicenseServiceStatus()
@@ -69,7 +88,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    const updated=await window.api.activateLicense(token);
    msg.textContent=updated.active?'Đã kích hoạt thành công.':'License không ở trạng thái hiệu lực.';
    code.value='';await refresh();
-  }catch(error){msg.textContent='Kích hoạt thất bại: '+error.message;}
+  }catch(error){msg.textContent='Kích hoạt thất bại: '+explainActivation(error.message);}
   finally{btn.disabled=false;}
  });
  el('license-deactivate').addEventListener('click',async()=>{
