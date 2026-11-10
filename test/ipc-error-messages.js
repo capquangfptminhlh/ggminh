@@ -22,6 +22,8 @@ const root = path.join(__dirname, '..');
         invoke: ch => ch === 'get-settings' ? Promise.resolve({ ok: 1 })
           : ch === 'save-profile' ? Promise.reject(new Error("Error invoking remote method 'save-profile': Error: Giới hạn 10 profile của gói dùng thử đã đạt."))
           : ch === 'license-center-activate' ? Promise.reject(Object.assign(new Error("Error invoking remote method 'license-center-activate': TypeError: License format not recognized"), { code: 'E_LIC' }))
+          : ch === 'session-snapshots-create' ? Promise.reject(new Error("Error invoking remote method 'session-snapshots-create': Error: Maximum ten snapshots per profile; delete an older one first"))
+          : ch === 'session-snapshots-restore' ? Promise.reject(new Error("Error invoking remote method 'session-snapshots-restore': Error: Restore rollback failed; original data remains at C:\\x"))
           : Promise.reject(new Error('plain failure')),
         on() {}, removeListener() {}
       }
@@ -38,6 +40,21 @@ const root = path.join(__dirname, '..');
   await assert.rejects(api.getProfiles(), e => e.message === 'plain failure', 'messages without the prefix pass through');
   const preload = fs.readFileSync(path.join(root, 'preload.js'), 'utf8');
   assert.strictEqual((preload.match(/exposeInMainWorld\(/g) || []).length, 1);
+  // Everyday-flow messages are translated (exact and prefix forms).
+  const channelOf = name => (preload.match(new RegExp('\\b' + name + ':[^\\n]*=>\\s*ipcRenderer\\.invoke\\(\'([^\']+)\'')) || [])[1];
+  const createName = Object.keys(api).find(k => channelOf(k) === 'session-snapshots-create');
+  const restoreName = Object.keys(api).find(k => channelOf(k) === 'session-snapshots-restore');
+  if (createName) await assert.rejects(api[createName](), e => e.message === 'Mỗi hồ sơ có tối đa 10 snapshot. Hãy xóa bớt một snapshot cũ trước.');
+  if (restoreName) await assert.rejects(api[restoreName](), e => e.message === 'Khôi phục thất bại và không hoàn tác được; dữ liệu gốc vẫn ở: C:\\x');
+  assert(createName && restoreName, 'snapshot API names not found in preload');
+  // Every translated key still exists verbatim in the core modules (a reworded core message would silently stop translating).
+  const block = preload.slice(preload.indexOf('const CUSTOMER_TEXT'), preload.indexOf('function customerText'));
+  const keys = [...block.matchAll(/^  '([^']+)':/gm)].map(m => m[1]).concat([...block.matchAll(/\['([^']+)', '/g)].map(m => m[1]));
+  const sources = [];
+  (function walk(dir) { for (const f of fs.readdirSync(dir)) { const p = path.join(dir, f); if (fs.statSync(p).isDirectory()) walk(p); else if (p.endsWith('.js')) sources.push(fs.readFileSync(p, 'utf8')); } })(path.join(root, 'src'));
+  const core = sources.join('\n');
+  assert(keys.length >= 20, 'translation table too small: ' + keys.length);
+  for (const key of keys) assert(core.includes("'" + key), 'translated message no longer in src/: ' + key);
 
   // 2. License screen: every English activation error thrown by manager.js has a Vietnamese explanation.
   const ui = fs.readFileSync(path.join(root, 'src/ui/licenseCenter.js'), 'utf8');
