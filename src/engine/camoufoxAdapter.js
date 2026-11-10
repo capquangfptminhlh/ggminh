@@ -10,13 +10,15 @@ const {spawn,execFile}=require('child_process');
 const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
-const {identityEnvForProfile,assertIdentityMatchesProfile}=require('./camoufoxIdentity');
+const {identityEnvForProfile,assertIdentityMatchesProfile,hasIdentityCollision}=require('./camoufoxIdentity');
 const {applyGeckoDownloadDir}=require('./downloadDirectory');
 const {createPeerGuard}=require('../security/loopbackPeerGuard');
 
 const MIN_STARTUP_MS=1000;
 const MAX_STARTUP_MS=45000;
-function validateCamoufoxProfile(profile,baseDir){
+function validateCamoufoxProfile(profile,baseDir,{
+ requirePinnedIdentity=false,existingProfiles=null
+}={}){
  assertProfileId(profile?.id);
  if(typeof baseDir!=='string'||!path.isAbsolute(baseDir))
   throw Error('Profile storage root must be absolute');
@@ -32,7 +34,17 @@ function validateCamoufoxProfile(profile,baseDir){
  // A pinned identity, when present, must be valid and consistent with the
  // profile before any process is created.
  const identity=identityEnvForProfile(profile);
- if(identity)assertIdentityMatchesProfile(profile,identity.expectations);
+ if(!identity&&(requirePinnedIdentity===true||
+    profile.fingerprint?.requirePinnedIdentity===true||
+    profile.fingerprint?.identityProvisioning==='unavailable'||
+    profile.fingerprint?.identityProvisioning==='invalid'))
+  throw Error('CAMOUFOX_IDENTITY_REQUIRED: Camoufox profile requires a verified pinned identity before launch to prevent hardware fingerprint leak');
+ if(identity){
+  assertIdentityMatchesProfile(profile,identity.expectations);
+  if(Array.isArray(existingProfiles)&&
+     hasIdentityCollision(profile.fingerprint.identity,existingProfiles,profile.id))
+   throw Error('CAMOUFOX_IDENTITY_COLLISION: Profile identity collides with another profile');
+ }
  return {profileDir:path.join(baseDir,'camoufox-profiles',profile.id),identity};
 }
 function nativeArgs(profileDir,url){
@@ -97,7 +109,8 @@ class CamoufoxAdapter{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
-  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false,downloadsRoot=null,peerGuardFactory
+  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false,downloadsRoot=null,peerGuardFactory,
+  requirePinnedIdentity=false
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
      typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
@@ -112,6 +125,7 @@ class CamoufoxAdapter{
   this.closeWindow=closeWindow;this.platform=platform;
   this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
   this.allowProxyLab=allowProxyLab===true;
+  this.requirePinnedIdentity=requirePinnedIdentity===true;
   // Per-profile download folder; never the shared OS Downloads folder.
   this.downloadsRoot=downloadsRoot||(path.isAbsolute(String(baseDir||''))?path.join(baseDir,'downloads'):null);
   this.startupTimeoutMs=startupTimeoutMs;
@@ -134,7 +148,10 @@ class CamoufoxAdapter{
  async start(profile,{url,onClosed}={}){
   const id=assertProfileId(profile?.id);
   if(this.isBusy(id))throw Error('Camoufox profile is already running or starting');
-  const {profileDir,identity}=validateCamoufoxProfile(profile,this.baseDir);
+  const {profileDir,identity}=validateCamoufoxProfile(profile,this.baseDir,{
+   requirePinnedIdentity:this.requirePinnedIdentity,
+   existingProfiles:this.store?.data?.profiles||null
+  });
   if(normalizedProxy(profile.proxy).type!=='direct'&&!this.allowProxyLab)
    throw Error('Camoufox authenticated proxy is experimental and requires an approved proxy/DNS/WebRTC lab; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');

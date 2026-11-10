@@ -571,11 +571,11 @@ async function openProfileModal(existingProfile = null) {
   } else {
     document.getElementById('modal-title').textContent = 'Tạo hồ sơ mới';
     fieldId.value = '';
-    fieldBrowserEngine.value = 'chromium';
+    fieldBrowserEngine.value = 'gecko';
     fieldName.value = `Profile_${allProfiles.length + 1}`;
-    fieldGroup.value = 'Default';
+    fieldGroup.value = 'Google Ads';
     fieldStartUrl.value = 'https://ads.google.com/';
-    fieldTags.value = '';
+    fieldTags.value = 'Google Ads';
     fieldNotes.value = '';
     fieldProxyType.value = 'direct';
     proxyFields.style.display = 'none';

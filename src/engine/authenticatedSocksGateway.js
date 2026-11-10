@@ -1,6 +1,7 @@
 'use strict';
 const http=require('http');
 const net=require('net');
+const {isPrivateOrLoopbackTarget}=require('./authenticatedHttpGateway');
 
 /**
  * Loopback HTTP CONNECT to authenticated SOCKS5 (RFC 1928 + RFC 1929).
@@ -9,13 +10,17 @@ const net=require('net');
  * by the local gateway. Only HTTPS CONNECT is supported (fail closed).
  */
 async function createAuthenticatedSocksGateway(upstream, {
-  createServer=http.createServer, connect=net.connect, authorizePeer=null
+  createServer=http.createServer, connect=net.connect, authorizePeer=null,
+  blockPrivateTargets
 }={}) {
   if (!upstream || upstream.type!=='socks5' || typeof upstream.host!=='string' ||
       !Number.isInteger(upstream.port) || upstream.port<1 || upstream.port>65535 ||
       typeof upstream.user!=='string' || typeof upstream.pass!=='string') {
     throw Error('Invalid SOCKS5 gateway configuration');
   }
+  const denyPrivate=blockPrivateTargets!==undefined
+    ?blockPrivateTargets===true
+    :!isPrivateOrLoopbackTarget(upstream.host);
   const username=Buffer.from(upstream.user,'utf8'), password=Buffer.from(upstream.pass,'utf8');
   if (!username.length || !password.length || username.length>255 || password.length>255) {
     throw Error('SOCKS5 credentials must be 1–255 UTF-8 bytes');
@@ -59,6 +64,9 @@ async function createAuthenticatedSocksGateway(upstream, {
     const nameBytes=Buffer.from(name,'ascii');
     if (!kind && (nameBytes.length>253 || name.split('.').some(label=>!label||label.length>63))) {
       client.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');return;
+    }
+    if (denyPrivate && isPrivateOrLoopbackTarget(name)) {
+      client.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');return;
     }
     const upstreamSocket=connect({host:upstream.host,port:upstream.port});
     sockets.add(upstreamSocket);

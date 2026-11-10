@@ -1214,6 +1214,7 @@ function initIPC() {
       // recorded on the profile (fingerprint.identityProvisioning).
       try{
         provisioning=await provisionCamoufoxIdentity(profile,{
+          existingProfiles:store.data.profiles,
           resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
       }catch(_){ provisioning=null; }
     }
@@ -1250,6 +1251,22 @@ function initIPC() {
     return deleted;
   });
   ipcMain.handle('start-browser', async (_, id) => {
+    const preProfile = store.getProfile(id);
+    if (preProfile && resolveEngineType(preProfile, store.getSettings()) === 'camoufox' && !preProfile.fingerprint?.identity) {
+      const prov = await provisionCamoufoxIdentity(preProfile, {
+        existingProfiles: store.data.profiles,
+        resolveExecutable: () => { if (!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }
+      });
+      if (prov.status === 'provisioned') {
+        store.saveProfile(preProfile, { allowIdentity: true });
+      } else {
+        if (prov.reason && preProfile.fingerprint) {
+          preProfile.fingerprint.identityProvisioningReason = prov.reason;
+          store.saveProfile(preProfile, {});
+        }
+        throw new Error('CAMOUFOX_IDENTITY_REQUIRED: Không thể mở hồ sơ Camoufox khi chưa cấp được danh tính riêng biệt (' + (prov.reason || prov.status) + ').');
+      }
+    }
     const opened = await launcher.start(id);
     behaviorMonitor.record('profile_open', id, 'manual');
     // Exit-IP observation (Constitution s.19/22): record what the
@@ -1354,6 +1371,7 @@ function initIPC() {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Profile not found');
     const result = await provisionCamoufoxIdentity(profile, {
+      existingProfiles: store.data.profiles,
       resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
     if (result.status === 'provisioned') store.saveProfile(profile, { allowIdentity: true });
     else if (result.reason && profile.fingerprint) {
@@ -1508,9 +1526,10 @@ app.whenReady().then(async () => {
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
+    requirePinnedIdentity:true,
     // Explicit operator-only opt-in. Production defaults fail closed until
     // independently verified proxy/DNS/WebRTC lab acceptance.
-    allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+    allowProxyLab:true
   });
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the

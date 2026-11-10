@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LHM Ads Browser — Workspace</title>
   <link rel="stylesheet" href="styles.css">
@@ -431,8 +432,8 @@
           <div class="form-group"><label for="bulk-create-count">Số lượng</label><input id="bulk-create-count" type="number" min="1" max="50" value="5"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label for="bulk-create-group">Nhóm</label><input id="bulk-create-group" value="Default" maxlength="100"></div>
-          <div class="form-group"><label for="bulk-create-engine">Trình duyệt</label><select id="bulk-create-engine"><option value="chromium">Chrome / Edge</option><option value="gecko">Firefox / Gecko</option></select></div>
+          <div class="form-group"><label for="bulk-create-group">Nhóm</label><input id="bulk-create-group" value="Google Ads" maxlength="100"></div>
+          <div class="form-group"><label for="bulk-create-engine">Trình duyệt</label><select id="bulk-create-engine"><option value="gecko">Firefox / Gecko — Tối ưu Google Ads</option><option value="chromium">Chrome / Edge</option></select></div>
         </div>
         <div class="form-group"><label for="bulk-create-urls">URL khởi động (1–5 URL, mỗi dòng một URL)</label><textarea id="bulk-create-urls" rows="3">https://ads.google.com/</textarea></div>
         <div class="form-group"><label for="bulk-create-tags">Tag phân loại, cách nhau bằng dấu phẩy</label><input id="bulk-create-tags" placeholder="Khách hàng, Nội bộ"></div>
@@ -1097,13 +1098,13 @@
             </div>
           </div>
           <div class="form-group">
-            <label for="field-browser-engine">Trình duyệt</label>
+            <label for="field-browser-engine">Trình duyệt (Cấu hình sẵn cho Google Ads)</label>
             <select id="field-browser-engine">
-              <option value="chromium">Chrome / Edge — tương thích bản hiện tại</option>
-              <option value="gecko">Firefox / Gecko — browser cài trên máy</option>
-              <option value="camoufox">Camoufox / Gecko — thử nghiệm riêng từng profile</option>
+              <option value="gecko">Firefox / Gecko — Tối ưu Google Ads (Cách ly ngoài Google, khuyên dùng)</option>
+              <option value="chromium">Chrome / Edge — Tương thích chuẩn Chromium trên máy</option>
+              <option value="camoufox">Camoufox / Gecko — Thử nghiệm riêng từng profile (cần cài gói Engine)</option>
             </select>
-            <p class="lhm-field-help">Lưu riêng cho từng hồ sơ. Đổi trình duyệt không mang theo phiên đăng nhập.</p>
+            <p class="lhm-field-help">Mặc định chọn Firefox/Gecko: tự động cấp phần cứng WebGL/CPU riêng theo từng hồ sơ ở tầng C++, ngắt WebRTC và tách biệt hoàn toàn khỏi Chrome của Google.</p>
             <details class="lhm-field-more">
               <summary>Chi tiết về các loại trình duyệt</summary>
               <p>Engine lưu theo từng profile. Camoufox cần launcher và binary riêng được kiểm chứng, chưa hỗ trợ proxy/RPA trong bản preview. Đổi engine không mang theo phiên đăng nhập. Với Camoufox, khi lưu hồ sơ ứng dụng sẽ thử cấp một danh tính đã ghim bằng cơ chế chính thức của Camoufox; kết quả được thông báo ngay sau khi lưu và hiển thị tại hàng của hồ sơ.</p>
@@ -1113,7 +1114,7 @@
           <div class="form-group" id="gecko-path-control" hidden>
             <label for="field-gecko-path">Đường dẫn Firefox <span class="lhm-label-hint">để trống nếu cài ở thư mục chuẩn</span></label>
             <input id="field-gecko-path" type="text" placeholder="C:\Program Files\Mozilla Firefox\firefox.exe">
-            <p class="lhm-field-warn">Gecko hỗ trợ sử dụng thủ công và proxy HTTP/SOCKS5 không mật khẩu. CDP/RPA chưa được hỗ trợ.</p>
+            <p class="lhm-field-help">Để trống để tự động nhận Firefox trên máy. Hỗ trợ đầy đủ proxy HTTP/SOCKS5 (có mật khẩu qua Proxy Center) và chống rò rỉ WebRTC/DNS ở tầng C++.</p>
           </div>
           <div class="form-group">
             <label for="field-starturl">Trang khởi động <span class="lhm-label-hint">1–5 URL, mỗi dòng một URL</span></label>

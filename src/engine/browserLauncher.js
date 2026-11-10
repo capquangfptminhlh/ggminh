@@ -5,7 +5,7 @@ const net = require('net');
 const { generateExtension } = require('./extensionGenerator');
 const { createLaunchArgs } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
-const { updateGeckoProxy } = require('./geckoProxy');
+const { updateGeckoProxy, applyGeckoIdentityPrefs } = require('./geckoProxy');
 const { stopBrowserProcess } = require('./processStopper');
 const { applyChromiumDownloadDir, applyGeckoDownloadDir } = require('./downloadDirectory');
 const { applyChromiumWebrtcPolicy } = require('./chromiumWebrtcPolicy');
@@ -205,6 +205,7 @@ class BrowserLauncher {
         ? profile.startUrls : [profile.startUrl || 'https://ads.google.com/']);
     if (engine === 'gecko') {
       updateGeckoProxy(profileDir, effectiveProxy);
+      applyGeckoIdentityPrefs(profileDir, profile);
       applyGeckoDownloadDir(profileDir, this.downloadsRoot, profile.id);
     } else {
       applyChromiumDownloadDir(profileDir, this.downloadsRoot, profile.id);
@@ -225,9 +226,15 @@ class BrowserLauncher {
       args.unshift('--edge-skip-compat-layer-relaunch');
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);
+    const rawTz = profile.proxy?.timezone || profile.fingerprint?.timezone;
+    let validTz = null;
+    if (typeof rawTz === 'string' && rawTz.length > 0 && rawTz.length <= 80) {
+      try { new Intl.DateTimeFormat('en-US', { timeZone: rawTz }); validTz = rawTz; } catch (_) {}
+    }
     const proc = this.spawnProcess(browserBin, args, {
       detached: false,
-      stdio: 'ignore'
+      stdio: 'ignore',
+      ...(validTz ? { env: { ...process.env, TZ: validTz } } : {})
     });
     peerGuard?.setRoot(proc.pid);
 

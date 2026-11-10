@@ -13,7 +13,7 @@ const {inspectBinary}=require('./runtimeRegistry');
 const DOMAIN='LHM_BROWSER_ENGINE_BUNDLE_V1\n';
 const SHA=/^[a-f0-9]{64}$/;
 const VERSION=/^\d{1,3}\.\d{1,5}\.\d{1,5}(?:\.\d{1,6})?$/;
-const RELATIVE=/^[a-zA-Z0-9_][a-zA-Z0-9_.-]*(?:\/[a-zA-Z0-9_][a-zA-Z0-9_.-]*)*$/;
+const RELATIVE=/^[^/\\:*?\x22\x3c\x3e|\0\r\n]+(?:\/[^/\\:*?\x22\x3c\x3e|\0\r\n]+)*$/;
 const MAX_FILES=10000;
 const MAX_FILE_SIZE=512*1024*1024;
 const MAX_TOTAL_SIZE=3*1024*1024*1024;
@@ -37,7 +37,7 @@ function containsPrivateKeyMaterial(buffer){
 }
 function fileName(name){
  if(typeof name!=='string'||name.length>240||!RELATIVE.test(name)||
-    name.split('/').some(part=>part==='.'||part==='..'))
+    name.split('/').some(part=>!part||part==='.'||part==='..'||part.startsWith(' ')||part.endsWith(' ')))
   throw Error('Unsafe bundled engine relative file path');
  return name;
 }

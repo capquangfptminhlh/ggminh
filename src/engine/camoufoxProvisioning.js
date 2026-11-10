@@ -33,7 +33,7 @@
  * `fingerprint.timezone`. (Verified against a real run of the
  * official generator — test/camoufox-provisioning-real.js.)
  */
-const { validateStoredIdentity, assertIdentityMatchesProfile } = require('./camoufoxIdentity');
+const { validateStoredIdentity, assertIdentityMatchesProfile, hasIdentityCollision } = require('./camoufoxIdentity');
 
 function isCamoufoxNativeProfile(profile) {
   return !!profile && profile.engine === 'gecko' &&
@@ -104,31 +104,54 @@ async function provisionCamoufoxIdentity(profile, deps = {}) {
     return { status: 'unavailable', reason: 'engine-not-installed-or-unverified' };
   }
   const generate = typeof deps.generate === 'function' ? deps.generate : defaultGenerate;
+  const existingProfiles = Array.isArray(deps.existingProfiles) ? deps.existingProfiles : [];
+  const maxCollisionRetries = Number.isInteger(deps.maxCollisionRetries) && deps.maxCollisionRetries >= 1
+    ? deps.maxCollisionRetries : 5;
   const fp = profile.fingerprint;
   const declaredLocale = typeof fp.language === 'string' && fp.language
     ? fp.language
     : (Array.isArray(fp.languages) && typeof fp.languages[0] === 'string' && fp.languages[0]
-      ? fp.languages[0] : null);
+      ? fp.languages[0]
+      : (typeof profile.proxy?.locale === 'string' && profile.proxy.locale
+        ? profile.proxy.locale
+        : (typeof deps.proxyLocale === 'string' && deps.proxyLocale ? deps.proxyLocale : null)));
+  const resolvedTimezone = typeof fp.timezone === 'string' && fp.timezone
+    ? fp.timezone
+    : (typeof profile.proxy?.timezone === 'string' && profile.proxy.timezone
+      ? profile.proxy.timezone
+      : (typeof deps.proxyTimezone === 'string' && deps.proxyTimezone ? deps.proxyTimezone : null));
   let identity;
-  try {
-    identity = await generate({
-      executablePath,
-      os: 'windows',
-      locale: declaredLocale,
-      timezone: typeof fp.timezone === 'string' && fp.timezone ? fp.timezone : null,
-    });
-  } catch (error) {
-    profile.fingerprint.identityProvisioning = 'unavailable';
-    return {
-      status: 'unavailable',
-      reason: error && error.code === 'GENERATOR_UNAVAILABLE'
-        ? 'generator-package-missing' : 'generator-failed',
-    };
+  let collided = false;
+  for (let attempt = 0; attempt < maxCollisionRetries; attempt++) {
+    try {
+      identity = await generate({
+        executablePath,
+        os: 'windows',
+        locale: declaredLocale,
+        timezone: resolvedTimezone,
+      });
+    } catch (error) {
+      profile.fingerprint.identityProvisioning = 'unavailable';
+      return {
+        status: 'unavailable',
+        reason: error && error.code === 'GENERATOR_UNAVAILABLE'
+          ? 'generator-package-missing' : 'generator-failed',
+      };
+    }
+    if (!hasIdentityCollision(identity, existingProfiles, profile.id)) {
+      collided = false;
+      break;
+    }
+    collided = true;
   }
   try { validateStoredIdentity(identity); }
   catch (_) {
     profile.fingerprint.identityProvisioning = 'invalid';
     return { status: 'invalid', reason: 'generated-identity-failed-validation' };
+  }
+  if (collided) {
+    profile.fingerprint.identityProvisioning = 'invalid';
+    return { status: 'invalid', reason: 'generated-identity-collides-with-existing-profile' };
   }
   try { assertIdentityMatchesProfile(profile, identity.expectations); }
   catch (_) {

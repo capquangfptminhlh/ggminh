@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 
 const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
@@ -13,6 +14,56 @@ const SAFE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
 const MIN_FREE_BYTES = 6 * 1024 ** 3;
 const MAX_AVDS = 50;
 const MAX_IMAGES = 60;
+
+const AVD_HARDWARE_PROFILES = Object.freeze([
+  { width: 1080, height: 2400, density: 420, ramSize: 4096, cores: 4 },
+  { width: 1080, height: 2340, density: 440, ramSize: 4096, cores: 4 },
+  { width: 1440, height: 3120, density: 560, ramSize: 6144, cores: 6 },
+  { width: 1080, height: 2460, density: 395, ramSize: 4096, cores: 4 },
+  { width: 1220, height: 2712, density: 480, ramSize: 6144, cores: 6 },
+]);
+
+function hardenAvdConfig(configContent, avdName) {
+  if (typeof nameCheck(avdName) !== 'string') throw new Error('Invalid AVD name');
+  const raw = String(configContent || '');
+  const hash = crypto.createHash('sha256').update(avdName).digest();
+  const hw = AVD_HARDWARE_PROFILES[hash[0] % AVD_HARDWARE_PROFILES.length];
+  const enforced = new Map([
+    ['AvdId', avdName],
+    ['avd.ini.displayname', avdName],
+    ['fastboot.forceColdBoot', 'yes'],
+    ['fastboot.forceFastBoot', 'no'],
+    ['fastboot.forceChosenSnapshotBoot', 'no'],
+    ['fastboot.chosenSnapshotFile', ''],
+    ['hw.audioInput', 'no'],
+    ['hw.camera.back', 'none'],
+    ['hw.camera.front', 'none'],
+    ['hw.gps', 'no'],
+    ['hw.lcd.width', String(hw.width)],
+    ['hw.lcd.height', String(hw.height)],
+    ['hw.lcd.density', String(hw.density)],
+    ['hw.ramSize', String(hw.ramSize)],
+    ['hw.cpu.ncore', String(hw.cores)],
+  ]);
+  const lines = raw.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  const seen = new Set();
+  const updated = lines.map((line) => {
+    const eq = line.indexOf('=');
+    if (eq <= 0) return line;
+    const key = line.slice(0, eq).trim();
+    if (!enforced.has(key)) return line;
+    seen.add(key);
+    return `${key}=${enforced.get(key)}`;
+  });
+  for (const [key, val] of enforced.entries()) {
+    if (!seen.has(key)) updated.push(`${key}=${val}`);
+  }
+  return updated.join('\n') + '\n';
+}
+
+function nameCheck(name) {
+  return typeof name === 'string' && SAFE_NAME.test(name) ? name : null;
+}
 
 function packageFromConfig(content) {
   const match = String(content || '').match(/^image\.sysdir\.1\s*=\s*.*?system-images[\\/](android-[A-Za-z0-9._-]+)[\\/]([A-Za-z0-9._-]+)[\\/]([A-Za-z0-9._-]+)/m);
@@ -164,7 +215,14 @@ class AvdProvisioner {
       await this.runCreate(resolveAvdManager(this.root,this.fs,this.platform),name,systemImage);
       const updated = await this.manager.avds();
       if (!updated.includes(name)) throw new Error('SDK reported success but new AVD was not found; check Android Studio.');
-      return {name,systemImage,state:'created',userData:'new-empty'};
+      if (typeof this.fs.writeFileSync === 'function') {
+        const cfgPath = this.path.join(this.avdHome, name + '.avd', 'config.ini');
+        try {
+          const rawCfg = this.fs.readFileSync(cfgPath, 'utf8');
+          this.fs.writeFileSync(cfgPath, hardenAvdConfig(rawCfg, name), 'utf8');
+        } catch (_) {}
+      }
+      return {name,systemImage,state:'created',userData:'new-empty',coldBootEnforced:true};
     } finally {
       this.pending.delete(name);
     }
@@ -186,4 +244,4 @@ class AvdProvisioner {
   }
 }
 
-module.exports = { AvdProvisioner, sdkRoot, getInstalledImages, resolveAvdManager, packageFromConfig, diskStatus };
+module.exports = { AvdProvisioner, sdkRoot, getInstalledImages, resolveAvdManager, packageFromConfig, diskStatus, hardenAvdConfig };
