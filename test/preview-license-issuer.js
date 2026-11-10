@@ -42,6 +42,39 @@ function makeTempDir(){
  }
 }
 
+{
+ const root=makeTempDir();
+ const publicKeyFile=path.join(root,publicName);
+ const originalReadFileSync=fs.readFileSync;
+ let result,rewritten=false;
+ try{
+  try{
+   fs.readFileSync=function(file,...args){
+    if(typeof file==='string'&&path.resolve(file)===path.resolve(publicKeyFile)&&!rewritten){
+     const original=originalReadFileSync.call(this,file,'utf8');
+     const altered=original.replace(/\r?\n/g,'\r\n');
+     assert.notStrictEqual(altered,original);
+     fs.writeFileSync(file,altered);
+     rewritten=true;
+    }
+    return originalReadFileSync.call(this,file,...args);
+   };
+   result=setupPreviewIssuer(root,{passphrase});
+  }finally{
+   fs.readFileSync=originalReadFileSync;
+  }
+  assert.strictEqual(rewritten,true);
+  const persistedText=fs.readFileSync(publicKeyFile,'utf8');
+  const persistedSpki=crypto.createPublicKey(persistedText).export({format:'der',type:'spki'});
+  assert.strictEqual(result.publicKey,persistedText);
+  assert.strictEqual(result.spkiBase64,persistedSpki.toString('base64'));
+  assert.strictEqual(result.spkiSha256,
+   crypto.createHash('sha256').update(persistedSpki).digest('hex'));
+ }finally{
+  fs.rmSync(root,{recursive:true,force:true});
+ }
+}
+
 assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Absolute issuer directory/);
 {
  const root=makeTempDir();
@@ -110,6 +143,38 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
 }
 
 {
+ const worktreeRoot=makeTempDir();
+ const markerTarget=makeTempDir();
+ const marker=path.join(worktreeRoot,'.git');
+ try{
+  fs.symlinkSync(markerTarget,marker,process.platform==='win32'?'junction':'dir');
+  const output=path.join(worktreeRoot,'issuer-via-git-link');
+  assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/Git repository/);
+  assert.strictEqual(fs.existsSync(output),false);
+ }finally{
+  if(fs.existsSync(marker))fs.unlinkSync(marker);
+  fs.rmSync(worktreeRoot,{recursive:true,force:true});
+  fs.rmSync(markerTarget,{recursive:true,force:true});
+ }
+}
+
+{
+ const implicitBareRoot=makeTempDir();
+ try{
+  fs.writeFileSync(path.join(implicitBareRoot,'HEAD'),'ref: refs/heads/main\n');
+  fs.mkdirSync(path.join(implicitBareRoot,'objects'));
+  fs.mkdirSync(path.join(implicitBareRoot,'refs'));
+  fs.writeFileSync(path.join(implicitBareRoot,'config'),
+   '; bare in this section is unrelated\n[application]\nbare\n[core]\nbare = false\nbare\n');
+  const output=path.join(implicitBareRoot,'issuer');
+  assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/Git repository/);
+  assert.strictEqual(fs.existsSync(output),false);
+ }finally{
+  fs.rmSync(implicitBareRoot,{recursive:true,force:true});
+ }
+}
+
+{
  const bareRoot=makeTempDir();
  try{
   const initialized=spawnSync('git',['init','--bare','--quiet',bareRoot],{encoding:'utf8'});
@@ -129,7 +194,7 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
   fs.mkdirSync(path.join(ordinaryRoot,'objects'));
   fs.mkdirSync(path.join(ordinaryRoot,'refs'));
   fs.writeFileSync(path.join(ordinaryRoot,'config'),
-   '# [core] bare = true\n[application]\nbare = true\n[core]\nbare = false\n');
+   '# [core] bare = true\n[application]\nbare = true\n[core]\nbare\nbare = false\n');
   const output=path.join(ordinaryRoot,'issuer');
   const result=setupPreviewIssuer(output,{passphrase});
   assert.strictEqual(fs.existsSync(result.publicKeyFile),true);

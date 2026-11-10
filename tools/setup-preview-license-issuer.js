@@ -35,6 +35,9 @@ function configDeclaresBare(configFile){
   if(setting){
    bareFound=true;
    bareValue=/^(?:true|yes|on|1)$/i.test(setting[1]);
+  }else if(/^bare\s*(?:[#;].*)?$/i.test(line)){
+   bareFound=true;
+   bareValue=true;
   }
  }
  return bareFound&&bareValue;
@@ -46,7 +49,9 @@ function findGitRoot(location){
   const marker=path.join(current,'.git');
   try{
    const markerType=fs.lstatSync(marker);
-   if(markerType.isDirectory()||markerType.isFile())return current;
+   if(markerType.isDirectory()||markerType.isFile()||markerType.isSymbolicLink())return current;
+   const markerTarget=fs.statSync(marker);
+   if(markerTarget.isDirectory()||markerTarget.isFile())return current;
   }catch(error){
    if(error.code!=='ENOENT')throw error;
   }
@@ -124,7 +129,6 @@ function setupPreviewIssuer(outputDir,{passphrase=process.env.LHM_ISSUER_PASSPHR
   });
   const publicPem=publicKey.export({format:'pem',type:'spki'});
   const spki=publicKey.export({format:'der',type:'spki'});
-  const publicKeyText=publicPem.toString();
   const spkiBase64=spki.toString('base64');
   const spkiSha256=crypto.createHash('sha256').update(spki).digest('hex');
   const unlocked=crypto.createPrivateKey({key:privatePem,format:'pem',passphrase});
@@ -135,12 +139,18 @@ function setupPreviewIssuer(outputDir,{passphrase=process.env.LHM_ISSUER_PASSPHR
   const persistedPrivate=crypto.createPrivateKey({
    key:fs.readFileSync(privateKeyFile),format:'pem',passphrase
   });
-  const persistedPublic=crypto.createPublicKey(fs.readFileSync(publicKeyFile));
+  const persistedPublicPem=fs.readFileSync(publicKeyFile);
+  const persistedPublic=crypto.createPublicKey(persistedPublicPem);
+  const persistedSpki=persistedPublic.export({format:'der',type:'spki'});
+  const persistedSpkiBase64=persistedSpki.toString('base64');
+  const persistedSpkiSha256=crypto.createHash('sha256').update(persistedSpki).digest('hex');
   if(!crypto.createPublicKey(persistedPrivate).export({format:'der',type:'spki'}).equals(spki)||
-     !persistedPublic.export({format:'der',type:'spki'}).equals(spki))
+     !persistedSpki.equals(spki)||persistedSpkiBase64!==spkiBase64||
+     persistedSpkiSha256!==spkiSha256)
    throw Error('Preview issuer persisted key verification failed');
   return {
-   privateKeyFile,publicKeyFile,publicKey:publicKeyText,spkiBase64,spkiSha256
+   privateKeyFile,publicKeyFile,publicKey:persistedPublicPem.toString(),
+   spkiBase64:persistedSpkiBase64,spkiSha256:persistedSpkiSha256
   };
  }catch(error){
   const cleanupSteps=[];
