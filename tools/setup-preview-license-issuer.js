@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 const crypto=require('crypto');
+const {spawnSync}=require('child_process');
 const fs=require('fs');
 const path=require('path');
 const ROOT=path.resolve(__dirname,'..');
@@ -46,8 +47,59 @@ function configDeclaresBare(configFile){
  return bareFound&&bareValue;
 }
 
+function configUsesIncludes(configFile){
+ for(const rawLine of fs.readFileSync(configFile,'utf8').split(/\r?\n/)){
+  const line=rawLine.trim();
+  if(!line||line.startsWith('#')||line.startsWith(';'))continue;
+  if(/^\[include(?:if)?(?:\s|\])/i.test(line))return true;
+ }
+ return false;
+}
+
+function createdDirectoryChain(outputDir,firstCreated){
+ if(firstCreated===undefined)return [];
+ const comparable=location=>{
+  let resolved=path.resolve(location);
+  if(process.platform==='win32'){
+   if(resolved.startsWith('\\\\?\\UNC\\'))resolved='\\\\'+resolved.slice(8);
+   else if(resolved.startsWith('\\\\?\\'))resolved=resolved.slice(4);
+   resolved=resolved.toLowerCase();
+  }
+  return resolved;
+ };
+ const first=comparable(firstCreated),created=[];
+ let current=path.resolve(outputDir);
+ while(true){
+  created.push(current);
+  if(comparable(current)===first)return created;
+  const parent=path.dirname(current);
+  if(parent===current)throw Error('Recursive directory creation returned an invalid path');
+  current=parent;
+ }
+}
+
+function gitProbeEnvironment(){
+ const env={
+  GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'Never',GIT_CONFIG_NOSYSTEM:'1',LC_ALL:'C',
+  GIT_CONFIG_GLOBAL:process.platform==='win32'?'NUL':'/dev/null'
+ };
+ for(const name of ['PATH','Path','PATHEXT','SystemRoot','SYSTEMROOT','WINDIR','COMSPEC']){
+  if(typeof process.env[name]==='string')env[name]=process.env[name];
+ }
+ return env;
+}
+
+function gitPlumbingDetectsRepository(location){
+ const probe=spawnSync('git',['-C',path.resolve(location),'rev-parse','--git-dir'],{
+  env:gitProbeEnvironment(),stdio:['ignore','ignore','ignore'],windowsHide:true,
+  timeout:5000,maxBuffer:1024
+ });
+ return probe.status===0&&!probe.error;
+}
+
 function findGitRoot(location){
  let current=path.resolve(location);
+ if(gitPlumbingDetectsRepository(current))return current;
  while(true){
   const marker=path.join(current,'.git');
   try{
@@ -64,8 +116,10 @@ function findGitRoot(location){
    const refs=fs.lstatSync(path.join(current,'refs'));
    const configFile=path.join(current,'config');
    const config=fs.lstatSync(configFile);
-   if(head.isFile()&&objects.isDirectory()&&refs.isDirectory()&&config.isFile()&&
-      configDeclaresBare(configFile))return current;
+   if(head.isFile()&&objects.isDirectory()&&refs.isDirectory()&&
+      (config.isFile()||config.isSymbolicLink())&&
+      (config.isSymbolicLink()||configDeclaresBare(configFile)||configUsesIncludes(configFile)))
+    return current;
   }catch(error){
    if(error.code!=='ENOENT')throw error;
   }
@@ -114,7 +168,8 @@ function setupPreviewIssuer(outputDir,{passphrase=process.env.LHM_ISSUER_PASSPHR
   throw Error('Refusing Preview issuer directory resolving inside repository');
  if(findGitRoot(canonicalAncestor))
   throw Error('Refusing Preview issuer directory inside a Git repository or worktree');
- const outputCreated=fs.mkdirSync(outputDir,{recursive:true,mode:0o700})!==undefined;
+ const firstCreated=fs.mkdirSync(outputDir,{recursive:true,mode:0o700});
+ const createdDirectories=createdDirectoryChain(outputDir,firstCreated);
  const privateKeyFile=path.join(outputDir,'preview-license-ed25519-private.pem');
  const publicKeyFile=path.join(outputDir,'preview-license-ed25519-public.pem');
  let privateCreated=false,publicCreated=false;
@@ -159,7 +214,8 @@ function setupPreviewIssuer(outputDir,{passphrase=process.env.LHM_ISSUER_PASSPHR
   const cleanupSteps=[];
   if(publicCreated)cleanupSteps.push(['public key file',()=>fs.rmSync(publicKeyFile,{force:true})]);
   if(privateCreated)cleanupSteps.push(['private key file',()=>fs.rmSync(privateKeyFile,{force:true})]);
-  if(outputCreated)cleanupSteps.push(['issuer directory',()=>fs.rmdirSync(outputDir)]);
+  for(const directory of createdDirectories)
+   cleanupSteps.push(['issuer directory',()=>fs.rmdirSync(directory)]);
   rollback(error,cleanupSteps);
  }
 }

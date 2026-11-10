@@ -159,6 +159,27 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
 }
 
 {
+ const parent=makeTempDir();
+ const firstCreated=path.join(parent,'new-level-one');
+ const output=path.join(firstCreated,'new-level-two','issuer-new-leaf');
+ const publicKeyFile=path.join(output,publicName);
+ const originalReadFileSync=fs.readFileSync;
+ try{
+  fs.readFileSync=function(file,...args){
+   if(path.resolve(file)===path.resolve(publicKeyFile))
+    throw Error('injected nested-path verification failure');
+   return originalReadFileSync.call(this,file,...args);
+  };
+  assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/injected nested-path verification failure/);
+ }finally{
+  fs.readFileSync=originalReadFileSync;
+ }
+ assert.strictEqual(fs.existsSync(firstCreated),false);
+ assert.strictEqual(fs.existsSync(parent),true);
+ fs.rmSync(parent,{recursive:true,force:true});
+}
+
+{
  const implicitBareRoot=makeTempDir();
  try{
   fs.writeFileSync(path.join(implicitBareRoot,'HEAD'),'ref: refs/heads/main\n');
@@ -185,6 +206,67 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
   assert.strictEqual(fs.existsSync(output),false);
  }finally{
   fs.rmSync(bareRoot,{recursive:true,force:true});
+ }
+}
+
+{
+ const bareRoot=makeTempDir();
+ try{
+  const initialized=spawnSync('git',['init','--bare','--quiet',bareRoot],{encoding:'utf8'});
+  assert.strictEqual(initialized.status,0,initialized.stderr);
+  fs.writeFileSync(path.join(bareRoot,'included-bare.conf'),'[core]\nbare = true\n');
+  fs.writeFileSync(path.join(bareRoot,'config'),'[include]\npath = included-bare.conf\n');
+  const probe=spawnSync('git',['-C',bareRoot,'rev-parse','--is-bare-repository'],{encoding:'utf8'});
+  assert.strictEqual(probe.status,0,probe.stderr);
+  assert.strictEqual(probe.stdout.trim(),'true');
+  const output=path.join(bareRoot,'issuer-via-included-config');
+  assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/Git repository/);
+  assert.strictEqual(fs.existsSync(output),false);
+  const fallbackOutput=path.join(bareRoot,'issuer-via-include-fallback');
+  const originalPath=process.env.PATH;
+  try{
+   process.env.PATH='';
+   assert.throws(()=>setupPreviewIssuer(fallbackOutput,{passphrase}),/Git repository/);
+  }finally{
+   if(originalPath===undefined)delete process.env.PATH;
+   else process.env.PATH=originalPath;
+  }
+  assert.strictEqual(fs.existsSync(fallbackOutput),false);
+ }finally{
+  fs.rmSync(bareRoot,{recursive:true,force:true});
+ }
+}
+
+{
+ const bareRoot=makeTempDir();
+ const targetRoot=makeTempDir();
+ const configFile=path.join(bareRoot,'config');
+ const configTarget=path.join(targetRoot,'bare-config');
+ let linked=false;
+ try{
+  const initialized=spawnSync('git',['init','--bare','--quiet',bareRoot],{encoding:'utf8'});
+  assert.strictEqual(initialized.status,0,initialized.stderr);
+  fs.copyFileSync(configFile,configTarget);
+  fs.rmSync(configFile);
+  try{
+   fs.symlinkSync(configTarget,configFile,'file');
+   linked=true;
+  }catch(error){
+   if(!['EPERM','EACCES','EINVAL','ENOSYS','ENOTSUP','EOPNOTSUPP','UNKNOWN'].includes(error.code))
+    throw error;
+   console.log(`Preview issuer bootstrap: symlinked Git config SKIP (${error.code})`);
+  }
+  if(linked){
+   const probe=spawnSync('git',['-C',bareRoot,'rev-parse','--is-bare-repository'],{encoding:'utf8'});
+   assert.strictEqual(probe.status,0,probe.stderr);
+   assert.strictEqual(probe.stdout.trim(),'true');
+   const output=path.join(bareRoot,'issuer-via-symlinked-config');
+   assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/Git repository/);
+   assert.strictEqual(fs.existsSync(output),false);
+  }
+ }finally{
+  fs.rmSync(bareRoot,{recursive:true,force:true});
+  fs.rmSync(targetRoot,{recursive:true,force:true});
  }
 }
 
