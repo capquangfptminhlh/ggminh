@@ -2,6 +2,8 @@
 
 The Preview issuer's encrypted private key and passphrase DPAPI material live beneath `%LOCALAPPDATA%`. DPAPI uses `CurrentUser`, so this material is bound to the Windows user profile. There is intentionally no plaintext passphrase or portable passphrase backup.
 
+The Preview issuer is a disposable, rotatable operational test identity, not a durable Production-grade identity. Reuse is permitted only within the current Preview lifecycle.
+
 Current public SPKI SHA-256 fingerprint:
 
 `4d7706893b134e4cb2cfe266eebed30ed9bf5ea4c17a4317d18744b00fdf9117`
@@ -20,7 +22,7 @@ Never reuse a Preview issuer for Production licensing, Camoufox publisher signin
 4. Rotate all three public anchors together, then run trust tests, build checks, and install checks.
 5. Issue replacement licenses only after the trust rotation is verified; reissue all affected Preview licenses.
 
-Never output a passphrase, DPAPI blob, private PEM, or full activation token. Never place any of them in Git, command output, or logs.
+Never output or store a passphrase, DPAPI blob, or private PEM in Git, command output, logs, reports, or diagnostics. Never output or store any activation token or token fragment in Git, logs, reports, diagnostics, or any command output.
 
 ## Interrupted generation
 
