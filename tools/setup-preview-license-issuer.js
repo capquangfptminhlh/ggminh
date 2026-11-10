@@ -20,6 +20,26 @@ function existingAncestor(location){
  return current;
 }
 
+function configDeclaresBare(configFile){
+ let inCore=false,bareValue=false,bareFound=false;
+ for(const rawLine of fs.readFileSync(configFile,'utf8').split(/\r?\n/)){
+  const line=rawLine.trim();
+  if(!line||line.startsWith('#')||line.startsWith(';'))continue;
+  const section=line.match(/^\[([^\]]+)\](?:\s*[#;].*)?$/);
+  if(section){
+   inCore=section[1].trim().toLowerCase()==='core';
+   continue;
+  }
+  if(!inCore)continue;
+  const setting=line.match(/^bare\s*=\s*([^\s#;]+)\s*(?:[#;].*)?$/i);
+  if(setting){
+   bareFound=true;
+   bareValue=/^(?:true|yes|on|1)$/i.test(setting[1]);
+  }
+ }
+ return bareFound&&bareValue;
+}
+
 function findGitRoot(location){
  let current=path.resolve(location);
  while(true){
@@ -34,7 +54,10 @@ function findGitRoot(location){
    const head=fs.lstatSync(path.join(current,'HEAD'));
    const objects=fs.lstatSync(path.join(current,'objects'));
    const refs=fs.lstatSync(path.join(current,'refs'));
-   if(head.isFile()&&objects.isDirectory()&&refs.isDirectory())return current;
+   const configFile=path.join(current,'config');
+   const config=fs.lstatSync(configFile);
+   if(head.isFile()&&objects.isDirectory()&&refs.isDirectory()&&config.isFile()&&
+      configDeclaresBare(configFile))return current;
   }catch(error){
    if(error.code!=='ENOENT')throw error;
   }

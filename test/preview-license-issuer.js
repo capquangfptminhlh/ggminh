@@ -127,6 +127,9 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
  try{
   fs.writeFileSync(path.join(ordinaryRoot,'HEAD'),'ordinary file, not a Git repository\n');
   fs.mkdirSync(path.join(ordinaryRoot,'objects'));
+  fs.mkdirSync(path.join(ordinaryRoot,'refs'));
+  fs.writeFileSync(path.join(ordinaryRoot,'config'),
+   '# [core] bare = true\n[application]\nbare = true\n[core]\nbare = false\n');
   const output=path.join(ordinaryRoot,'issuer');
   const result=setupPreviewIssuer(output,{passphrase});
   assert.strictEqual(fs.existsSync(result.publicKeyFile),true);
