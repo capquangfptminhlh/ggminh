@@ -165,7 +165,8 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
   fs.mkdirSync(path.join(implicitBareRoot,'objects'));
   fs.mkdirSync(path.join(implicitBareRoot,'refs'));
   fs.writeFileSync(path.join(implicitBareRoot,'config'),
-   '; bare in this section is unrelated\n[application]\nbare\n[core]\nbare = false\nbare\n');
+   '; quoted values in this section are unrelated\n[application]\nbare = "true"\n' +
+   '[core]\nbare = \'false\'\nbare = "TrUe"\n');
   const output=path.join(implicitBareRoot,'issuer');
   assert.throws(()=>setupPreviewIssuer(output,{passphrase}),/Git repository/);
   assert.strictEqual(fs.existsSync(output),false);
@@ -194,7 +195,8 @@ assert.throws(()=>setupPreviewIssuer('relative-preview-issuer',{passphrase}),/Ab
   fs.mkdirSync(path.join(ordinaryRoot,'objects'));
   fs.mkdirSync(path.join(ordinaryRoot,'refs'));
   fs.writeFileSync(path.join(ordinaryRoot,'config'),
-   '# [core] bare = true\n[application]\nbare = true\n[core]\nbare\nbare = false\n');
+   '# [core] bare = "true"\n[application]\nbare = "true"\n' +
+   '[core]\nbare = "TRUE"\nbare = \'FaLsE\'\n');
   const output=path.join(ordinaryRoot,'issuer');
   const result=setupPreviewIssuer(output,{passphrase});
   assert.strictEqual(fs.existsSync(result.publicKeyFile),true);

@@ -33,8 +33,11 @@ function configDeclaresBare(configFile){
   if(!inCore)continue;
   const setting=line.match(/^bare\s*=\s*([^\s#;]+)\s*(?:[#;].*)?$/i);
   if(setting){
+   let value=setting[1];
+   const quote=value[0];
+   if((quote==='"'||quote==="'")&&value.at(-1)===quote)value=value.slice(1,-1);
    bareFound=true;
-   bareValue=/^(?:true|yes|on|1)$/i.test(setting[1]);
+   bareValue=/^(?:true|yes|on|1)$/i.test(value);
   }else if(/^bare\s*(?:[#;].*)?$/i.test(line)){
    bareFound=true;
    bareValue=true;
