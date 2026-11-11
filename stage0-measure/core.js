@@ -238,7 +238,9 @@ async function extendedProbe(){
   osc.connect(comp);comp.connect(ctx.destination);
   osc.start(0);
   const buffer=await ctx.startRendering();
-  const data=buffer.getChannelData(0);
+  // Firefox automation exposes AudioBuffer data through an Xray wrapper.
+  // Copy to a plain page-realm Array before indexing it.
+  const data=Array.from(buffer.getChannelData(0));
   let sum=0;for(let i=4500;i<5000&&i<data.length;i++)sum+=Math.abs(data[i]);
   return {sampleSum:sum.toFixed(8),sampleRate:buffer.sampleRate,length:buffer.length};
  });
