@@ -1,7 +1,7 @@
 # Camoufox local release preflight — design
 
 Date: 2026-11-11
-Status: proposed for owner review
+Status: approved by owner on 2026-11-11
 
 ## 1. Goal and boundary
 
