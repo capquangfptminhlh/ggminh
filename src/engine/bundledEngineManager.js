@@ -36,7 +36,7 @@ function containsPrivateKeyMaterial(buffer){
 }
 function normalizeEngineRelativePath(input){
  if(typeof input!=='string'||!input)throw Error('Unsafe bundled engine relative file path');
- const name=input.normalize('NFC');
+ const name=input;
  if(name.length>240||name.startsWith('/')||name.includes('\\')||
     /[\u0000-\u001f\u007f<>:"|?*]/.test(name))
   throw Error('Unsafe bundled engine relative file path');
@@ -65,7 +65,7 @@ function canonicalManifest(payload){
      f.bytes<1||f.bytes>MAX_FILE_SIZE)
    throw Error('Invalid bundled engine file at index '+i);
   const canonical=fileName(f.path);
-  const key=canonical.toLowerCase();
+  const key=canonical.normalize('NFC').toLowerCase();
   if(names.has(key))throw Error('Duplicate bundled engine file');
   names.add(key);
   return {path:canonical,bytes:f.bytes,sha256:f.sha256};
@@ -138,8 +138,7 @@ function listFiles(root){
     const rel=path.relative(root,full).split(path.sep).join('/');
     if(rel!=='manifest.json'){
      const canonical=fileName(rel);
-     if(canonical!==rel)throw Error('Bundled engine path must use Unicode NFC');
-     const key=canonical.toLowerCase();
+     const key=canonical.normalize('NFC').toLowerCase();
      if(names.has(key))throw Error('Duplicate bundled engine file');
      names.add(key);files.push(canonical);
     }

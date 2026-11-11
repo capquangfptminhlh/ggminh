@@ -12,7 +12,12 @@ for(const value of [
  'fonts/106__Raleway-Italic[wght].ttf',
  'fonts/110__Inter-Italic[opsz,wght].ttf',
  'fonts/日本語 フォント.ttf'
-])assert.equal(normalizeEngineRelativePath(value),value.normalize('NFC'));
+])assert.equal(normalizeEngineRelativePath(value),value);
+
+const upstreamNfd='fonts/18__ヒラキ\u3099ノ角コ\u3099シック W9.ttc';
+assert.notEqual(upstreamNfd,upstreamNfd.normalize('NFC'));
+assert.equal(normalizeEngineRelativePath(upstreamNfd),upstreamNfd,
+ 'safe upstream filenames must be preserved byte-for-byte');
 
 for(const value of [
  '../camoufox.exe','/absolute','C:/escape','dir\\escape',
@@ -41,7 +46,8 @@ try{
   'fonts/1003__Bangla MN.ttc',
   'fonts/106__Raleway-Italic[wght].ttf',
   'fonts/110__Inter-Italic[opsz,wght].ttf',
-  'fonts/日本語 フォント.ttf'
+  'fonts/日本語 フォント.ttf',
+  upstreamNfd
  ];
  for(const name of names){
   const full=path.join(root,...name.split('/'));
