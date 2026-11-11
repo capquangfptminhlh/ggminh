@@ -168,6 +168,7 @@
             <button type="button" class="btn btn-secondary" id="btn-import-profiles"><span data-lhm-icon="file-input"></span> Nhập CSV</button>
           </div>
         </details>
+        <button type="button" class="btn btn-secondary" id="btn-ads-hub"><span data-lhm-icon="shield-check"></span> Trung tâm Ads</button>
         <button type="button" class="btn btn-secondary" id="btn-bulk-create"><span data-lhm-icon="layers"></span> Tạo nhanh</button>
         <button type="button" class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
       </div>
@@ -303,6 +304,8 @@
       <div class="lhm-list-tabs" role="group" aria-label="Bộ lọc trạng thái hồ sơ">
         <button type="button" class="lhm-list-tab is-current" data-lhm-status="all">Tất cả hồ sơ</button>
         <button type="button" class="lhm-list-tab" data-lhm-status="running">Đang chạy</button>
+        <button type="button" class="lhm-list-tab" data-lhm-status="google-ads">🎯 Google Ads</button>
+        <button type="button" class="lhm-list-tab" data-lhm-status="facebook-ads">📱 Facebook Ads</button>
         <button type="button" class="lhm-list-tab" data-lhm-status="stopped">Đã dừng</button>
       </div>
       <div class="search-box">
@@ -337,6 +340,8 @@
         </details>
         <select id="filter-status" aria-label="Lọc trạng thái">
           <option value="all">Tất cả Trạng thái</option>
+          <option value="google-ads">🎯 Google Ads</option>
+          <option value="facebook-ads">📱 Facebook Ads</option>
           <option value="running">Đang chạy</option>
           <option value="stopped">Đã dừng</option>
         </select>
@@ -1074,6 +1079,16 @@
         <button class="btn-close" id="btn-close-modal" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="lhm-ads-preset-bar">
+          <span class="lhm-ads-preset-title">Mẫu quảng cáo 1-Click:</span>
+          <div class="lhm-ads-preset-actions">
+            <button type="button" class="btn btn-secondary btn-sm lhm-preset-btn" data-preset="google-ads">🎯 Google Ads</button>
+            <button type="button" class="btn btn-secondary btn-sm lhm-preset-btn" data-preset="facebook-ads">📱 Facebook Ads</button>
+            <button type="button" class="btn btn-secondary btn-sm lhm-preset-btn" data-preset="google-mcc">🏢 Google MCC</button>
+            <button type="button" class="btn btn-secondary btn-sm lhm-preset-btn" data-preset="google-gmc">🛍️ GMC Shopping</button>
+            <button type="button" class="btn btn-secondary btn-sm lhm-preset-btn" data-preset="meta-pixel">🛒 Meta Pixel</button>
+          </div>
+        </div>
         <div class="tabs lhm-steps" aria-label="Các bước thiết lập hồ sơ">
           <button class="tab-btn active" data-tab="tab-general"><span class="lhm-step-no">1</span>Thông tin</button>
           <button class="tab-btn" data-tab="tab-proxy"><span class="lhm-step-no">2</span>Kết nối mạng</button>
@@ -2049,6 +2064,63 @@ run();
     </div>
   </div>
 
+  
+  <!-- Modal: Trung tâm Ads (Google & Facebook) -->
+  <div class="modal-overlay" id="modal-ads-hub">
+    <div class="modal-dialog modal-lg lhm-ads-hub-dialog" role="dialog" aria-modal="true" aria-labelledby="ads-hub-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="ads-hub-title">Trung tâm Quản trị Ads (Google & Meta)</h2>
+          <p class="lhm-dialog-subtitle">Lối tắt chuyên dụng đến các bảng điều khiển tài khoản và công cụ chiến dịch</p>
+        </div>
+        <button class="btn-close" type="button" id="btn-close-ads-hub" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="lhm-ads-hub-grid">
+          <div class="lhm-ads-hub-card">
+            <div class="lhm-ads-hub-card-header">
+              <span class="lhm-ads-hub-icon">🎯</span>
+              <h3>Hệ sinh thái Google Ads</h3>
+            </div>
+            <p>Truy cập trực tiếp các cổng quản trị chính của Google:</p>
+            <div class="lhm-ads-links">
+              <a href="https://ads.google.com/" target="_blank" class="btn btn-secondary btn-sm">Trình quản lý Google Ads</a>
+              <a href="https://ads.google.com/aw/billing/summary" target="_blank" class="btn btn-secondary btn-sm">Hóa đơn & Thanh toán</a>
+              <a href="https://merchants.google.com/" target="_blank" class="btn btn-secondary btn-sm">Google Merchant Center</a>
+              <a href="https://adstransparency.google.com/" target="_blank" class="btn btn-secondary btn-sm">Minh bạch quảng cáo Google</a>
+              <a href="https://tagmanager.google.com/" target="_blank" class="btn btn-secondary btn-sm">Google Tag Manager</a>
+              <a href="https://analytics.google.com/" target="_blank" class="btn btn-secondary btn-sm">Google Analytics 4</a>
+            </div>
+          </div>
+          <div class="lhm-ads-hub-card">
+            <div class="lhm-ads-hub-card-header">
+              <span class="lhm-ads-hub-icon">📱</span>
+              <h3>Hệ sinh thái Meta / Facebook Ads</h3>
+            </div>
+            <p>Quản lý tài khoản quảng cáo, BM, Pixel và kháng nghị checkpoint:</p>
+            <div class="lhm-ads-links">
+              <a href="https://adsmanager.facebook.com/" target="_blank" class="btn btn-secondary btn-sm">Trình quản lý quảng cáo Ads Manager</a>
+              <a href="https://business.facebook.com/select" target="_blank" class="btn btn-secondary btn-sm">Meta Business Suite (BM)</a>
+              <a href="https://www.facebook.com/accountquality" target="_blank" class="btn btn-secondary btn-sm">Chất lượng tài khoản (Kháng 282/956)</a>
+              <a href="https://business.facebook.com/events_manager2" target="_blank" class="btn btn-secondary btn-sm">Trình quản lý sự kiện & Pixel</a>
+              <a href="https://secure.facebook.com/billing_hub/payment_methods" target="_blank" class="btn btn-secondary btn-sm">Phương thức thanh toán Meta</a>
+              <a href="https://www.facebook.com/ads/library/" target="_blank" class="btn btn-secondary btn-sm">Thư viện quảng cáo (Spy ads)</a>
+            </div>
+          </div>
+        </div>
+        <div class="lhm-ads-hub-footer-box">
+          <div>
+            <strong>Kiểm tra trước khi xuất bản chiến dịch</strong>
+            <p>Soi link đích landing page, tự động tạo chuỗi UTM và kiểm tra chính sách offline.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-ads-hub-open-guard">Mở Ads Launch Guard</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-done-ads-hub">Đóng</button>
+      </div>
+    </div>
+  </div>
   <script src="icons.js"></script>
   <script src="profilePagination.js"></script>
   <script src="profileStatusPoller.js"></script>

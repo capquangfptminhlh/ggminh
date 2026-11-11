@@ -63,6 +63,12 @@ const fieldProxyHost = document.getElementById('field-proxy-host');
 const fieldProxyPort = document.getElementById('field-proxy-port');
 const fieldProxyUser = document.getElementById('field-proxy-user');
 const fieldProxyPass = document.getElementById('field-proxy-pass');
+const fieldAdStatus = document.getElementById('field-ad-status');
+const modalAdsHub = document.getElementById('modal-ads-hub');
+const btnAdsHub = document.getElementById('btn-ads-hub');
+const btnCloseAdsHub = document.getElementById('btn-close-ads-hub');
+const btnDoneAdsHub = document.getElementById('btn-done-ads-hub');
+const btnAdsHubOpenGuard = document.getElementById('btn-ads-hub-open-guard');
 const btnTestProxy = document.getElementById('btn-test-proxy');
 const proxyTestResult = document.getElementById('proxy-test-result');
 
@@ -438,6 +444,78 @@ function setupEventListeners() {
     }
   });
 
+  // Ads Presets 1-Click
+  const ADS_PRESETS = {
+    'google-ads': {
+      prefix: 'Google Ads',
+      group: 'Google Ads',
+      tags: 'Google Ads, Search, PMax',
+      startUrls: ['https://ads.google.com/', 'https://mail.google.com/', 'https://myaccount.google.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    },
+    'facebook-ads': {
+      prefix: 'Facebook Ads',
+      group: 'Facebook Ads',
+      tags: 'Facebook Ads, BM, Via',
+      startUrls: ['https://www.facebook.com/', 'https://adsmanager.facebook.com/', 'https://business.facebook.com/select', 'https://www.facebook.com/accountquality'],
+      engine: 'gecko',
+      adStatus: 'warming'
+    },
+    'google-mcc': {
+      prefix: 'Google MCC',
+      group: 'Google MCC',
+      tags: 'Google MCC, Agency, GA4',
+      startUrls: ['https://ads.google.com/aw/overview', 'https://analytics.google.com/', 'https://tagmanager.google.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    },
+    'google-gmc': {
+      prefix: 'GMC Shopping',
+      group: 'Google Shopping',
+      tags: 'GMC, Shopping',
+      startUrls: ['https://merchants.google.com/', 'https://ads.google.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    },
+    'meta-pixel': {
+      prefix: 'Meta Pixel',
+      group: 'Meta Pixel',
+      tags: 'Meta Pixel, CAPI',
+      startUrls: ['https://business.facebook.com/events_manager2', 'https://adsmanager.facebook.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    }
+  };
+
+  document.querySelectorAll('.lhm-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = ADS_PRESETS[btn.dataset.preset];
+      if (!p) return;
+      if (!fieldId.value || /^Profile_\d+$/.test(fieldName.value.trim())) {
+        fieldName.value = `${p.prefix}_${allProfiles.length + 1}`;
+      }
+      fieldGroup.value = p.group;
+      fieldTags.value = p.tags;
+      fieldStartUrl.value = p.startUrls.join('\n');
+      fieldBrowserEngine.value = p.engine;
+      fieldBrowserEngine.dispatchEvent(new Event('change'));
+      if (fieldAdStatus) fieldAdStatus.value = p.adStatus;
+      document.querySelectorAll('.lhm-preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  if (btnAdsHub && modalAdsHub) {
+    btnAdsHub.addEventListener('click', () => openModal(modalAdsHub));
+    btnCloseAdsHub?.addEventListener('click', () => closeModal(modalAdsHub));
+    btnDoneAdsHub?.addEventListener('click', () => closeModal(modalAdsHub));
+    btnAdsHubOpenGuard?.addEventListener('click', () => {
+      closeModal(modalAdsHub);
+      document.getElementById('btn-ads-launch-guard')?.click();
+    });
+  }
+
   // Save Profile
   btnSaveProfile.addEventListener('click', async () => {
     const name = fieldName.value.trim();
@@ -453,6 +531,7 @@ function setupEventListeners() {
       engine:fieldBrowserEngine.value==='chromium'?'chromium':'gecko',
       engine_type:fieldBrowserEngine.value==='gecko'?'firefox':fieldBrowserEngine.value,
       group: fieldGroup.value.trim() || 'Default',
+      adStatus: fieldAdStatus ? fieldAdStatus.value : 'active',
       startUrls: parseStartupUrls(fieldStartUrl.value),
       tags: parseTags(fieldTags.value),
       notes: fieldNotes.value.trim(),
@@ -555,6 +634,7 @@ async function openProfileModal(existingProfile = null) {
     fieldGroup.value = existingProfile.group || 'Default';
     fieldStartUrl.value = (existingProfile.startUrls || [existingProfile.startUrl || 'https://ads.google.com/']).join('\n');
     fieldTags.value = (existingProfile.tags || []).join(', ');
+    if (fieldAdStatus) fieldAdStatus.value = existingProfile.adStatus || 'active';
     fieldNotes.value = existingProfile.notes || '';
 
     const pxy = existingProfile.proxy || {};
@@ -576,6 +656,8 @@ async function openProfileModal(existingProfile = null) {
     fieldGroup.value = 'Google Ads';
     fieldStartUrl.value = 'https://ads.google.com/';
     fieldTags.value = 'Google Ads';
+    if (fieldAdStatus) fieldAdStatus.value = 'active';
+    document.querySelectorAll('.lhm-preset-btn').forEach(b => b.classList.remove('active'));
     fieldNotes.value = '';
     fieldProxyType.value = 'direct';
     proxyFields.style.display = 'none';
@@ -736,7 +818,17 @@ function renderProfiles() {
     const isRunning = activeBrowserMap.has(p.id);
     const matchStatus = selectedStatus === 'all' ||
       (selectedStatus === 'running' && isRunning) ||
-      (selectedStatus === 'stopped' && !isRunning);
+      (selectedStatus === 'stopped' && !isRunning) ||
+      (selectedStatus === 'google-ads' && (
+        (p.group && /google/i.test(p.group)) ||
+        (p.tags || []).some(t => /google|gmc|mcc/i.test(t)) ||
+        (p.startUrls || []).some(u => /google\.com/i.test(u))
+      )) ||
+      (selectedStatus === 'facebook-ads' && (
+        (p.group && /facebook|meta/i.test(p.group)) ||
+        (p.tags || []).some(t => /facebook|meta|via|bm/i.test(t)) ||
+        (p.startUrls || []).some(u => /facebook\.com|fb\.com/i.test(u))
+      ));
 
     const matchEngine = selectedEngine === 'all' ||
       (p.engine || 'chromium') === selectedEngine;
@@ -786,10 +878,16 @@ function renderProfiles() {
 
     const tr = document.createElement('tr');
     tr.dataset.profileId=profile.id;
+    const adStatus = profile.adStatus || 'active';
+    const adBadge = adStatus === 'warming' ? '<span class="lhm-ad-pill is-warming" title="Nuôi via / Ngâm profile">Nuôi via</span>' :
+      adStatus === 'billing' ? '<span class="lhm-ad-pill is-billing" title="Chờ gắn thẻ thanh toán">Chờ add thẻ</span>' :
+      adStatus === 'appeal' ? '<span class="lhm-ad-pill is-appeal" title="Đang kháng nghị checkpoint">Đang kháng</span>' :
+      adStatus === 'ready' ? '<span class="lhm-ad-pill is-ready" title="Sẵn sàng / Dự phòng">Dự phòng</span>' :
+      '<span class="lhm-ad-pill is-active" title="Đang chạy camp chiến dịch">Active</span>';
     tr.innerHTML = `
       <td><input type="checkbox" aria-label="Chọn hồ sơ" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
       <td data-table-col="id"><code class="profile-id">${escapeHtml(profile.id)}</code></td>
-      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
+      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span> ${adBadge}<span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
       <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span></div></td>
       <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>

@@ -165,6 +165,7 @@ class Store {
       startUrl: startUrls[0], startUrls, tags,
       // An explicit empty string clears notes; omitted notes preserve the old value.
       notes: String(input.notes !== undefined ? input.notes : (old.notes || '')).slice(0, 2000),
+      adStatus: typeof input.adStatus === 'string' ? input.adStatus : (old.adStatus || 'active'),
       proxy,
       requiresProxySetup: proxy.type==='direct' &&
         (input.requiresProxySetup === true ||
