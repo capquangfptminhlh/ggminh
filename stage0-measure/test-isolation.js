@@ -7,6 +7,7 @@
 const assert=require('node:assert/strict');
 const {ISO_FIELDS,concurrentIsolationResult,crashRecoveryResult,
  restoreIsolationResult,httpCacheIsolationResult,faviconCacheResult}=require('./core');
+const {profilePidsFromWindowsSnapshot}=require('./windows-profile-processes');
 const map=(value)=>Object.fromEntries(ISO_FIELDS.map(f=>[f,value]));
 
 // --- concurrent writes: simultaneous + interleaved cross-writes ----------
@@ -72,5 +73,20 @@ assert.deepEqual(faviconCacheResult({hitsAfterA:0,hitsAfterB:0}),
 assert.equal(faviconCacheResult({hitsAfterA:1,hitsAfterB:2}).pass,true);
 assert.equal(faviconCacheResult({hitsAfterA:1,hitsAfterB:1}).pass,false);
 assert.throws(()=>faviconCacheResult({hitsAfterA:2,hitsAfterB:1}),/Missing favicon/);
+
+// --- Windows persistent-context process discovery -------------------------
+// Playwright returns context.browser() === null for a persistent context, so
+// crash tests must resolve Camoufox processes from their exact -profile path.
+const winProfile='C:\\Temp\\lhm-stage0-iso-1\\camoufox-profiles\\iso_a';
+const winRows=JSON.stringify([
+ {ProcessId:4101,Name:'camoufox.exe',CommandLine:'camoufox.exe -profile "'+winProfile+'" -juggler-pipe'},
+ {ProcessId:4102,Name:'camoufox.exe',CommandLine:'camoufox.exe -contentproc -profile "'+winProfile.toLowerCase()+'"'},
+ {ProcessId:4103,Name:'camoufox.exe',CommandLine:'camoufox.exe -profile "'+winProfile+'_sibling"'},
+ {ProcessId:4104,Name:'other.exe',CommandLine:'other.exe --profile='+winProfile}
+]);
+assert.deepEqual(profilePidsFromWindowsSnapshot(winRows,winProfile),[4101,4102]);
+assert.deepEqual(profilePidsFromWindowsSnapshot(JSON.stringify(
+ {ProcessId:5101,Name:'camoufox.exe',CommandLine:'camoufox.exe --profile='+winProfile}),winProfile),[5101]);
+assert.throws(()=>profilePidsFromWindowsSnapshot('{bad json',winProfile),/process snapshot/i);
 
 console.log('Stage-0 isolation contract: PASS; real browser condition runs NOT_RUN until run-isolation.js executes');
