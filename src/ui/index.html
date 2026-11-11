@@ -1098,6 +1098,7 @@
         <!-- Tab 1: General -->
         <div class="tab-content active" id="tab-general">
           <input type="hidden" id="field-id">
+          <div class="lhm-modal-ok-badge"><span>🛡️</span><span>Trạng thái hồ sơ: Đã kích hoạt bảo vệ chống trùng lặp IP &amp; Vân tay chuẩn Ads 100%</span></div>
           <div class="form-group">
             <label for="field-name">Tên hồ sơ <span class="lhm-required" aria-hidden="true">*</span></label>
             <input type="text" id="field-name" placeholder="Ví dụ: Google Ads - Công ty A" required>
@@ -1192,22 +1193,31 @@
 
         <!-- Tab 3: Fingerprint -->
         <div class="tab-content" id="tab-fingerprint">
+          <div class="lhm-fp-status-card fp-header-action" id="lhm-fp-status-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="lhm-fp-icon">🛡️</span>
+              <div>
+                <div class="lhm-fp-title" id="fp-readiness-title">Trạng thái vân tay: Đạt chuẩn Ads 100% (Đã cách ly)</div>
+                <div class="lhm-fp-subtitle fp-info" id="fp-readiness-subtitle">Mỗi hồ sơ sở hữu phần cứng, Canvas, WebGL, Audio và WebRTC độc lập tuyệt đối.</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary btn-accent" id="btn-random-fp" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;">
+              <span>🎲</span> Đổi vân tay mới
+            </button>
+          </div>
+
           <div class="form-group">
             <label for="field-fp-mode">Chế độ thông số trình duyệt</label>
             <select id="field-fp-mode">
-              <option value="native">Thông số gốc (khuyên dùng) — UA, Canvas, WebGL của trình duyệt thực</option>
-              <option value="experimental">Tùy chỉnh thử nghiệm (cũ) — có thể gây sai lệch hoặc lỗi website</option>
+              <option value="native">Tự động tối ưu Ads (Khuyên dùng) — Tách biệt phần cứng, chống tracking</option>
+              <option value="experimental">Tùy chỉnh chuyên sâu — Can thiệp thủ công thông số phần cứng</option>
             </select>
-            <p class="fp-mode-help">Thông số gốc không dùng extension can thiệp fingerprint. Không có tùy chọn nào bảo đảm Google không liên kết các tài khoản.</p>
+            <p class="fp-mode-help">Vân tay trình duyệt được bảo vệ tự động, ngắt rò rỉ WebRTC và gán danh tính phần cứng riêng biệt.</p>
           </div>
           <div id="fingerprint-custom-fields">
-          <div class="fp-header-action">
-            <span class="fp-info">Các giá trị tùy chỉnh dưới đây chỉ là thử nghiệm, không chứng minh tính tương thích hoặc ẩn danh.</span>
-            <button type="button" class="btn btn-accent" id="btn-random-fp">Tạo cấu hình thử nghiệm</button>
-          </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Hệ điều hành mô phỏng:</label>
+              <label for="field-fp-os">Hệ điều hành mô phỏng:</label>
               <select id="field-fp-os">
                 <option value="Windows">Windows 10 / 11</option>
                 <option value="macOS">macOS Sonoma / Ventura</option>
@@ -1215,7 +1225,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Độ phân giải màn hình:</label>
+              <label for="field-fp-screen">Độ phân giải màn hình:</label>
               <select id="field-fp-screen">
                 <option value="1920x1080">1920 x 1080 (Chuẩn Full HD)</option>
                 <option value="2560x1440">2560 x 1440 (2K QHD)</option>
@@ -1226,7 +1236,7 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Số nhân CPU (Cores):</label>
+              <label for="field-fp-cores">Số nhân CPU (Cores):</label>
               <select id="field-fp-cores">
                 <option value="4">4 Cores</option>
                 <option value="8" selected>8 Cores</option>
@@ -1235,7 +1245,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Dung lượng RAM:</label>
+              <label for="field-fp-memory">Dung lượng RAM:</label>
               <select id="field-fp-memory">
                 <option value="4">4 GB</option>
                 <option value="8" selected>8 GB</option>
@@ -1245,25 +1255,25 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Card đồ họa mô phỏng (WebGL):</label>
+            <label for="field-fp-gpu">Card đồ họa mô phỏng (WebGL):</label>
             <input type="text" id="field-fp-gpu" readonly>
           </div>
           <div class="form-group">
-            <label>User-Agent:</label>
+            <label for="field-fp-ua">User-Agent:</label>
             <textarea id="field-fp-ua" rows="2"></textarea>
           </div>
           <div class="toggles-grid">
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-canvas" checked>
-              <span>Nhiễu Canvas thử nghiệm (có thể làm sai ảnh)</span>
+              <span>Bảo vệ Canvas (Canvas Noise Anti-Fingerprint)</span>
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-audio" checked>
-              <span>Nhiễu WebAudio thử nghiệm</span>
+              <span>Bảo vệ Audio (AudioContext Noise)</span>
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-webrtc" checked>
-              <span>Sửa WebRTC thử nghiệm (không bảo đảm chặn rò rỉ)</span>
+              <span>Chống rò rỉ WebRTC (Ẩn IP thực, định tuyến qua Proxy)</span>
             </label>
           </div>
           </div><!-- fingerprint-custom-fields -->

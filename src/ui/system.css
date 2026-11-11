@@ -485,3 +485,65 @@ body[data-lhm-motion="off"] *,body[data-lhm-motion="off"] *::before,body[data-lh
 .lhm-dialog-pane{display:none}
 .lhm-dialog-pane.active{display:block}
 .lhm-dialog-pane>:first-child{margin-top:0}
+
+/* Fingerprint Setup & Ads Readiness Indicators */
+.lhm-fp-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card, #f8fafc);
+  border: 1.5px solid #10b981;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.lhm-fp-status-card .lhm-fp-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+.lhm-fp-status-card .lhm-fp-title {
+  font-weight: 700;
+  color: #059669;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.lhm-fp-status-card .lhm-fp-subtitle {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin-top: 2px;
+}
+.lhm-modal-ok-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-weight: 600;
+  color: #059669;
+}
+.lhm-profile-ok-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-top: 4px;
+}
+.lhm-status-subtext {
+  font-size: 11px;
+  color: #059669;
+  font-weight: 600;
+  margin-top: 2px;
+}
