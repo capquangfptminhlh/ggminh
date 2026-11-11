@@ -24,8 +24,7 @@ function gate(id,status,reason,evidence=null){
 function validateCandidate(candidate){
  const hash=/^[a-f0-9]{64}$/i;
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate)||
-  !/^[a-f0-9]{40,64}$/i.test(candidate.commit||'')||
-  !hash.test(candidate.appSha256||'')||
+  !/^[a-f0-9]{40}$/i.test(candidate.commit||'')||
   !hash.test(candidate.engineSha256||'')||
   !hash.test(candidate.installerSha256||'')||
   typeof candidate.engineVersion!=='string'||
@@ -51,6 +50,13 @@ function finalize(candidate,gates,generatedAt){
 function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
  validateCandidate(candidate);
  if(!Array.isArray(gates))throw Error('Camoufox preflight gates must be an array');
+ const seen=new Set();
+ for(const item of gates){
+  if(!item||typeof item!=='object')throw Error('Invalid Camoufox preflight gate');
+  gate(item.id,item.status,item.reason,item.evidence);
+  if(seen.has(item.id))throw Error('Invalid Camoufox preflight gate');
+  seen.add(item.id);
+ }
  const timestamp=now instanceof Date?now:new Date(now);
  if(Number.isNaN(timestamp.getTime()))throw Error('Invalid Camoufox preflight time');
  return finalize(candidate,gates,timestamp.toISOString());
