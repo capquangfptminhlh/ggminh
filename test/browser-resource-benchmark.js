@@ -45,11 +45,16 @@ assert.deepEqual(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrom
  '--samples','12','--output','C:\\evidence\\report.json'],{platform:'win32'}),{
  engine:'chromium',binary:'C:\\Browser\\chrome.exe',appArtifact:'C:\\LHM\\app.asar',
  workload:'heavy',concurrency:5,samples:12,output:'C:\\evidence\\report.json',
- signedReleaseDir:null,identityFile:null,durationMs:3000
+ signedReleaseDir:null,publisherKeyDir:null,identityFile:null,durationMs:3000
 });
 assert.throws(()=>parseArgs(['--engine','camoufox','--binary','C:\\bad.exe',
  '--app-artifact','C:\\app.asar','--output','C:\\out.json'],{platform:'win32'}),
  /signed-release-dir/);
+assert.equal(parseArgs(['--engine','camoufox',
+ '--app-artifact','C:\\LHM\\setup.exe','--signed-release-dir','D:\\engine',
+ '--publisher-key-dir','C:\\LHM\\resources','--identity-file','D:\\identities.json',
+ '--output','D:\\report.json'],{platform:'win32'}).publisherKeyDir,
+ 'C:\\LHM\\resources');
 for(const kind of ['light','medium','heavy']){
  const html=workloadHtml(kind,'sample-id');
  assert(html.includes('sample-id'));

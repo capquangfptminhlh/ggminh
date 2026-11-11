@@ -36,7 +36,8 @@ function absoluteFor(value,platform){
 function parseArgs(argv,{platform=process.platform}={}){
  if(platform!=='win32')throw Error('Real browser resource benchmark is Windows-only');
  const out={engine:null,binary:null,appArtifact:null,workload:'light',concurrency:1,
-  samples:10,output:null,signedReleaseDir:null,identityFile:null,durationMs:3000};
+  samples:10,output:null,signedReleaseDir:null,publisherKeyDir:null,
+  identityFile:null,durationMs:3000};
  for(let i=0;i<argv.length;i++){
   const arg=argv[i];
   if(arg==='--engine')out.engine=valueAfter(argv,i,'engine'),i++;
@@ -47,6 +48,7 @@ function parseArgs(argv,{platform=process.platform}={}){
   else if(arg==='--samples')out.samples=Number(valueAfter(argv,i,'samples')),i++;
   else if(arg==='--output')out.output=valueAfter(argv,i,'output'),i++;
   else if(arg==='--signed-release-dir')out.signedReleaseDir=valueAfter(argv,i,'signed-release-dir'),i++;
+  else if(arg==='--publisher-key-dir')out.publisherKeyDir=valueAfter(argv,i,'publisher-key-dir'),i++;
   else if(arg==='--identity-file')out.identityFile=valueAfter(argv,i,'identity-file'),i++;
   else if(arg==='--duration-ms')out.durationMs=Number(valueAfter(argv,i,'duration-ms')),i++;
   else throw Error('Unsupported argument: '+arg);
@@ -65,6 +67,8 @@ function parseArgs(argv,{platform=process.platform}={}){
  if(out.engine==='camoufox'){
   if(!out.signedReleaseDir||!absoluteFor(out.signedReleaseDir,platform))
    throw Error('Camoufox requires an absolute --signed-release-dir');
+  if(!out.publisherKeyDir||!absoluteFor(out.publisherKeyDir,platform))
+   throw Error('Camoufox requires an absolute --publisher-key-dir');
   if(!out.identityFile||!absoluteFor(out.identityFile,platform))
    throw Error('Camoufox requires an absolute --identity-file');
   out.binary=null;
@@ -219,7 +223,7 @@ function resolveExecutable(options){
   if(!fs.statSync(options.binary).isFile())throw Error('Browser binary is not a file');
   return {binary:options.binary,identityEnvs:Array(options.concurrency).fill(null)};
  }
- const publicKey=loadCamoufoxPublisherKey(options.signedReleaseDir,{licenseKey:LICENSE_PUBLIC_KEY});
+ const publicKey=loadCamoufoxPublisherKey(options.publisherKeyDir,{licenseKey:LICENSE_PUBLIC_KEY});
  if(!publicKey)throw Error('Camoufox publisher trust anchor missing');
  const manager=new BundledEngineManager(options.signedReleaseDir,{engine:'camoufox',publicKey});
  const status=manager.status();

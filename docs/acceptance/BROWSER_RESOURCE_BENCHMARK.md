@@ -37,6 +37,7 @@ Firefox thay `--engine firefox` và `--binary`. Camoufox dùng:
 node tools/browser-resource-benchmark.js `
   --engine camoufox `
   --signed-release-dir "C:\lhm-camoufox-signed" `
+  --publisher-key-dir "C:\lhm-camoufox-resources" `
   --identity-file "C:\lhm-private-input\benchmark-identities.json" `
   --app-artifact "C:\path\to\app.asar" `
   --workload medium --concurrency 3 --samples 10 `
