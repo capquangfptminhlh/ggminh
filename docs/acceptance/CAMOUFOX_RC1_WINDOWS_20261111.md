@@ -15,7 +15,7 @@ Status: **RC evidence only; not approved for customer release**.
 | Gate | Result | Evidence/limit |
 |---|---|---|
 | Signed tree and packaged descriptor | PASS | 1,579 files; archive digest and Ed25519 manifest verified; installer includes only public metadata, not engine/private key/loose manifest. |
-| Real archive install service | PASS | The 1.36 GB RC archive was installed by `CamoufoxInstallService` into an isolated D: acceptance root; extraction and all-file verification passed; the installed executable retained the pinned SHA-256. Two configured profiles then launched from that installed path: identity and storage PASS, extended signals MEASURED, cleanup PASS. Local archive seam only—GitHub download remains NOT_RUN while the release is draft. |
+| Real archive install service | PASS | The 1.36 GB RC archive was installed by `CamoufoxInstallService` into an isolated D: acceptance root; extraction and all-file verification passed; the installed executable retained the pinned SHA-256. From that installed path: two configured profiles passed identity/storage/cleanup; WebGL matched 2/2 per profile; direct and lab-proxy WebRTC observations reproduced. Local archive seam only—GitHub download and real-proxy P2 remain NOT_RUN. |
 | Pinned identities | PASS | Two synthetic identities matched their own locale, timezone, navigator, screen and WebGL expectations across launch and restart. |
 | Storage isolation | PASS | Cookie, localStorage, IndexedDB, Cache Storage and Service Worker remained separated for baseline, concurrent cross-write, restart and directory snapshot/restore. |
 | Crash recovery, 10-second flush | PASS | All five stores persisted; the other profile was unchanged. |
