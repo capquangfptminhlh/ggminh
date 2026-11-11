@@ -58,11 +58,11 @@ upstream chính thức, đối chiếu digest đã ghim như quy trình staging
 hiện có), máy ký có private key publisher (từ két ở mục 2, chỉ cắm
 vào trong buổi ký).
 
-1. **Kiểm tra cây trước khi ký:** cây chứa `camoufox.exe`; mọi tên
-   file phải hợp lệ với định dạng manifest (công cụ ký từ chối tên
-   chứa ký tự ngoài `[A-Za-z0-9_.-]` theo từng đoạn đường dẫn —
-   nếu upstream đổi tên file, xử lý ở bước chuẩn bị cây, không nới
-   quy tắc); trong cây **không có** bất kỳ file khóa nào.
+1. **Kiểm tra cây trước khi ký:** cây chứa `camoufox.exe`; validator cho
+   phép Unicode/dấu cách/ngoặc vuông an toàn và giữ nguyên tên upstream,
+   nhưng từ chối traversal, đường dẫn tuyệt đối, device name Windows,
+   symlink và collision sau NFC + lowercase. Không đổi tên font để vượt
+   validator; trong cây **không có** bất kỳ file khóa nào.
 2. Đặt hai biến môi trường (đường dẫn tuyệt đối, nằm ngoài cây
    engine và ngoài repo):
    `LHM_ENGINE_SIGNING_KEY_FILE` = private key publisher;

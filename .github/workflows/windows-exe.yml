@@ -117,16 +117,21 @@ jobs:
           if (-not (Test-Path (Join-Path $resources "lhm-update-publisher\\update-publisher-ed25519.pub") -PathType Leaf)) {
             throw "Update trust anchor missing from packaged resources"
           }
-          # Preview releases must not accidentally ship an unapproved engine
-          # executable or manifest from a developer's staging directory.
-          foreach ($folder in @("lhm-camoufox", "lhm-engines")) {
-            $dir = Join-Path $resources $folder
-            if (Test-Path $dir) {
-              $forbidden = Get-ChildItem $dir -Recurse -File -ErrorAction Stop |
-                Where-Object { $_.Name -in @("camoufox.exe", "release.json", "publisher-ed25519.pub") }
-              if ($forbidden) {
-                throw "Unapproved engine release payload staged in $folder : $($forbidden.FullName -join ', ')"
-              }
+          # The installer may carry only the verified public trust anchor and
+          # signed download descriptor. The 1.3 GB engine, its manifest and
+          # every private key remain outside the application package.
+          $sourceCamoufox = Join-Path $PWD "resources\camoufox-engine"
+          $packagedCamoufox = Join-Path $resources "lhm-camoufox"
+          node tools/verify-camoufox-release-resources.js $sourceCamoufox
+          if ($LASTEXITCODE -ne 0) { throw 'Source Camoufox release metadata failed verification' }
+          node tools/verify-camoufox-release-resources.js $packagedCamoufox
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged Camoufox release metadata failed verification' }
+          $bundled = Join-Path $resources "lhm-engines"
+          if (Test-Path $bundled) {
+            $forbidden = Get-ChildItem $bundled -Recurse -File -ErrorAction Stop |
+              Where-Object { $_.Name -in @("camoufox.exe", "manifest.json") }
+            if ($forbidden) {
+              throw "Unapproved engine payload staged in lhm-engines: $($forbidden.FullName -join ', ')"
             }
           }
       - name: Verify packaged license authority is explicitly DISABLED in Preview
