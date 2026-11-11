@@ -1,0 +1,39 @@
+# Camoufox RC1 — Windows evidence status (2026-11-11)
+
+Status: **RC evidence only; not approved for customer release**.
+
+## Bound artifacts
+
+- Engine: Camoufox `156.0.1-beta.36`.
+- `camoufox.exe` SHA-256: `a235730786ee4e27b7e5087751509b2d456b0f03ce73d04bbb1b9077458764c6`.
+- Release ZIP SHA-256: `d619b42d96cbc9bfadbf2e89dea5aba860b3d29c8b700b4af099a0412914b869` (1,364,568,719 bytes).
+- Fresh Preview installer SHA-256: `f0a876bd8b7b4e39bd2f7f428743a8e7e53b96841b14a5b53e098079f5c62f81` (128,194,866 bytes).
+- The engine release on GitHub remains a draft. The current publisher key is a local staging key, not the offline production key required by QD-02.
+
+## Windows results
+
+| Gate | Result | Evidence/limit |
+|---|---|---|
+| Signed tree and packaged descriptor | PASS | 1,579 files; archive digest and Ed25519 manifest verified; installer includes only public metadata, not engine/private key/loose manifest. |
+| Pinned identities | PASS | Two synthetic identities matched their own locale, timezone, navigator, screen and WebGL expectations across launch and restart. |
+| Storage isolation | PASS | Cookie, localStorage, IndexedDB, Cache Storage and Service Worker remained separated for baseline, concurrent cross-write, restart and directory snapshot/restore. |
+| Crash recovery, 10-second flush | PASS | All five stores persisted; the other profile was unchanged. |
+| Crash recovery, 1.5-second flush | KNOWN FINDING | localStorage reverted to its last committed value; the other four stores persisted and no cross-profile data appeared. This is the documented engine durability window, not an isolation pass. |
+| WebGL real GPU | PASS | Both profiles matched vendor/renderer 2/2; extensions, parameters, shader precision and render hashes were measured headful. |
+| Canvas, Audio Offline, fonts | MEASURED | Canvas exports were internally consistent; Audio Offline was measured after the Xray-safe probe fix; font probing detected 29/45 candidates in each profile. Font probing is not a full installed-font inventory. |
+| WebRTC direct | MEASURED | Host candidates were mDNS; public srflx equalled the direct exit IP. |
+| WebRTC lab proxy | MEASURED | No ICE candidates or STUN datagrams were exposed behind the controlled proxy route. |
+| Real customer proxy, DNS route, runtime egress | NOT_RUN | Requires an authenticated test proxy, controlled echo endpoint, and the approved DNS-lab adapter procedure. |
+| Resource benchmark | NOT_RUN | The 16 GB host had less than the mandatory 20% free-RAM reserve. No applications were terminated to force a result. |
+| Installed-client clean Windows acceptance | NOT_RUN | This developer machine is not a clean Windows acceptance VM; the draft/staging-key release must not be promoted to simulate this gate. |
+
+## Verification
+
+- `npm test`: 351/351 selected steps PASS, plus the Camoufox publisher/trust/descriptor/resource pretests PASS.
+- `npm run build:win`: PASS.
+- Packaged `resources/lhm-camoufox`: trust anchor and descriptor validate; no bundled engine payload or private key.
+
+## Release decision
+
+`resources/camoufox-engine/capabilities.json` intentionally keeps `releases: []`.
+Do not publish the draft release or market Camoufox as “100%”, “sub-50ms”, or approved for Google/Facebook. Customer enablement remains fail-closed until the real-proxy/DNS/runtime, resource, clean-install and production-key gates are completed.
