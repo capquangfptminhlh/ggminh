@@ -29,7 +29,8 @@ function assertNoPrivateKeyMaterial(root,filenames){
    throw Error('Engine tree contains private key material; refusing to sign: '+name);
  }
 }
-function issueManifest({root,version,keyFile,engine='chromium',publisherKeyFile=null}){
+function issueManifest({root,version,keyFile,keyPassphrase=null,
+ engine='chromium',publisherKeyFile=null}){
  if(typeof root!=='string'||!path.isAbsolute(root))
   throw Error('Choose the absolute resource engine directory');
  if(typeof version!=='string'||!/^([0-9]{1,3}\.){2}[0-9]{1,5}(?:\.[0-9]{1,6})?$/.test(version))
@@ -43,7 +44,10 @@ function issueManifest({root,version,keyFile,engine='chromium',publisherKeyFile=
  const resolvedKey=path.resolve(keyFile);
  if(resolvedKey===resolvedRoot||resolvedKey.startsWith(resolvedRoot+path.sep))
   throw Error('Signing key file must not be inside the engine tree being packaged');
- const privateKey=crypto.createPrivateKey(fs.readFileSync(keyFile));
+ const keyData=fs.readFileSync(keyFile);
+ const privateKey=keyPassphrase===null||keyPassphrase===undefined?
+  crypto.createPrivateKey(keyData):
+  crypto.createPrivateKey({key:keyData,passphrase:keyPassphrase});
  if(privateKey.asymmetricKeyType!=='ed25519')
   throw Error('Engine release signing key must use Ed25519');
  // Resolve the expected publisher public key. A separately provisioned
@@ -91,6 +95,7 @@ if(require.main===module){
    root:process.argv[2],version:process.argv[3],
    engine:process.argv[4]||'chromium',
    keyFile:process.env.LHM_ENGINE_SIGNING_KEY_FILE,
+   keyPassphrase:process.env.LHM_ENGINE_SIGNING_KEY_PASSPHRASE||null,
    publisherKeyFile:process.env.LHM_ENGINE_PUBLISHER_KEY_FILE||null
   });
   console.log('Signed verified manifest:',result.path,'Files:',result.fileCount);

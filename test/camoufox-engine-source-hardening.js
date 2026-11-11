@@ -7,6 +7,7 @@
 const assert=require('assert');
 const crypto=require('crypto');
 const fs=require('fs'),os=require('os'),path=require('path');
+const {spawnSync}=require('child_process');
 const {EventEmitter}=require('events');
 const {Readable}=require('stream');
 const {CamoufoxInstallService,validateRelease,downloadPinned}=
@@ -86,6 +87,36 @@ function signedManifest(root,signingKey,{extraFiles=[]}={}){
   assert.throws(()=>issueManifest({root:signRoot,version:'156.0.1',
    keyFile:rsaPrivFile,engine:'camoufox',publisherKeyFile:publisherPubFile}),
    /Ed25519/);
+  // Encrypted publisher keys can be unlocked without ever writing an
+  // unencrypted private key to disk.
+  const encryptedRoot=path.join(root,'encrypted-sign-tree');
+  engineTree(encryptedRoot);
+  const encryptedPrivFile=path.join(root,'publisher-private-encrypted.pem');
+  const publisherPassphrase='camoufox-preview-publisher-test-passphrase';
+  fs.writeFileSync(encryptedPrivFile,publisher.privateKey.export({
+   format:'pem',type:'pkcs8',cipher:'aes-256-cbc',passphrase:publisherPassphrase
+  }));
+  const encryptedIssued=issueManifest({root:encryptedRoot,version:'156.0.1',
+   keyFile:encryptedPrivFile,keyPassphrase:publisherPassphrase,
+   engine:'camoufox',publisherKeyFile:publisherPubFile});
+  assert.strictEqual(encryptedIssued.fileCount,2);
+  assert.throws(()=>issueManifest({root:encryptedRoot,version:'156.0.1',
+   keyFile:encryptedPrivFile,keyPassphrase:'wrong-passphrase',
+   engine:'camoufox',publisherKeyFile:publisherPubFile}));
+  const encryptedCliRoot=path.join(root,'encrypted-cli-sign-tree');
+  engineTree(encryptedCliRoot);
+  const signer=path.join(__dirname,'..','tools','sign-bundled-engine.js');
+  const encryptedCli=spawnSync(process.execPath,
+   [signer,encryptedCliRoot,'156.0.1','camoufox'],{
+    encoding:'utf8',env:{...process.env,
+     LHM_ENGINE_SIGNING_KEY_FILE:encryptedPrivFile,
+     LHM_ENGINE_SIGNING_KEY_PASSPHRASE:publisherPassphrase,
+     LHM_ENGINE_PUBLISHER_KEY_FILE:publisherPubFile}
+   });
+  assert.strictEqual(encryptedCli.status,0,encryptedCli.stderr);
+  assert.match(encryptedCli.stdout,/Signed verified manifest/);
+  assert(!encryptedCli.stdout.includes(publisherPassphrase));
+  assert(!encryptedCli.stderr.includes(publisherPassphrase));
   // Signing key located inside the tree being packaged: refused.
   const insideKey=path.join(signRoot,'signing.pem');
   fs.writeFileSync(insideKey,
