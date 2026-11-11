@@ -425,7 +425,7 @@ function setupEventListeners() {
 
   // Test Proxy
   btnTestProxy.addEventListener('click', async () => {
-    proxyTestResult.textContent = 'Đang kiểm tra kết nối...';
+    proxyTestResult.textContent = 'Đang kiểm tra kết nối & độ sạch IP...';
     proxyTestResult.className = 'test-result';
     const proxyConfig = {
       type: fieldProxyType.value,
@@ -437,7 +437,16 @@ function setupEventListeners() {
     const res = await window.api.checkProxy(proxyConfig);
     if (['success', 'verified', 'warning'].includes(res.status)) {
       proxyTestResult.className = res.status === 'warning' ? 'test-result error' : 'test-result success';
-      proxyTestResult.textContent = res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`;
+      let qInfo = '';
+      if (res.quality) {
+        const qBadge = res.quality.riskLevel === 'clean' ? '🟢 SẠCH' : res.quality.riskLevel === 'warning' ? '🟡 CẢNH BÁO' : '🔴 RỦI RO CAO';
+        qInfo = `\n[Độ sạch IP: ${qBadge} (${res.quality.score}/100)] Loại: ${res.quality.category} · Nhà mạng: ${res.quality.isp || 'N/A'} (${res.quality.country || ''}) · Múi giờ: ${res.quality.timezone || 'N/A'}\nĐánh giá: ${res.quality.message}`;
+        if (res.quality.timezone && fieldNotes && !fieldNotes.value.includes('Múi giờ IP:')) {
+          const sep = fieldNotes.value ? '\n' : '';
+          fieldNotes.value = fieldNotes.value + `${sep}[IP Info] Quốc gia: ${res.quality.country || ''} | Múi giờ IP: ${res.quality.timezone} | Loại: ${res.quality.category}`;
+        }
+      }
+      proxyTestResult.textContent = (res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`) + qInfo;
     } else {
       proxyTestResult.className = 'test-result error';
       proxyTestResult.textContent = `Lỗi: ${res.message}`;
