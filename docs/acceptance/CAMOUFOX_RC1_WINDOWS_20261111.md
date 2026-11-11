@@ -25,6 +25,7 @@ Status: **RC evidence only; not approved for customer release**.
 | WebRTC lab proxy | MEASURED | No ICE candidates or STUN datagrams were exposed behind the controlled proxy route. |
 | Real customer proxy, DNS route, runtime egress | NOT_RUN | Requires an authenticated test proxy, controlled echo endpoint, and the approved DNS-lab adapter procedure. |
 | Resource benchmark | NOT_RUN | The 16 GB host had less than the mandatory 20% free-RAM reserve. No applications were terminated to force a result. |
+| Packaged `win-unpacked` UI smoke | PASS | Isolated temporary user-data; process exit 0; 13 distinct PNG captures; smallest capture 103,871 bytes; stderr empty. This proves the packaged UI path, not an installer/upgrade. |
 | Installed-client clean Windows acceptance | NOT_RUN | This developer machine is not a clean Windows acceptance VM; the draft/staging-key release must not be promoted to simulate this gate. |
 
 ## Verification
