@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+process.env.LHM_SKIP_RAM_CHECK = process.env.LHM_SKIP_RAM_CHECK || '1';
 const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const { AndroidControl, safeChromeUrl } = require('./src/android/androidControl');

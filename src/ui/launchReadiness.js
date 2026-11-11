@@ -75,15 +75,22 @@ window.LHMLaunchReadiness = (() => {
     list.replaceChildren();
     get('launch-readiness-layers').replaceChildren();
     openButton.disabled = true;
-    modal.classList.add('open');
     const answer = new Promise(resolve => { activeResolve = resolve; });
     currentProfile = profileId;
     try {
       const report = await window.api.getLaunchReadiness(profileId);
       if (currentProfile !== profileId) return answer;
       lastReport = report;
+      if (report.canLaunch && report.errorCount === 0) {
+        activeResolve = null;
+        currentProfile = null;
+        lastReport = null;
+        return true;
+      }
+      modal.classList.add('open');
       render(report);
     } catch (e) {
+      modal.classList.add('open');
       if (currentProfile === profileId) {
         status.dataset.state = 'blocked';
         status.textContent = 'KHÔNG THỂ KIỂM TRA — KHÔNG MỞ HỒ SƠ';

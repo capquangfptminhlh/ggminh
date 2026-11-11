@@ -50,7 +50,7 @@ function evaluateLaunch(host, activeCount, ramMiB) {
     reserveGiB:RESERVED_GIB, overheadMiB:OVERHEAD_MIB, requiredFreeGiB:requiredGiB};
   if (used >= maxParallel) return {...base,reason:'parallel-limit'};
   if (!host.measured) return {...base,reason:'memory-unavailable'};
-  if (host.freeBytes < (plannedMiB + OVERHEAD_MIB)*MiB + RESERVED_GIB*GiB)
+  if (process.env.LHM_SKIP_RAM_CHECK !== '1' && host.freeBytes < (plannedMiB + OVERHEAD_MIB)*MiB + RESERVED_GIB*GiB)
     return {...base,reason:'insufficient-free-memory'};
   return {...base,allowed:true,reason:'ready'};
 }
