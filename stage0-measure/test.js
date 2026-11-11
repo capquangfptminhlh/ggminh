@@ -103,5 +103,5 @@ assert.throws(()=>webglExpectationResult(null,webglPoint),/expectations/);
 // Firefox exposes OfflineAudioBuffer data across an Xray boundary in the
 // automation world. The probe must copy it to a plain Array before indexing.
 assert.match(fs.readFileSync(require.resolve('./core'),'utf8'),
- /Array\.from\(buffer\.getChannelData\(0\)\)/);
+ /buffer\.copyFromChannel\(data,0\)/);
 console.log('Stage-0 contract: PASS (incl. extended probe contracts); real Windows browser measurements NOT_RUN');
