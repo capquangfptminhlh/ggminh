@@ -68,17 +68,9 @@ function powershell(command,timeoutMs=5000){
 // belonging to a different profile or unrelated PID.
 async function windowsWindowProbe(pid){
  if(!Number.isSafeInteger(pid)||pid<=0)return false;
- const command=[
-  '$root='+pid,
-  '$p=Get-Process -Id $root -ErrorAction SilentlyContinue',
-  'if($p -and $p.MainWindowHandle -ne 0){ Write-Output ("WINDOW_READY:"+$root); exit 0 }',
-  '$camou=Get-Process -Name "camoufox" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 }',
-  'if($camou){ $id = if ($camou -is [array]) { $camou[0].Id } else { $camou.Id }; Write-Output ("WINDOW_READY:"+$id); exit 0 }'
- ].join('\n');
  try{
-  const output=await powershell(command,6000);
-  const match=/^WINDOW_READY:(\d+)$/.exec(output);
-  return match?{ready:true,windowPid:Number(match[1])}:false;
+  process.kill(pid, 0);
+  return {ready:true,windowPid:pid};
  }catch(_){return false;}
 }
 async function requestWindowClose(pid){

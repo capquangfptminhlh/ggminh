@@ -186,7 +186,11 @@ class BundledEngineManager{
  }
  resolve(engine){
   if(engine!==this.engine)throw Error('Bundled engine not available for this browser family');
-  return this.verify().executable;
+  if(this._cachedExecutable&&fs.existsSync(this._cachedExecutable))
+   return this._cachedExecutable;
+  const verified=this.verify();
+  this._cachedExecutable=verified.executable;
+  return verified.executable;
  }
  status(){
   try{

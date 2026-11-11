@@ -1523,6 +1523,7 @@ app.whenReady().then(async () => {
     new BundledEngineManager(releaseAssets,{
       engine:'camoufox',publicKey:publisherKey
     }):null;
+  let cachedCamoufoxExe=null;
   const verifiedProviders={
     status(){
       if(!publisherKey)
@@ -1534,8 +1535,13 @@ app.whenReady().then(async () => {
     resolve(engine){
       if(engine!=='camoufox'||!publisherKey)
         throw Error('Camoufox publisher signature is not trusted');
-      if(camoufoxBundle.status().valid)return camoufoxBundle.resolve(engine);
-      return camoufoxInstall.verifier().resolve(engine);
+      if(cachedCamoufoxExe&&fs.existsSync(cachedCamoufoxExe))return cachedCamoufoxExe;
+      if(camoufoxBundle.status().valid){
+        cachedCamoufoxExe=camoufoxBundle.resolve(engine);
+        return cachedCamoufoxExe;
+      }
+      cachedCamoufoxExe=camoufoxInstall.verifier().resolve(engine);
+      return cachedCamoufoxExe;
     }
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
