@@ -19,8 +19,14 @@ const gates=GATE_IDS.map(id=>gate(id,'PASS',`${id} verified`,{
 
 const report=evaluateCamoufoxReleasePreflight(candidate,gates,now);
 assert.deepStrictEqual(report.gates.map(item=>item.id),GATE_IDS);
+assert.deepStrictEqual(evaluateCamoufoxReleasePreflight(candidate,[...gates].reverse(),now).gates.map(item=>item.id),GATE_IDS);
+assert.strictEqual(report.generatedAt,now.toISOString());
 assert.strictEqual(report.overall,'READY_FOR_OWNER_REVIEW');
 assert.deepStrictEqual(report.blockers,[]);
+assert.deepStrictEqual(report.manualAssertions,[
+ {gate:'publisher-ceremony',status:'PASS'},
+ {gate:'clean-install-upgrade',status:'PASS'}
+]);
 assert(report.limitation.length>0);
 assert(!JSON.stringify(report).includes('RELEASED'));
 assert.deepStrictEqual(Object.keys(report.candidate).sort(),
@@ -29,6 +35,17 @@ assert.deepStrictEqual(Object.keys(report.candidate).sort(),
 const blockedGates=gates.map(item=>item.id==='graphics-fingerprint'?
  gate(item.id,'BLOCKED','Graphics evidence failed',item.evidence):item);
 assert.strictEqual(evaluateCamoufoxReleasePreflight(candidate,blockedGates,now).overall,'BLOCKED');
+const manualGates=gates.map(item=>item.id==='publisher-ceremony'?
+ gate(item.id,'MANUAL_REQUIRED','Owner ceremony review pending',item.evidence):item);
+const manualReport=evaluateCamoufoxReleasePreflight(candidate,manualGates,now);
+assert.strictEqual(manualReport.overall,'BLOCKED');
+assert.deepStrictEqual(manualReport.blockers,[{
+ gate:'publisher-ceremony',status:'MANUAL_REQUIRED',reason:'Owner ceremony review pending'
+}]);
+assert.deepStrictEqual(manualReport.manualAssertions,[
+ {gate:'publisher-ceremony',status:'MANUAL_REQUIRED'},
+ {gate:'clean-install-upgrade',status:'PASS'}
+]);
 assert.throws(()=>evaluateCamoufoxReleasePreflight(candidate,gates.slice(1),now),/omitted a required gate/);
 assert.strictEqual(JSON.stringify(evaluateCamoufoxReleasePreflight(candidate,gates,now)),
  JSON.stringify(evaluateCamoufoxReleasePreflight(candidate,gates,now)));
@@ -40,6 +57,24 @@ for(const invalid of [
  {...candidate,installerSha256:'not-a-hash'},
  {...candidate,commit:'not-a-commit'},
  {...candidate,engineVersion:'latest'}
+]) assert.throws(()=>evaluateCamoufoxReleasePreflight(invalid,gates,now),/Invalid Camoufox preflight candidate/);
+for(const invalid of [
+ {...candidate,commit:['a'.repeat(40)]},
+ {...candidate,commit:null},
+ {...candidate,commit:1},
+ {...candidate,commit:{}},
+ {...candidate,engineVersion:['156.0.1']},
+ {...candidate,engineVersion:null},
+ {...candidate,engineVersion:156},
+ {...candidate,engineVersion:{}},
+ {...candidate,engineSha256:['c'.repeat(64)]},
+ {...candidate,engineSha256:null},
+ {...candidate,engineSha256:1},
+ {...candidate,engineSha256:{}},
+ {...candidate,installerSha256:['d'.repeat(64)]},
+ {...candidate,installerSha256:null},
+ {...candidate,installerSha256:1},
+ {...candidate,installerSha256:{}}
 ]) assert.throws(()=>evaluateCamoufoxReleasePreflight(invalid,gates,now),/Invalid Camoufox preflight candidate/);
 
 const rawGates=gates.map(item=>({...item}));

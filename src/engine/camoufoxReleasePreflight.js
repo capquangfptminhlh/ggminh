@@ -24,9 +24,9 @@ function gate(id,status,reason,evidence=null){
 function validateCandidate(candidate){
  const hash=/^[a-f0-9]{64}$/i;
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate)||
-  !/^[a-f0-9]{40}$/i.test(candidate.commit||'')||
-  !hash.test(candidate.engineSha256||'')||
-  !hash.test(candidate.installerSha256||'')||
+  typeof candidate.commit!=='string'||!/^[a-f0-9]{40}$/i.test(candidate.commit)||
+  typeof candidate.engineSha256!=='string'||!hash.test(candidate.engineSha256)||
+  typeof candidate.installerSha256!=='string'||!hash.test(candidate.installerSha256)||
   typeof candidate.engineVersion!=='string'||
   !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(candidate.engineVersion))
   throw Error('Invalid Camoufox preflight candidate');
