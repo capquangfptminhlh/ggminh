@@ -428,7 +428,7 @@ function setupEventListeners() {
       if (titleEl) {
         titleEl.textContent = '✅ Đã tạo vân tay ngẫu nhiên mới thành công!';
         setTimeout(() => {
-          if (titleEl) titleEl.textContent = 'Trạng thái vân tay: Đạt chuẩn Ads 100% (Đã cách ly)';
+          if (titleEl) titleEl.textContent = 'Trạng thái thông số: Đã kích hoạt cấu hình cách ly';
         }, 2500);
       }
     } catch (err) { console.error('Lỗi tạo vân tay:', err); }
@@ -451,7 +451,7 @@ function setupEventListeners() {
       try {
         const col = await window.api.checkIpCollision({ ip: res.ip, profileId: fieldId.value });
         if (col && col.collision) {
-          collisionNote = `\n🚨 CẢNH BÁO TRÙNG IP CŨ: IP thoát (${res.ip}) ĐÃ TỪNG ĐƯỢC DÙNG bởi hồ sơ: "${col.names.join(', ')}"! Dùng lại IP cũ này sẽ bị Google Ads / Facebook phát hiện dấu vết liên đới 100%. Hãy đổi IP mới!\n`;
+          collisionNote = `\n🚨 CẢNH BÁO TRÙNG IP CŨ: IP thoát (${res.ip}) ĐÃ TỪNG ĐƯỢC DÙNG bởi hồ sơ: "${col.names.join(', ')}"! Dùng lại IP cũ này có rủi ro liên kết tài khoản giữa các hồ sơ. Khuyến nghị dùng IP riêng biệt!\n`;
         }
       } catch (_) {}
     }
@@ -948,7 +948,7 @@ function renderProfiles() {
       <td data-table-col="id"><code class="profile-id">${escapeHtml(profile.id)}</code></td>
       <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span> ${adBadge}<span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
-      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span><span class="lhm-profile-ok-badge" title="Vân tay đã được cách ly &amp; tối ưu cho Ads">🛡️ Chuẩn Ads (100% OK)</span></div></td>
+      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span><span class="lhm-profile-ok-badge" title="Vân tay đã được cách ly &amp; tối ưu cho Ads">🛡️ Hồ sơ đã cách ly</span></div></td>
       <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span><div class="lhm-status-subtext">🛡️ Đã cách ly an toàn</div></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
