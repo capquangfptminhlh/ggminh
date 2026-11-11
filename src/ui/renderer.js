@@ -435,6 +435,20 @@ function setupEventListeners() {
       pass: fieldProxyPass.value.trim()
     };
     const res = await window.api.checkProxy(proxyConfig);
+    let collisionNote = '';
+    if (res.verified && res.ip && window.api.checkIpCollision) {
+      try {
+        const col = await window.api.checkIpCollision({ ip: res.ip, profileId: fieldId.value });
+        if (col && col.collision) {
+          collisionNote = `\n🚨 CẢNH BÁO TRÙNG IP CŨ: IP thoát (${res.ip}) ĐÃ TỪNG ĐƯỢC DÙNG bởi hồ sơ: "${col.names.join(', ')}"! Dùng lại IP cũ này sẽ bị Google Ads / Facebook phát hiện dấu vết liên đới 100%. Hãy đổi IP mới!\n`;
+        }
+      } catch (_) {}
+    }
+    const dupProfile = allProfiles.find(p => p.id !== fieldId.value && p.proxy &&
+      p.proxy.host === proxyConfig.host && Number(p.proxy.port) === Number(proxyConfig.port));
+    if (dupProfile) {
+      collisionNote += `\n⚠️ CẢNH BÁO TRÙNG PROXY: Host & Port này đang trùng với hồ sơ "${dupProfile.name}". Dùng chung proxy sẽ làm lộ liên kết giữa các tài khoản!\n`;
+    }
     if (['success', 'verified', 'warning'].includes(res.status)) {
       proxyTestResult.className = res.status === 'warning' ? 'test-result error' : 'test-result success';
       let qInfo = '';
@@ -446,7 +460,7 @@ function setupEventListeners() {
           fieldNotes.value = fieldNotes.value + `${sep}[IP Info] Quốc gia: ${res.quality.country || ''} | Múi giờ IP: ${res.quality.timezone} | Loại: ${res.quality.category}`;
         }
       }
-      proxyTestResult.textContent = (res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`) + qInfo;
+      proxyTestResult.textContent = collisionNote + (res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`) + qInfo;
     } else {
       proxyTestResult.className = 'test-result error';
       proxyTestResult.textContent = `Lỗi: ${res.message}`;
@@ -559,6 +573,15 @@ function setupEventListeners() {
         ? currentGeneratedFP : selectedFingerprintConfig()
     };
 
+    if (profile.proxy && profile.proxy.type !== 'direct' && profile.proxy.host) {
+      const dup = allProfiles.find(p => p.id !== profile.id && p.proxy &&
+        p.proxy.host === profile.proxy.host && Number(p.proxy.port) === Number(profile.proxy.port));
+      if (dup) {
+        if (!confirm('CẢNH BÁO: Proxy này (' + profile.proxy.host + ':' + profile.proxy.port + ') đang được dùng bởi hồ sơ "' + dup.name + '".\n\nDùng chung IP proxy sẽ khiến Google/Meta liên kết các tài khoản quảng cáo với nhau.\n\nBạn có chắc chắn muốn lưu cấu hình này không?')) {
+          return;
+        }
+      }
+    }
     const isCreate = !fieldId.value;
     let savedProfile = null;
     try {

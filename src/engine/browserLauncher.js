@@ -140,7 +140,8 @@ class BrowserLauncher {
     // Warning-only findings remain explanatory; remote platform decisions
     // can never be certified before a browser contacts the site.
     const readiness=launchReadiness(profile,{
-      proxies:this.store.data?.proxies||[],vault:this.proxyVault
+      proxies:this.store.data?.proxies||[],vault:this.proxyVault,
+      allProfiles:typeof this.store?.getProfiles === 'function' ? this.store.getProfiles() : (this.store?.data?.profiles || []),exitIpStore:this.ipObservationStore
     });
     if (!readiness.canLaunch) {
       const codes=readiness.issues.filter(issue=>issue.level==='error')

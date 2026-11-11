@@ -9,7 +9,7 @@
 const { checkProfileSignalChain } = require('./signalChain');
 const { safeWebUrls } = require('../engine/launchArgs');
 
-function launchReadiness(profile, { proxies = [], vault = null } = {}) {
+function launchReadiness(profile, { proxies = [], vault = null, allProfiles = [], exitIpStore = null } = {}) {
   const issues = [];
   const add = (level, code, message) => {
     if (!issues.some(item => item.code === code))
@@ -49,6 +49,34 @@ function launchReadiness(profile, { proxies = [], vault = null } = {}) {
       }
     }
   }
+  // Check cross-profile proxy endpoint collision
+  if (proxy.type && proxy.type !== 'direct' && proxy.host && Array.isArray(allProfiles) && allProfiles.length) {
+    const colliders = allProfiles.filter(p => p && p.id !== profile.id && p.proxy &&
+      p.proxy.type === proxy.type && p.proxy.host === proxy.host &&
+      Number(p.proxy.port) === Number(proxy.port));
+    if (colliders.length > 0) {
+      add('warning', 'shared_proxy_endpoint',
+        'CẢNH BÁO TRÙNG PROXY: Đang dùng chung Proxy (' + proxy.host + ':' + proxy.port + ') với hồ sơ ' + colliders.map(p => p.name).join(', ') + '. Dùng chung proxy sẽ làm lộ liên kết tài khoản giữa các hồ sơ!');
+    }
+  }
+
+  // Check cross-profile historical exit IP collision
+  if (exitIpStore && typeof exitIpStore.list === 'function') {
+    const obs = exitIpStore.list();
+    const myLast = obs.slice().reverse().find(o => o.profileId === profile.id);
+    if (myLast && myLast.ip) {
+      const otherUses = obs.filter(o => o.profileId !== profile.id && o.ip === myLast.ip);
+      if (otherUses.length > 0) {
+        const otherIds = [...new Set(otherUses.map(o => o.profileId))];
+        const names = Array.isArray(allProfiles)
+          ? otherIds.map(id => (allProfiles.find(p => p.id === id)?.name || id))
+          : otherIds;
+        add('warning', 'shared_exit_ip_collision',
+          'CẢNH BÁO TRÙNG IP CŨ: IP thoát (' + myLast.ip + ') đã từng xuất hiện ở hồ sơ khác (' + names.join(', ') + '). Rất dễ bị Google Ads quét dấu vết liên đới!');
+      }
+    }
+  }
+
   if (proxy.type && proxy.type !== 'direct')
     add('warning', 'network_unverified',
       'Cấu hình proxy không chứng minh được IP thoát, DNS, WebRTC hoặc đường truyền thực tế.');

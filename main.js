@@ -992,12 +992,25 @@ function initIPC() {
   });
     ipcMain.handle('ads-landing-inspect', (_, input) => inspectLandingUrls(input));
   ipcMain.handle('ads-utm-build', (_, url, values) => buildUtmUrl(url, values));
-    ipcMain.handle('get-launch-readiness', (_, id) => {
+    
+  ipcMain.handle('check-ip-collision', (_, { ip, profileId }) => {
+    if (!ip || !ipObservationStore) return { collision: false };
+    const list = ipObservationStore.list();
+    const matches = list.filter(o => o.profileId !== profileId && o.ip === ip);
+    if (!matches.length) return { collision: false };
+    const ids = [...new Set(matches.map(o => o.profileId))];
+    const names = ids.map(id => store.getProfile(id)?.name || id);
+    return { collision: true, names, ip };
+  });
+
+  ipcMain.handle('get-launch-readiness', (_, id) => {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Không tìm thấy hồ sơ');
     return launchReadiness(profile, {
       proxies: store.data.proxies,
-      vault: proxyVault
+      vault: proxyVault,
+      allProfiles: store.getProfiles(),
+      exitIpStore: ipObservationStore
     });
   });
   ipcMain.handle('get-profile-health', (_, id) => {
@@ -1548,7 +1561,7 @@ app.whenReady().then(async () => {
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
-  try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
+  try{ipObservationStore=new ExitIpObservationStore(storageDir); if (launcher) launcher.ipObservationStore = ipObservationStore;}catch(_){}
   try{
     measurementRecordStore=new MeasurementRecordStore(storageDir);
     const loadedRecords=measurementRecordStore.status();

@@ -154,6 +154,7 @@ const api = {
   openUrlForStoppedProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-url',ids,url),
   openUrlInRunningProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-live-url',ids,url),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
+  checkIpCollision: (payload) => ipcRenderer.invoke('check-ip-collision', payload),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   bundledEngineStatus: () => ipcRenderer.invoke('bundled-engine-status'),
   camoufoxInstallStatus: () => ipcRenderer.invoke('camoufox-install-status'),
