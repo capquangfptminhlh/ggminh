@@ -949,6 +949,8 @@ function renderProfiles() {
     const btnToggle = tr.querySelector('.btn-toggle-run');
     btnToggle.addEventListener('click', async () => {
       btnToggle.disabled = true;
+      const originalHtml = btnToggle.innerHTML;
+      btnToggle.textContent = isRunning ? 'Đang dừng...' : '⏳ Đang mở...';
       try {
         if (isRunning) await window.api.stopBrowser(profile.id);
         else {
@@ -956,6 +958,10 @@ function renderProfiles() {
           if (confirmed) await window.api.startBrowser(profile.id);
         }
       } catch (error) { alert('Không thể mở/đóng hồ sơ: ' + error.message); }
+      finally {
+        btnToggle.disabled = false;
+        btnToggle.innerHTML = originalHtml;
+      }
       await loadProfiles();
       await refreshBehaviorAlerts();
     });

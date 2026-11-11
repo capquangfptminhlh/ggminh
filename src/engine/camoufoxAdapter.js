@@ -70,24 +70,10 @@ async function windowsWindowProbe(pid){
  if(!Number.isSafeInteger(pid)||pid<=0)return false;
  const command=[
   '$root='+pid,
-  '$queue=New-Object System.Collections.Generic.Queue[int]',
-  '$seen=New-Object System.Collections.Generic.HashSet[int]',
-  '$queue.Enqueue($root)',
-  '$count=0',
-  'while($queue.Count -gt 0 -and $count -lt 60){',
-  ' $id=$queue.Dequeue()',
-  ' if(-not $seen.Add([int]$id)){continue}',
-  ' $count++',
-  ' $p=Get-Process -Id $id -ErrorAction SilentlyContinue',
-  ' if($p -and $p.MainWindowHandle -ne 0){',
-  '   Write-Output ("WINDOW_READY:"+$id);exit 0',
-  ' }',
-  ' foreach($child in @(Get-CimInstance Win32_Process -Filter ("ParentProcessId = "+$id) -ErrorAction SilentlyContinue)){',
-  '   if($child.Name -ieq "camoufox.exe"){',
-  '     $queue.Enqueue([int]$child.ProcessId)',
-  '   }',
-  ' }',
-  '}'
+  '$p=Get-Process -Id $root -ErrorAction SilentlyContinue',
+  'if($p -and $p.MainWindowHandle -ne 0){ Write-Output ("WINDOW_READY:"+$root); exit 0 }',
+  '$camou=Get-Process -Name "camoufox" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 }',
+  'if($camou){ $id = if ($camou -is [array]) { $camou[0].Id } else { $camou.Id }; Write-Output ("WINDOW_READY:"+$id); exit 0 }'
  ].join('\n');
  try{
   const output=await powershell(command,6000);

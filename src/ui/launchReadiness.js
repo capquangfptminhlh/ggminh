@@ -84,7 +84,7 @@ window.LHMLaunchReadiness = (() => {
       if (report.canLaunch && report.errorCount === 0) {
         const collision = report.issues.find(x => x.code === 'shared_proxy_endpoint' || x.code === 'shared_exit_ip_collision');
         if (collision) {
-          if (!confirm(collision.message + '\n\nBạn có chắc chắn muốn bỏ qua cảnh báo trùng IP và tiếp tục mở hồ sơ này không?')) {
+          if (!window.confirm(collision.message + '\n\nBạn có chắc chắn muốn bỏ qua cảnh báo trùng IP và tiếp tục mở hồ sơ này không?')) {
             activeResolve = null;
             currentProfile = null;
             lastReport = null;
