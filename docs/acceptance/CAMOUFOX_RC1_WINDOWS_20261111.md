@@ -26,14 +26,14 @@ Status: **RC evidence only; not approved for customer release**.
 | WebRTC lab proxy | MEASURED | No ICE candidates or STUN datagrams were exposed behind the controlled proxy route. |
 | Real customer proxy, DNS route, runtime egress | NOT_RUN | Requires an authenticated test proxy, controlled echo endpoint, and the approved DNS-lab adapter procedure. |
 | Resource benchmark | NOT_RUN | The 16 GB host had less than the mandatory 20% free-RAM reserve. No applications were terminated to force a result. |
-| Packaged `win-unpacked` UI smoke | PASS | Isolated temporary user-data; process exit 0; 13 distinct PNG captures; smallest capture 103,871 bytes; stderr empty. This proves the packaged UI path, not an installer/upgrade. |
+| Historical packaged `win-unpacked` UI smoke | PASS | Isolated temporary user-data, process exit 0, 13 distinct PNG captures, smallest capture 103,871 bytes, and empty stderr. The preflight packaged UI gate requires a measurement tied to the candidate installer hash. |
 | Installed-client clean Windows acceptance | NOT_RUN | This developer machine is not a clean Windows acceptance VM; the draft/staging-key release must not be promoted to simulate this gate. |
 
 ## Verification
 
-- `npm test`: 351/351 selected steps PASS, plus the Camoufox publisher/trust/descriptor/resource pretests PASS.
-- `npm run build:win`: PASS.
-- Packaged `resources/lhm-camoufox`: trust anchor and descriptor validate; no bundled engine payload or private key.
+- The original candidate at `94c5ef88fdc421a2b276a2c286144f88a4d002ed` historically passed 351/351 selected `npm test` steps and the Camoufox publisher, trust, descriptor, and resource pretests.
+- The original `npm run build:win` passed. Packaged `resources/lhm-camoufox` contained the verified public metadata.
+- At the final hardening revision, `npm test` passed 352/352 selected steps and all four Camoufox pretests. The separately scoped `a66a109` rebuild below is the latest installer build in this record.
 
 ## Expected release preflight state
 
@@ -70,10 +70,16 @@ BLOCKED (P2 not measured); resource capacity BLOCKED (required report missing);
 packaged UI BLOCKED (process exit not measured); clean install/upgrade
 MANUAL_REQUIRED. These results apply only to that installer hash.
 
+The final hardening rerun against the same installer hash also exited 2 with
+an overall `BLOCKED` result. The packaged UI report has an explicit `BLOCKED`
+run status and lacks a measured digest for that installer. The saved preflight
+report passed the sensitive-data scan.
+
 A separate Windows build at source commit `a66a1099959951248f344523eca860cbeebaac4b`
 produced an installer of 128,201,560 bytes with SHA-256
 `0157436f31d798587ca6f48ba83cab8a141384efe950fc9ee31d0855f9fc37dd`.
 Because this differs from the preflight candidate, the prior packaged-UI
 evidence is stale for this build; packaged UI remains BLOCKED pending a rerun
 against this exact installer hash. Clean install/upgrade remains NOT_RUN and
-MANUAL_REQUIRED. The new build is not approved for release.
+MANUAL_REQUIRED. The strict resource verifier also passed against this build's
+packaged `resources/lhm-camoufox` directory. The build remains unapproved for release.

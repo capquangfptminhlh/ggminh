@@ -10,9 +10,17 @@ const {validateRelease}=require('../src/engine/camoufoxInstallService');
 const MAX_METADATA_BYTES=1024*1024;
 const PUBLIC_FILE='publisher-ed25519.pub';
 const RELEASE_FILE='release.json';
+const resourceNameKey=name=>process.platform==='win32'?name.toLowerCase():name;
+const RESOURCE_LIMITS=new Map([
+ [PUBLIC_FILE,4096],
+ [RELEASE_FILE,MAX_METADATA_BYTES],
+ ['capabilities.json',MAX_METADATA_BYTES],
+ [resourceNameKey('README.md'),MAX_METADATA_BYTES]
+]);
 
 function readCheckedResource(file,stat,limit){
  if(stat.size>limit)throw Error('Camoufox release metadata exceeds size limits');
+ if(stat.size===0)throw Error('Camoufox release metadata is empty');
  const fd=fs.openSync(file,'r');
  try{
   const opened=fs.fstatSync(fd);
@@ -37,31 +45,21 @@ function loadVerifiedCamoufoxReleaseResources(resourceDir,{licenseKey=null}={}){
  if(!root.isDirectory()||root.isSymbolicLink())
   throw Error('Camoufox resources must be a regular directory');
  const metadata=new Map();
- function visit(directory){
-  for(const name of fs.readdirSync(directory)){
-   const file=path.join(directory,name),stat=fs.lstatSync(file);
-   if(stat.isSymbolicLink())throw Error('Camoufox release resources must not contain symlinks');
-   const base=process.platform==='win32'?name.toLowerCase():name;
-   const isMetadata=directory===resourceDir&&(base===PUBLIC_FILE||base===RELEASE_FILE);
-   if(isMetadata&&(!stat.isFile()||metadata.has(base)))
-    throw Error('Camoufox trust and release files must be unique regular files');
-   if(stat.isDirectory())visit(file);
-   else if(stat.isFile()){
-    if(['camoufox.exe','manifest.json'].includes(name.toLowerCase()))
-     throw Error('Camoufox engine payload must not ship inside the application');
-    if(isMetadata||stat.size<=MAX_METADATA_BYTES){
-     const limit=isMetadata&&base===PUBLIC_FILE?4096:MAX_METADATA_BYTES;
-     const bytes=readCheckedResource(file,stat,limit);
-     if(containsPrivateKeyMaterial(bytes))throw Error('Camoufox resources contain private key material: '+name);
-     if(isMetadata)metadata.set(base,bytes);
-    }
-   }else throw Error('Unsupported Camoufox release resource');
-  }
+ for(const name of fs.readdirSync(resourceDir)){
+  const file=path.join(resourceDir,name),stat=fs.lstatSync(file);
+  if(stat.isSymbolicLink())throw Error('Camoufox release resources must not contain symlinks');
+  const base=resourceNameKey(name);
+  const limit=RESOURCE_LIMITS.get(base);
+  if(!limit||!stat.isFile()||metadata.has(base))
+   throw Error('Unexpected Camoufox release resource must not ship inside the application');
+  const bytes=readCheckedResource(file,stat,limit);
+  if(containsPrivateKeyMaterial(bytes))throw Error('Camoufox resources contain private key material');
+  metadata.set(base,bytes);
  }
- visit(resourceDir);
- if(metadata.size===1)
+ const hasPublisherKey=metadata.has(PUBLIC_FILE);
+ if(hasPublisherKey!==metadata.has(RELEASE_FILE))
   throw Error('Camoufox publisher key and release descriptor must ship together');
- if(!metadata.size)return {summary:{configured:false},publicKey:null,descriptor:null,release:null};
+ if(!hasPublisherKey)return {summary:{configured:false},publicKey:null,descriptor:null,release:null};
  const publicKey=crypto.createPublicKey(metadata.get(PUBLIC_FILE));
  if(licenseKey){
   const licensePublicKey=licenseKey.type==='public'?licenseKey:crypto.createPublicKey(licenseKey);

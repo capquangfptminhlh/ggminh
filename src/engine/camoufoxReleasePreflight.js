@@ -27,6 +27,21 @@ const FORBIDDEN_KEY=/proxy|password|secret|token|cookie|account|profileName|priv
 const SAFE_PRIVACY_FIELDS=new Set(['privateKeyEncryptedOutsideGit']);
 const SAFE_NETWORK_FIELDS=new Set(['realProxyP2','labProxyP1','followedRealProxyRoute']);
 const FORBIDDEN_TEXT=/https?:\/\/|\bhttps?[._-](?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?!json\b|txt\b|log\b|csv\b|xml\b|yaml?\b|md\b|pdf\b|zip\b)[a-z]{2,}(?:\.(?:json|txt|log|csv|xml|yaml?|md|pdf|zip))?|-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|CAMOU_CONFIG_/i;
+const REQUIRED_PACKAGED_UI_CAPTURES=Object.freeze([
+ 'workspace-about-update-preview.png',
+ 'workspace-ads-guard-preview.png',
+ 'workspace-agency-handoff-preview.png',
+ 'workspace-command-preview.png',
+ 'workspace-customer-handoff-preview.png',
+ 'workspace-engine-provider-preview.png',
+ 'workspace-expanded-preview.png',
+ 'workspace-fleet-triage-preview.png',
+ 'workspace-license-preview.png',
+ 'workspace-performance-lab-preview.png',
+ 'workspace-preview.png',
+ 'workspace-profile-editor-preview.png',
+ 'workspace-profile-paging-preview.png'
+]);
 const RESOURCE_RAM_TIERS=Object.freeze([8,16,32]);
 const RESOURCE_WORKLOADS=Object.freeze(['light','medium','heavy']);
 const RESOURCE_CONCURRENCY=Object.freeze([1,3,5,10]);
@@ -146,7 +161,10 @@ function validateEvidence(envelope,{candidate,kind,now=new Date(),requireInstall
  const generatedAt=normalizeEvidenceTimestamp(envelope.generatedAt);
  const age=preflightTime(now).getTime()-generatedAt.getTime();
  let reason;
- if(envelope.schema!==EVIDENCE_SCHEMA)reason='Evidence schema is unsupported';
+ if((Object.hasOwn(envelope,'status')&&envelope.status!=='PASS')||
+  (Object.hasOwn(envelope.result,'status')&&envelope.result.status!=='PASS'))
+  reason='Evidence run status is not PASS';
+ else if(envelope.schema!==EVIDENCE_SCHEMA)reason='Evidence schema is unsupported';
  else if(envelope.kind!==kind)reason='Evidence kind does not match the gate';
  else if(CANDIDATE_FIELDS.some(field=>envelope.candidate[field]!==candidate[field]))
   reason='Evidence candidate does not match the release candidate';
@@ -158,19 +176,27 @@ function validateEvidence(envelope,{candidate,kind,now=new Date(),requireInstall
  return {status:'PASS',generatedAt:generatedAt.toISOString(),result:copyPlainData(envelope.result)};
 }
 
+function isSafeBasename(name){
+ const match=typeof name==='string'&&/^([a-z0-9][a-z0-9_-]*)\.json$/i.exec(name);
+ if(!match)return false;
+ const stem=match[1];
+ return !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(stem)&&
+  !/(?:^|[-_])(?:proxy|endpoint|password|secret|token|cookie|account|ip|host)(?:$|[-_])/i.test(stem);
+}
+
 function evidenceBasename(value){
  if(typeof value!=='string'||!value||/[\\/]\.{1,2}(?:[\\/]|$)/.test(value)||
   value.startsWith('\\\\?\\')||value.startsWith('\\\\.\\')||/[\\/]$/.test(value))
   throw Error('Invalid Camoufox preflight evidence reference');
- const name=typeof value==='string'&&win32.basename(value);
- if(!name||!/^[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?$/i.test(name)||
-  /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i.test(name))
+ const name=win32.basename(value);
+ if(!isSafeBasename(name))
   throw Error('Invalid Camoufox preflight evidence reference');
  return name;
 }
 
 function sanitizeEvidence(evidence){
  if(typeof evidence==='string')return evidenceBasename(evidence);
+ if(Array.isArray(evidence))return evidence.map(evidenceBasename);
  if(evidence&&Object.hasOwn(evidence,'file'))
   return {...evidence,file:evidenceBasename(evidence.file)};
  return evidence;
@@ -365,11 +391,6 @@ function evaluateResourceCapacity(entries,options={}){
  return gate('resource-capacity','PASS','All 36 required resource-capacity reports passed',evidence);
 }
 
-function safeCaptureName(value){
- if(typeof value!=='string'||! /^[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?\.png$/i.test(value)||/[\\/]/.test(value))return false;
- return !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(value.split('.')[0]);
-}
-
 function evaluatePackagedUi(envelope,options={}){
  const checked=validateEvidence(envelope,{candidate:options.candidate,kind:'packaged-ui',now:options.now||new Date(),requireInstalled:false});
  const evidence=gateEvidenceName(options.evidenceName);
@@ -380,14 +401,18 @@ function evaluatePackagedUi(envelope,options={}){
  const captures=result.captures;
  if(result.exitCode!==0)return gate('packaged-ui','BLOCKED','Measure packaged UI process exit code',evidence);
  if(result.stderr!=='')return gate('packaged-ui','BLOCKED','Measure packaged UI stderr and require it to be empty',evidence);
- if(result.requiredCaptureCount!==13||!Array.isArray(captures)||captures.length!==13)
+ if(typeof result.packagedArtifactSha256!=='string'||!/^[a-f0-9]{64}$/i.test(result.packagedArtifactSha256)||
+  result.packagedArtifactSha256.toLowerCase()!==options.candidate.installerSha256.toLowerCase())
+  return gate('packaged-ui','BLOCKED','Measured packaged UI artifact digest must match the release candidate installer',evidence);
+ const requiredCount=REQUIRED_PACKAGED_UI_CAPTURES.length;
+ if(result.requiredCaptureCount!==requiredCount||!Array.isArray(captures)||captures.length!==requiredCount)
   return gate('packaged-ui','BLOCKED','Capture all 13 required packaged UI screenshots',evidence);
- const names=new Set();
+ // Exact matching against the lowercase names also prevents case-insensitive duplicates.
+ const remainingNames=new Set(REQUIRED_PACKAGED_UI_CAPTURES);
  for(const capture of captures){
-  if(!capture||typeof capture!=='object'||Array.isArray(capture)||!safeCaptureName(capture.name)||
-   names.has(capture.name.toLowerCase())||!Number.isSafeInteger(capture.bytes)||capture.bytes<100000)
-   return gate('packaged-ui','BLOCKED','Capture 13 distinct safe packaged UI PNGs of at least 100000 bytes',evidence);
-  names.add(capture.name.toLowerCase());
+  if(!capture||typeof capture!=='object'||Array.isArray(capture)||!remainingNames.delete(capture.name)||
+   !Number.isSafeInteger(capture.bytes)||capture.bytes<100000)
+   return gate('packaged-ui','BLOCKED','Capture each required packaged UI PNG at a minimum of 100000 bytes',evidence);
  }
  return gate('packaged-ui','PASS','Packaged UI exited cleanly and all 13 required screenshots were captured',evidence);
 }
@@ -517,7 +542,7 @@ function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
  return finalize(projectCandidate(candidate),sanitizedGates,preflightTime(now).toISOString());
 }
 
-module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,
+module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,isSafeBasename,validateEvidence,evaluateCamoufoxReleasePreflight,
  evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,evaluateGraphicsFingerprint,
  evaluateRealProxyNetwork,evaluateResourceCapacity,evaluatePackagedUi,evaluateArtifactTrust,
- evaluatePublisherCeremony,evaluateCleanInstallUpgrade,REQUIRED_RESOURCE_MATRIX};
+ evaluatePublisherCeremony,evaluateCleanInstallUpgrade,REQUIRED_RESOURCE_MATRIX,REQUIRED_PACKAGED_UI_CAPTURES};

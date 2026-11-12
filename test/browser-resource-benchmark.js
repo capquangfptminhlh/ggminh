@@ -3,8 +3,11 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {
- parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer
+ parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion
 }=require('../tools/browser-resource-benchmark');
+const {
+ evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX
+}=require('../src/engine/camoufoxReleasePreflight');
 
 const samples=Array.from({length:10},(_,index)=>({
  startupMs:100+index,peakWorkingSetBytes:500_000_000+index*1_000_000,
@@ -15,7 +18,7 @@ const samples=Array.from({length:10},(_,index)=>({
 }));
 const report=shapeReport({
  commit:'a'.repeat(40),appSha256:'b'.repeat(64),engineSha256:'c'.repeat(64),
- appVersion:'5.8.0',engineVersion:'Camoufox 0.5.8',windowsBuild:'10.0.26100',
+ appVersion:'5.8.0',engineVersion:'156.0.1',windowsBuild:'10.0.26100',
  totalRamBytes:16*1024**3,engine:'camoufox',workload:'medium',concurrency:3,
  generatedAt:'2026-11-10T01:02:03.000Z',samples,
  cleanup:{status:'PASS',remainingPids:0}
@@ -66,6 +69,33 @@ assert(guide.includes('8 GB | UNMEASURED'));
 assert(guide.includes('--signed-release-dir'));
 assert(guide.includes('không ghi đè'));
 (async()=>{
+ const signedVersion=await resolveEngineVersion({binary:'camoufox.exe',engineVersion:'156.0.1'},()=>{
+  assert.fail('Camoufox version must come from the verified signed manifest');
+ });
+ assert.equal(signedVersion,'156.0.1');
+ for(const [binary,observedVersion] of [
+  ['chrome.exe','Chromium 130.0.1'],['firefox.exe','Mozilla Firefox 156.0.1']
+ ]){
+  assert.equal(await resolveEngineVersion({binary},observedBinary=>{
+   assert.equal(observedBinary,binary);
+   return observedVersion;
+  }),observedVersion);
+ }
+
+ const candidate={commit:report.commit,engineVersion:'156.0.1',
+  engineSha256:report.engine.sha256,installerSha256:report.app.sha256};
+ const generatedAt=report.generatedAt;
+ const entries=REQUIRED_RESOURCE_MATRIX.map(({ramGiB,workload,concurrency},i)=>({
+  file:'resource-'+i+'.json',
+  report:shapeReport({
+   commit:candidate.commit,appSha256:candidate.installerSha256,engineSha256:candidate.engineSha256,
+   appVersion:report.app.version,engineVersion:signedVersion,windowsBuild:report.system.windowsBuild,
+   totalRamBytes:ramGiB*1024**3,engine:'camoufox',workload,concurrency,generatedAt,
+   samples:samples.map(sample=>({...sample,crashed:false})),cleanup:{status:'PASS',remainingPids:0}
+  })
+ }));
+ assert.equal(evaluateResourceCapacity(entries,{candidate,now:new Date(generatedAt)}).status,'PASS');
+
  const server=createWorkloadServer();
  const port=await server.listen();
  try{

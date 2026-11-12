@@ -10,7 +10,7 @@ const {loadVerifiedCamoufoxReleaseResources}=require('./verify-camoufox-release-
 const {PUBLIC_KEY}=require('../src/licensing/manager');
 const {BundledEngineManager,sha256File,signedManifestSha256}=require('../src/engine/bundledEngineManager');
 const {
- gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,evaluateArtifactTrust,
+ gate,assertPrivacySafe,isSafeBasename,validateEvidence,evaluateCamoufoxReleasePreflight,evaluateArtifactTrust,
  evaluatePublisherCeremony,evaluateConfiguredIdentity,evaluateStorageIsolation,
  evaluateCrashDurability,evaluateGraphicsFingerprint,evaluateRealProxyNetwork,
  evaluateResourceCapacity,evaluatePackagedUi,evaluateCleanInstallUpgrade,REQUIRED_RESOURCE_MATRIX
@@ -92,13 +92,8 @@ function readJson(file,optional=false){
  }finally{fs.closeSync(fd);}
 }
 
-function isSafeBasename(name){
- return typeof name==='string'&&/^[A-Za-z0-9](?:[-A-Za-z0-9_.]*[A-Za-z0-9])?$/.test(name)&&
-  !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name);
-}
-
 function evidencePath(root,name){
- if(!isSafeBasename(name)||!name.endsWith('.json'))throw Error('Invalid evidence basename');
+ if(!isSafeBasename(name))throw Error('Invalid evidence basename');
  const file=path.resolve(root,name);
  if(path.dirname(file)!==root)throw Error('Invalid evidence path');
  return file;
@@ -184,8 +179,8 @@ async function evaluateRelease(args,now){
  if(archiveCheck.status==='BLOCKED')artifactGate=gate('artifact-trust','BLOCKED',archiveCheck.reason,archive.file);
  else if(archive.report.environment!=='windows-release-archive')
   artifactGate=gate('artifact-trust','BLOCKED','Archive evidence must come from the Windows release archive',archive.file);
- // The run status belongs in result. An envelope status cannot override it.
- else if(archiveCheck.result.status!=='PASS'||(Object.hasOwn(archive.report,'status')&&archive.report.status!=='PASS'))
+ // Archive evidence requires a result status even when the envelope omits one.
+ else if(archiveCheck.result.status!=='PASS')
   artifactGate=gate('artifact-trust','BLOCKED','Archive evidence must record a passing run',archive.file);
  if(installerSha256!==candidate.installerSha256.toLowerCase())
   artifactGate=gate('artifact-trust','BLOCKED','Installer digest does not match the release candidate',archive.file);

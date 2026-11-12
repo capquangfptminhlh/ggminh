@@ -12,7 +12,7 @@ const {
  evaluateCamoufoxReleasePreflight,gate,GATE_IDS,validateEvidence,
  evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,
  evaluateGraphicsFingerprint,evaluateRealProxyNetwork,evaluateResourceCapacity,
- evaluatePackagedUi,REQUIRED_RESOURCE_MATRIX,evaluateArtifactTrust,
+ evaluatePackagedUi,REQUIRED_PACKAGED_UI_CAPTURES,REQUIRED_RESOURCE_MATRIX,evaluateArtifactTrust,
  evaluatePublisherCeremony,evaluateCleanInstallUpgrade
 }=require('../src/engine/camoufoxReleasePreflight');
 
@@ -59,6 +59,8 @@ test('release preflight package wiring and operator documentation are explicit',
  const rcSection=acceptance.slice(rcStart,rcEnd);
  const observedStart=acceptance.indexOf('## Observed preflight run');
  const observedSection=acceptance.slice(observedStart);
+ const normalizedObserved=observedSection.replace(/`/g,'').replace(/\s+/g,' ');
+ const normalizedAcceptance=acceptance.replace(/`/g,'').replace(/\s+/g,' ');
  assert(rcSection.length>0);
  assert(observedStart>rcEnd&&observedSection.length>0);
  assert.match(rcSection,/BLOCKED/);
@@ -73,9 +75,11 @@ test('release preflight package wiring and operator documentation are explicit',
  assert.match(rcSection,/pre-run checkpoint recorded before commit\s+`116555f`/i);
  assert.match(rcSection,/Task 8 and the live release preflight had not yet run; the observed run is\s+recorded below\./i);
  assert.doesNotMatch(acceptance,/Task 8 and the live release\s+preflight\s+have NOT run\./i);
- assert.match(observedSection,/The live preflight ran[\s\S]{0,240}exited 2 with overall\s+`BLOCKED`/i);
- assert.doesNotMatch(observedSection,/overall\s+(?:is\s+)?(?:READY_FOR_OWNER_REVIEW|PASS)\b/i);
- assert.doesNotMatch(acceptance,/\b(?:Task 8|live release preflight)\b[^.\n]{0,100}\b(?:READY_FOR_OWNER_REVIEW|complete(?:d)?|passed)\b/i);
+ assert.match(normalizedObserved,/The live preflight ran.{0,240}exited 2 with overall BLOCKED\b/i);
+ assert.doesNotMatch(normalizedObserved,
+  /\boverall\b(?:\s+status)?(?:\s+(?:is|was|remains))?\s*[:=]?\s*(?:READY(?:_FOR_OWNER_REVIEW)?|PASS(?:ED)?|COMPLETE(?:D)?)\b/i);
+ assert.doesNotMatch(normalizedAcceptance,
+  /\b(?:Task 8|live release preflight)\b[^.]{0,100}\b(?:READY_FOR_OWNER_REVIEW|complete(?:d)?|passed)\b/i);
  assert.doesNotMatch(rcSection,/100%|undetectable|evasion|advertising account safety|platform non.association/i);
 });
 
@@ -380,6 +384,22 @@ test('detaches validated envelope results after evidence validation',()=>{
  assert(!JSON.stringify(checked).includes('example.invalid'));
 });
 
+const unsafeEvidenceNames=[
+ 'proxy-report.json','proxy.qa-domain.example.json','account-list.json',
+ 'check_endpoint.json','check-password-report.json','secret.json','run-token.json',
+ 'cookie-data.json','ip-summary.json','qa-host.json','identity.txt'
+];
+const invalidEvidenceReference=/^Error: Invalid Camoufox preflight evidence reference$/;
+
+test('rejects sensitive basenames in composed gate evidence references',()=>{
+ for(const file of unsafeEvidenceNames){
+  for(const evidence of [file,{file},[file]]){
+   assert.throws(()=>evaluateCamoufoxReleasePreflight(candidate,
+    withGate(gate(evidenceGateId,'PASS','Verified',evidence)),now),invalidEvidenceReference);
+  }
+ }
+});
+
 for(const file of ['/review/deep/..','C:\\review\\deep\\..','/review/identity.json:alternate',
  '/review/.','C:\\review\\.','/review/../identity.json','\\\\?\\C:\\review\\identity.json',
  '','relative/path/bad name.json','relative/path/file.json.','C:\\review\\CON.txt']){
@@ -428,8 +448,24 @@ const networkResult={
  runtimeVsManager:{status:'PASS',bothObserved:true,agree:true},
  labProxyP1:{status:'PASS',supportingOnly:true}
 };
+const approvedCaptures=[
+ 'workspace-about-update-preview.png',
+ 'workspace-ads-guard-preview.png',
+ 'workspace-agency-handoff-preview.png',
+ 'workspace-command-preview.png',
+ 'workspace-customer-handoff-preview.png',
+ 'workspace-engine-provider-preview.png',
+ 'workspace-expanded-preview.png',
+ 'workspace-fleet-triage-preview.png',
+ 'workspace-license-preview.png',
+ 'workspace-performance-lab-preview.png',
+ 'workspace-preview.png',
+ 'workspace-profile-editor-preview.png',
+ 'workspace-profile-paging-preview.png'
+];
 const packagedUiResult={exitCode:0,stderr:'',requiredCaptureCount:13,
- captures:Array.from({length:13},(_,i)=>({name:`capture-${i+1}.png`,bytes:110000+i}))};
+ packagedArtifactSha256:candidate.installerSha256,
+ captures:approvedCaptures.map((name,i)=>({name,bytes:110000+i}))};
 const gib=1024**3;
 const resourceReport=(row,overrides={})=>({
  schema:'lhm.browser-resource.evidence.v1',generatedAt:'2026-11-11T04:00:00.000Z',
@@ -443,6 +479,31 @@ const resourceReport=(row,overrides={})=>({
 const resourceEntries=()=>REQUIRED_RESOURCE_MATRIX.map((row,index)=>({
  evidenceName:`reports/resource-${String(index+1).padStart(2,'0')}.json`,report:resourceReport(row)
 }));
+
+for(const [kind,evaluate,result,environment] of [
+ ['identity',evaluateConfiguredIdentity,identityResult],
+ ['network',evaluateRealProxyNetwork,networkResult],
+ ['graphics',evaluateGraphicsFingerprint,graphicsResult],
+ ['packaged-ui',evaluatePackagedUi,packagedUiResult,'windows-packaged-app']
+]){
+ for(const location of ['envelope','result']){
+  test(kind+' blocks an explicit nonpassing '+location+' status',()=>{
+   for(const status of ['NOT_RUN','FAIL','BLOCKED','UNKNOWN',null]){
+    const envelope=installedEnvelope(kind,result,{environment:environment??'windows-installed-engine'});
+    if(location==='envelope')envelope.status=status;
+    else envelope.result={...result,status};
+    const checked=evaluate(envelope,gateContext);
+    assert.strictEqual(checked.status,'BLOCKED');
+    assert.strictEqual(checked.reason,'Evidence run status is not PASS');
+   }
+  });
+ }
+}
+
+test('an explicit nonpassing status gives the safe run-status reason for stale evidence',()=>{
+ const envelope=installedEnvelope('identity',identityResult,{status:'NOT_RUN',generatedAt:'2026-10-01T00:00:00.000Z'});
+ assert.strictEqual(evaluateConfiguredIdentity(envelope,gateContext).reason,'Evidence run status is not PASS');
+});
 
 test('real proxy network accepts the complete installed-engine P2 result',()=>{
  const result=evaluateRealProxyNetwork(installedEnvelope('network',networkResult),gateContext);
@@ -572,6 +633,18 @@ test('resource capacity reduces evidence paths to sorted safe basenames',()=>{
  const result=evaluateResourceCapacity(entries,{candidate,now});
  assert(result.evidence.includes('report.json'));assert(!JSON.stringify(result).includes('private'));
 });
+test('resource capacity rejects sensitive evidence basenames',()=>{
+ for(const evidenceName of unsafeEvidenceNames){
+  const entries=resourceEntries();entries[0].evidenceName=evidenceName;
+  assert.throws(()=>evaluateResourceCapacity(entries,{candidate,now}),invalidEvidenceReference);
+ }
+});
+test('resource capacity accepts safe substrings inside evidence basename tokens',()=>{
+ const entries=resourceEntries();entries[0].evidenceName='benchmarks/resource-chipset-01.json';
+ const result=evaluateResourceCapacity(entries,{candidate,now});
+ assert.strictEqual(result.status,'PASS');
+ assert(result.evidence.includes('resource-chipset-01.json'));
+});
 test('resource capacity ignores safe unknown report fields without emitting them',()=>{
  const entries=resourceEntries();entries[0].report.futureEvidence='safe note';
  const result=evaluateResourceCapacity(entries,{candidate,now});
@@ -592,10 +665,26 @@ for(const [label,change] of [
  ['duplicate capture',r=>r.captures[1].name=r.captures[0].name],
  ['case-insensitive duplicate capture',r=>r.captures[1].name=r.captures[0].name.toUpperCase()],
  ['unsafe capture',r=>r.captures[0].name='..\\private.png'],
- ['small capture',r=>r.captures[0].bytes=99999]
+ ['small capture',r=>r.captures[0].bytes=99999],
+ ['fractional capture size',r=>r.captures[0].bytes=100000.5],
+ ['missing measured artifact digest',r=>delete r.packagedArtifactSha256],
+ ['malformed measured artifact digest',r=>r.packagedArtifactSha256='z'.repeat(64)],
+ ['different measured artifact digest',r=>r.packagedArtifactSha256='f'.repeat(64)],
+ ['an arbitrary set of 13 captures',r=>r.captures.forEach((capture,i)=>capture.name='capture-'+i+'.png')],
+ ['noncanonical capture capitalization',r=>r.captures[0].name=r.captures[0].name.toUpperCase()]
 ]) test(`packaged UI blocks ${label}`,()=>{
  const input=JSON.parse(JSON.stringify(packagedUiResult));change(input);
  assert.strictEqual(evaluatePackagedUi(installedEnvelope('packaged-ui',input,{environment:'windows-packaged-app'}),gateContext).status,'BLOCKED');
+});
+test('packaged UI accepts case-insensitive artifact hashes and the exact capture set in any order',()=>{
+ const input={...packagedUiResult,packagedArtifactSha256:candidate.installerSha256.toUpperCase(),
+  captures:packagedUiResult.captures.slice().reverse()};
+ const result=evaluatePackagedUi(installedEnvelope('packaged-ui',input,{environment:'windows-packaged-app'}),gateContext);
+ assert.strictEqual(result.status,'PASS');
+});
+test('required packaged UI captures are the immutable approved basenames',()=>{
+ assert.deepStrictEqual(REQUIRED_PACKAGED_UI_CAPTURES,approvedCaptures);
+ assert(Object.isFrozen(REQUIRED_PACKAGED_UI_CAPTURES));
 });
 test('packaged UI rejects Windows and POSIX capture paths safely',()=>{
  for(const name of ['C:\\private\\capture.png','/private/capture.png']){
@@ -613,7 +702,7 @@ test('packaged UI requires its packaged-app environment',()=>{
 test('packaged UI ignores safe unknown fields and emits only the evidence basename',()=>{
  const result=evaluatePackagedUi(installedEnvelope('packaged-ui',{...packagedUiResult,futureEvidence:'safe'},
   {environment:'windows-packaged-app'}),gateContext);
- assert.strictEqual(result.evidence,'gate.json');assert(!JSON.stringify(result).includes('capture-1'));
+ assert.strictEqual(result.evidence,'gate.json');assert(!JSON.stringify(result).includes(approvedCaptures[0]));
 });
 test('packaged UI rejects privacy-forbidden extra evidence fields',()=>{
  assert.throws(()=>evaluatePackagedUi(installedEnvelope('packaged-ui',{...packagedUiResult,accountName:'private'},
@@ -870,9 +959,9 @@ test('artifact trust rejects forbidden unknown fields',()=>{
   /^Error: Camoufox preflight data contains private information$/);
 });
 test('artifact trust rejects privacy-sensitive evidence basenames',()=>{
- for(const evidenceName of ['192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
+ for(const evidenceName of [...unsafeEvidenceNames,'192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
   assert.throws(()=>evaluateArtifactTrust(candidate,artifactResult,{candidate,now,evidenceName}),
-   /^Error: Camoufox preflight data contains private information$/);
+   invalidEvidenceReference);
 });
 test('artifact trust permits benign protocol-named evidence basenames',()=>{
  for(const evidenceName of ['https-report.json','http-response.json','ftp-checklist.json'])
@@ -930,10 +1019,10 @@ test('publisher ceremony accepts the safe private-key custody assertion field',(
   {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'PASS');
 });
 test('publisher ceremony rejects privacy-sensitive evidence basenames',()=>{
- for(const evidenceName of ['192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
+ for(const evidenceName of [...unsafeEvidenceNames,'192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
   assert.throws(()=>evaluatePublisherCeremony(ceremonyReceipt,
    {...gateOptions,evidenceName,packagedPublicKeySpkiSha256:'c'.repeat(64)}),
-   /^Error: Camoufox preflight data contains private information$/);
+   invalidEvidenceReference);
 });
 test('publisher ceremony permits benign protocol-named evidence basenames',()=>{
  for(const evidenceName of ['https-report.json','http-response.json','ftp-checklist.json'])
@@ -956,9 +1045,9 @@ test('clean install and upgrade passes the matching fresh-install receipt',()=>{
  assert.strictEqual(result.status,'PASS');assert.strictEqual(result.evidence,'receipt.json');
 });
 test('clean install and upgrade rejects privacy-sensitive evidence basenames',()=>{
- for(const evidenceName of ['192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
+ for(const evidenceName of [...unsafeEvidenceNames,'192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
   assert.throws(()=>evaluateCleanInstallUpgrade(installReceipt,{...gateOptions,evidenceName}),
-   /^Error: Camoufox preflight data contains private information$/);
+   invalidEvidenceReference);
 });
 test('clean install and upgrade permits benign protocol-named evidence basenames',()=>{
  for(const evidenceName of ['https-report.json','http-response.json','ftp-checklist.json'])
@@ -1102,7 +1191,9 @@ function makeCliFixture(root,{uppercaseInstallerDigest=false}={}){
  saveEnvelope('crash','crash',crashResult);
  saveEnvelope('graphics','graphics',graphicsResult);
  saveEnvelope('network','network',networkResult);
- saveEnvelope('packagedUi','packaged-ui',packagedUiResult,'windows-packaged-app');
+ saveEnvelope('packagedUi','packaged-ui',{
+  ...packagedUiResult,packagedArtifactSha256:installerSha256
+ },'windows-packaged-app');
  REQUIRED_RESOURCE_MATRIX.forEach((row,i)=>{
   const name=`resource-${i+1}.json`;
   reportNames.resources.push(name);
@@ -1253,15 +1344,19 @@ process.on('exit',()=>{if([...reads.values()].some(count=>count!==1))process.exi
   });
 
   test('CLI accepts existing owner receipts whose basenames cannot be reported',()=>{
-   const publisher=path.join(root,'owner review.json');
-   const clean=path.join(root,'192.0.2.1.json');
-   fs.copyFileSync(publisherReceipt,publisher);
-   fs.copyFileSync(cleanInstallReceipt,clean);
-   const withPublisher=replaceArg(args,'--publisher-receipt',publisher);
-   const result=expectCliReport(runCli(replaceArg(withPublisher,'--clean-install-receipt',clean)),0);
-   const manualGates=result.gates.filter(item=>result.manualAssertions.some(manual=>manual.gate===item.id));
-   assert.strictEqual(manualGates.length,2);
-   assert(manualGates.every(item=>item.status==='PASS'&&item.evidence===null));
+   for(const [publisherName,cleanName] of [
+    ['owner review.json','192.0.2.1.json'],['account-list.json','proxy.qa-domain.example.json']
+   ]){
+    const publisher=path.join(root,publisherName);
+    const clean=path.join(root,cleanName);
+    fs.copyFileSync(publisherReceipt,publisher);
+    fs.copyFileSync(cleanInstallReceipt,clean);
+    const withPublisher=replaceArg(args,'--publisher-receipt',publisher);
+    const result=expectCliReport(runCli(replaceArg(withPublisher,'--clean-install-receipt',clean)),0);
+    const manualGates=result.gates.filter(item=>result.manualAssertions.some(manual=>manual.gate===item.id));
+    assert.strictEqual(manualGates.length,2);
+    assert(manualGates.every(item=>item.status==='PASS'&&item.evidence===null));
+   }
   });
 
   test('CLI rejects non-object owner receipts and blocks incomplete object receipts',()=>{
@@ -1273,6 +1368,12 @@ process.on('exit',()=>{if([...reads.values()].some(count=>count!==1))process.exi
    withFileContents(publisherReceipt,JSON.stringify(receipt),()=>{
     expectSingleBlocker(runCli(args),'publisher-ceremony','Publisher ceremony owner approval is missing');
    });
+  });
+
+  test('CLI rejects an extra executable in the packaged resources directory',()=>{
+   const file=path.join(resources,'renamed-browser.exe');
+   fs.writeFileSync(file,'MZ');
+   try{invalid();}finally{fs.unlinkSync(file);}
   });
 
   test('CLI blocks when the installer bytes disagree with the indexed digest',()=>{
@@ -1356,10 +1457,11 @@ BundledEngineManager.prototype.verify=function(){
    const archive=JSON.parse(fs.readFileSync(file));
    for(const [changed,reason] of [
     [{...archive,environment:'windows-installed-engine'},'Archive evidence must come from the Windows release archive'],
-    ...[undefined,'NOT_RUN','FAIL'].map(status=>[
-     {...archive,result:{...archive.result,status}},'Archive evidence must record a passing run']),
-    [{...archive,status:'PASS',result:{...archive.result,status:'NOT_RUN'}},'Archive evidence must record a passing run'],
-    ...['NOT_RUN','FAIL'].map(status=>[{...archive,status},'Archive evidence must record a passing run'])
+    [{...archive,result:{...archive.result,status:undefined}},'Archive evidence must record a passing run'],
+    ...['NOT_RUN','FAIL'].map(status=>[
+     {...archive,result:{...archive.result,status}},'Evidence run status is not PASS']),
+    [{...archive,status:'PASS',result:{...archive.result,status:'NOT_RUN'}},'Evidence run status is not PASS'],
+    ...['NOT_RUN','FAIL'].map(status=>[{...archive,status},'Evidence run status is not PASS'])
    ]){
     withFileContents(file,JSON.stringify(changed),()=>{
      expectSingleBlocker(runCli(args),'artifact-trust',reason);
@@ -1415,6 +1517,17 @@ BundledEngineManager.prototype.verify=function(){
    const duplicate={...index,reports:{...index.reports,
     resources:[index.reports.resources[1].toUpperCase(),...index.reports.resources.slice(1)]}};
    withFileContents(indexFile,JSON.stringify(duplicate),invalid);
+  });
+
+  test('CLI rejects existing indexed files with sensitive basenames',()=>{
+   for(const name of ['proxy.qa-domain.example.json','proxy-report.json','account-list.json']){
+    const file=path.join(evidence,name);
+    fs.copyFileSync(evidenceFile('identity'),file);
+    withFileContents(indexFile,JSON.stringify({...index,reports:{...index.reports,identity:name}}),invalid);
+    fs.copyFileSync(path.join(evidence,index.reports.resources[0]),file);
+    const resources=[name,...index.reports.resources.slice(1)];
+    withFileContents(indexFile,JSON.stringify({...index,reports:{...index.reports,resources}}),invalid);
+   }
   });
 
   test('CLI reports missing resource rows as a resource-capacity blocker',()=>{

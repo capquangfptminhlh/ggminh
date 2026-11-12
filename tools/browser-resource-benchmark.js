@@ -228,7 +228,7 @@ function resolveExecutable(options){
  const manager=new BundledEngineManager(options.signedReleaseDir,{engine:'camoufox',publicKey});
  const status=manager.status();
  if(status.valid!==true)throw Error('Camoufox signed release invalid: '+status.reason);
- return {binary:manager.resolve('camoufox'),
+ return {binary:manager.resolve('camoufox'),engineVersion:status.version,
   identityEnvs:loadCamoufoxIdentities(options.identityFile,options.concurrency)};
 }
 function hashFile(file){
@@ -252,6 +252,9 @@ async function gitCommit(){
 async function browserVersion(binary){
  try{return (await commandOutput(binary,['--version'])).slice(0,120)||'unknown'}
  catch(_){return 'unknown'}
+}
+function resolveEngineVersion({binary,engineVersion},observeVersion=browserVersion){
+ return engineVersion??observeVersion(binary);
 }
 async function closeChildren(children,engine){
  for(const child of children)if(child.exitCode===null)
@@ -334,7 +337,7 @@ async function run(argv=process.argv.slice(2)){
   }
  }finally{await server.close()}
  const [commit,appSha256,engineSha256,engineVersion]=await Promise.all([
-  gitCommit(),hashFile(options.appArtifact),hashFile(resolved.binary),browserVersion(resolved.binary)
+  gitCommit(),hashFile(options.appArtifact),hashFile(resolved.binary),resolveEngineVersion(resolved)
  ]);
  const pkg=require('../package.json');
  const report=shapeReport({commit,appSha256,engineSha256,appVersion:pkg.version,
@@ -351,4 +354,4 @@ if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
 module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,
- workloadHtml,createWorkloadServer,loadCamoufoxIdentities,run};
+ workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};

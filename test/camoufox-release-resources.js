@@ -39,11 +39,48 @@ try{
  const forbidden=path.join(root,'forbidden');fs.mkdirSync(forbidden);
  for(const name of ['publisher-ed25519.pub','release.json'])
   fs.copyFileSync(path.join(repoResources,name),path.join(forbidden,name));
- fs.writeFileSync(path.join(forbidden,'camoufox.exe'),'MZ');
- assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/must not ship/);
- fs.rmSync(path.join(forbidden,'camoufox.exe'));
- fs.writeFileSync(path.join(forbidden,'backup.pem'),'-----BEGIN PRIVATE KEY-----');
- assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/private key material/);
+ assert.deepStrictEqual(verifyCamoufoxReleaseResources(forbidden),verified);
+ for(const [name,contents] of [
+  ['camoufox.exe','MZ'],['browser-copy.exe','MZ'],['notes.txt','benign text'],
+  ['backup.pem','-----BEGIN PRIVATE KEY-----']
+ ]){
+  const file=path.join(forbidden,name);
+  fs.writeFileSync(file,contents);
+  try{
+   assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/must not ship/,name);
+  }finally{fs.unlinkSync(file);}
+ }
+ const nested=path.join(forbidden,'nested');
+ fs.mkdirSync(nested);
+ try{assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/must not ship/,'subdirectory');}
+ finally{fs.rmdirSync(nested);}
+
+ const marker='-----BEGIN PRIVATE KEY-----';
+ for(const [name,limit] of [
+  ['publisher-ed25519.pub',4096],['release.json',1024*1024],
+  ['capabilities.json',1024*1024],['README.md',1024*1024]
+ ]){
+  const file=path.join(forbidden,name);
+  const original=fs.existsSync(file)?fs.readFileSync(file):null;
+  const source=fs.readFileSync(path.join(repoResources,name),'utf8');
+  const oversized=Buffer.alloc(limit+1,0x20);
+  oversized.write(marker);
+  try{
+   fs.writeFileSync(file,oversized);
+   assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/exceeds size limits/,name);
+
+   const contaminated=name.endsWith('.json')?
+    JSON.stringify({...JSON.parse(source),testMarker:marker}):source+'\n'+marker;
+   fs.writeFileSync(file,contaminated);
+   assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/private key material/,name);
+
+   fs.writeFileSync(file,'');
+   assert.throws(()=>verifyCamoufoxReleaseResources(forbidden),/metadata is empty/,name);
+  }finally{
+   if(original)fs.writeFileSync(file,original);
+   else fs.unlinkSync(file);
+  }
+ }
 }finally{fs.rmSync(root,{recursive:true,force:true});}
 
 console.log('Camoufox packaged release resources: paired trust/descriptor and no payload/private key PASS');
