@@ -38,8 +38,8 @@ Status: **RC evidence only; not approved for customer release**.
 ## Expected release preflight state
 
 For the current RC evidence, the expected preflight state is **BLOCKED**.
-This records the evidence gaps for owner review; it does not claim that Task 8
-or a live release preflight has run.
+This records the evidence gaps for owner review. Task 8 and the live release
+preflight have NOT run.
 
 The incomplete categories are:
 

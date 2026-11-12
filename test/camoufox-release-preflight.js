@@ -31,16 +31,28 @@ test('release preflight package wiring and operator documentation are explicit',
 
  const checklist=fs.readFileSync(path.join(__dirname,'..','docs/agents/agent-r6/RELEASE-DAY-CHECKLIST.md'),'utf8');
  const acceptance=fs.readFileSync(path.join(__dirname,'..','docs/acceptance/CAMOUFOX_RC1_WINDOWS_20261111.md'),'utf8');
+ const preflightStart=checklist.indexOf('## 10. Camoufox release preflight');
+ const preflightEnd=checklist.indexOf('\n## 11.',preflightStart);
+ const preflightSection=checklist.slice(preflightStart,preflightEnd);
+ assert(preflightSection.length>0);
  assert.match(checklist,/READY_FOR_OWNER_REVIEW/);
  assert.match(checklist,/\b0\b[^\n]*READY_FOR_OWNER_REVIEW/);
  assert.match(checklist,/\b1\b[^\n]*(?:unsafe|malformed|internal)/i);
  assert.match(checklist,/\b2\b[^\n]*(?:BLOCKED|MANUAL_REQUIRED)/);
  for(const flag of ['--resources-dir','--engine-dir','--installer','--evidence-dir','--publisher-receipt','--clean-install-receipt'])
   assert(checklist.includes(flag),`release-day command must include ${flag}`);
- assert.match(checklist,/read-only/i);
- assert.match(checklist,/no network/i);
- assert.match(checklist,/owner must\s+review the JSON/i);
- assert.match(checklist,/must never edit[^\n]*capabilities\.json/i);
+ assert.match(preflightSection,/evidence directory must contain the release evidence index/i);
+ assert.match(preflightSection,/every\s+indexed report required by that index/i);
+ assert.match(preflightSection,/genuine owner receipts/i);
+ assert.match(preflightSection,/receipt is absent,?\s+the report records\s+`MANUAL_REQUIRED`/i);
+ assert.match(preflightSection,/Do not create or alter receipts/i);
+ assert.match(preflightSection,/runs locally and is read-only/i);
+ assert.match(preflightSection,/no network requests/i);
+ assert.match(preflightSection,/does not install,\s+launch,\s+sign,\s+download,\s+publish,\s+delete,\s+or edit capabilities\./i);
+ assert.match(preflightSection,/must never edit `resources\/camoufox-engine\/capabilities\.json`/i);
+ assert.match(preflightSection,/owner must\s+review the JSON/i);
+ assert.match(preflightSection,/separately decide whether to approve release or\s+activate any capability/i);
+ assert.match(preflightSection,/Do not make “100%”, “undetectable”, evasion, advertising account safety, or\s+platform non-association claims/i);
 
  const rcStart=acceptance.indexOf('## Expected release preflight state');
  const rcEnd=acceptance.indexOf('\n## Release decision',rcStart);
@@ -55,7 +67,8 @@ test('release preflight package wiring and operator documentation are explicit',
  ])assert.match(rcSection,blocker);
  assert.match(rcSection,/capability releases remain empty/i);
  assert.match(rcSection,/draft release remains unpublished/i);
- assert.doesNotMatch(rcSection,/live preflight[^\n]*(?:passed|completed)/i);
+ assert.match(rcSection,/Task 8 and the live release\s+preflight\s+have NOT run\./);
+ assert.doesNotMatch(rcSection,/\b(?:Task 8|live (?:release )?preflight)\b[^.\n]{0,80}\b(?:has run|was run|executed|completed|passed)\b/i);
  assert.doesNotMatch(rcSection,/100%|undetectable|evasion|advertising account safety|platform non.association/i);
 });
 
