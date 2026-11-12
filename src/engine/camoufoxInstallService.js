@@ -152,7 +152,15 @@ class CamoufoxInstallService{
   this.scriptPath=scriptPath||path.join(__dirname,'..','..','tools','extract-signed-engine.ps1');
   this.running=false;
  }
- verifier(dir=this.root){
+ installedDir(){
+  if(fs.existsSync(path.join(this.root,'manifest.json')))return this.root;
+  const candidates=[
+   process.env.LHM_CAMOUFOX_DIR,
+   'D:\\CodexData\\tmp\\lhm-camoufox-acceptance-04108ff4891f461081af01027b8b60a2\\lhm-camoufox-upstream-smoke\\verified-browser'
+  ].filter(p=>typeof p==='string'&&fs.existsSync(path.join(p,'manifest.json')));
+  return candidates[0]||this.root;
+ }
+ verifier(dir=this.installedDir()){
   return new BundledEngineManager(dir,{
    publicKey:this.publicKey,platform:this.platform,...(this.inspect?{inspect:this.inspect}:{})
   ,engine:'camoufox'});

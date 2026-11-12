@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { validateProxy } = require('../health/profileHealth');
 const { safeWebUrls } = require('../engine/launchArgs');
 const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
+const {hasIdentityCollision}=require('../engine/camoufoxIdentity');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -164,6 +165,7 @@ class Store {
       startUrl: startUrls[0], startUrls, tags,
       // An explicit empty string clears notes; omitted notes preserve the old value.
       notes: String(input.notes !== undefined ? input.notes : (old.notes || '')).slice(0, 2000),
+      adStatus: typeof input.adStatus === 'string' ? input.adStatus : (old.adStatus || 'active'),
       proxy,
       requiresProxySetup: proxy.type==='direct' &&
         (input.requiresProxySetup === true ||
@@ -198,6 +200,10 @@ class Store {
           } else {
             delete fp.identity; // a save can never create a pin
           }
+        } else if (fp.identity !== undefined && options.allowIdentity === true && options.recovery !== true) {
+          if (hasIdentityCollision(fp.identity, this.data.profiles, id)) {
+            throw new Error('CAMOUFOX_IDENTITY_COLLISION: Refusing to reuse an existing profile identity on another profile');
+          }
         }
         // Editing an existing Camoufox profile must NOT discard its
         // generated identity when the form submits only { mode:'native' }.
@@ -212,6 +218,18 @@ class Store {
           if (old.fingerprint.identityProvisioningReason !== undefined)
             fp.identityProvisioningReason = old.fingerprint.identityProvisioningReason;
           else delete fp.identityProvisioningReason;
+        }
+        if (type === 'chromium' && fp.mode !== 'native') {
+          if (Number.isInteger(fp.canvasNoiseSeed) && fp.canvasNoiseSeed > 0) {
+            while (this.data.profiles.some(p => p.id !== id && p.fingerprint?.canvasNoiseSeed === fp.canvasNoiseSeed)) {
+              fp.canvasNoiseSeed = ((fp.canvasNoiseSeed + 104729) % 0xfffffffe) + 1;
+            }
+          }
+          if (Number.isInteger(fp.audioNoiseSeed) && fp.audioNoiseSeed > 0) {
+            while (this.data.profiles.some(p => p.id !== id && p.fingerprint?.audioNoiseSeed === fp.audioNoiseSeed)) {
+              fp.audioNoiseSeed = ((fp.audioNoiseSeed + 104729) % 0xfffffffe) + 1;
+            }
+          }
         }
         return fp;
       })(),

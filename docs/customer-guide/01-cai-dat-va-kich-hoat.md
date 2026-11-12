@@ -7,8 +7,11 @@
    phải cài một chạm).
 2. Mở ứng dụng từ shortcut sau khi cài xong. Lần chạy đầu tiên, ứng
    dụng tạo thư mục dữ liệu tại:
-   `C:\Users\<tên người dùng>\AppData\Roaming\LHM Ads Browser\storage`
-   Mọi hồ sơ, cấu hình và nhật ký quan sát đều nằm trong thư mục này.
+   `C:\Users\<tên người dùng>\AppData\Roaming\power-browser\storage`
+   (gõ nhanh `%APPDATA%\power-browser` vào thanh địa chỉ File Explorer).
+   Tên thư mục là `power-browser` — tên nội bộ của ứng dụng, khác tên
+   sản phẩm hiển thị. Mọi hồ sơ, cấu hình và nhật ký quan sát đều nằm
+   trong thư mục này.
 3. Ứng dụng **không tự tải engine lạ về máy**. Trình duyệt dùng để mở
    hồ sơ lấy từ các nguồn ở mục 1.4 dưới đây, và engine đóng gói chỉ
    chạy khi chữ ký nhà phát hành và mã băm SHA-256 của toàn bộ tệp

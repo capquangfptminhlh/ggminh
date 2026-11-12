@@ -209,3 +209,149 @@
 @media(prefers-reduced-motion:reduce){
   .lhm-v6-intro-actions .lhm-commercial-quickaction:hover{transform:none}
 }
+
+/* Specialized Google & Facebook Ads styling */
+.lhm-ads-preset-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0f6ff;
+  border: 1px solid #c9defe;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.lhm-ads-preset-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: #1e4a9e;
+  margin-right: 4px;
+}
+.lhm-ads-preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lhm-preset-btn {
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #244b82;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lhm-preset-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+.lhm-preset-btn.active {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1e40af;
+  font-weight: 700;
+}
+
+/* Ad Status Pills in Table */
+.lhm-ad-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.lhm-ad-pill.is-active {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+.lhm-ad-pill.is-warming {
+  background: #fefce8;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+.lhm-ad-pill.is-billing {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.lhm-ad-pill.is-appeal {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+.lhm-ad-pill.is-ready {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+/* Ads Hub Dialog Grid */
+.lhm-ads-hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media(max-width: 768px) {
+  .lhm-ads-hub-grid { grid-template-columns: 1fr; }
+}
+.lhm-ads-hub-card {
+  background: #f8fafc;
+  border: 1px solid var(--lhm-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+.lhm-ads-hub-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.lhm-ads-hub-card-header h3 {
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--lhm-heading);
+  margin: 0;
+}
+.lhm-ads-hub-card p {
+  font-size: 12px;
+  color: var(--lhm-body);
+  margin: 0 0 10px 0;
+}
+.lhm-ads-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lhm-ads-links .btn {
+  text-align: left;
+  justify-content: flex-start;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.lhm-ads-hub-footer-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.lhm-ads-hub-footer-box p {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #166534;
+}
+.lhm-ads-hub-footer-box strong {
+  font-size: 13px;
+  color: #14532d;
+}

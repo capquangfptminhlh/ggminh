@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('api', {
+const api = {
   androidDiscover: () => ipcRenderer.invoke('android-discover'),
   androidCreateAvd: (name, image) => ipcRenderer.invoke('android-create-avd', name, image),
   androidDuplicateAvd: (source, name) => ipcRenderer.invoke('android-duplicate-avd', source, name),
@@ -157,6 +157,7 @@ contextBridge.exposeInMainWorld('api', {
   openUrlForStoppedProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-url',ids,url),
   openUrlInRunningProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-live-url',ids,url),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
+  checkIpCollision: (payload) => ipcRenderer.invoke('check-ip-collision', payload),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   bundledEngineStatus: () => ipcRenderer.invoke('bundled-engine-status'),
   camoufoxInstallStatus: () => ipcRenderer.invoke('camoufox-install-status'),
@@ -165,4 +166,76 @@ contextBridge.exposeInMainWorld('api', {
   selectBundledEngine: source => ipcRenderer.invoke('bundled-engine-select',source),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings)
-});
+};
+
+// Electron prefixes every error thrown in the main process with
+// "Error invoking remote method '<channel>': Error: ". Customers saw that
+// technical English in alerts and the License screen, so strip it here once
+// for every call. Main-process messages a customer meets in everyday flows
+// (session snapshots, signed updates, proxy vault, opening a profile) are
+// still English in the core modules; translate those exact messages here.
+// test/ipc-error-messages.js checks each key still exists in src/.
+// (Activation errors are explained by src/ui/licenseCenter.js.)
+const IPC_PREFIX = /^Error invoking remote method '[^']*': (?:[A-Za-z]*Error: )?/;
+const CUSTOMER_TEXT = {
+  'Close the browser and finish RPA before changing session data':
+    'Hãy đóng trình duyệt của hồ sơ và chờ RPA chạy xong rồi mới thao tác với dữ liệu phiên.',
+  'Maximum ten snapshots per profile; delete an older one first':
+    'Mỗi hồ sơ có tối đa 10 snapshot. Hãy xóa bớt một snapshot cũ trước.',
+  'Profile directory is empty; open and close browser first':
+    'Hồ sơ chưa có dữ liệu phiên. Hãy mở hồ sơ, đóng trình duyệt rồi tạo snapshot.',
+  'Profile snapshot is larger than 1200 files or 32 MB':
+    'Dữ liệu phiên của hồ sơ vượt giới hạn snapshot (1.200 tệp hoặc 32 MB). Hãy dọn bộ nhớ đệm của hồ sơ rồi thử lại.',
+  'Snapshot exceeds 32 MB': 'Snapshot vượt giới hạn 32 MB.',
+  'Not a valid LHM encrypted session snapshot': 'Tệp này không phải snapshot phiên mã hóa của LHM.',
+  'Corrupted encrypted snapshot': 'Snapshot bị hỏng, không khôi phục được.',
+  'Snapshot belongs to a different profile or browser engine':
+    'Snapshot này thuộc hồ sơ khác hoặc loại trình duyệt khác.',
+  'Type KHOI PHUC to confirm': 'Gõ đúng KHOI PHUC để xác nhận khôi phục.',
+  'Type XOA SNAPSHOT to confirm': 'Gõ đúng XOA SNAPSHOT để xác nhận xóa.',
+  'No signed update was verified':
+    'Chưa có bản cập nhật nào được xác minh chữ ký. Bấm "Kiểm tra phiên bản online" trước.',
+  'Signed update offer expired or invalid':
+    'Thông tin bản cập nhật đã hết hạn hoặc không hợp lệ. Hãy bấm kiểm tra lại.',
+  'Update size differs from signed manifest':
+    'Tệp tải về không khớp bản đã ký nên đã bị loại bỏ. Hãy thử tải lại.',
+  'Update SHA-256 mismatch: discarded unsafe installer':
+    'Tệp tải về không khớp bản đã ký (SHA-256) nên đã bị xóa để an toàn. Hãy thử tải lại.',
+  'Refusing to replace an existing installer':
+    'Thư mục tải đã có tệp bộ cài cùng tên. Hãy xóa hoặc đổi tên tệp cũ rồi tải lại.',
+  'Destination directory does not exist': 'Thư mục lưu bộ cài không tồn tại.',
+  'OS credential vault unavailable':
+    'Windows chưa cho phép mã hóa mật khẩu trên tài khoản này nên chưa lưu được mật khẩu proxy.',
+  'Installed runtime cannot handle this engine':
+    'Trình duyệt cài trên máy không hỗ trợ loại trình duyệt của hồ sơ này. Kiểm tra mục Nguồn trình duyệt.'
+};
+const CUSTOMER_PREFIX = [
+  ['Restore rollback failed; original data remains at ', 'Khôi phục thất bại và không hoàn tác được; dữ liệu gốc vẫn ở: '],
+  ['Launch readiness blocked: ', 'Chưa mở được hồ sơ — kiểm tra trước khi mở báo: '],
+  ['Signal-chain preflight blocked inconsistent profile: ', 'Chưa mở được hồ sơ vì cấu hình không nhất quán: ']
+];
+function customerText(message) {
+  if (Object.prototype.hasOwnProperty.call(CUSTOMER_TEXT, message)) return CUSTOMER_TEXT[message];
+  for (const [prefix, text] of CUSTOMER_PREFIX)
+    if (message.startsWith(prefix)) return text + message.slice(prefix.length);
+  return message;
+}
+function cleanIpcError(error) {
+  if (!error || typeof error.message !== 'string') return error;
+  const stripped = error.message.replace(IPC_PREFIX, '');
+  const text = customerText(stripped);
+  if (text === error.message) return error;
+  const clean = new Error(text);
+  if (error.code) clean.code = error.code;
+  return clean;
+}
+for (const [name, fn] of Object.entries(api)) {
+  api[name] = (...args) => {
+    const result = fn(...args);
+    return result && typeof result.then === 'function'
+      ? result.catch(error => { throw cleanIpcError(error); })
+      : result;
+  };
+}
+
+contextBridge.exposeInMainWorld('api', api);

@@ -61,7 +61,7 @@ này là dừng ngay, không nghiệm thu tiếp trên artifact khác.
 - Một máy Windows **độc lập**: không phải máy phát triển, không
   phải máy người bán dùng để cấp license, và **chưa từng cài** LHM
   Ads Browser (nếu đã từng cài, phải gỡ và xóa cả thư mục
-  `C:\Users\<user>\AppData\Roaming\LHM Ads Browser` trước, rồi ghi
+  `C:\Users\<user>\AppData\Roaming\power-browser` trước, rồi ghi
   rõ tiền lệ này vào biên bản).
 - Ghi lại trước khi bắt đầu: phiên bản Windows + số build
   (`winver`), CPU, RAM, GPU, độ phân giải màn hình, múi giờ hệ
@@ -178,7 +178,7 @@ trên. FAIL khi cài không xong, hoặc Defender phát hiện/chặn tệp
 
 1. Mở ứng dụng lần đầu. Chờ ứng dụng tạo thư mục dữ liệu; kiểm tra
    thư mục sau đã tồn tại:
-   `C:\Users\<user>\AppData\Roaming\LHM Ads Browser\storage`
+   `C:\Users\<user>\AppData\Roaming\power-browser\storage`
 2. Vào mục **License** trong ứng dụng. Chụp trạng thái hiển thị:
    đang dùng thử, số ngày còn lại, giới hạn hồ sơ, danh sách tính
    năng. Bấm **Sao chép mã cài đặt** (Installation ID) và gửi mã
@@ -541,7 +541,7 @@ lại thực tế trên bản cài**, không phải sửa chúng tại chỗ.
    hồ sơ này (đặt mật khẩu riêng), rồi kiểm tra trong thư mục
    dữ liệu: ghi lại đường dẫn và dung lượng của thư mục
    snapshot tương ứng dưới
-   `AppData\Roaming\LHM Ads Browser\storage\session-snapshots\`.
+   `AppData\Roaming\power-browser\storage\session-snapshots\`.
 2. (Tùy chọn nhưng nên làm) Tạo một quy trình (workflow) đơn
    giản trong Automation Studio tham chiếu `g3-chromium-01`,
    lưu lại. Nếu bỏ qua, ghi NOT_RUN cho riêng thao tác con F4.
@@ -647,7 +647,7 @@ chứng của chính nó).
 **Thao tác**
 
 1. Chụp lại cây thư mục trước khi gỡ:
-   `C:\Users\<user>\AppData\Roaming\LHM Ads Browser\` (toàn bộ,
+   `C:\Users\<user>\AppData\Roaming\power-browser\` (toàn bộ,
    kèm dung lượng thư mục `storage`) và thư mục cài đã chọn ở
    G3-02.
 2. Gỡ ứng dụng bằng Settings → Apps của Windows (hoặc shortcut
@@ -656,7 +656,7 @@ chứng của chính nó).
 3. Kiểm kê sau gỡ, ghi *còn/mất + đường dẫn* cho từng mục:
    - thư mục cài (tệp chương trình còn lại những gì);
    - lối tắt desktop/Start Menu;
-   - thư mục `AppData\Roaming\LHM Ads Browser` và thư mục con
+   - thư mục `AppData\Roaming\power-browser` và thư mục con
      `storage` bên trong (hồ sơ, kho proxy, nhật ký quan sát);
    - bản Camoufox đã cài qua hộp thoại Engine, nếu G3-05B đã
      chạy (nằm trong thư mục dữ liệu của ứng dụng);
@@ -671,7 +671,7 @@ chứng của chính nó).
    5.5: muốn xóa sạch phải tự xóa thư mục dữ liệu).
 5. Sau khi kiểm kê xong, nếu máy nghiệm thu cần trả về trạng
    thái sạch: tự xóa thư mục
-   `C:\Users\<user>\AppData\Roaming\LHM Ads Browser` theo đúng
+   `C:\Users\<user>\AppData\Roaming\power-browser` theo đúng
    hướng dẫn ở mục 5.5 của tài liệu khách hàng, và xác nhận
    xóa xong. Việc xóa tay này là thao tác của người nghiệm
    thu, không phải hành vi của trình gỡ cài đặt — ghi tách

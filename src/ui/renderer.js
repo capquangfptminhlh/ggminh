@@ -63,6 +63,12 @@ const fieldProxyHost = document.getElementById('field-proxy-host');
 const fieldProxyPort = document.getElementById('field-proxy-port');
 const fieldProxyUser = document.getElementById('field-proxy-user');
 const fieldProxyPass = document.getElementById('field-proxy-pass');
+const fieldAdStatus = document.getElementById('field-ad-status');
+const modalAdsHub = document.getElementById('modal-ads-hub');
+const btnAdsHub = document.getElementById('btn-ads-hub');
+const btnCloseAdsHub = document.getElementById('btn-close-ads-hub');
+const btnDoneAdsHub = document.getElementById('btn-done-ads-hub');
+const btnAdsHubOpenGuard = document.getElementById('btn-ads-hub-open-guard');
 const btnTestProxy = document.getElementById('btn-test-proxy');
 const proxyTestResult = document.getElementById('proxy-test-result');
 
@@ -297,9 +303,12 @@ async function refreshBehaviorAlerts() {
 function setupEventListeners() {
   fieldFpMode.addEventListener('change', () => {
     const native = fieldFpMode.value === 'native';
-    fpCustomFields.hidden = native;
-    if (native) currentGeneratedFP = { mode: 'native' };
-    else window.api.generateFingerprint({ os: fieldFpOs.value }).then(applyFingerprintToForm).catch(console.error);
+    fpCustomFields.hidden = false;
+    if (native) {
+      currentGeneratedFP = { mode: 'native' };
+    } else {
+      window.api.generateFingerprint({ os: fieldFpOs.value }).then(applyFingerprintToForm).catch(console.error);
+    }
     fpAuditResults.textContent = 'Cấu hình đã thay đổi. Nhấn Kiểm tra cấu hình để xem cảnh báo.';
     renderProfileSignalCoverage();
   });
@@ -331,8 +340,7 @@ function setupEventListeners() {
   fieldBrowserEngine.addEventListener('change', () => {
     const gecko = fieldBrowserEngine.value !== 'chromium';
     geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
-    if (gecko) setFingerprintMode('native');
-    fieldFpMode.disabled = gecko;
+    fpCustomFields.hidden = false;
     updateCamoufoxFormHint();
     renderProfileSignalCoverage();
   });
@@ -412,14 +420,23 @@ function setupEventListeners() {
 
   // Randomize Fingerprint
   btnRandomFP.addEventListener('click', async () => {
-    const os = fieldFpOs.value;
-    const fp = await window.api.generateFingerprint({ os });
-    applyFingerprintToForm(fp);
+    const os = fieldFpOs.value || 'Windows';
+    try {
+      const fp = await window.api.generateFingerprint({ os });
+      applyFingerprintToForm(fp);
+      const titleEl = document.getElementById('fp-readiness-title');
+      if (titleEl) {
+        titleEl.textContent = '✅ Đã tạo vân tay ngẫu nhiên mới thành công!';
+        setTimeout(() => {
+          if (titleEl) titleEl.textContent = 'Trạng thái thông số: Đã kích hoạt cấu hình cách ly';
+        }, 2500);
+      }
+    } catch (err) { console.error('Lỗi tạo vân tay:', err); }
   });
 
   // Test Proxy
   btnTestProxy.addEventListener('click', async () => {
-    proxyTestResult.textContent = 'Đang kiểm tra kết nối...';
+    proxyTestResult.textContent = 'Đang kiểm tra kết nối & độ sạch IP...';
     proxyTestResult.className = 'test-result';
     const proxyConfig = {
       type: fieldProxyType.value,
@@ -429,14 +446,109 @@ function setupEventListeners() {
       pass: fieldProxyPass.value.trim()
     };
     const res = await window.api.checkProxy(proxyConfig);
+    let collisionNote = '';
+    if (res.verified && res.ip && window.api.checkIpCollision) {
+      try {
+        const col = await window.api.checkIpCollision({ ip: res.ip, profileId: fieldId.value });
+        if (col && col.collision) {
+          collisionNote = `\n🚨 CẢNH BÁO TRÙNG IP CŨ: IP thoát (${res.ip}) ĐÃ TỪNG ĐƯỢC DÙNG bởi hồ sơ: "${col.names.join(', ')}"! Dùng lại IP cũ này có rủi ro liên kết tài khoản giữa các hồ sơ. Khuyến nghị dùng IP riêng biệt!\n`;
+        }
+      } catch (_) {}
+    }
+    const dupProfile = allProfiles.find(p => p.id !== fieldId.value && p.proxy &&
+      p.proxy.host === proxyConfig.host && Number(p.proxy.port) === Number(proxyConfig.port));
+    if (dupProfile) {
+      collisionNote += `\n⚠️ CẢNH BÁO TRÙNG PROXY: Host & Port này đang trùng với hồ sơ "${dupProfile.name}". Dùng chung proxy sẽ làm lộ liên kết giữa các tài khoản!\n`;
+    }
     if (['success', 'verified', 'warning'].includes(res.status)) {
       proxyTestResult.className = res.status === 'warning' ? 'test-result error' : 'test-result success';
-      proxyTestResult.textContent = res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`;
+      let qInfo = '';
+      if (res.quality) {
+        const qBadge = res.quality.riskLevel === 'clean' ? '🟢 SẠCH' : res.quality.riskLevel === 'warning' ? '🟡 CẢNH BÁO' : '🔴 RỦI RO CAO';
+        qInfo = `\n[Độ sạch IP: ${qBadge} (${res.quality.score}/100)] Loại: ${res.quality.category} · Nhà mạng: ${res.quality.isp || 'N/A'} (${res.quality.country || ''}) · Múi giờ: ${res.quality.timezone || 'N/A'}\nĐánh giá: ${res.quality.message}`;
+        if (res.quality.timezone && fieldNotes && !fieldNotes.value.includes('Múi giờ IP:')) {
+          const sep = fieldNotes.value ? '\n' : '';
+          fieldNotes.value = fieldNotes.value + `${sep}[IP Info] Quốc gia: ${res.quality.country || ''} | Múi giờ IP: ${res.quality.timezone} | Loại: ${res.quality.category}`;
+        }
+      }
+      proxyTestResult.textContent = collisionNote + (res.status === 'warning' ? `${res.message} IP: ${res.ip}` : res.status === 'verified' ? `${res.message} Proxy IP: ${res.ip}${res.directIp ? ' | IP máy: ' + res.directIp : ''} (${res.latency}ms)` : `IP trực tiếp: ${res.ip} (${res.latency}ms)`) + qInfo;
     } else {
       proxyTestResult.className = 'test-result error';
       proxyTestResult.textContent = `Lỗi: ${res.message}`;
     }
   });
+
+  // Ads Presets 1-Click
+  const ADS_PRESETS = {
+    'google-ads': {
+      prefix: 'Google Ads',
+      group: 'Google Ads',
+      tags: 'Google Ads, Search, PMax',
+      startUrls: ['https://ads.google.com/', 'https://mail.google.com/', 'https://myaccount.google.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    },
+    'facebook-ads': {
+      prefix: 'Facebook Ads',
+      group: 'Facebook Ads',
+      tags: 'Facebook Ads, BM, Via',
+      startUrls: ['https://www.facebook.com/', 'https://adsmanager.facebook.com/', 'https://business.facebook.com/select', 'https://www.facebook.com/accountquality'],
+      engine: 'gecko',
+      adStatus: 'warming'
+    },
+    'google-mcc': {
+      prefix: 'Google MCC',
+      group: 'Google MCC',
+      tags: 'Google MCC, Agency, GA4',
+      startUrls: ['https://ads.google.com/aw/overview', 'https://analytics.google.com/', 'https://tagmanager.google.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    },
+    'google-gmc': {
+      prefix: 'GMC Shopping',
+      group: 'Google Shopping',
+      tags: 'GMC, Shopping',
+      startUrls: ['https://merchants.google.com/', 'https://ads.google.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    },
+    'meta-pixel': {
+      prefix: 'Meta Pixel',
+      group: 'Meta Pixel',
+      tags: 'Meta Pixel, CAPI',
+      startUrls: ['https://business.facebook.com/events_manager2', 'https://adsmanager.facebook.com/'],
+      engine: 'gecko',
+      adStatus: 'active'
+    }
+  };
+
+  document.querySelectorAll('.lhm-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = ADS_PRESETS[btn.dataset.preset];
+      if (!p) return;
+      if (!fieldId.value || /^Profile_\d+$/.test(fieldName.value.trim())) {
+        fieldName.value = `${p.prefix}_${allProfiles.length + 1}`;
+      }
+      fieldGroup.value = p.group;
+      fieldTags.value = p.tags;
+      fieldStartUrl.value = p.startUrls.join('\n');
+      fieldBrowserEngine.value = p.engine;
+      fieldBrowserEngine.dispatchEvent(new Event('change'));
+      if (fieldAdStatus) fieldAdStatus.value = p.adStatus;
+      document.querySelectorAll('.lhm-preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  if (btnAdsHub && modalAdsHub) {
+    btnAdsHub.addEventListener('click', () => openModal(modalAdsHub));
+    btnCloseAdsHub?.addEventListener('click', () => closeModal(modalAdsHub));
+    btnDoneAdsHub?.addEventListener('click', () => closeModal(modalAdsHub));
+    btnAdsHubOpenGuard?.addEventListener('click', () => {
+      closeModal(modalAdsHub);
+      document.getElementById('btn-ads-launch-guard')?.click();
+    });
+  }
 
   // Save Profile
   btnSaveProfile.addEventListener('click', async () => {
@@ -453,6 +565,7 @@ function setupEventListeners() {
       engine:fieldBrowserEngine.value==='chromium'?'chromium':'gecko',
       engine_type:fieldBrowserEngine.value==='gecko'?'firefox':fieldBrowserEngine.value,
       group: fieldGroup.value.trim() || 'Default',
+      adStatus: fieldAdStatus ? fieldAdStatus.value : 'active',
       startUrls: parseStartupUrls(fieldStartUrl.value),
       tags: parseTags(fieldTags.value),
       notes: fieldNotes.value.trim(),
@@ -471,6 +584,15 @@ function setupEventListeners() {
         ? currentGeneratedFP : selectedFingerprintConfig()
     };
 
+    if (profile.proxy && profile.proxy.type !== 'direct' && profile.proxy.host) {
+      const dup = allProfiles.find(p => p.id !== profile.id && p.proxy &&
+        p.proxy.host === profile.proxy.host && Number(p.proxy.port) === Number(profile.proxy.port));
+      if (dup) {
+        if (!confirm('CẢNH BÁO: Proxy này (' + profile.proxy.host + ':' + profile.proxy.port + ') đang được dùng bởi hồ sơ "' + dup.name + '".\n\nDùng chung IP proxy sẽ khiến Google/Meta liên kết các tài khoản quảng cáo với nhau.\n\nBạn có chắc chắn muốn lưu cấu hình này không?')) {
+          return;
+        }
+      }
+    }
     const isCreate = !fieldId.value;
     let savedProfile = null;
     try {
@@ -555,6 +677,7 @@ async function openProfileModal(existingProfile = null) {
     fieldGroup.value = existingProfile.group || 'Default';
     fieldStartUrl.value = (existingProfile.startUrls || [existingProfile.startUrl || 'https://ads.google.com/']).join('\n');
     fieldTags.value = (existingProfile.tags || []).join(', ');
+    if (fieldAdStatus) fieldAdStatus.value = existingProfile.adStatus || 'active';
     fieldNotes.value = existingProfile.notes || '';
 
     const pxy = existingProfile.proxy || {};
@@ -571,20 +694,35 @@ async function openProfileModal(existingProfile = null) {
   } else {
     document.getElementById('modal-title').textContent = 'Tạo hồ sơ mới';
     fieldId.value = '';
-    fieldBrowserEngine.value = 'chromium';
+    fieldBrowserEngine.value = 'gecko';
     fieldName.value = `Profile_${allProfiles.length + 1}`;
-    fieldGroup.value = 'Default';
+    fieldGroup.value = 'Google Ads';
     fieldStartUrl.value = 'https://ads.google.com/';
-    fieldTags.value = '';
+    fieldTags.value = 'Google Ads';
+    if (fieldAdStatus) fieldAdStatus.value = 'active';
+    document.querySelectorAll('.lhm-preset-btn').forEach(b => b.classList.remove('active'));
     fieldNotes.value = '';
     fieldProxyType.value = 'direct';
     proxyFields.style.display = 'none';
 
     currentGeneratedFP = { mode: 'native' };
     setFingerprintMode('native');
+    window.api.generateFingerprint({ os: 'Windows' }).then(fp => {
+      applyFingerprintToForm(fp);
+    }).catch(() => {
+      fieldFpOs.value = 'Windows';
+      fieldFpScreen.value = '1920x1080';
+      fieldFpCores.value = '8';
+      fieldFpMemory.value = '8';
+      fieldFpGpu.value = 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)';
+      fieldFpCanvas.checked = true;
+      fieldFpAudio.checked = true;
+      fieldFpWebrtc.checked = true;
+    });
   }
   geckoPathControl.hidden = fieldBrowserEngine.value !== 'gecko';
-  fieldFpMode.disabled = fieldBrowserEngine.value !== 'chromium';
+  fieldFpMode.disabled = false;
+  fpCustomFields.hidden = false;
   await window.LHMProxyCenter?.refreshPresets(existingProfile?.proxy || null);
   updateCamoufoxFormHint();
   renderProfileSignalCoverage();
@@ -602,17 +740,20 @@ function parseTags(value) {
   return value.split(',').map(tag => tag.trim()).filter(Boolean);
 }
 function selectedFingerprintConfig() {
-  if (fieldFpMode.value === 'native' || fieldBrowserEngine.value !== 'chromium')
-    return { mode: 'native' };
-  const [width,height] = fieldFpScreen.value.split('x').map(Number);
+  const [width,height] = (fieldFpScreen.value || '1920x1080').split('x').map(Number);
+  const isExp = fieldFpMode.value === 'experimental';
   return {
     ...(currentGeneratedFP || {}),
-    mode: 'experimental',
-    os: fieldFpOs.value,
+    mode: isExp ? 'experimental' : 'native',
+    os: fieldFpOs.value || 'Windows',
     userAgent: fieldFpUa.value.trim(),
-    hardwareConcurrency: Number(fieldFpCores.value),
-    deviceMemory: Number(fieldFpMemory.value),
-    screen: { width, height, availWidth: width, availHeight: height - 40, colorDepth: 24 },
+    hardwareConcurrency: Number(fieldFpCores.value || 8),
+    deviceMemory: Number(fieldFpMemory.value || 8),
+    screen: { width: width || 1920, height: height || 1080, availWidth: width || 1920, availHeight: (height || 1080) - 40, colorDepth: 24 },
+    webgl: currentGeneratedFP?.webgl || {
+      vendor: 'Google Inc. (NVIDIA)',
+      renderer: fieldFpGpu.value || 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)'
+    },
     canvasNoiseSeed: fieldFpCanvas.checked ? (Number(currentGeneratedFP?.canvasNoiseSeed) || 1) : 0,
     audioNoiseSeed: fieldFpAudio.checked ? (Number(currentGeneratedFP?.audioNoiseSeed) || 1) : 0,
     webrtc: fieldFpWebrtc.checked ? 'spoof' : 'real'
@@ -620,7 +761,7 @@ function selectedFingerprintConfig() {
 }
 function setFingerprintMode(mode) {
   fieldFpMode.value = mode === 'native' ? 'native' : 'experimental';
-  fpCustomFields.hidden = fieldFpMode.value === 'native';
+  fpCustomFields.hidden = false;
   fpAuditResults.textContent = 'Nhấn Kiểm tra cấu hình để xem phân tích.';
   renderProfileSignalCoverage();
 }
@@ -736,7 +877,17 @@ function renderProfiles() {
     const isRunning = activeBrowserMap.has(p.id);
     const matchStatus = selectedStatus === 'all' ||
       (selectedStatus === 'running' && isRunning) ||
-      (selectedStatus === 'stopped' && !isRunning);
+      (selectedStatus === 'stopped' && !isRunning) ||
+      (selectedStatus === 'google-ads' && (
+        (p.group && /google/i.test(p.group)) ||
+        (p.tags || []).some(t => /google|gmc|mcc/i.test(t)) ||
+        (p.startUrls || []).some(u => /google\.com/i.test(u))
+      )) ||
+      (selectedStatus === 'facebook-ads' && (
+        (p.group && /facebook|meta/i.test(p.group)) ||
+        (p.tags || []).some(t => /facebook|meta|via|bm/i.test(t)) ||
+        (p.startUrls || []).some(u => /facebook\.com|fb\.com/i.test(u))
+      ));
 
     const matchEngine = selectedEngine === 'all' ||
       (p.engine || 'chromium') === selectedEngine;
@@ -786,13 +937,19 @@ function renderProfiles() {
 
     const tr = document.createElement('tr');
     tr.dataset.profileId=profile.id;
+    const adStatus = profile.adStatus || 'active';
+    const adBadge = adStatus === 'warming' ? '<span class="lhm-ad-pill is-warming" title="Nuôi via / Ngâm profile">Nuôi via</span>' :
+      adStatus === 'billing' ? '<span class="lhm-ad-pill is-billing" title="Chờ gắn thẻ thanh toán">Chờ add thẻ</span>' :
+      adStatus === 'appeal' ? '<span class="lhm-ad-pill is-appeal" title="Đang kháng nghị checkpoint">Đang kháng</span>' :
+      adStatus === 'ready' ? '<span class="lhm-ad-pill is-ready" title="Sẵn sàng / Dự phòng">Dự phòng</span>' :
+      '<span class="lhm-ad-pill is-active" title="Đang chạy camp chiến dịch">Active</span>';
     tr.innerHTML = `
       <td><input type="checkbox" aria-label="Chọn hồ sơ" data-id="${escapeHtml(profile.id)}" ${selectedProfileIds.has(profile.id) ? 'checked' : ''}></td>
       <td data-table-col="id"><code class="profile-id">${escapeHtml(profile.id)}</code></td>
-      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span><span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
+      <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span> ${adBadge}<span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
-      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span></div></td>
-      <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span></td>
+      <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span><span class="lhm-profile-ok-badge" title="Vân tay đã được cách ly &amp; tối ưu cho Ads">🛡️ Hồ sơ đã cách ly</span></div></td>
+      <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span><div class="lhm-status-subtext">🛡️ Đã cách ly an toàn</div></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
         <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="${escapeHtml(profile.id)}" title="Sửa hồ sơ"><span data-lhm-icon="edit"></span>Sửa</button>
@@ -819,6 +976,8 @@ function renderProfiles() {
     const btnToggle = tr.querySelector('.btn-toggle-run');
     btnToggle.addEventListener('click', async () => {
       btnToggle.disabled = true;
+      const originalHtml = btnToggle.innerHTML;
+      btnToggle.textContent = isRunning ? 'Đang dừng...' : '⏳ Đang mở...';
       try {
         if (isRunning) await window.api.stopBrowser(profile.id);
         else {
@@ -836,6 +995,10 @@ function renderProfiles() {
       } catch (error) {
         const handled=await window.LHMLicenseCenter.handleOperationError(error);
         if(!handled)alert('Không thể mở/đóng hồ sơ: ' + error.message);
+      }
+      finally {
+        btnToggle.disabled = false;
+        btnToggle.innerHTML = originalHtml;
       }
       await loadProfiles();
       await refreshBehaviorAlerts();

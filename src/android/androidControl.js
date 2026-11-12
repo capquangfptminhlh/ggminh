@@ -214,6 +214,39 @@ class AndroidControl {
     } finally {this.busy.delete(serial);}
   }
 
+  async resetChromeData(serial) {
+    // Wipe 100% of Chrome Mobile app state (cookies, cache, IndexedDB,
+    // Service Workers, localStorage, saved accounts) inside the target AVD
+    // so the next Chrome session starts as a clean first-time user.
+    if (typeof serial!=='string' || !/^emulator-\d{4,5}$/.test(serial))
+      throw new Error('Chrome data reset is limited to a dedicated Android emulator');
+    const adb=await this.authorized(serial);
+    if (this.busy.has(serial))
+      throw new Error('Device is busy; wait for the current Android action');
+    this.busy.add(serial);
+    try {
+      const devices=await this.manager.devices();
+      if (!devices.some(device=>device.serial===serial &&
+          device.kind==='emulator' && device.status==='device'))
+        throw new Error('The Android emulator is no longer authorized');
+      const boot=(await this.manager.run(adb,
+        ['-s',serial,'shell','getprop','sys.boot_completed'])).trim();
+      if (boot!=='1') throw new Error('Android has not finished booting');
+      const installed=await this.manager.run(adb,
+        ['-s',serial,'shell','pm','path','com.android.chrome']);
+      if (!/^package:\S+\.apk\s*$/m.test(installed))
+        throw new Error('Chrome is not installed on this Android emulator');
+      const output=(await this.manager.run(adb,
+        ['-s',serial,'shell','pm','clear','com.android.chrome'])).trim();
+      if (!/\bSuccess\b/.test(output))
+        throw new Error('Android did not confirm Chrome data wipe');
+      return {
+        serial,app:'Chrome',state:'chrome-data-cleared',
+        cookiesCleared:true,storageCleared:true
+      };
+    } finally {this.busy.delete(serial);}
+  }
+
   async screenshot(serial) {
     const adb=await this.authorized(serial);
     if (this.busy.has(serial)) throw new Error('Device is busy; retry screenshot');

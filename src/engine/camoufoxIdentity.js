@@ -20,6 +20,7 @@
  *   cannot smuggle different expectations past measurement);
  * - expectations must not contradict the profile's own declared fields.
  */
+const crypto=require('crypto');
 const {uaFamily,platformFamily}=require('../health/signalChain');
 
 const IDENTITY_FORMAT='camoufox-camou-config';
@@ -153,6 +154,10 @@ function assertIdentityMatchesProfile(profile,expectations){
  if(fingerprint.timezone&&expectations.timezone&&
     fingerprint.timezone!==expectations.timezone)
   problems.push('identity timezone contradicts the declared timezone');
+ if(isRecord(profile?.proxy)&&typeof profile.proxy.timezone==='string'&&
+    profile.proxy.timezone&&expectations.timezone&&
+    profile.proxy.timezone!==expectations.timezone)
+  problems.push('identity timezone contradicts the proxy timezone');
  if(Array.isArray(fingerprint.languages)&&fingerprint.languages.length&&
     expectations.language&&
     !fingerprint.languages.some(l=>l===expectations.language||
@@ -172,7 +177,36 @@ function assertIdentityMatchesProfile(profile,expectations){
  return true;
 }
 
+function identityFingerprintDigest(identity){
+ if(!isRecord(identity)||!isRecord(identity.env))return null;
+ const keys=Object.keys(identity.env).filter(k=>/^CAMOU_CONFIG_\d+$/.test(k));
+ if(!keys.length)return null;
+ const ordered=keys.map(k=>({n:Number(k.slice('CAMOU_CONFIG_'.length)),k}))
+  .sort((a,b)=>a.n-b.n);
+ const h=crypto.createHash('sha256');
+ for(const entry of ordered){
+  const v=identity.env[entry.k];
+  if(typeof v!=='string'||!v.length)return null;
+  h.update(v);
+ }
+ return h.digest('hex');
+}
+
+function hasIdentityCollision(identity,existingProfiles,currentProfileId=null){
+ const digest=identityFingerprintDigest(identity);
+ if(!digest||!Array.isArray(existingProfiles))return false;
+ for(const other of existingProfiles){
+  if(!other||typeof other!=='object')continue;
+  if(currentProfileId&&other.id===currentProfileId)continue;
+  const otherId=other.fingerprint?.identity;
+  if(!otherId)continue;
+  if(identityFingerprintDigest(otherId)===digest)return true;
+ }
+ return false;
+}
+
 module.exports={IDENTITY_FORMAT,IDENTITY_VERSION,EXPECTATION_KEYS,
  REPLAY_CHUNK_LENGTH,parseCamouConfigEnv,summarizeIdentity,
  validateStoredIdentity,rechunkCamouConfigEnv,
- identityEnvForProfile,assertIdentityMatchesProfile};
+ identityEnvForProfile,assertIdentityMatchesProfile,
+ identityFingerprintDigest,hasIdentityCollision};

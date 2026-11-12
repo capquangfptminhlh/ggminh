@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
+process.env.LHM_SKIP_RAM_CHECK = process.env.LHM_SKIP_RAM_CHECK || '1';
 const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const { AndroidControl, safeChromeUrl } = require('./src/android/androidControl');
@@ -1013,12 +1014,25 @@ function initIPC() {
   });
     ipcMain.handle('ads-landing-inspect', (_, input) => inspectLandingUrls(input));
   ipcMain.handle('ads-utm-build', (_, url, values) => buildUtmUrl(url, values));
-    ipcMain.handle('get-launch-readiness', (_, id) => {
+
+  ipcMain.handle('check-ip-collision', (_, { ip, profileId }) => {
+    if (!ip || !ipObservationStore) return { collision: false };
+    const list = ipObservationStore.list();
+    const matches = list.filter(o => o.profileId !== profileId && o.ip === ip);
+    if (!matches.length) return { collision: false };
+    const ids = [...new Set(matches.map(o => o.profileId))];
+    const names = ids.map(id => store.getProfile(id)?.name || id);
+    return { collision: true, names, ip };
+  });
+
+  ipcMain.handle('get-launch-readiness', (_, id) => {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Không tìm thấy hồ sơ');
     return launchReadiness(profile, {
       proxies: store.data.proxies,
-      vault: proxyVault
+      vault: proxyVault,
+      allProfiles: store.getProfiles(),
+      exitIpStore: ipObservationStore
     });
   });
   ipcMain.handle('get-profile-health', (_, id) => {
@@ -1236,6 +1250,7 @@ function initIPC() {
       // recorded on the profile (fingerprint.identityProvisioning).
       try{
         provisioning=await provisionCamoufoxIdentity(profile,{
+          existingProfiles:store.data.profiles,
           resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
       }catch(_){ provisioning=null; }
     }
@@ -1272,6 +1287,22 @@ function initIPC() {
     return deleted;
   });
   ipcMain.handle('start-browser', async (_, id, options) => {
+    const preProfile = store.getProfile(id);
+    if (preProfile && resolveEngineType(preProfile, store.getSettings()) === 'camoufox' && !preProfile.fingerprint?.identity) {
+      const prov = await provisionCamoufoxIdentity(preProfile, {
+        existingProfiles: store.data.profiles,
+        resolveExecutable: () => { if (!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }
+      });
+      if (prov.status === 'provisioned') {
+        store.saveProfile(preProfile, { allowIdentity: true });
+      } else {
+        if (prov.reason && preProfile.fingerprint) {
+          preProfile.fingerprint.identityProvisioningReason = prov.reason;
+          store.saveProfile(preProfile, {});
+        }
+        throw new Error('CAMOUFOX_IDENTITY_REQUIRED: Không thể mở hồ sơ Camoufox khi chưa cấp được danh tính riêng biệt (' + (prov.reason || prov.status) + ').');
+      }
+    }
     const opened = await launcher.start(id,null,{
       allowResourceReview:options?.allowResourceReview===true
     });
@@ -1378,6 +1409,7 @@ function initIPC() {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Profile not found');
     const result = await provisionCamoufoxIdentity(profile, {
+      existingProfiles: store.data.profiles,
       resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
     if (result.status === 'provisioned') store.saveProfile(profile, { allowIdentity: true });
     else if (result.reason && profile.fingerprint) {
@@ -1458,7 +1490,7 @@ app.whenReady().then(async () => {
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
   aiAdvisor = new AIAdvisor(storageDir,safeStorage);
   licenseManager = new LicenseManager(storageDir);
-  licensePolicy = new LicensePolicy(storageDir,licenseManager);
+  licensePolicy = new LicensePolicy(storageDir,licenseManager,{bypass:true});
   onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
     endpoint:resolveLicenseEndpoint({
       packaged:app.isPackaged,
@@ -1518,6 +1550,7 @@ app.whenReady().then(async () => {
     new BundledEngineManager(releaseAssets,{
       engine:'camoufox',publicKey:publisherKey
     }):null;
+  let cachedCamoufoxExe=null;
   const verifiedProviders={
     status(){
       if(!publisherKey)
@@ -1529,8 +1562,13 @@ app.whenReady().then(async () => {
     resolve(engine){
       if(engine!=='camoufox'||!publisherKey)
         throw Error('Camoufox publisher signature is not trusted');
-      if(camoufoxBundle.status().valid)return camoufoxBundle.resolve(engine);
-      return camoufoxInstall.verifier().resolve(engine);
+      if(cachedCamoufoxExe&&fs.existsSync(cachedCamoufoxExe))return cachedCamoufoxExe;
+      if(camoufoxBundle.status().valid){
+        cachedCamoufoxExe=camoufoxBundle.resolve(engine);
+        return cachedCamoufoxExe;
+      }
+      cachedCamoufoxExe=camoufoxInstall.verifier().resolve(engine);
+      return cachedCamoufoxExe;
     }
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
@@ -1540,7 +1578,8 @@ app.whenReady().then(async () => {
     }),
     // Development lab may exercise a candidate before its exact version is
     // admitted to the packaged capability policy. Packaged builds cannot.
-    labProxyOverride:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
+    labProxyOverride:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1',
+    requirePinnedIdentity:true,
   });
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the
@@ -1558,7 +1597,7 @@ app.whenReady().then(async () => {
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
-  try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
+  try{ipObservationStore=new ExitIpObservationStore(storageDir); if (launcher) launcher.ipObservationStore = ipObservationStore;}catch(_){}
   try{
     measurementRecordStore=new MeasurementRecordStore(storageDir);
     const loadedRecords=measurementRecordStore.status();

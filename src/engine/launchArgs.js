@@ -36,6 +36,10 @@ function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, pro
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-sync', // Avoid accidentally syncing Chrome browser data between managed profiles.
+    '--disable-background-networking',
+    '--disable-domain-reliability',
+    '--no-pings',
+    '--disable-blink-features=AutomationControlled',
     '--window-size=' + (size.width || 1280) + ',' + (size.height || 800)
   ];
   const extensions=[...(extensionDir?[extensionDir]:[]),...extensionDirs];
@@ -54,6 +58,8 @@ function createLaunchArgs({ engine, profileDir, url, urls, fingerprint = {}, pro
     // proxied Chromium. Does NOT implement SOCKS5 UDP ASSOCIATE or prove
     // the absence of every OS/browser UDP pathway.
     args.push('--disable-quic');
+    args.push('--dns-prefetch-disable');
+    args.push('--proxy-bypass-list=<-loopback>');
     args.push('--force-webrtc-ip-handling-policy=disable_non_proxied_udp');
     if (!proxy.host || !/^[A-Za-z0-9_.:-]+$/.test(proxy.host)) throw new Error('Invalid proxy hostname');
     const proxyPort = Number(proxy.port);

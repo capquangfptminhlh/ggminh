@@ -89,6 +89,58 @@ function generateExtension(profile, outputDir) {
       get: () => ${safeString(fp.languages?.[0],'vi-VN')},
       configurable: true
     });
+    const uaPlatform = ${safeString(fp.os === 'macOS' ? 'macOS' : fp.os === 'Linux' ? 'Linux' : 'Windows', 'Windows')};
+    const fullVer = ${safeString(fp.chromeVersion || '134.0.7000.32', '134.0.7000.32')};
+    const majorVer = String(fullVer).split('.')[0] || '134';
+    const brandsList = [
+      { brand: 'Chromium', version: majorVer },
+      { brand: 'Google Chrome', version: majorVer },
+      { brand: 'Not(A:Brand', version: '24' }
+    ];
+    if (navigator.userAgentData) {
+      const highEntropy = {
+        brands: brandsList,
+        mobile: false,
+        platform: uaPlatform,
+        architecture: 'x86',
+        bitness: '64',
+        model: '',
+        platformVersion: uaPlatform === 'Windows' ? '15.0.0' : '14.5.0',
+        uaFullVersion: fullVer,
+        fullVersionList: brandsList.map(b => ({ brand: b.brand, version: b.brand === 'Not(A:Brand' ? '24.0.0.0' : fullVer }))
+      };
+      Object.defineProperty(navigator, 'userAgentData', {
+        get: () => ({
+          brands: brandsList,
+          mobile: false,
+          platform: uaPlatform,
+          toJSON: makeNative(function toJSON() { return { brands: brandsList, mobile: false, platform: uaPlatform }; }, 'toJSON'),
+          getHighEntropyValues: makeNative(function getHighEntropyValues(hints) {
+            const out = { brands: brandsList, mobile: false, platform: uaPlatform };
+            if (Array.isArray(hints)) {
+              for (const k of hints) if (k in highEntropy) out[k] = highEntropy[k];
+            }
+            return Promise.resolve(out);
+          }, 'getHighEntropyValues')
+        }),
+        configurable: true
+      });
+    }
+  } catch (e) {}
+
+  // --- 2b. Coherent Timezone Spoofing ---
+  try {
+    const targetTz = ${safeString(profile.proxy?.timezone || fp.timezone || '', '')};
+    if (targetTz && typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+      const OrigDTF = Intl.DateTimeFormat;
+      const origResolved = OrigDTF.prototype.resolvedOptions;
+      OrigDTF.prototype.resolvedOptions = function() {
+        const res = origResolved.call(this);
+        res.timeZone = targetTz;
+        return res;
+      };
+      makeNative(OrigDTF.prototype.resolvedOptions, 'resolvedOptions');
+    }
   } catch (e) {}
 
   // --- 3. Screen Dimension Spoofing ---
@@ -158,19 +210,44 @@ function generateExtension(profile, outputDir) {
     makeNative(CanvasRenderingContext2D.prototype.getImageData, 'getImageData');
 
     const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
-    HTMLCanvasElement.prototype.toDataURL = function(type, ...args) {
-      const ctx = this.getContext('2d');
-      if (ctx && this.width > 0 && this.height > 0) {
-        try {
-          ctx.getImageData(0, 0, Math.min(10, this.width), Math.min(10, this.height));
-        } catch (e) {}
+    const origPutImageData = CanvasRenderingContext2D.prototype.putImageData;
+    function cloneWithNoise(canvas) {
+      if (!canvas || canvas.width <= 0 || canvas.height <= 0 || typeof document === 'undefined') return canvas;
+      try {
+        const clone = document.createElement('canvas');
+        clone.width = canvas.width;
+        clone.height = canvas.height;
+        const cctx = clone.getContext('2d');
+        if (!cctx) return canvas;
+        cctx.drawImage(canvas, 0, 0);
+        const w = Math.min(16, clone.width), h = Math.min(16, clone.height);
+        const img = origGetImageData.call(cctx, 0, 0, w, h);
+        for (let i = 0; i < img.data.length; i += 4) {
+          const px = (i / 4) % w, py = Math.floor((i / 4) / w);
+          const n = (pseudoRandom(px, py) > 0.5 ? 1 : -1);
+          img.data[i] = Math.max(0, Math.min(255, img.data[i] + n));
+          img.data[i + 2] = Math.max(0, Math.min(255, img.data[i + 2] - n));
+        }
+        origPutImageData.call(cctx, img, 0, 0);
+        return clone;
+      } catch (e) {
+        return canvas;
       }
-      return origToDataURL.call(this, type, ...args);
+    }
+    HTMLCanvasElement.prototype.toDataURL = function(type, ...args) {
+      return origToDataURL.call(cloneWithNoise(this), type, ...args);
     };
     makeNative(HTMLCanvasElement.prototype.toDataURL, 'toDataURL');
+    if (HTMLCanvasElement.prototype.toBlob) {
+      const origToBlob = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function(cb, type, ...args) {
+        return origToBlob.call(cloneWithNoise(this), cb, type, ...args);
+      };
+      makeNative(HTMLCanvasElement.prototype.toBlob, 'toBlob');
+    }
   } catch (e) {}
 
-  // --- 6. WebAudio Noise (Subtle frequency perturbation) ---
+  // --- 6. WebAudio Noise (Subtle frequency & channel buffer perturbation) ---
   if (${boundedSeed(fp.audioNoiseSeed) > 0}) try {
     const audioSeed = ${boundedSeed(fp.audioNoiseSeed)};
     if (window.AnalyserNode) {
@@ -183,6 +260,21 @@ function generateExtension(profile, outputDir) {
         }
       };
       makeNative(AnalyserNode.prototype.getFloatFrequencyData, 'getFloatFrequencyData');
+    }
+    if (window.AudioBuffer && AudioBuffer.prototype.getChannelData) {
+      const origGetChannelData = AudioBuffer.prototype.getChannelData;
+      const noisyBuffers = new WeakSet();
+      AudioBuffer.prototype.getChannelData = function(channel) {
+        const data = origGetChannelData.call(this, channel);
+        if (!noisyBuffers.has(data)) {
+          noisyBuffers.add(data);
+          for (let i = 0; i < data.length; i += 64) {
+            data[i] += Math.sin(i + audioSeed) * 1e-7;
+          }
+        }
+        return data;
+      };
+      makeNative(AudioBuffer.prototype.getChannelData, 'getChannelData');
     }
   } catch (e) {}
 

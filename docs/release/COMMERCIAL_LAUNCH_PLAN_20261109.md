@@ -15,7 +15,40 @@ Những gì còn thiếu là **hạ tầng và nghiệm thu thật** — phần 
 
 ---
 
-## Bảng tổng hợp
+## Cập nhật 09/11 tối — có đường bán sớm hơn (phương án A)
+
+Khi chuẩn bị, trợ lý tìm thấy hai việc đã làm từ 06/11 mà kế hoạch ban đầu
+chưa tính:
+
+- **Khóa issuer license đã có** (commit `0f1e1cd`, vân tay SPKI
+  `725db621…dff0`, ghim trong app và Worker). Khóa riêng đã mã hóa nằm ở
+  `D:\LHM-Keys\` trên máy chủ dự án; mật khẩu bọc DPAPI. Bản cài hiện tại
+  **chấp nhận license `strict` khi chưa có máy chủ** và chặn `owner-sweep`.
+- **Khóa ký cập nhật đã có** (commit `8a76b43`, khóa riêng cũng ở
+  `D:\LHM-Keys\`). Trợ lý đã chạy thử toàn bộ quy trình ký bằng khóa thử
+  dùng một lần: `setup-update-publisher` → `sign-app-update` →
+  `update-release-preflight` cho EXE `a1f8d02` ra `VERIFIED_ARTIFACT_ONLY`;
+  manifest bị sửa 1 ký tự bị từ chối. Lưu ý: manifest mặc định hết hạn sau
+  30 ngày (`--valid-days`), phải ký lại định kỳ.
+
+**Phương án A — bán bản đầu bằng license offline `strict`, chưa cần máy chủ:**
+
+| Bước | Việc | Ai |
+|---|---|---|
+| A1 | Nghiệm thu license offline trên máy Windows sạch: cấp → kích hoạt → restart → gia hạn → hết hạn (`docs/release/KICH-BAN-NGHIEM-THU-BAN-DAU.md`, phần 1) | Chủ dự án + khách thử |
+| A2 | Nâng cấp giữ dữ liệu (cùng tài liệu, phần 2) | Chủ dự án |
+| A3 | Bỏ chữ "Preview" (đụng `package.json`, 2 workflow, bộ công cụ Gate 3) — **chỉ sau khi A1, A2 PASS**, vì `V58_RC_SCOPE_LOCK_20261023.md` cấm bỏ "Preview" để lách tiêu chí. Tài liệu khách hàng: bộ có sẵn `docs/customer-guide/` (đã bổ sung chương 09) | Trợ lý (PR ngày phát hành) |
+| A4 | Ký manifest cập nhật cho EXE đã đóng băng, tạo release `lhm-updates` | Chủ dự án ký, trợ lý preflight + tải lên |
+| A5 | Tag `v5.8.0`, đóng Issue #47 với ghi chú "license offline strict" | Chủ dự án duyệt |
+
+Giới hạn phải chấp nhận khi chọn A: **không thu hồi license từ xa**, không
+có biên nhận máy chủ; hạn dùng dựa trên đồng hồ máy khách (app cảnh báo khi
+giờ bị chỉnh lùi). Máy chủ license (bước 1–2 bên dưới) làm sau, khi cần
+thu hồi/`owner-sweep`.
+
+---
+
+## Bảng tổng hợp (phương án đầy đủ, có máy chủ license)
 
 | # | Việc | Ai làm | Phụ thuộc | Bằng chứng "xong" |
 |---|---|---|---|---|
@@ -133,9 +166,10 @@ Trợ lý soạn kịch bản kiểm tra và biểu mẫu ghi kết quả.
 
 ## Bước 6 — Phát hành chính thức (Gate 4)
 
-1. Bỏ chữ "Preview" trong tên bộ cài/kênh; số phiên bản `5.8.0`.
-2. Tài liệu khách hàng: cài đặt, kích hoạt, gia hạn, cảnh báo SmartScreen
-   (nếu không ký số), chính sách dữ liệu, hỗ trợ.
+1. Bỏ chữ "Preview" trong tên bộ cài/kênh; số phiên bản `5.8.0` — chỉ khi các
+   cổng đã PASS (quy tắc trong `V58_RC_SCOPE_LOCK_20261023.md`).
+2. Tài liệu khách hàng: bộ `docs/customer-guide/` (01–09); bỏ nhãn
+   "(Preview)" trong `README.md` của bộ này cùng lúc với bước 1.
 3. *Thông tin LHM → Bàn giao khách hàng* trên bản cuối không còn mục
    "CẦN RÀ SOÁT" ngoài các mục chủ dự án đã chấp nhận bằng văn bản.
 4. Đánh dấu đủ checklist Issue #47 → tag `v5.8.0` → release → đóng Issue.

@@ -1,4 +1,5 @@
 const net = require('net');
+const http = require('http');
 const tls = require('tls');
 const https = require('https');
 const { validateProxy } = require('../health/profileHealth');
@@ -139,23 +140,103 @@ function directIp() {
   });
 }
 
-async function checkProxy(input, { directProbe = directIp, proxyProbe = viaProxy } = {}) {
+
+function checkIpQuality(ip) {
+  if (!ip || !net.isIP(ip)) return Promise.resolve(null);
+  if (ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.16.')) {
+    return Promise.resolve({
+      type: 'local',
+      category: 'Mạng nội bộ / Local',
+      clean: true,
+      score: 100,
+      riskLevel: 'clean',
+      message: 'IP Mạng nội bộ'
+    });
+  }
+  return new Promise(resolve => {
+    const req = http.get('http://ip-api.com/json/' + ip + '?fields=status,message,country,countryCode,regionName,city,timezone,isp,org,as,mobile,proxy,hosting,query', {
+      timeout: 4000
+    }, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.status !== 'success') return resolve(null);
+          const isHosting = json.hosting === true;
+          const isProxy = json.proxy === true;
+          const isMobile = json.mobile === true;
+
+          let category = 'Dân cư (Residential / ISP)';
+          let riskLevel = 'clean';
+          let score = 95;
+          let message = 'IP Dân cư sạch — Tối ưu và an toàn nhất cho Google Ads & Facebook Ads';
+
+          if (isHosting) {
+            category = 'Máy chủ (Datacenter / Hosting VPS)';
+            riskLevel = 'high_risk';
+            score = 30;
+            message = 'IP Máy chủ/VPS — Rủi ro cao: Google Ads dễ nghi ngờ và tạm ngưng tài khoản';
+          } else if (isProxy) {
+            category = 'Proxy công cộng / VPN';
+            riskLevel = 'warning';
+            score = 55;
+            message = 'IP Proxy/VPN công cộng — Độ sạch trung bình, nên thận trọng';
+          } else if (isMobile) {
+            category = 'Di động (4G/5G Cellular)';
+            riskLevel = 'clean';
+            score = 98;
+            message = 'IP 4G/5G Di động — Điểm tin cậy cao nhất cho lên camp';
+          }
+
+          resolve({
+            ip: json.query,
+            country: json.country,
+            countryCode: json.countryCode,
+            city: json.city,
+            region: json.regionName,
+            timezone: json.timezone,
+            isp: json.isp,
+            org: json.org,
+            as: json.as,
+            isHosting,
+            isProxy,
+            isMobile,
+            category,
+            riskLevel,
+            score,
+            message
+          });
+        } catch (_) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+
+async function checkProxy(input, { directProbe = directIp, proxyProbe = viaProxy, qualityProbe = checkIpQuality } = {}) {
   const started = Date.now();
   const config = validateProxy(input);
   if (!config.ok) return { status: 'error', message: config.message };
   try {
     if (config.type === 'direct') {
       const ip = await directProbe();
-      return { status: 'success', ip, type: 'direct', latency: Date.now() - started, verified: true };
+      let quality = null;
+      try { quality = await qualityProbe(ip); } catch (_) {}
+      return { status: 'success', ip, type: 'direct', latency: Date.now() - started, verified: true, quality };
     }
     const ip = await proxyProbe(config);
     let direct = null;
     try { direct = await directProbe(); } catch (_) { /* Do not assume proxy differs without comparison. */ }
     const sameIp = direct && ip === direct;
+    let quality = null;
+    try { quality = await qualityProbe(ip); } catch (_) {}
     return {
       status: sameIp ? 'warning' : 'verified', ip,
       type: config.type, latency: Date.now() - started,
       verified: true, directIp: direct, matchesDirectIp: sameIp || false,
+      quality,
       message: sameIp ? 'IP thoát trùng với IP trực tiếp; hãy kiểm tra cấu hình mạng.'
         : direct ? 'IP thoát proxy đã được xác minh bằng HTTPS.'
           : 'Đã xác minh IP thoát; không đo được IP trực tiếp để so sánh.'
@@ -164,4 +245,4 @@ async function checkProxy(input, { directProbe = directIp, proxyProbe = viaProxy
     return { status: 'error', message: error.message || 'Không xác minh được proxy', verified: false };
   }
 }
-module.exports = { checkProxy, validateProxy, parseRemoteIp, directIp, viaProxy };
+module.exports = { checkProxy, validateProxy, parseRemoteIp, directIp, viaProxy, checkIpQuality };

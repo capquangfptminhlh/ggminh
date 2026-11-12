@@ -92,5 +92,50 @@ function sanitizedEmulatorEnv(env={}) {
   return cleaned;
 }
 
+function assertDistinctAvdIdentities(records=[]) {
+  if(!Array.isArray(records))throw Error('AVD identity records must be an array');
+  const seenNames=new Set();
+  const seenAndroidIds=new Map();
+  const seenProxies=new Map();
+  const seenEgressIps=new Map();
+  for(const item of records) {
+    if(!item||typeof item!=='object')throw Error('Invalid AVD identity record');
+    const name=String(item.name||'').trim();
+    if(!SAFE_AVD.test(name))throw Error('Invalid AVD name in identity check');
+    if(seenNames.has(name))throw Error('Duplicate AVD record name: '+name);
+    seenNames.add(name);
+    if(item.androidId!==undefined&&item.androidId!==null&&item.androidId!=='') {
+      const id=String(item.androidId).trim().toLowerCase();
+      if(!/^[0-9a-f]{16}$/.test(id))throw Error('Invalid Android ID format for AVD '+name);
+      if(seenAndroidIds.has(id)) {
+        const err=new Error(`Android ID collision between ${seenAndroidIds.get(id)} and ${name}`);
+        err.code='ANDROID_ID_COLLISION';
+        throw err;
+      }
+      seenAndroidIds.set(id,name);
+    }
+    if(item.proxyEndpoint!==undefined&&item.proxyEndpoint!==null&&item.proxyEndpoint!=='') {
+      const ep=proxyEndpoint(String(item.proxyEndpoint));
+      if(seenProxies.has(ep)) {
+        const err=new Error(`Android TCP proxy collision between ${seenProxies.get(ep)} and ${name}`);
+        err.code='ANDROID_PROXY_COLLISION';
+        throw err;
+      }
+      seenProxies.set(ep,name);
+    }
+    if(item.egressIp!==undefined&&item.egressIp!==null&&item.egressIp!=='') {
+      const ip=String(item.egressIp).trim();
+      if(net.isIP(ip)===0)throw Error('Invalid egress IP for AVD '+name);
+      if(seenEgressIps.has(ip)) {
+        const err=new Error(`Android egress IP collision between ${seenEgressIps.get(ip)} and ${name}`);
+        err.code='ANDROID_EGRESS_IP_COLLISION';
+        throw err;
+      }
+      seenEgressIps.set(ip,name);
+    }
+  }
+  return {verifiedCount:records.length,distinct:true};
+}
+
 module.exports={proxyEndpoint,avdNetworkMode,parseAvdProxyMap,
-  resolveAvdNetworkLaunch,sanitizedEmulatorEnv};
+  resolveAvdNetworkLaunch,sanitizedEmulatorEnv,assertDistinctAvdIdentities};

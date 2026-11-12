@@ -75,15 +75,31 @@ window.LHMLaunchReadiness = (() => {
     list.replaceChildren();
     get('launch-readiness-layers').replaceChildren();
     openButton.disabled = true;
-    modal.classList.add('open');
     const answer = new Promise(resolve => { activeResolve = resolve; });
     currentProfile = profileId;
     try {
       const report = await window.api.getLaunchReadiness(profileId);
       if (currentProfile !== profileId) return answer;
       lastReport = report;
+      if (report.canLaunch && report.errorCount === 0) {
+        const collision = report.issues.find(x => x.code === 'shared_proxy_endpoint' || x.code === 'shared_exit_ip_collision');
+        if (collision) {
+          if (!window.confirm(collision.message + '\n\nBạn có chắc chắn muốn bỏ qua cảnh báo trùng IP và tiếp tục mở hồ sơ này không?')) {
+            activeResolve = null;
+            currentProfile = null;
+            lastReport = null;
+            return false;
+          }
+        }
+        activeResolve = null;
+        currentProfile = null;
+        lastReport = null;
+        return true;
+      }
+      modal.classList.add('open');
       render(report);
     } catch (e) {
+      modal.classList.add('open');
       if (currentProfile === profileId) {
         status.dataset.state = 'blocked';
         status.textContent = 'KHÔNG THỂ KIỂM TRA — KHÔNG MỞ HỒ SƠ';
