@@ -35,6 +35,22 @@ Status: **RC evidence only; not approved for customer release**.
 - `npm run build:win`: PASS.
 - Packaged `resources/lhm-camoufox`: trust anchor and descriptor validate; no bundled engine payload or private key.
 
+## Expected release preflight state
+
+For the current RC evidence, the expected preflight state is **BLOCKED**.
+This records the evidence gaps for owner review; it does not claim that Task 8
+or a live release preflight has run.
+
+The incomplete categories are:
+
+- Production publisher ceremony receipt.
+- Real proxy P2, DNS route, and browser-runtime vs manager egress evidence.
+- Required 8/16/32 GiB × workloads × concurrency resource rows.
+- Clean install/upgrade/uninstall-retention owner receipt.
+
+Capability releases remain empty, and the draft release remains unpublished.
+Do not claim completion or create receipts to fill these gaps.
+
 ## Release decision
 
 `resources/camoufox-engine/capabilities.json` intentionally keeps `releases: []`.

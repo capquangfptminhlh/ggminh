@@ -18,6 +18,47 @@ const {
 
 function test(name,run){try{run();}catch(error){console.error(name);throw error;}}
 
+test('release preflight package wiring and operator documentation are explicit',()=>{
+ const packageJson=JSON.parse(fs.readFileSync(path.join(__dirname,'..','package.json'),'utf8'));
+ assert.strictEqual(packageJson.scripts['camoufox:release-preflight'],
+  'node tools/camoufox-release-preflight.js');
+ const steps=packageJson.scripts['test:steps'].split(' && ');
+ const focusedStep='node test/camoufox-release-preflight.js';
+ const capabilityStep=steps.indexOf('node test/camoufox-capability-policy.js');
+ assert(capabilityStep>=0);
+ assert.strictEqual(steps.filter(step=>step===focusedStep).length,1);
+ assert.strictEqual(steps[capabilityStep+1],focusedStep);
+
+ const checklist=fs.readFileSync(path.join(__dirname,'..','docs/agents/agent-r6/RELEASE-DAY-CHECKLIST.md'),'utf8');
+ const acceptance=fs.readFileSync(path.join(__dirname,'..','docs/acceptance/CAMOUFOX_RC1_WINDOWS_20261111.md'),'utf8');
+ assert.match(checklist,/READY_FOR_OWNER_REVIEW/);
+ assert.match(checklist,/\b0\b[^\n]*READY_FOR_OWNER_REVIEW/);
+ assert.match(checklist,/\b1\b[^\n]*(?:unsafe|malformed|internal)/i);
+ assert.match(checklist,/\b2\b[^\n]*(?:BLOCKED|MANUAL_REQUIRED)/);
+ for(const flag of ['--resources-dir','--engine-dir','--installer','--evidence-dir','--publisher-receipt','--clean-install-receipt'])
+  assert(checklist.includes(flag),`release-day command must include ${flag}`);
+ assert.match(checklist,/read-only/i);
+ assert.match(checklist,/no network/i);
+ assert.match(checklist,/owner must\s+review the JSON/i);
+ assert.match(checklist,/must never edit[^\n]*capabilities\.json/i);
+
+ const rcStart=acceptance.indexOf('## Expected release preflight state');
+ const rcEnd=acceptance.indexOf('\n## Release decision',rcStart);
+ const rcSection=acceptance.slice(rcStart,rcEnd);
+ assert(rcSection.length>0);
+ assert.match(rcSection,/BLOCKED/);
+ for(const blocker of [
+  /production publisher ceremony receipt/i,
+  /real proxy P2[^\n]*DNS route[^\n]*browser.runtime vs manager egress/i,
+  /8\/16\/32 GiB[^\n]*workloads[^\n]*concurrency/i,
+  /clean install\/upgrade\/uninstall.retention owner receipt/i
+ ])assert.match(rcSection,blocker);
+ assert.match(rcSection,/capability releases remain empty/i);
+ assert.match(rcSection,/draft release remains unpublished/i);
+ assert.doesNotMatch(rcSection,/live preflight[^\n]*(?:passed|completed)/i);
+ assert.doesNotMatch(rcSection,/100%|undetectable|evasion|advertising account safety|platform non.association/i);
+});
+
 const now=new Date('2026-11-11T12:00:00.000Z');
 const candidate={
  commit:'a'.repeat(40),

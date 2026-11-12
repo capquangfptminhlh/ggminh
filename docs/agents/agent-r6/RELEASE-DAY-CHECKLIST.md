@@ -135,7 +135,46 @@ của Hiến pháp, không chép lại số diễn tập.
   (SHA của `camoufox.exe` + SHA của archive), hệ điều hành, cấu
   hình, thời gian, phạm vi đã đo. Thiếu hồ sơ = chưa phát hành.
 
-## 10. Đóng buổi ký
+## 10. Camoufox release preflight — owner review gate
+
+Run this local, read-only check after clean-machine measurements and
+before any capability activation or release approval. Replace each
+`C:\ABSOLUTE_PATH_TO_...` value with the operator's actual absolute path;
+these are command placeholders, not pending work items.
+
+```powershell
+npm run camoufox:release-preflight -- `
+  --resources-dir "C:\ABSOLUTE_PATH_TO\resources\camoufox-engine" `
+  --engine-dir "C:\ABSOLUTE_PATH_TO\installed\camoufox" `
+  --installer "C:\ABSOLUTE_PATH_TO\LHM-Ads-Browser-Preview-Setup.exe" `
+  --evidence-dir "C:\ABSOLUTE_PATH_TO\release-evidence" `
+  --publisher-receipt "C:\ABSOLUTE_PATH_TO\release-evidence\publisher-ceremony.json" `
+  --clean-install-receipt "C:\ABSOLUTE_PATH_TO\release-evidence\clean-install-upgrade.json"
+```
+
+The evidence directory must contain the release evidence index and every
+indexed report required by that index. Supply genuine owner receipts at the
+two receipt paths; if a receipt is absent, the report records
+`MANUAL_REQUIRED`. Keep the original receipts in the evidence directory and
+review their contents independently. Do not create or alter receipts to make
+the check ready.
+
+| Exit | Meaning |
+|---:|---|
+| 0 | `READY_FOR_OWNER_REVIEW` only; this is not a release decision. |
+| 2 | Valid `BLOCKED` and/or `MANUAL_REQUIRED` result, with the JSON report. |
+| 1 | Unsafe or malformed input, or an internal verification input error; no valid report is produced. |
+
+The command runs locally and is read-only. It makes no network requests and
+does not install, launch, sign, download, publish, delete, or edit capabilities.
+It must never edit `resources/camoufox-engine/capabilities.json`. The owner must
+review the JSON report and separately decide whether to approve release or
+activate any capability.
+
+Do not make “100%”, “undetectable”, evasion, advertising account safety, or
+platform non-association claims.
+
+## 11. Đóng buổi ký
 
 - Rút private key khỏi máy ký, trả về két (OWNER-RUNBOOK mục 2/6).
 - Hồ sơ phát hành gồm: descriptor đã đăng, `scan-summary.json` +
