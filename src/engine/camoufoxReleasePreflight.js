@@ -147,6 +147,10 @@ function normalizeEvidenceTimestamp(value){
  return new Date(timestamp);
 }
 
+function hasNonpassingStatus(value){
+ return Object.hasOwn(value,'status')&&value.status!=='PASS';
+}
+
 function validateEvidence(envelope,{candidate,kind,now=new Date(),requireInstalled=false}){
  assertPrivacySafe(envelope);
  assertPrivacySafe(candidate);
@@ -161,9 +165,7 @@ function validateEvidence(envelope,{candidate,kind,now=new Date(),requireInstall
  const generatedAt=normalizeEvidenceTimestamp(envelope.generatedAt);
  const age=preflightTime(now).getTime()-generatedAt.getTime();
  let reason;
- if((Object.hasOwn(envelope,'status')&&envelope.status!=='PASS')||
-  (Object.hasOwn(envelope.result,'status')&&envelope.result.status!=='PASS'))
-  reason='Evidence run status is not PASS';
+ if(hasNonpassingStatus(envelope)||hasNonpassingStatus(envelope.result))reason='Evidence run status is not PASS';
  else if(envelope.schema!==EVIDENCE_SCHEMA)reason='Evidence schema is unsupported';
  else if(envelope.kind!==kind)reason='Evidence kind does not match the gate';
  else if(CANDIDATE_FIELDS.some(field=>envelope.candidate[field]!==candidate[field]))
@@ -181,25 +183,29 @@ function isSafeBasename(name){
  if(!match)return false;
  const stem=match[1];
  return !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(stem)&&
-  !/(?:^|[-_])(?:proxy|endpoint|password|secret|token|cookie|account|ip|host)(?:$|[-_])/i.test(stem);
+  !/(?:proxy|endpoint|password|secret|token|cookie|account|host)/i.test(stem)&&
+  !/(?:(?:^|[-_])ip(?:$|[-_])|ip\d)/i.test(stem);
+}
+
+function checkedEvidenceBasename(name){
+ if(!isSafeBasename(name))throw Error('Invalid Camoufox preflight evidence reference');
+ return name;
 }
 
 function evidenceBasename(value){
  if(typeof value!=='string'||!value||/[\\/]\.{1,2}(?:[\\/]|$)/.test(value)||
   value.startsWith('\\\\?\\')||value.startsWith('\\\\.\\')||/[\\/]$/.test(value))
   throw Error('Invalid Camoufox preflight evidence reference');
- const name=win32.basename(value);
- if(!isSafeBasename(name))
-  throw Error('Invalid Camoufox preflight evidence reference');
- return name;
+ return checkedEvidenceBasename(win32.basename(value));
 }
 
 function sanitizeEvidence(evidence){
- if(typeof evidence==='string')return evidenceBasename(evidence);
- if(Array.isArray(evidence))return evidence.map(evidenceBasename);
- if(evidence&&Object.hasOwn(evidence,'file'))
-  return {...evidence,file:evidenceBasename(evidence.file)};
- return evidence;
+ if(evidence===null)return null;
+ if(typeof evidence==='string')return checkedEvidenceBasename(evidence);
+ if(Array.isArray(evidence)&&Reflect.ownKeys(evidence).length===evidence.length+1)
+  return Array.from(evidence,checkedEvidenceBasename);
+ if(exactKeys(evidence,['file']))return {file:checkedEvidenceBasename(evidence.file)};
+ throw Error('Invalid Camoufox preflight evidence reference');
 }
 
 function exactKeys(value,keys){
@@ -326,6 +332,7 @@ function resourceMatrixLabel(row){return `${row.ramGiB}GiB-${row.workload}-c${ro
 function resourceReportRow(report,candidate,now){
  if(!report||typeof report!=='object'||Array.isArray(report)||
   report.schema!=='lhm.browser-resource.evidence.v1')return {reason:'schema or report shape'};
+ if(hasNonpassingStatus(report))return {reason:'run status'};
  let generatedAt;
  try{generatedAt=normalizeEvidenceTimestamp(report.generatedAt);}catch{return {reason:'generated timestamp'};}
  const age=preflightTime(now).getTime()-generatedAt.getTime();
@@ -536,7 +543,7 @@ function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
   const validated=gate(item.id,item.status,item.reason,item.evidence);
   if(seen.has(item.id))throw Error('Invalid Camoufox preflight gate');
   seen.add(item.id);
-  validated.evidence=sanitizeEvidence(copyPlainData(validated.evidence));
+  validated.evidence=sanitizeEvidence(validated.evidence);
   sanitizedGates.push(validated);
  }
  return finalize(projectCandidate(candidate),sanitizedGates,preflightTime(now).toISOString());

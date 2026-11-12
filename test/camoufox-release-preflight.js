@@ -90,13 +90,7 @@ const candidate={
  engineSha256:'c'.repeat(64),
  installerSha256:'d'.repeat(64)
 };
-const gates=GATE_IDS.map(id=>gate(id,'PASS',`${id} verified`,{
- observedAt:now.toISOString(),
- candidateCommit:candidate.commit,
- candidateEngineVersion:candidate.engineVersion,
- candidateEngineSha256:candidate.engineSha256,
- candidateInstallerSha256:candidate.installerSha256
-}));
+const gates=GATE_IDS.map((id,index)=>gate(id,'PASS',`${id} verified`,`gate-${index+1}.json`));
 
 const report=evaluateCamoufoxReleasePreflight(candidate,gates,now);
 assert.deepStrictEqual(report.gates.map(item=>item.id),GATE_IDS);
@@ -262,11 +256,9 @@ for(const [label,field,value] of [
  });
 }
 
-test('allows the exact private-key ceremony assertion field',()=>{
- const evidence={privateKeyEncryptedOutsideGit:true};
- const report=evaluateCamoufoxReleasePreflight(candidate,
-  withGate(gate('publisher-ceremony','PASS','Reviewed',evidence)),now);
- assert.deepStrictEqual(report.gates[1].evidence,evidence);
+test('allows the exact private-key ceremony assertion field in validated evidence data',()=>{
+ const result={privateKeyEncryptedOutsideGit:true};
+ assert.deepStrictEqual(validateEvidence({...envelope,result},evidenceOptions).result,result);
 });
 
 test('rejects private text in a gate reason',()=>{
@@ -337,19 +329,11 @@ test('rejects symbol keyed evidence without traversing hidden fields',()=>{
   /^Error: Invalid Camoufox preflight data$/);
 });
 
-test('outputs only the basename of Windows and POSIX evidence paths',()=>{
- for(const file of [
-  'C:\\review\\deep\\candidate\\evidence\\identity.json',
-  '/review/deep/candidate/evidence/identity.json'
- ]){
-  for(const evidence of [file,{file}]){
-   const report=evaluateCamoufoxReleasePreflight(candidate,
-    withGate(gate(evidenceGateId,'PASS','Verified',evidence)),now);
-   assert.deepStrictEqual(report.gates[2].evidence,
-    typeof evidence==='string'?'identity.json':{file:'identity.json'});
-   assert(!JSON.stringify(report).includes('deep'));
-  }
- }
+test('preserves the exact file wrapper for a safe evidence basename',()=>{
+ const input=Object.assign(Object.create(null),{file:'identity.json'});
+ const report=evaluateCamoufoxReleasePreflight(candidate,
+  withGate(gate(evidenceGateId,'PASS','Verified',input)),now);
+ assert.deepStrictEqual(report.gates[2].evidence,{file:'identity.json'});
 });
 
 test('detaches candidate data and excludes extra candidate fields from reports',()=>{
@@ -365,14 +349,12 @@ test('detaches candidate data and excludes extra candidate fields from reports',
  assert(!JSON.stringify(report).includes('buildMetadata'));
 });
 
-test('detaches nested gate evidence after evaluation',()=>{
- const input={details:[{verified:true}]};
+test('detaches the exact file wrapper after evaluation',()=>{
+ const input={file:'publisher-ceremony.json'};
  const report=evaluateCamoufoxReleasePreflight(candidate,
   withGate(gate('publisher-ceremony','PASS','Reviewed',input)),now);
- input.details[0].verified='http://example.invalid/injected-value';
- input.details.push({later:true});
- assert.deepStrictEqual(report.gates[1].evidence,{details:[{verified:true}]});
- assert(!JSON.stringify(report).includes('example.invalid'));
+ input.file='http://example.invalid/injected-value';
+ assert.deepStrictEqual(report.gates[1].evidence,{file:'publisher-ceremony.json'});
 });
 
 test('detaches validated envelope results after evidence validation',()=>{
@@ -387,7 +369,10 @@ test('detaches validated envelope results after evidence validation',()=>{
 const unsafeEvidenceNames=[
  'proxy-report.json','proxy.qa-domain.example.json','account-list.json',
  'check_endpoint.json','check-password-report.json','secret.json','run-token.json',
- 'cookie-data.json','ip-summary.json','qa-host.json','identity.txt'
+ 'cookie-data.json','ip-summary.json','qa-host.json','identity.txt',
+ 'proxy01.json','account12345.json','customerAccountName.json','qaEndpoint.json',
+ 'probePassword01.json','qaSecret01.json','runToken2.json','qaCookie2.json','qaHost99.json',
+ 'ip.json','ip01.json','report-ip.json','report_ip01.json','reportIP01.json'
 ];
 const invalidEvidenceReference=/^Error: Invalid Camoufox preflight evidence reference$/;
 
@@ -397,6 +382,28 @@ test('rejects sensitive basenames in composed gate evidence references',()=>{
    assert.throws(()=>evaluateCamoufoxReleasePreflight(candidate,
     withGate(gate(evidenceGateId,'PASS','Verified',evidence)),now),invalidEvidenceReference);
   }
+ }
+});
+
+test('rejects raw paths and unprojected metadata in final gate evidence',()=>{
+ const path='C:\\QA\\proxy.qa-domain.example.json';
+ const windowsPath='C:\\QA\\identity.json';
+ const posixPath='/review/evidence/identity.json';
+ const arrayWithPath=Object.assign(['identity.json'],{path});
+ for(const evidence of [
+  {path},{file:'identity.json',path},{details:[{path}]},{file:{path}},[{path}],
+  windowsPath,posixPath,{file:windowsPath},[posixPath],arrayWithPath,Array(1),true,42
+ ]){
+  assert.throws(()=>evaluateCamoufoxReleasePreflight(candidate,
+   withGate(gate(evidenceGateId,'PASS','Verified',evidence)),now),invalidEvidenceReference);
+ }
+});
+
+test('preserves canonical identity, publisher, receipt, and resource basenames',()=>{
+ for(const file of ['identity.json','publisher-ceremony.json','clean-install-receipt.json','resource-chipset-01.json']){
+  const report=evaluateCamoufoxReleasePreflight(candidate,
+   withGate(gate(evidenceGateId,'PASS','Verified',file)),now);
+  assert.strictEqual(report.gates[2].evidence,file);
  }
 });
 
@@ -547,8 +554,25 @@ test('resource capacity accepts exactly one valid report for all 36 matrix rows'
  assert.strictEqual(REQUIRED_RESOURCE_MATRIX.length,36);
  const result=evaluateResourceCapacity(resourceEntries(),{candidate,now,evidenceName:'reports/summary.json'});
  assert.strictEqual(result.status,'PASS');
- assert.deepStrictEqual(result.evidence,resourceEntries().map(entry=>entry.evidenceName.split('/').pop()).sort());
- assert(!JSON.stringify(result).includes('availableRatio'));
+ const expected=resourceEntries().map(entry=>entry.evidenceName.split('/').pop()).sort();
+ assert.deepStrictEqual(result.evidence,expected);
+ const composed=evaluateCamoufoxReleasePreflight(candidate,
+  gates.map(item=>item.id===result.id?result:item),now);
+ result.evidence.push('later.json');
+ assert.deepStrictEqual(composed.gates.find(item=>item.id===result.id).evidence,expected);
+ assert(!JSON.stringify(composed).includes('availableRatio'));
+});
+for(const status of ['NOT_RUN','FAIL','BLOCKED','UNKNOWN',null]){
+ test('resource capacity blocks an explicit nonpassing report status of '+status,()=>{
+  const entries=resourceEntries();
+  entries[0].report.status=status;
+  assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+ });
+}
+test('resource capacity accepts an explicit passing report status',()=>{
+ const entries=resourceEntries();
+ entries[0].report.status='PASS';
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'PASS');
 });
 for(const row of REQUIRED_RESOURCE_MATRIX) test(`resource capacity blocks missing ${row.ramGiB}GiB-${row.workload}-c${row.concurrency}`,()=>{
  const entries=resourceEntries().filter(entry=>{
@@ -1345,7 +1369,8 @@ process.on('exit',()=>{if([...reads.values()].some(count=>count!==1))process.exi
 
   test('CLI accepts existing owner receipts whose basenames cannot be reported',()=>{
    for(const [publisherName,cleanName] of [
-    ['owner review.json','192.0.2.1.json'],['account-list.json','proxy.qa-domain.example.json']
+    ['owner review.json','192.0.2.1.json'],['account-list.json','proxy.qa-domain.example.json'],
+    ['proxy01.json','customerAccountName.json']
    ]){
     const publisher=path.join(root,publisherName);
     const clean=path.join(root,cleanName);
@@ -1520,7 +1545,10 @@ BundledEngineManager.prototype.verify=function(){
   });
 
   test('CLI rejects existing indexed files with sensitive basenames',()=>{
-   for(const name of ['proxy.qa-domain.example.json','proxy-report.json','account-list.json']){
+   for(const name of [
+    'proxy.qa-domain.example.json','proxy-report.json','account-list.json','proxy01.json',
+    'account12345.json','customerAccountName.json','qaEndpoint.json','ip01.json'
+   ]){
     const file=path.join(evidence,name);
     fs.copyFileSync(evidenceFile('identity'),file);
     withFileContents(indexFile,JSON.stringify({...index,reports:{...index.reports,identity:name}}),invalid);
