@@ -1,7 +1,9 @@
 'use strict';
 const assert=require('assert');
 const {
- evaluateCamoufoxReleasePreflight,gate,GATE_IDS,validateEvidence
+ evaluateCamoufoxReleasePreflight,gate,GATE_IDS,validateEvidence,
+ evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,
+ evaluateGraphicsFingerprint
 }=require('../src/engine/camoufoxReleasePreflight');
 
 function test(name,run){try{run();}catch(error){console.error(name);throw error;}}
@@ -316,6 +318,179 @@ for(const file of ['/review/deep/..','C:\\review\\deep\\..','/review/identity.js
   /^Error: Invalid Camoufox preflight evidence reference$/);
  });
 }
+
+const installedEnvelope=(kind,result,overrides={})=>({
+ schema:'lhm.camoufox-preflight.evidence.v1',kind,
+ generatedAt:'2026-11-11T04:00:00.000Z',candidate:{...candidate},
+ environment:'windows-installed-engine',result,...overrides
+});
+const gateContext={candidate,now,evidenceName:'C:\\private\\evidence\\gate.json'};
+const identityResult={profiles:[
+ {syntheticId:'SYN-A',launchMatches:true,restartMatches:true,
+  extended:{timezone:'MEASURED',locale:'MEASURED',hardware:'MEASURED'}},
+ {syntheticId:'SYN-B',launchMatches:true,restartMatches:true,
+  extended:{timezone:'MEASURED',locale:'MEASURED',hardware:'UNSUPPORTED'}}
+]};
+const isolationResult={
+ baseline:'PASS',concurrentCrossWrite:'PASS',snapshotRestore:'PASS',
+ configBackupRestore:'PASS',httpCache:'PASS',faviconCache:'PASS'
+};
+const crashResult={
+ idleFlush:{status:'PASS',idleMs:10000},
+ shortCrash:{status:'PASS',idleMs:1500}
+};
+const graphicsResult={
+ headful:true,realGpu:true,
+ profiles:[
+  {vendorCompared:2,rendererCompared:2,vendorMatches:true,rendererMatches:true,
+   canvas:'MEASURED',offlineAudio:'MEASURED',font:{status:'MEASURED',claim:'probe-only'}},
+  {vendorCompared:2,rendererCompared:2,vendorMatches:true,rendererMatches:true,
+   canvas:'MEASURED',offlineAudio:'MEASURED',font:{status:'MEASURED',claim:'probe-only'}}
+ ]
+};
+const detachedGate=(evaluator,kind,result,changes={})=>evaluator(
+ installedEnvelope(kind,result,changes),gateContext);
+
+test('configured identity accepts two distinct measured synthetic identities',()=>{
+ const result=detachedGate(evaluateConfiguredIdentity,'identity',identityResult);
+ assert.deepStrictEqual(result,gate('configured-identity','PASS',result.reason,'gate.json'));
+ assert.strictEqual(result.evidence,'gate.json');
+ assert(!JSON.stringify(result).includes('SYN-'));
+});
+for(const [label,mutate] of [
+ ['duplicate IDs',r=>r.profiles[1].syntheticId=r.profiles[0].syntheticId],
+ ['launch mismatch',r=>r.profiles[0].launchMatches=false],
+ ['restart mismatch',r=>r.profiles[1].restartMatches=false],
+ ['extended blocked',r=>r.profiles[0].extended.timezone='BLOCKED'],
+ ['invalid extended value',r=>r.profiles[1].extended.locale='NOT_MEASURED'],
+ ['empty extended points',r=>r.profiles[0].extended={}],
+ ['missing profile',r=>r.profiles.pop()],
+ ['extra profile',r=>r.profiles.push({...r.profiles[0],syntheticId:'SYN-C'})],
+ ['empty synthetic ID',r=>r.profiles[0].syntheticId='']
+]) test('configured identity blocks '+label,()=>{
+ const result=detachedGate(evaluateConfiguredIdentity,'identity',(()=>{
+  const copy=JSON.parse(JSON.stringify(identityResult));mutate(copy);return copy;
+ })());
+ assert.strictEqual(result.id,'configured-identity');
+ assert.strictEqual(result.status,'BLOCKED');
+ assert(!result.reason.includes('SYN-'));
+});
+
+test('configured identity blocks a wrong candidate and stale evidence through validateEvidence',()=>{
+ for(const changes of [
+  {candidate:{...candidate,commit:'b'.repeat(40)}},
+  {generatedAt:'2026-10-01T00:00:00.000Z'}
+ ]) assert.strictEqual(detachedGate(evaluateConfiguredIdentity,'identity',identityResult,changes).status,'BLOCKED');
+});
+
+test('storage isolation accepts exactly the six required passing conditions',()=>{
+ const result=detachedGate(evaluateStorageIsolation,'isolation',isolationResult);
+ assert.strictEqual(result.status,'PASS');
+ assert.strictEqual(result.id,'storage-isolation');
+ assert.strictEqual(result.evidence,'gate.json');
+});
+for(const condition of ['baseline','concurrentCrossWrite','snapshotRestore',
+ 'configBackupRestore','httpCache','faviconCache']){
+ test('storage isolation blocks a non-PASS '+condition,()=>{
+  for(const value of ['NOT_RUN','FAIL',null,1]){
+   const input={...isolationResult,[condition]:value};
+   const result=detachedGate(evaluateStorageIsolation,'isolation',input);
+   assert.strictEqual(result.status,'BLOCKED');
+   assert(!result.reason.includes('null'));
+  }
+ });
+}
+for(const [label,change] of [
+ ['missing condition',r=>delete r.baseline],
+ ['extra condition',r=>r.unlisted='PASS'],
+ ['non-enumerable extra condition',r=>Object.defineProperty(r,'hidden',{value:'PASS'})],
+ ['array conditions',r=>r.baseline=['PASS']]
+]) test('storage isolation blocks '+label,()=>{
+ const input={...isolationResult};change(input);
+ assert.strictEqual(detachedGate(evaluateStorageIsolation,'isolation',input).status,'BLOCKED');
+});
+test('storage isolation blocks wrong-candidate and stale evidence',()=>{
+ for(const changes of [
+  {candidate:{...candidate,installerSha256:'e'.repeat(64)}},
+  {generatedAt:'2026-10-01T00:00:00.000Z'}
+ ]) assert.strictEqual(detachedGate(evaluateStorageIsolation,'isolation',isolationResult,changes).status,'BLOCKED');
+});
+
+test('crash durability accepts regular idle-flush and short-crash PASS',()=>{
+ const result=detachedGate(evaluateCrashDurability,'crash',crashResult);
+ assert.strictEqual(result.status,'PASS');
+ assert.strictEqual(result.id,'crash-durability');
+ assert.strictEqual(result.evidence,'gate.json');
+});
+test('crash durability accepts and names only the bounded localStorage known finding',()=>{
+ const result=detachedGate(evaluateCrashDurability,'crash',{
+  idleFlush:{status:'PASS',idleMs:10000},
+  shortCrash:{status:'KNOWN_FINDING',idleMs:1500,
+   revertedFields:['localStorage'],aLocalStorageEqualsPriorCommitted:true,
+   allOtherAFieldsPersisted:true,allBFieldsUnchanged:true,crossedProfileMarkers:0}
+ });
+ assert.strictEqual(result.status,'PASS');
+ assert.match(result.reason,/bounded 1\.5-second localStorage finding/i);
+});
+for(const [label,change] of [
+ ['extra reverted A field',r=>r.shortCrash.revertedFields.push('cookieJar')],
+ ['missing reverted A field',r=>delete r.shortCrash.revertedFields],
+ ['different reverted A field',r=>r.shortCrash.revertedFields=['sessionStorage']],
+ ['localStorage not prior committed',r=>r.shortCrash.aLocalStorageEqualsPriorCommitted=false],
+ ['missing other A persistence',r=>r.shortCrash.allOtherAFieldsPersisted=false],
+ ['changed B field',r=>r.shortCrash.allBFieldsUnchanged=false],
+ ['crossed marker',r=>r.shortCrash.crossedProfileMarkers=1],
+ ['extra known-finding key',r=>r.shortCrash.note='broader issue'],
+ ['missing known-finding key',r=>delete r.shortCrash.allBFieldsUnchanged],
+ ['wrong short idle time',r=>r.shortCrash.idleMs=2000],
+ ['wrong idle-flush time',r=>r.idleFlush.idleMs=9000],
+ ['idle-flush failure',r=>r.idleFlush.status='FAIL'],
+ ['broader short-crash failure',r=>r.shortCrash.status='FAIL']
+]) test('crash durability blocks '+label,()=>{
+ const input={idleFlush:{status:'PASS',idleMs:10000},shortCrash:{
+  status:'KNOWN_FINDING',idleMs:1500,revertedFields:['localStorage'],
+  aLocalStorageEqualsPriorCommitted:true,allOtherAFieldsPersisted:true,
+  allBFieldsUnchanged:true,crossedProfileMarkers:0
+ }};
+ change(input);
+ assert.strictEqual(detachedGate(evaluateCrashDurability,'crash',input).status,'BLOCKED');
+});
+test('crash durability blocks wrong-candidate and stale evidence',()=>{
+ for(const changes of [
+  {candidate:{...candidate,engineVersion:'156.0.2'}},
+  {generatedAt:'2026-10-01T00:00:00.000Z'}
+ ]) assert.strictEqual(detachedGate(evaluateCrashDurability,'crash',crashResult,changes).status,'BLOCKED');
+});
+
+test('graphics fingerprint accepts headful real GPU with two complete profiles',()=>{
+ const result=detachedGate(evaluateGraphicsFingerprint,'graphics',graphicsResult);
+ assert.strictEqual(result.status,'PASS');
+ assert.strictEqual(result.id,'graphics-fingerprint');
+ assert.strictEqual(result.evidence,'gate.json');
+});
+for(const [label,change] of [
+ ['headless mode',r=>r.headful=false],
+ ['software graphics',r=>r.realGpu=false],
+ ['one profile',r=>r.profiles.pop()],
+ ['extra profile',r=>r.profiles.push({...r.profiles[0]})],
+ ['vendor compared count',r=>r.profiles[0].vendorCompared=1],
+ ['renderer compared count',r=>r.profiles[1].rendererCompared=3],
+ ['vendor mismatch',r=>r.profiles[0].vendorMatches=false],
+ ['renderer mismatch',r=>r.profiles[1].rendererMatches=false],
+ ['unmeasured canvas',r=>r.profiles[0].canvas='NOT_RUN'],
+ ['unmeasured offline audio',r=>r.profiles[1].offlineAudio='UNSUPPORTED'],
+ ['unmeasured font probe',r=>r.profiles[0].font.status='NOT_RUN'],
+ ['inventory-style font claim',r=>r.profiles[1].font.claim='full-inventory']
+]) test('graphics fingerprint blocks '+label,()=>{
+ const input=JSON.parse(JSON.stringify(graphicsResult));change(input);
+ assert.strictEqual(detachedGate(evaluateGraphicsFingerprint,'graphics',input).status,'BLOCKED');
+});
+test('graphics fingerprint blocks wrong-candidate and stale evidence',()=>{
+ for(const changes of [
+  {candidate:{...candidate,engineSha256:'f'.repeat(64)}},
+  {generatedAt:'2026-10-01T00:00:00.000Z'}
+ ]) assert.strictEqual(detachedGate(evaluateGraphicsFingerprint,'graphics',graphicsResult,changes).status,'BLOCKED');
+});
 
 test('prints only the required success line',()=>{});
 console.log('Camoufox release preflight evaluator PASS');

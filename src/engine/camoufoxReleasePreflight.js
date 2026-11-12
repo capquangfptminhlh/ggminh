@@ -162,6 +162,89 @@ function sanitizeEvidence(evidence){
  return evidence;
 }
 
+function exactKeys(value,keys){
+ return value&&typeof value==='object'&&!Array.isArray(value)&&
+  Reflect.ownKeys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
+}
+
+function gateEvidenceName(evidenceName){
+ return evidenceName==null?null:evidenceBasename(evidenceName);
+}
+
+function evaluateEvidenceGate(envelope,{candidate,now=new Date(),evidenceName}={},id,kind,check,passReason){
+ const checked=validateEvidence(envelope,{candidate,kind,now,requireInstalled:true});
+ const evidence=gateEvidenceName(evidenceName);
+ if(checked.status==='BLOCKED')return gate(id,'BLOCKED',checked.reason,evidence);
+ if(!check(checked.result))return gate(id,'BLOCKED',`${id} evidence did not satisfy the required checks`,evidence);
+ return gate(id,'PASS',typeof passReason==='function'?passReason(checked.result):passReason,evidence);
+}
+
+function evaluateConfiguredIdentity(envelope,options={}){
+ return evaluateEvidenceGate(envelope,options,'configured-identity','identity',result=>{
+  if(!exactKeys(result,['profiles'])||!Array.isArray(result.profiles)||result.profiles.length!==2)return false;
+  const ids=new Set();
+  for(const profile of result.profiles){
+   if(!profile||typeof profile!=='object'||Array.isArray(profile)||
+    typeof profile.syntheticId!=='string'||!profile.syntheticId.trim()||ids.has(profile.syntheticId)||
+    profile.launchMatches!==true||profile.restartMatches!==true||
+    !profile.extended||typeof profile.extended!=='object'||Array.isArray(profile.extended))return false;
+   ids.add(profile.syntheticId);
+   const points=Reflect.ownKeys(profile.extended);
+   if(!points.length||points.some(point=>!['MEASURED','UNSUPPORTED','BLOCKED'].includes(profile.extended[point])||
+    profile.extended[point]==='BLOCKED'))return false;
+  }
+  return true;
+ },'Two distinct synthetic identities matched launch and restart checks');
+}
+
+const ISOLATION_CONDITIONS=Object.freeze([
+ 'baseline','concurrentCrossWrite','snapshotRestore','configBackupRestore','httpCache','faviconCache'
+]);
+
+function evaluateStorageIsolation(envelope,options={}){
+ return evaluateEvidenceGate(envelope,options,'storage-isolation','isolation',result=>
+  exactKeys(result,ISOLATION_CONDITIONS)&&ISOLATION_CONDITIONS.every(condition=>result[condition]==='PASS'),
+ 'All six required storage isolation conditions passed');
+}
+
+function evaluateCrashDurability(envelope,options={}){
+ return evaluateEvidenceGate(envelope,options,'crash-durability','crash',result=>{
+  if(!exactKeys(result,['idleFlush','shortCrash'])||
+   !exactKeys(result.idleFlush,['status','idleMs'])||result.idleFlush.status!=='PASS'||result.idleFlush.idleMs!==10000||
+   !result.shortCrash||typeof result.shortCrash!=='object'||Array.isArray(result.shortCrash))return false;
+  if(exactKeys(result.shortCrash,['status','idleMs'])&&
+   result.shortCrash.status==='PASS'&&result.shortCrash.idleMs===1500)return true;
+  return exactKeys(result.shortCrash,[
+   'status','idleMs','revertedFields','aLocalStorageEqualsPriorCommitted',
+   'allOtherAFieldsPersisted','allBFieldsUnchanged','crossedProfileMarkers'
+  ])&&result.shortCrash.status==='KNOWN_FINDING'&&result.shortCrash.idleMs===1500&&
+   Array.isArray(result.shortCrash.revertedFields)&&result.shortCrash.revertedFields.length===1&&
+   result.shortCrash.revertedFields[0]==='localStorage'&&
+   result.shortCrash.aLocalStorageEqualsPriorCommitted===true&&
+   result.shortCrash.allOtherAFieldsPersisted===true&&result.shortCrash.allBFieldsUnchanged===true&&
+   result.shortCrash.crossedProfileMarkers===0;
+ },result=>result.shortCrash.status==='KNOWN_FINDING'?
+  'The 10-second idle-flush recovery passed; the bounded 1.5-second localStorage finding was observed':
+  'The 10-second idle-flush recovery and 1.5-second crash recovery passed');
+}
+
+/* Graphics result schema: {headful,realGpu,profiles:[{vendorCompared,rendererCompared,
+ * vendorMatches,rendererMatches,canvas,offlineAudio,font:{status,claim}}]}. Font is probe-only;
+ * these checks do not establish a complete font inventory.
+ */
+function evaluateGraphicsFingerprint(envelope,options={}){
+ return evaluateEvidenceGate(envelope,options,'graphics-fingerprint','graphics',result=>{
+  if(!exactKeys(result,['headful','realGpu','profiles'])||result.headful!==true||result.realGpu!==true||
+   !Array.isArray(result.profiles)||result.profiles.length!==2)return false;
+  return result.profiles.every(profile=>profile&&typeof profile==='object'&&!Array.isArray(profile)&&
+   profile.vendorCompared===2&&profile.rendererCompared===2&&
+   profile.vendorMatches===true&&profile.rendererMatches===true&&
+   profile.canvas==='MEASURED'&&profile.offlineAudio==='MEASURED'&&
+   exactKeys(profile.font,['status','claim'])&&profile.font.status==='MEASURED'&&
+   profile.font.claim==='probe-only');
+ },'Headful real-GPU checks matched both profiles; canvas and audio were measured and font was probe-only');
+}
+
 function finalize(candidate,gates,generatedAt){
  const ordered=GATE_IDS.map(id=>gates.find(item=>item&&item.id===id));
  if(ordered.some(item=>!item))throw Error('Camoufox preflight omitted a required gate');
@@ -195,4 +278,5 @@ function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
  return finalize(projectCandidate(candidate),sanitizedGates,preflightTime(now).toISOString());
 }
 
-module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight};
+module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,
+ evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,evaluateGraphicsFingerprint};
