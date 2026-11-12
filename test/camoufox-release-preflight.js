@@ -1343,8 +1343,14 @@ BundledEngineManager.prototype.verify=function(){
     const bad={...index,reports:{...index.reports,identity:name}};
     withFileContents(indexFile,JSON.stringify(bad),invalid);
    }
-   const longer={...index,reports:{...index.reports,resources:[...index.reports.resources,'resource-extra.json']}};
-   withFileContents(indexFile,JSON.stringify(longer),invalid);
+   const extra='resource-extra.json';
+   fs.copyFileSync(path.join(evidence,index.reports.resources[0]),path.join(evidence,extra));
+   const longer={...index,reports:{...index.reports,resources:[...index.reports.resources,extra]}};
+   withFileContents(indexFile,JSON.stringify(longer),()=>{
+    const result=runCli(args);
+    expectCliError(result);
+    assert.strictEqual(result.stderr,'Camoufox release preflight: input or verification failed\n');
+   });
    const duplicate={...index,reports:{...index.reports,
     resources:[index.reports.resources[1].toUpperCase(),...index.reports.resources.slice(1)]}};
    withFileContents(indexFile,JSON.stringify(duplicate),invalid);

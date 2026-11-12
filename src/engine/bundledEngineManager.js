@@ -7,6 +7,7 @@
 const crypto=require('crypto');
 const fs=require('fs');
 const path=require('path');
+const {TextDecoder}=require('node:util');
 const {PUBLIC_KEY}=require('../licensing/manager');
 const {inspectBinary}=require('./runtimeRegistry');
 
@@ -14,9 +15,11 @@ const DOMAIN='LHM_BROWSER_ENGINE_BUNDLE_V1\n';
 const SHA=/^[a-f0-9]{64}$/;
 const VERSION=/^\d{1,3}\.\d{1,5}\.\d{1,5}(?:\.\d{1,6})?$/;
 const MAX_FILES=10000;
+const MAX_MANIFEST_BYTES=1024n*1024n;
 const MAX_FILE_SIZE=512*1024*1024;
 const MAX_TOTAL_SIZE=3*1024*1024*1024;
 const MAX_KEY_SCAN_SIZE=1024*1024;
+const manifestUtf8=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true});
 const PRIVATE_KEY_MARKERS=[
  '-----BEGIN PRIVATE KEY-----',
  '-----BEGIN RSA PRIVATE KEY-----',
@@ -114,6 +117,29 @@ function checkNoLinks(root,filename){
  }
  return target;
 }
+function readEngineManifest(filename){
+ const stat=fs.lstatSync(filename,{bigint:true});
+ if(!stat.isFile()||stat.isSymbolicLink()||stat.size===0n)throw Error('Invalid engine manifest file');
+ if(stat.size>MAX_MANIFEST_BYTES)throw Error('Engine manifest exceeds 1 MB');
+ const size=Number(stat.size);
+ const fd=fs.openSync(filename,'r');
+ try{
+  function matchesStat(){
+   const opened=fs.fstatSync(fd,{bigint:true});
+   return opened.isFile()&&opened.dev===stat.dev&&opened.ino===stat.ino&&opened.size===stat.size;
+  }
+  if(!matchesStat())throw Error('Engine manifest changed during verification');
+  const bytes=Buffer.allocUnsafe(size+1);
+  let length=0;
+  while(length<bytes.length){
+   const count=fs.readSync(fd,bytes,length,bytes.length-length,null);
+   if(count===0)break;
+   length+=count;
+  }
+  if(length!==size||!matchesStat())throw Error('Engine manifest changed during verification');
+  return JSON.parse(manifestUtf8.decode(bytes.subarray(0,length)));
+ }finally{fs.closeSync(fd);}
+}
 function sha256File(filename){
  const fd=fs.openSync(filename,'r');
  const h=crypto.createHash('sha256');
@@ -168,10 +194,7 @@ class BundledEngineManager{
  verify(){
   if(this.platform!=='win32')throw Error('Bundled engine release currently supports Windows only');
   const manifestFile=checkNoLinks(this.root,path.join(this.root,'manifest.json'));
-  if(!fs.lstatSync(manifestFile).isFile())throw Error('Invalid engine manifest file');
-  if(fs.statSync(manifestFile).size>1024*1024)
-   throw Error('Engine manifest exceeds 1 MB');
-  const doc=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
+  const doc=readEngineManifest(manifestFile);
   if(!doc||Object.keys(doc).sort().join(',')!=='engine,entry,files,schema,signature,version')
    throw Error('Unexpected engine manifest fields');
   if(doc.engine!==this.engine)throw Error('Unexpected engine type in release manifest');
