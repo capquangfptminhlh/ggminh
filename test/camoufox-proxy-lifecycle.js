@@ -24,7 +24,7 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
   return child;
  };
  const adapter=new CamoufoxAdapter(root,{
-  platform:'win32',allowProxyLab:true,spawnProcess,windowProbe:async()=>true,
+  platform:'win32',labProxyOverride:true,spawnProcess,windowProbe:async()=>true,
   closeWindow:async pid=>{
    children.find(child=>child.pid===pid).kill();return true;
   },
@@ -44,7 +44,7 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
    platform:'win32',bundleVerifier:adapter.bundleVerifier,spawnProcess,
    windowProbe:async()=>true,prepareProxy:async()=>{throw Error('Should not configure');}
   });
-  await assert.rejects(()=>disabled.start(profile),/approved proxy\/DNS\/WebRTC lab/);
+  await assert.rejects(()=>disabled.start(profile),/not approved for manual release/);
   assert.strictEqual(spawned,0,'Unapproved proxy never reaches process creation');
   const instance=await adapter.start(profile);
   assert.strictEqual(instance.proxyMode,'authenticated-connect');
@@ -59,7 +59,7 @@ const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
   assert.strictEqual(adapter.isBusy(profile.id),false);
   assert.strictEqual(closed,1,'Exit must close local gateway exactly once');
   const denied=new CamoufoxAdapter(root,{
-   platform:'win32',allowProxyLab:true,spawnProcess,windowProbe:async()=>true,
+   platform:'win32',labProxyOverride:true,spawnProcess,windowProbe:async()=>true,
    bundleVerifier:adapter.bundleVerifier,
    prepareProxy:async()=>{throw Error('Bad proxy credentials');}
   });

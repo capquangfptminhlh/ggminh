@@ -269,6 +269,12 @@
           <div id="lhm-dashboard-groups" class="lhm-dashboard-groups"><p class="lhm-empty">Đang tải danh sách nhóm…</p></div>
           <p class="lhm-panel-note">Thanh hiển thị số hồ sơ đang hoạt động so với tổng số của từng nhóm.</p>
         </article>
+        <article class="lhm-dash-panel lhm-resource-panel">
+          <div class="lhm-panel-heading"><div><span class="lhm-eyebrow">Tài nguyên trên máy</span><h3>Resource Guard</h3></div><span id="lhm-resource-sample">Chưa đo</span></div>
+          <div class="lhm-proxy-readings"><div><span>Tổng RAM</span><strong id="lhm-resource-total">—</strong></div><div><span>RAM khả dụng</span><strong id="lhm-resource-available">—</strong></div><div><span>PID trình duyệt</span><strong id="lhm-resource-processes">—</strong></div></div>
+          <div id="lhm-resource-profiles" class="lhm-activity-list"><p class="lhm-empty">Đang đọc cây tiến trình cục bộ…</p></div>
+          <p class="lhm-panel-note">Chỉ đo cục bộ theo cây tiến trình. Không lưu lịch sử và không gửi dữ liệu lên máy chủ.</p>
+        </article>
       </div>
       <div class="lhm-dashboard-bottom">
         <div class="lhm-bottom-left"><strong>LHM WORKSPACE</strong><span>Thiết kế để quản trị minh bạch, dữ liệu trên máy của bạn.</span></div>
@@ -605,14 +611,14 @@
           <label for="engine-gecko-provider">Nguồn Firefox / Gecko</label>
           <select id="engine-gecko-provider">
             <option value="firefox">Firefox cài trên máy (mặc định)</option>
-            <option value="camoufox">Camoufox · Provider thử nghiệm, cần cài riêng</option>
+            <option value="camoufox">Camoufox · Module nâng cao, cần cài riêng</option>
           </select>
           <p id="engine-gecko-result" role="status" aria-live="polite">Chưa kiểm tra Camoufox.</p>
           <button type="button" class="btn btn-secondary" id="engine-gecko-save">Áp dụng nguồn Firefox</button>
           <p class="lhm-bulk-help" id="camoufox-install-info" role="status" aria-live="polite">Kiểm tra bản Camoufox đã ký…</p>
           <button type="button" class="btn btn-secondary" id="camoufox-install-button" disabled>Cài đặt Camoufox được xác minh</button>
         </div>
-        <p class="lhm-bulk-help">Camoufox native chạy bằng tiến trình Windows riêng, chỉ phục vụ duyệt web thủ công. Chỉ dùng tham số Firefox đã công bố cho profile và URL; proxy có mật khẩu chỉ thử nghiệm khi bật chế độ lab, qua gateway HTTPS CONNECT của Firefox. Chưa xác minh DNS/WebRTC, GeoIP tự động hoặc Automation Studio. Chỉ cài khi người dùng xác nhận và bản phát hành đã được LHM ký riêng. Không chuyển/xóa khóa Firefox thủ công. Đổi nguồn chỉ thực hiện khi đã đóng tất cả browser.</p>
+        <p class="lhm-bulk-help">Camoufox native chạy bằng tiến trình Windows riêng và chỉ phục vụ duyệt web thủ công. Engine phải có chữ ký publisher riêng; proxy có mật khẩu chỉ được mở cho đúng phiên bản đã có bằng chứng nghiệm thu, qua gateway loopback và Proxy Vault. Không fallback sang direct hoặc Firefox. GeoIP tự động, Playwright và Automation Studio không được bật trong bản khách. Không chuyển/xóa khóa Firefox thủ công. Đổi nguồn chỉ thực hiện khi đã đóng tất cả browser.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="engine-source-refresh">Kiểm tra lại</button>
@@ -2074,7 +2080,7 @@ run();
     </div>
   </div>
 
-  
+
   <!-- Modal: Trung tâm Ads (Google & Facebook) -->
   <div class="modal-overlay" id="modal-ads-hub">
     <div class="modal-dialog modal-lg lhm-ads-hub-dialog" role="dialog" aria-modal="true" aria-labelledby="ads-hub-title">
@@ -2132,6 +2138,7 @@ run();
     </div>
   </div>
   <script src="icons.js"></script>
+  <script src="licenseBlockMessage.js"></script>
   <script src="profilePagination.js"></script>
   <script src="profileStatusPoller.js"></script>
   <script src="profileSignalCoverage.js"></script>

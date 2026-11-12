@@ -41,11 +41,11 @@ class EngineFactory{
    this.adapters.chromium.launcher.store.getSettings());
   if(engineType==='camoufox'){
    const launcher=this.adapters.camoufox.launcher;
-   const lab=launcher.camoufoxPlaywrightController?.enabled===true
-     ?launcher.camoufoxPlaywrightController.labApproved
-     :launcher.camoufoxAdapter?.allowProxyLab===true;
+   const approvedProxyTypes=launcher.camoufoxPlaywrightController?.enabled===true
+     ?launcher.camoufoxPlaywrightController.labApproved===true?['http','socks5']:[]
+     :launcher.camoufoxAdapter?.approvedProxyTypes?.()||[];
    const report=NetworkSafetyCheck.evaluate(profile,{
-    labApproved:lab,store:launcher.store,proxyVault:launcher.proxyVault
+    approvedProxyTypes,store:launcher.store,proxyVault:launcher.proxyVault
    });
    if(!report.safeToLaunch){
     const error=new Error('NETWORK_BLOCKED: '+report.reason);

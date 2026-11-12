@@ -161,13 +161,15 @@ const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => s
     'raw English runtime reason must be translated, got: ' + notReadyText);
   assert.ok(notReadyText.includes('liên hệ'), 'not-ready guidance must give a next step');
 
-  installStatus = { available: false, alreadyInstalled: true, runtime: { ready: true } };
+  installStatus = { available: false, alreadyInstalled: true,
+    runtime: { ready: true, manualReady: true } };
   await engineElement('engine-source-refresh').click();
   await flush();
   assert.ok(engineElement('camoufox-install-info').textContent.includes('tạo hồ sơ Camoufox'),
     'installed state must tell the user they can create Camoufox profiles now');
 
-  installStatus = { available: true, version: '156.0.1', alreadyInstalled: false, runtime: { ready: true } };
+  installStatus = { available: true, version: '156.0.1', alreadyInstalled: false,
+    runtime: { ready: false, manualReady: false, canInstall: true } };
   await engineElement('engine-source-refresh').click();
   await flush();
   assert.ok(engineElement('camoufox-install-info').textContent.includes('Bấm nút cài đặt bên dưới'),

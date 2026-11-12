@@ -53,19 +53,28 @@ window.addEventListener('DOMContentLoaded',()=>{
    const availability=await window.api.camoufoxInstallStatus();
    releaseAvailable=availability.available&&!availability.alreadyInstalled;
    installButton.disabled=busy||!releaseAvailable;
-   installInfo.textContent=!availability.runtime?.ready?
-     camoufoxRuntimeGuidance(availability.runtime.reason):
-     availability.alreadyInstalled?
+   installInfo.textContent=availability.alreadyInstalled?
+     availability.runtime?.manualReady?
        'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng. '+
        'Bạn có thể tạo hồ sơ Camoufox; ứng dụng sẽ thử cấp danh tính đã ghim khi tạo hồ sơ.':
+       camoufoxRuntimeGuidance(availability.runtime?.reason):
+     !availability.runtime?.canInstall?
+       camoufoxRuntimeGuidance(availability.runtime?.reason):
      availability.available?'Có bản Camoufox được LHM ký số: '+availability.version+
        '. Bấm nút cài đặt bên dưới để bắt đầu; ứng dụng sẽ hỏi xác nhận riêng trước khi tải.':
        'Chưa có bản Camoufox được LHM ký và phê duyệt; nút cài đặt chưa khả dụng. '+
        'Hãy liên hệ bên bán để nhận bản phát hành đã ký. Trong lúc chờ, hồ sơ Chromium và Firefox vẫn dùng được.';
    geckoResult.textContent=camoufox.ready?
-     'Camoufox EXE đã xác minh chữ ký · '+camoufox.version+
-       '. Chỉ mở cửa sổ thủ công; không có Playwright hoặc proxy/GeoIP tự động.':
-     'Camoufox chưa sẵn sàng: cần EXE Windows được LHM ký riêng và xác minh SHA-256. Không yêu cầu Node 22; proxy chỉ thử nghiệm trong lab, chưa hỗ trợ Automation Studio.';
+     'Camoufox EXE đã xác minh chữ ký · '+camoufox.version+'. Cửa sổ thủ công sẵn sàng. '+
+       (camoufox.approvedProxyTypes?.length===2?
+        'Proxy HTTP/SOCKS5 đã nghiệm thu cho phiên bản này.':
+        camoufox.approvedProxyTypes?.length?
+         'Proxy '+camoufox.approvedProxyTypes.join('/').toUpperCase()+' đã nghiệm thu cho phiên bản này.':
+         'Proxy chưa được duyệt cho phiên bản engine này.')+
+       ' Không có Playwright hoặc Automation Studio.':
+     'Camoufox chưa sẵn sàng: '+(camoufox.note||
+       'cần EXE Windows được ký riêng và capability đúng phiên bản.')+
+       ' Không yêu cầu Node 22; không fallback sang Firefox hoặc direct.';
    result.textContent=bundle.valid?
     'Engine đóng gói hợp lệ · phiên bản '+bundle.version+
      ' · '+bundle.fileCount+' tệp · SHA-256: '+bundle.sha256.slice(0,16)+'…':
@@ -127,7 +136,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{
    const data=await window.api.selectCamoufoxProvider(provider);
    geckoResult.textContent=data.provider==='camoufox'?
-    'Đã chọn Camoufox chạy trực tiếp (preview). Chỉ duyệt web thủ công với profile native/direct.':
+    'Đã chọn Camoufox chạy trực tiếp. Chỉ duyệt web thủ công; proxy chỉ mở khi đúng phiên bản đã nghiệm thu.':
     'Đã trở về Firefox đã cài trên máy.';
   }catch(error){geckoResult.textContent='Không đổi được provider: '+error.message+
    '. Hãy đóng toàn bộ trình duyệt đang mở rồi thử lại.';}

@@ -18,7 +18,8 @@ const { cdpAllowed } = require('../security/cdpPolicy');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null,
-    stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory } = {}) {
+    stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory,
+    resourceGuard = null } = {}) {
     this.store = store;
     this.proxyVault = proxyVault;
     this.extensionManager = extensionManager;
@@ -35,6 +36,8 @@ class BrowserLauncher {
     // shared OS Downloads folder. main.js points this at the user's
     // Downloads/LHM Ads Browser; the default keeps files under app data.
     this.customDownloadsRoot = downloadsRoot;
+    this.resourceGuard = resourceGuard;
+    this.lastResourceAssessment = null;
     this.engineFactory=new EngineFactory(this);
   }
 
@@ -102,9 +105,9 @@ class BrowserLauncher {
     return this.pendingStarts.has(profileId) || this.activeProcesses.has(profileId);
   }
 
-  async start(profileId, customUrl = null) {
+  async start(profileId, customUrl = null, options = {}) {
     if (this.pendingStarts.has(profileId)) return this.pendingStarts.get(profileId);
-    const task = this._startInternal(profileId, customUrl);
+    const task = this._startInternal(profileId, customUrl, options);
     this.pendingStarts.set(profileId, task);
     try { return await task; }
     finally {
@@ -112,7 +115,7 @@ class BrowserLauncher {
     }
   }
 
-  async _startInternal(profileId, customUrl = null) {
+  async _startInternal(profileId, customUrl = null, options = {}) {
     if (this.activeProcesses.get(profileId)?.stopping) throw new Error('Hồ sơ đang đóng, vui lòng đợi tiến trình thoát');
     if (this.activeProcesses.has(profileId)) {
       return {
@@ -147,6 +150,23 @@ class BrowserLauncher {
       const codes=readiness.issues.filter(issue=>issue.level==='error')
         .map(issue=>issue.code);
       throw Error('Launch readiness blocked: '+codes.join(', '));
+    }
+    // This assessment must stay ahead of engine resolution, authenticated
+    // proxy gateways and process spawn. A missing benchmark is review-only
+    // for an explicitly acknowledged manual launch; all other callers fail
+    // closed until they opt in for that one launch.
+    if(this.resourceGuard?.assess){
+      const assessment=await this.resourceGuard.assess({
+        profile,active:this.listActive()
+      });
+      this.lastResourceAssessment=assessment;
+      if(!assessment?.allowed||
+         (assessment.reviewRequired&&options?.allowResourceReview!==true)){
+        const error=Error(assessment?.reason||'Browser resource assessment blocked launch');
+        error.code=assessment?.code||'RESOURCE_STATUS_INVALID';
+        error.resourceAssessment=assessment||null;
+        throw error;
+      }
     }
     // Resolve provider using the saved per-profile selection. Never fallback
     // from a missing Camoufox release into a different browser engine.

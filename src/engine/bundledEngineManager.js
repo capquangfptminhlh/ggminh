@@ -7,17 +7,19 @@
 const crypto=require('crypto');
 const fs=require('fs');
 const path=require('path');
+const {TextDecoder}=require('node:util');
 const {PUBLIC_KEY}=require('../licensing/manager');
 const {inspectBinary}=require('./runtimeRegistry');
 
 const DOMAIN='LHM_BROWSER_ENGINE_BUNDLE_V1\n';
 const SHA=/^[a-f0-9]{64}$/;
 const VERSION=/^\d{1,3}\.\d{1,5}\.\d{1,5}(?:\.\d{1,6})?$/;
-const RELATIVE=/^[^/\\:*?\x22\x3c\x3e|\0\r\n]+(?:\/[^/\\:*?\x22\x3c\x3e|\0\r\n]+)*$/;
 const MAX_FILES=10000;
+const MAX_MANIFEST_BYTES=1024n*1024n;
 const MAX_FILE_SIZE=512*1024*1024;
 const MAX_TOTAL_SIZE=3*1024*1024*1024;
 const MAX_KEY_SCAN_SIZE=1024*1024;
+const manifestUtf8=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true});
 const PRIVATE_KEY_MARKERS=[
  '-----BEGIN PRIVATE KEY-----',
  '-----BEGIN RSA PRIVATE KEY-----',
@@ -35,12 +37,20 @@ function containsPrivateKeyMaterial(buffer){
  const text=Buffer.isBuffer(buffer)?buffer.toString('latin1'):String(buffer);
  return PRIVATE_KEY_MARKERS.some(marker=>text.includes(marker));
 }
-function fileName(name){
- if(typeof name!=='string'||name.length>240||!RELATIVE.test(name)||
-    name.split('/').some(part=>!part||part==='.'||part==='..'||part.startsWith(' ')||part.endsWith(' ')))
+function normalizeEngineRelativePath(input){
+ if(typeof input!=='string'||!input)throw Error('Unsafe bundled engine relative file path');
+ const name=input;
+ if(name.length>240||name.startsWith('/')||name.includes('\\')||
+    /[\u0000-\u001f\u007f<>:"|?*]/.test(name))
   throw Error('Unsafe bundled engine relative file path');
- return name;
+ const parts=name.split('/');
+ if(parts.some(part=>!part||part==='.'||part==='..'||part.length>180||
+    /[. ]$/.test(part)||
+    /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part)))
+  throw Error('Unsafe bundled engine relative file path');
+ return parts.join('/');
 }
+const fileName=normalizeEngineRelativePath;
 function canonicalManifest(payload){
  if(!payload||typeof payload!=='object'||Array.isArray(payload)||
     Object.keys(payload).sort().join(',')!=='engine,entry,files,schema,version'||
@@ -57,9 +67,11 @@ function canonicalManifest(payload){
      !fileName(f.path)||!SHA.test(f.sha256)||!Number.isSafeInteger(f.bytes)||
      f.bytes<1||f.bytes>MAX_FILE_SIZE)
    throw Error('Invalid bundled engine file at index '+i);
-  if(names.has(f.path.toLowerCase()))throw Error('Duplicate bundled engine file');
-  names.add(f.path.toLowerCase());
-  return {path:f.path,bytes:f.bytes,sha256:f.sha256};
+  const canonical=fileName(f.path);
+  const key=canonical.normalize('NFC').toLowerCase();
+  if(names.has(key))throw Error('Duplicate bundled engine file');
+  names.add(key);
+  return {path:canonical,bytes:f.bytes,sha256:f.sha256};
  });
  if(!names.has(payload.entry.toLowerCase()))
   throw Error('Manifest omits the browser executable');
@@ -74,6 +86,10 @@ function signedPayload(manifest){
  const signed={schema:manifest.schema,engine:manifest.engine,
   version:manifest.version,entry:manifest.entry,files:manifest.files};
  return Buffer.from(DOMAIN+canonicalManifest(signed),'utf8');
+}
+function signedManifestSha256(manifest){
+ return crypto.createHash('sha256').update(signedPayload(manifest)).update('\n')
+  .update(manifest.signature,'ascii').digest('hex');
 }
 function decodeSignature(signature){
  if(typeof signature!=='string'||signature.length>100||
@@ -101,6 +117,29 @@ function checkNoLinks(root,filename){
  }
  return target;
 }
+function readEngineManifest(filename){
+ const stat=fs.lstatSync(filename,{bigint:true});
+ if(!stat.isFile()||stat.isSymbolicLink()||stat.size===0n)throw Error('Invalid engine manifest file');
+ if(stat.size>MAX_MANIFEST_BYTES)throw Error('Engine manifest exceeds 1 MB');
+ const size=Number(stat.size);
+ const fd=fs.openSync(filename,'r');
+ try{
+  function matchesStat(){
+   const opened=fs.fstatSync(fd,{bigint:true});
+   return opened.isFile()&&opened.dev===stat.dev&&opened.ino===stat.ino&&opened.size===stat.size;
+  }
+  if(!matchesStat())throw Error('Engine manifest changed during verification');
+  const bytes=Buffer.allocUnsafe(size+1);
+  let length=0;
+  while(length<bytes.length){
+   const count=fs.readSync(fd,bytes,length,bytes.length-length,null);
+   if(count===0)break;
+   length+=count;
+  }
+  if(length!==size||!matchesStat())throw Error('Engine manifest changed during verification');
+  return JSON.parse(manifestUtf8.decode(bytes.subarray(0,length)));
+ }finally{fs.closeSync(fd);}
+}
 function sha256File(filename){
  const fd=fs.openSync(filename,'r');
  const h=crypto.createHash('sha256');
@@ -118,6 +157,7 @@ function sha256File(filename){
 }
 function listFiles(root){
  const files=[];
+ const names=new Set();
  function visit(directory){
   for(const name of fs.readdirSync(directory)){
    const full=path.join(directory,name);
@@ -126,7 +166,12 @@ function listFiles(root){
    if(stat.isDirectory())visit(full);
    else if(stat.isFile()){
     const rel=path.relative(root,full).split(path.sep).join('/');
-    if(rel!=='manifest.json')files.push(fileName(rel));
+    if(rel!=='manifest.json'){
+     const canonical=fileName(rel);
+     const key=canonical.normalize('NFC').toLowerCase();
+     if(names.has(key))throw Error('Duplicate bundled engine file');
+     names.add(key);files.push(canonical);
+    }
    }else throw Error('Unsupported engine resource file');
    if(files.length>MAX_FILES)throw Error('Too many bundled engine files');
   }
@@ -149,10 +194,7 @@ class BundledEngineManager{
  verify(){
   if(this.platform!=='win32')throw Error('Bundled engine release currently supports Windows only');
   const manifestFile=checkNoLinks(this.root,path.join(this.root,'manifest.json'));
-  if(!fs.lstatSync(manifestFile).isFile())throw Error('Invalid engine manifest file');
-  if(fs.statSync(manifestFile).size>1024*1024)
-   throw Error('Engine manifest exceeds 1 MB');
-  const doc=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
+  const doc=readEngineManifest(manifestFile);
   if(!doc||Object.keys(doc).sort().join(',')!=='engine,entry,files,schema,signature,version')
    throw Error('Unexpected engine manifest fields');
   if(doc.engine!==this.engine)throw Error('Unexpected engine type in release manifest');
@@ -182,7 +224,7 @@ class BundledEngineManager{
   if(binary.sha256!==declared.sha256||binary.bytes!==declared.bytes)
    throw Error('Bundled browser executable changed during verification');
   return {executable,version:doc.version,fileCount:doc.files.length,
-   sha256:declared.sha256,engine:this.engine};
+   sha256:declared.sha256,engine:this.engine,manifestSha256:signedManifestSha256(doc)};
  }
  resolve(engine){
   if(engine!==this.engine)throw Error('Bundled engine not available for this browser family');
@@ -202,6 +244,6 @@ class BundledEngineManager{
   }
  }
 }
-module.exports={BundledEngineManager,canonicalManifest,signedPayload,
- decodeSignature,fileName,listFiles,sha256File,DOMAIN,
+module.exports={BundledEngineManager,canonicalManifest,signedPayload,signedManifestSha256,
+ decodeSignature,fileName,normalizeEngineRelativePath,listFiles,sha256File,DOMAIN,
  containsPrivateKeyMaterial,PRIVATE_KEY_MARKERS};

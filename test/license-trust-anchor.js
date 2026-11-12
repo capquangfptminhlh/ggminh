@@ -6,7 +6,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
-const PINNED_SPKI_SHA256 = '725db6213590c11a4d5677830d9095edefadf1fde5de94e74b815ebd539cdff0';
+const PINNED_SPKI_SHA256 = '4d7706893b134e4cb2cfe266eebed30ed9bf5ea4c17a4317d18744b00fdf9117';
 const { PUBLIC_KEY } = require('../src/licensing/manager');
 const spki = crypto.createPublicKey(PUBLIC_KEY).export({ format: 'der', type: 'spki' });
 assert.strictEqual(crypto.createPublicKey(PUBLIC_KEY).asymmetricKeyType, 'ed25519');

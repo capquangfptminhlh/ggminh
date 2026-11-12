@@ -14,6 +14,26 @@ const { createApiServer } = require('../src/api/server');
     const store=new Store(root);
     const first=store.saveProfile({name:'Customer A',engine:'chromium',proxy:{type:'direct'}});
     const second=store.saveProfile({name:'Customer B',engine:'chromium',proxy:{type:'direct'}});
+    const blockedProfile=store.saveProfile({name:'Resource blocked',engine:'chromium',
+      proxy:{type:'direct'},fingerprint:{mode:'native'}});
+    let blockedSpawnCount=0,engineResolveCount=0,peerGuardCount=0;
+    const blockedLauncher=new BrowserLauncher(store,{
+      spawnProcess:()=>{blockedSpawnCount++;throw Error('must not spawn');},
+      peerGuardFactory:()=>{peerGuardCount++;throw Error('must not open proxy gateway');},
+      resourceGuard:{assess:async()=>({allowed:false,reviewRequired:false,
+        code:'RESOURCE_LIMIT',reason:'Opening another browser would cross the RAM reserve'})}
+    });
+    blockedLauncher.findBrowserBinary=()=>process.execPath;
+    const launchProfile=blockedLauncher.engineFactory.launchProfile.bind(blockedLauncher.engineFactory);
+    blockedLauncher.engineFactory.launchProfile=(...args)=>{
+      engineResolveCount++;
+      return launchProfile(...args);
+    };
+    await assert.rejects(blockedLauncher.start(blockedProfile.id),error=>
+      error.code==='RESOURCE_LIMIT'&&/RAM reserve/.test(error.message));
+    assert.strictEqual(engineResolveCount,0,'Resource block must run before engine resolution');
+    assert.strictEqual(peerGuardCount,0,'Resource block must run before proxy gateway setup');
+    assert.strictEqual(blockedSpawnCount,0,'Resource block must run before browser spawn');
     let spawnCount=0;
     const processes=[];
     const commandLines=[];

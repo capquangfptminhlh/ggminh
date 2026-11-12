@@ -238,7 +238,9 @@ async function extendedProbe(){
   osc.connect(comp);comp.connect(ctx.destination);
   osc.start(0);
   const buffer=await ctx.startRendering();
-  const data=buffer.getChannelData(0);
+  // Avoid reading AudioBuffer's Xray-wrapped channel view directly.
+  const data=new Float32Array(buffer.length);
+  buffer.copyFromChannel(data,0);
   let sum=0;for(let i=4500;i<5000&&i<data.length;i++)sum+=Math.abs(data[i]);
   return {sampleSum:sum.toFixed(8),sampleRate:buffer.sampleRate,length:buffer.length};
  });

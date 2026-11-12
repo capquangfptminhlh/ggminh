@@ -30,6 +30,7 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const crypto=require('node:crypto'),http=require('node:http');
 const {spawnSync}=require('node:child_process');
 const core=require('./core');
+const {queryWindowsProfilePids}=require('./windows-profile-processes');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
 
 const IDS={a:'iso_a',b:'iso_b'};
@@ -207,6 +208,7 @@ async function swFreshPageFallback(page,observation){
 /* ---------------- engine process kill --------------------------------- */
 function pidsForProfileDir(dir){
  const found=[];
+ if(process.platform==='win32')return queryWindowsProfilePids(dir);
  if(process.platform==='linux'){
   for(const entry of fs.readdirSync('/proc')){
    if(!/^\d+$/.test(entry))continue;

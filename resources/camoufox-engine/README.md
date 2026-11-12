@@ -1,3 +1,8 @@
-# Camoufox signed release staging
+# Camoufox signed release metadata
 
-No browser executable ships in this source branch. A licensed Windows Firefox-based Camoufox distribution must be audited, hash-verified and signed with a release manifest before it can be packaged. Staged files go outside app.asar at resources/lhm-camoufox. Never exempt this directory from antivirus scanning. Never store profile session data here.
+The application ships only the Ed25519 publisher public key, the signed HTTPS
+release descriptor and capability policy. The browser executable and detached
+manifest never ship inside the application; installation is explicit and the
+downloaded archive is verified before extraction. Never place a private key,
+browser profile or engine payload in this directory, and never exempt installed
+engine files from antivirus scanning.

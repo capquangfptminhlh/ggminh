@@ -10,10 +10,10 @@ của Hiến pháp, không chép lại số diễn tập.
 
 ## 0. Điều kiện tiên quyết (thiếu một mục = dừng)
 
-- [ ] Quyết định của chủ dự án cho vấn đề **218 tên font** đã chốt
-      bằng văn bản (phương án A/B/C/D trong RUN-REPORT của R6).
-      Chưa chốt → công cụ ký sẽ từ chối cây nguyên trạng và ngày
-      phát hành tắc ở bước 5.
+- [ ] Policy đường dẫn hiện tại đã chạy trên đúng cây upstream: chấp nhận
+      Unicode/dấu cách/ngoặc vuông an toàn, giữ nguyên tên NFD của upstream,
+      đồng thời chặn traversal, device name Windows, symlink và collision sau
+      NFC + lowercase. Không đổi tên font trong ngày phát hành.
 - [ ] Quyết định khóa publisher (QD-02) đã chốt; buổi lễ khóa
       production (mục 1) thực hiện trên máy ngoại tuyến của chủ dự
       án — không dùng lại bất kỳ khóa thử nào của các đợt diễn tập
@@ -60,24 +60,19 @@ của Hiến pháp, không chép lại số diễn tập.
 - Chạy: `node docs/agents/agent-r6/scan-filenames.js <CAY> <THU_MUC_RA>`
   trên cây **nguyên trạng** và lưu `filename-verdicts.tsv` +
   `scan-summary.json` vào hồ sơ phát hành.
-  *Đầu ra kỳ vọng sau khi đã áp phương án ở mục 0:* `fail = 0` và
-  `productionListFiles.ok = true`. Trên cây v156.0.1-beta.36 nguyên
-  trạng, kết quả đúng là `fail = 218` (toàn bộ ở `fonts/`) — thấy
-  con số khác 218 với phiên bản này = upstream đã đổi cây, phải rà
-  soát lại trước khi ký.
+  *Đầu ra kỳ vọng trên cây v156.0.1-beta.36 nguyên trạng:* `fail = 0`,
+  `productionListFiles.ok = true`, 1.579 file. Có 12 tên font NFD được
+  giữ nguyên byte-for-byte; collision sau NFC + lowercase vẫn phải bằng 0.
 - Kiểm tra các giới hạn trong `scan-summary.json`: số file ≤
   10.000; file lớn nhất ≤ 512 MB (diễn tập: 192.123.488 byte);
   tổng ≤ 3 GiB (diễn tập: 2.563.096.877 byte); 0 symlink; 0 trùng
   tên không phân biệt hoa thường. Vượt bất kỳ giới hạn nào = dừng.
 
-## 5. Chuẩn bị cây theo phương án đã chốt (mục 0)
+## 5. Giữ nguyên cây upstream đã kiểm chứng
 
-- Phương án A (đổi tên): áp đúng bảng ánh xạ đã duyệt, quét lại đạt
-  `fail = 0`, tổng byte nội dung không đổi; lưu bảng ánh xạ vào hồ
-  sơ phát hành. *Tín hiệu dừng:* đổi tên làm đổi tổng byte, hoặc
-  phát sinh va chạm tên.
-- Phương án B/C/D: thực hiện theo thiết kế đã duyệt riêng của
-  phương án đó (không improvisation trong ngày phát hành).
+- Không đổi tên, thêm, xóa hoặc sửa file sau khi đối chiếu archive chính thức.
+  Chạy lại cổng mục 4 ngay trước khi ký; mọi sai khác số file, tổng byte,
+  collision hoặc symlink là tín hiệu dừng.
 
 ## 6. Ký manifest (OWNER-RUNBOOK mục 4)
 
@@ -140,7 +135,46 @@ của Hiến pháp, không chép lại số diễn tập.
   (SHA của `camoufox.exe` + SHA của archive), hệ điều hành, cấu
   hình, thời gian, phạm vi đã đo. Thiếu hồ sơ = chưa phát hành.
 
-## 10. Đóng buổi ký
+## 10. Camoufox release preflight — owner review gate
+
+Run this local, read-only check after clean-machine measurements and
+before any capability activation or release approval. Replace each
+`C:\ABSOLUTE_PATH_TO_...` value with the operator's actual absolute path;
+these are command placeholders, not pending work items.
+
+```powershell
+npm run camoufox:release-preflight -- `
+  --resources-dir "C:\ABSOLUTE_PATH_TO\resources\camoufox-engine" `
+  --engine-dir "C:\ABSOLUTE_PATH_TO\installed\camoufox" `
+  --installer "C:\ABSOLUTE_PATH_TO\LHM-Ads-Browser-Preview-Setup.exe" `
+  --evidence-dir "C:\ABSOLUTE_PATH_TO\release-evidence" `
+  --publisher-receipt "C:\ABSOLUTE_PATH_TO\release-evidence\publisher-ceremony.json" `
+  --clean-install-receipt "C:\ABSOLUTE_PATH_TO\release-evidence\clean-install-upgrade.json"
+```
+
+The evidence directory must contain the release evidence index and every
+indexed report required by that index. Supply genuine owner receipts at the
+two receipt paths; if a receipt is absent, the report records
+`MANUAL_REQUIRED`. Keep the original receipts in the evidence directory and
+review their contents independently. Do not create or alter receipts to make
+the check ready.
+
+| Exit | Meaning |
+|---:|---|
+| 0 | `READY_FOR_OWNER_REVIEW` only; this is not a release decision. |
+| 2 | Valid `BLOCKED` and/or `MANUAL_REQUIRED` result, with the JSON report. |
+| 1 | Unsafe or malformed input, or an internal verification input error; no valid report is produced. |
+
+The command runs locally and is read-only. It makes no network requests and
+does not install, launch, sign, download, publish, delete, or edit capabilities.
+It must never edit `resources/camoufox-engine/capabilities.json`. The owner must
+review the JSON report and separately decide whether to approve release or
+activate any capability.
+
+Do not make “100%”, “undetectable”, evasion, advertising account safety, or
+platform non-association claims.
+
+## 11. Đóng buổi ký
 
 - Rút private key khỏi máy ký, trả về két (OWNER-RUNBOOK mục 2/6).
 - Hồ sơ phát hành gồm: descriptor đã đăng, `scan-summary.json` +

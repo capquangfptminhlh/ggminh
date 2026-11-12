@@ -17,16 +17,18 @@ function peFixture(destination){
  try{
   const binary=path.join(base,'camoufox.exe');
   peFixture(binary);
-  const dll=path.join(base,'omni.ja');
+  const dllName='omni-\uFFFD.ja';
+  const dll=path.join(base,dllName);
+  const manifestFile=path.join(base,'manifest.json');
   fs.writeFileSync(dll,'approved engine resource');
   const keys=crypto.generateKeyPairSync('ed25519');
   const release=(engine='camoufox')=>{
-   const files=['camoufox.exe','omni.ja'].map(name=>({
+   const files=['camoufox.exe',dllName].map(name=>({
     path:name,...sha256File(path.join(base,name))
    }));
    const document={schema:1,engine,version:'134.0.2',entry:'camoufox.exe',files};
    document.signature=crypto.sign(null,signedPayload(document),keys.privateKey).toString('base64url');
-   fs.writeFileSync(path.join(base,'manifest.json'),JSON.stringify(document));
+   fs.writeFileSync(manifestFile,JSON.stringify(document));
   };
   release();
   const manager=new BundledEngineManager(base,{
@@ -38,6 +40,41 @@ function peFixture(destination){
    }
   });
   assert.strictEqual(manager.resolve('camoufox'),binary);
+  const signedManifest=fs.readFileSync(manifestFile);
+  const replacementOffset=signedManifest.indexOf(Buffer.from('\uFFFD'));
+  assert(replacementOffset>=0);
+  const malformed=Buffer.concat([signedManifest.subarray(0,replacementOffset),Buffer.from([0xff]),
+   signedManifest.subarray(replacementOffset+3)]);
+  try{
+   fs.writeFileSync(manifestFile,malformed);
+   assert.throws(()=>manager.verify(),{code:'ERR_ENCODING_INVALID_ENCODED_DATA'});
+   fs.writeFileSync(manifestFile,Buffer.concat([signedManifest,Buffer.alloc(1024*1024,0x20)]));
+   assert.throws(()=>manager.verify(),/manifest exceeds 1 MB/);
+  }finally{fs.writeFileSync(manifestFile,signedManifest);}
+
+  const openSync=fs.openSync,readSync=fs.readSync;
+  let manifestFd,grew=false;
+  fs.openSync=function(filename,...args){
+   const fd=openSync.call(this,filename,...args);
+   if(filename===manifestFile&&!grew)manifestFd=fd;
+   return fd;
+  };
+  fs.readSync=function(fd,...args){
+   if(fd===manifestFd&&!grew){
+    grew=true;
+    fs.appendFileSync(manifestFile,' ');
+   }
+   return readSync.call(this,fd,...args);
+  };
+  try{
+   assert.throws(()=>manager.verify(),/manifest changed during verification/);
+   assert(grew);
+   assert.throws(()=>fs.fstatSync(manifestFd),{code:'EBADF'});
+  }finally{
+   fs.openSync=openSync;
+   fs.readSync=readSync;
+   fs.writeFileSync(manifestFile,signedManifest);
+  }
   if(process.platform==='win32'){
    assert.throws(()=>validatePath('gecko',binary),/official Chrome\/Edge or Firefox/);
    assert.strictEqual(validatePath('gecko',binary,{trustedCamoufox:true}),binary);
@@ -72,6 +109,7 @@ function peFixture(destination){
   assert(!fs.existsSync(path.join(base,'camoufox-profiles','testcamoufox')));
   const mock=new CamoufoxAdapter(base,{
    bundleVerifier:manager,platform:'win32',
+   capabilityResolver:()=>({manual:true,proxyTypes:[],evidence:'test',reason:null}),
    windowProbe:async()=>true,
    closeWindow:async()=>false,
    spawnProcess:(executable,args)=>{

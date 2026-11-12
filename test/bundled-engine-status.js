@@ -37,7 +37,12 @@ try{
  const html=fs.readFileSync(path.join(__dirname,'..','src/ui/index.html'),'utf8');
  assert(preload.includes('bundledEngineStatus'));
  assert(main.includes("ipcMain.handle('bundled-engine-select'"));
+ assert(main.includes('publisherTrusted:!!publisherKey'));
+ assert(main.includes('approvedProxyTypes:adapterStatus.approvedProxyTypes'));
  assert(html.includes('id="engine-source-select"'));
  assert(html.includes('src="engineSource.js"'));
+ const engineSource=fs.readFileSync(path.join(__dirname,'..','src/ui/engineSource.js'),'utf8');
+ assert(engineSource.includes('Proxy HTTP/SOCKS5 đã nghiệm thu cho phiên bản này'));
+ assert(engineSource.includes('Proxy chưa được duyệt cho phiên bản engine này'));
  console.log('Verified bundled browser runtime, explicit selection and client package smoke passed');
 }finally{fs.rmSync(base,{recursive:true,force:true});}

@@ -1,5 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
 const {stageStorageResult,safeOptions,FIELDS,identityExpectationResult}=require('./core');
 const markers={a:'a-synthetic',b:'b-synthetic'};
 const left=Object.fromEntries(FIELDS.map(x=>[x,markers.a]));
@@ -99,4 +100,8 @@ assert.equal(webglExpectationResult(
 assert.equal(webglExpectationResult(expectations,
  {status:'UNSUPPORTED'}).pass,false);
 assert.throws(()=>webglExpectationResult(null,webglPoint),/expectations/);
+// Firefox exposes OfflineAudioBuffer data across an Xray boundary in the
+// automation world. The probe must copy it to a plain Array before indexing.
+assert.match(fs.readFileSync(require.resolve('./core'),'utf8'),
+ /buffer\.copyFromChannel\(data,0\)/);
 console.log('Stage-0 contract: PASS (incl. extended probe contracts); real Windows browser measurements NOT_RUN');

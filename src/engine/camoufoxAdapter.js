@@ -68,9 +68,31 @@ function powershell(command,timeoutMs=5000){
 // belonging to a different profile or unrelated PID.
 async function windowsWindowProbe(pid){
  if(!Number.isSafeInteger(pid)||pid<=0)return false;
+ const command=[
+  '$root='+pid,
+  '$queue=New-Object System.Collections.Generic.Queue[int]',
+  '$seen=New-Object System.Collections.Generic.HashSet[int]',
+  '$queue.Enqueue($root)',
+  '$count=0',
+  'while($queue.Count -gt 0 -and $count -lt 60){',
+  ' $id=$queue.Dequeue()',
+  ' if(-not $seen.Add([int]$id)){continue}',
+  ' $count++',
+  ' $p=Get-Process -Id $id -ErrorAction SilentlyContinue',
+  ' if($p -and $p.MainWindowHandle -ne 0){',
+  '   Write-Output ("WINDOW_READY:"+$id);exit 0',
+  ' }',
+  ' foreach($child in @(Get-CimInstance Win32_Process -Filter ("ParentProcessId = "+$id) -ErrorAction SilentlyContinue)){',
+  '   if($child.Name -ieq "camoufox.exe"){',
+  '     $queue.Enqueue([int]$child.ProcessId)',
+  '   }',
+  ' }',
+  '}'
+ ].join('\n');
  try{
-  process.kill(pid, 0);
-  return {ready:true,windowPid:pid};
+  const output=await powershell(command,6000);
+  const match=/^WINDOW_READY:(\d+)$/.exec(output);
+  return match?{ready:true,windowPid:Number(match[1])}:false;
  }catch(_){return false;}
 }
 async function requestWindowClose(pid){
@@ -87,7 +109,10 @@ class CamoufoxAdapter{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
-  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false,downloadsRoot=null,peerGuardFactory,
+  prepareProxy=prepareCamoufoxProxy,
+  capabilityResolver=()=>({manual:false,proxyTypes:[],evidence:null,
+   reason:'No approved capability policy'}),
+  labProxyOverride=false,downloadsRoot=null,peerGuardFactory,
   requirePinnedIdentity=false
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
@@ -102,23 +127,44 @@ class CamoufoxAdapter{
   if(typeof prepareProxy!=='function')throw Error('Invalid Camoufox proxy configurator');
   this.closeWindow=closeWindow;this.platform=platform;
   this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
-  this.allowProxyLab=allowProxyLab===true;
+  if(typeof capabilityResolver!=='function')throw Error('Invalid Camoufox capability resolver');
+  this.capabilityResolver=capabilityResolver;
+  this.labProxyOverride=labProxyOverride===true;
   this.requirePinnedIdentity=requirePinnedIdentity===true;
   // Per-profile download folder; never the shared OS Downloads folder.
   this.downloadsRoot=downloadsRoot||(path.isAbsolute(String(baseDir||''))?path.join(baseDir,'downloads'):null);
   this.startupTimeoutMs=startupTimeoutMs;
   this.sessions=new Map();this.pending=new Map();
  }
- status(){
+ _releaseState(){
   const signed=this.bundleVerifier?.status?.()||
    {valid:false,reason:'No signed Camoufox executable'};
+  if(signed.valid!==true)return {signed,capabilities:{manual:false,
+   proxyTypes:[],evidence:null,reason:signed.reason||'Signed Camoufox release unavailable'}};
+  if(this.labProxyOverride)return {signed,capabilities:{manual:true,
+   proxyTypes:['http','socks5'],evidence:'development-lab-override',reason:null}};
+  let capabilities;
+  try{capabilities=this.capabilityResolver({engineVersion:signed.version,
+   engineSha256:signed.sha256||null});}
+  catch(error){capabilities={manual:false,proxyTypes:[],evidence:null,
+   reason:String(error.message||error).slice(0,180)}}
+  if(!capabilities||capabilities.manual!==true||!Array.isArray(capabilities.proxyTypes))
+   capabilities={manual:false,proxyTypes:[],evidence:null,
+    reason:capabilities?.reason||'Signed Camoufox version is not approved'};
+  return {signed,capabilities};
+ }
+ approvedProxyTypes(){return [...this._releaseState().capabilities.proxyTypes]}
+ status(){
+  const {signed,capabilities}=this._releaseState();
   return {installed:signed.valid===true,binaryVerified:signed.valid===true,
    version:signed.version||null,active:this.sessions.size,
    runtimeCompatible:this.platform==='win32',manualOnly:true,
    automationAvailable:false,
-   ready:signed.valid===true&&this.platform==='win32',
-   note:signed.valid?
-    'Signed native EXE available; manual UI only. Proxy auth is opt-in lab-only until DNS/WebRTC checks pass.':
+   ready:signed.valid===true&&this.platform==='win32'&&capabilities.manual===true,
+   approvedProxyTypes:[...capabilities.proxyTypes],evidence:capabilities.evidence||null,
+   note:signed.valid&&capabilities.manual?
+    'Signed native EXE and version-bound manual capability available.':
+    signed.valid?(capabilities.reason||'Signed Camoufox version is not approved for manual release.'):
     'Independent publisher-signed Camoufox EXE is not installed or verified.'};
  }
  isBusy(id){return this.sessions.has(id)||this.pending.has(id);}
@@ -130,8 +176,15 @@ class CamoufoxAdapter{
    requirePinnedIdentity:this.requirePinnedIdentity,
    existingProfiles:this.store?.data?.profiles||null
   });
-  if(normalizedProxy(profile.proxy).type!=='direct'&&!this.allowProxyLab)
-   throw Error('Camoufox authenticated proxy is experimental and requires an approved proxy/DNS/WebRTC lab; no direct fallback');
+  const release=this._releaseState();
+  if(release.signed.valid!==true)
+   throw Error('Camoufox requires a trusted, release-signed browser distribution');
+  if(release.capabilities.manual!==true)
+   throw Error('Signed Camoufox version is not approved for manual release');
+  const proxyType=normalizedProxy(profile.proxy).type;
+  if(proxyType!=='direct'&&!release.capabilities.proxyTypes.includes(proxyType))
+   throw Error('NETWORK_BLOCKED: Camoufox '+proxyType+
+    ' proxy is not approved for this signed engine version; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
   const task=this._startVerified({profile,id,profileDir,target,onClosed,identity});
   this.pending.set(id,task);

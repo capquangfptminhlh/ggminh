@@ -40,52 +40,54 @@ function checkEvaluate(){
  assert.strictEqual(direct.safeToLaunch,true);
  assert.strictEqual(direct.code,'PREFLIGHT_ONLY');
 
- // Mandatory authenticated proxy without an approved lab -> blocked.
+ // Mandatory authenticated proxy without an approved release capability -> blocked.
  assert.strictEqual(evaluate(authProfile).safeToLaunch,false);
  assert.strictEqual(evaluate(authProfile).code,'NETWORK_BLOCKED');
 
  // Lab approved but store/vault missing -> blocked (mandatory checks
  // cannot complete, Constitution 19.4 third bullet).
  assert.strictEqual(
-  evaluate(authProfile,{labApproved:true}).safeToLaunch,false);
+  evaluate(authProfile,{approvedProxyTypes:['socks5']}).safeToLaunch,false);
 
  // Proxy Center record mismatch (port) -> blocked.
  const wrongStore={data:{proxies:[{id:'px-1',type:'socks5',
   host:'proxy.example',port:9999}]}};
  assert.strictEqual(evaluate(authProfile,
-  {labApproved:true,store:wrongStore,proxyVault:goodVault})
+  {approvedProxyTypes:['socks5'],store:wrongStore,proxyVault:goodVault})
   .safeToLaunch,false);
 
  // Vault entry missing credentials -> blocked.
  assert.strictEqual(evaluate(authProfile,
-  {labApproved:true,store:goodStore,proxyVault:{get:()=>null}})
+  {approvedProxyTypes:['socks5'],store:goodStore,proxyVault:{get:()=>null}})
   .safeToLaunch,false);
 
  // GeoIP behaviour enabled (unverified) -> blocked even with lab.
  assert.strictEqual(evaluate({...authProfile,geoip:true},
-  {labApproved:true,store:goodStore,proxyVault:goodVault})
+  {approvedProxyTypes:['socks5'],store:goodStore,proxyVault:goodVault})
   .safeToLaunch,false);
 
  // Credentials inline in the profile instead of the vault -> blocked.
  const inlineCreds={...authProfile,proxy:{type:'socks5',
   host:'proxy.example',port:1080,authProxyId:'px-1',user:'x',pass:'y'}};
  assert.strictEqual(evaluate(inlineCreds,
-  {labApproved:true,store:goodStore,proxyVault:goodVault})
+  {approvedProxyTypes:['socks5'],store:goodStore,proxyVault:goodVault})
   .safeToLaunch,false);
 
  // Unsupported proxy type -> blocked, never reinterpreted as direct.
  const badType={...authProfile,proxy:{type:'socks4',
   host:'proxy.example',port:1080,authProxyId:'px-1'}};
  assert.strictEqual(evaluate(badType,
-  {labApproved:true,store:goodStore,proxyVault:goodVault})
+  {approvedProxyTypes:['socks5'],store:goodStore,proxyVault:goodVault})
   .safeToLaunch,false);
 
  // Fully verified configuration -> passes as LAB_PREFLIGHT_ONLY
  // (still not a DNS/WebRTC certification).
  const ok=evaluate(authProfile,
-  {labApproved:true,store:goodStore,proxyVault:goodVault});
+  {approvedProxyTypes:['socks5'],store:goodStore,proxyVault:goodVault});
  assert.strictEqual(ok.safeToLaunch,true);
- assert.strictEqual(ok.code,'LAB_PREFLIGHT_ONLY');
+ assert.strictEqual(ok.code,'APPROVED_PREFLIGHT_ONLY');
+ assert.strictEqual(evaluate(authProfile,{approvedProxyTypes:['http'],
+  store:goodStore,proxyVault:goodVault}).safeToLaunch,false);
 }
 
 async function checkFactory(){
@@ -93,7 +95,7 @@ async function checkFactory(){
   _launchInstalled(){throw Error('must not launch');},
   store:goodStore,proxyVault:goodVault,
   camoufoxPlaywrightController:{enabled:false,labApproved:false},
-  camoufoxAdapter:{allowProxyLab:false},
+  camoufoxAdapter:{approvedProxyTypes:()=>[]},
   activeProcesses:new Map()};
  const factory=new EngineFactory(launcher);
  let adapterCalls=0;
@@ -105,8 +107,8 @@ async function checkFactory(){
   assert.strictEqual(err.code,'NETWORK_BLOCKED');return true;});
  assert.strictEqual(adapterCalls,0);
 
- // Positive control: approved lab makes the same factory launch.
- launcher.camoufoxAdapter.allowProxyLab=true;
+ // Positive control: approved signed-version capability makes the same factory launch.
+ launcher.camoufoxAdapter.approvedProxyTypes=()=>['socks5'];
  const result=await factory.launchProfile(authProfile);
  assert.strictEqual(result.engineType,'camoufox');
  assert.strictEqual(adapterCalls,1);
