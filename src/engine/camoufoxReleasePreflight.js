@@ -24,7 +24,7 @@ const MAX_AGE_MS=30*24*60*60*1000;
 const MAX_FUTURE_MS=5*60*1000;
 const CANDIDATE_FIELDS=['commit','engineVersion','engineSha256','installerSha256'];
 const FORBIDDEN_KEY=/proxy|password|secret|token|cookie|account|profileName|privateKey|identityBlob|ipAddress/i;
-const SAFE_PRIVACY_FIELDS=new Set(['privateKeyEncryptedOutsideGit','noPrivateKeyMaterial']);
+const SAFE_PRIVACY_FIELDS=new Set(['privateKeyEncryptedOutsideGit']);
 const SAFE_NETWORK_FIELDS=new Set(['realProxyP2','labProxyP1','followedRealProxyRoute']);
 const FORBIDDEN_TEXT=/https?:\/\/|-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|CAMOU_CONFIG_/i;
 const RESOURCE_RAM_TIERS=Object.freeze([8,16,32]);
@@ -48,7 +48,7 @@ function containsIpAddress(value){
  });
 }
 
-function assertPrivacySafe(value,ancestors=new Set()){
+function scanPrivacySafe(value,ancestors,allowedPrivateFields){
  if(typeof value==='string'){
   if(FORBIDDEN_TEXT.test(value)||containsIpAddress(value))
    throw Error('Camoufox preflight data contains private information');
@@ -64,13 +64,19 @@ function assertPrivacySafe(value,ancestors=new Set()){
  for(const key of Reflect.ownKeys(value)){
   if(typeof key!=='string')throw Error('Invalid Camoufox preflight data');
   const property=Object.getOwnPropertyDescriptor(value,key);
-  if(!SAFE_PRIVACY_FIELDS.has(key)&&!SAFE_NETWORK_FIELDS.has(key)&&FORBIDDEN_KEY.test(key))
+  if(!allowedPrivateFields.has(key)&&!SAFE_NETWORK_FIELDS.has(key)&&FORBIDDEN_KEY.test(key))
    throw Error('Camoufox preflight data contains private information');
   if(!Object.hasOwn(property,'value'))throw Error('Invalid Camoufox preflight data');
-  assertPrivacySafe(key,ancestors);
-  assertPrivacySafe(property.value,ancestors);
+  if(key==='privateKeyEncryptedOutsideGit'&&typeof property.value!=='boolean')
+   throw Error('Camoufox preflight data contains private information');
+  scanPrivacySafe(key,ancestors,allowedPrivateFields);
+  scanPrivacySafe(property.value,ancestors,allowedPrivateFields);
  }
  ancestors.delete(value);
+}
+
+function assertPrivacySafe(value,ancestors=new Set()){
+ scanPrivacySafe(value,ancestors,SAFE_PRIVACY_FIELDS);
 }
 
 function copyPlainData(value){
@@ -392,7 +398,8 @@ function freshReceiptTime(value,now){
 }
 
 function evaluateArtifactTrust(candidate,artifact,options={}){
- assertPrivacySafe(candidate);assertPrivacySafe(artifact);
+ assertPrivacySafe(candidate);
+ scanPrivacySafe(artifact,new Set(),new Set([...SAFE_PRIVACY_FIELDS,'noPrivateKeyMaterial']));
  validateCandidate(candidate);
  const evidence=gateEvidenceName(options.evidenceName);
  const blocked=reason=>gate('artifact-trust','BLOCKED',reason,evidence);

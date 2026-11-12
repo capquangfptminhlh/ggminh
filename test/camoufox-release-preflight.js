@@ -844,6 +844,11 @@ test('publisher ceremony accepts the safe private-key custody assertion field',(
  assert.strictEqual(evaluatePublisherCeremony(ceremonyReceipt,
   {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'PASS');
 });
+test('publisher ceremony rejects artifact-only noPrivateKeyMaterial field',()=>{
+ assert.throws(()=>evaluatePublisherCeremony({...ceremonyReceipt,noPrivateKeyMaterial:true},
+  {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}),
+  /^Error: Camoufox preflight data contains private information$/);
+});
 
 test('clean install and upgrade passes the matching fresh-install receipt',()=>{
  const result=evaluateCleanInstallUpgrade(installReceipt,gateOptions);
@@ -874,6 +879,12 @@ test('clean install and upgrade ignores safe extras and rejects private extras',
  const result=evaluateCleanInstallUpgrade({...installReceipt,futureEvidence:'note'},gateOptions);
  assert.strictEqual(result.status,'PASS');assert(!JSON.stringify(result).includes('futureEvidence'));
  assert.throws(()=>evaluateCleanInstallUpgrade({...installReceipt,profileName:'private'},gateOptions),
+  /^Error: Camoufox preflight data contains private information$/);
+});
+test('clean install and upgrade rejects artifact-only and malformed privacy assertions',()=>{
+ assert.throws(()=>evaluateCleanInstallUpgrade({...installReceipt,noPrivateKeyMaterial:true},gateOptions),
+  /^Error: Camoufox preflight data contains private information$/);
+ assert.throws(()=>evaluateCleanInstallUpgrade({...installReceipt,privateKeyEncryptedOutsideGit:'not-a-boolean'},gateOptions),
   /^Error: Camoufox preflight data contains private information$/);
 });
 test('owner receipt evaluators detach results from mutable inputs',()=>{
