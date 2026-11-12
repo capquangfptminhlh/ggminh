@@ -805,6 +805,10 @@ test('artifact trust rejects privacy-sensitive evidence basenames',()=>{
   assert.throws(()=>evaluateArtifactTrust(candidate,artifactResult,{candidate,now,evidenceName}),
    /^Error: Camoufox preflight data contains private information$/);
 });
+test('artifact trust permits benign protocol-named evidence basenames',()=>{
+ for(const evidenceName of ['https-report.json','http-response.json','ftp-checklist.json'])
+  assert.strictEqual(evaluateArtifactTrust(candidate,artifactResult,{candidate,now,evidenceName}).status,'PASS');
+});
 test('artifact trust compares validated digests without case sensitivity',()=>{
  const result=evaluateArtifactTrust(candidate,{...artifactResult,
   releaseArchiveSha256:artifactResult.releaseArchiveSha256.toUpperCase(),
@@ -862,6 +866,11 @@ test('publisher ceremony rejects privacy-sensitive evidence basenames',()=>{
    {...gateOptions,evidenceName,packagedPublicKeySpkiSha256:'c'.repeat(64)}),
    /^Error: Camoufox preflight data contains private information$/);
 });
+test('publisher ceremony permits benign protocol-named evidence basenames',()=>{
+ for(const evidenceName of ['https-report.json','http-response.json','ftp-checklist.json'])
+  assert.strictEqual(evaluatePublisherCeremony(ceremonyReceipt,
+   {...gateOptions,evidenceName,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'PASS');
+});
 test('publisher ceremony compares validated SPKI digests without case sensitivity',()=>{
  assert.strictEqual(evaluatePublisherCeremony({...ceremonyReceipt,
   publicKeySpkiSha256:ceremonyReceipt.publicKeySpkiSha256.toUpperCase()},
@@ -881,6 +890,10 @@ test('clean install and upgrade rejects privacy-sensitive evidence basenames',()
  for(const evidenceName of ['192.0.2.1.json','https_example.com.json','CAMOU_CONFIG_secret.json'])
   assert.throws(()=>evaluateCleanInstallUpgrade(installReceipt,{...gateOptions,evidenceName}),
    /^Error: Camoufox preflight data contains private information$/);
+});
+test('clean install and upgrade permits benign protocol-named evidence basenames',()=>{
+ for(const evidenceName of ['https-report.json','http-response.json','ftp-checklist.json'])
+  assert.strictEqual(evaluateCleanInstallUpgrade(installReceipt,{...gateOptions,evidenceName}).status,'PASS');
 });
 test('clean install and upgrade compares validated installer hashes without case sensitivity',()=>{
  const upperCandidate={...candidate,installerSha256:candidate.installerSha256.toUpperCase()};
