@@ -1,5 +1,13 @@
 'use strict';
 const assert=require('assert');
+const crypto=require('node:crypto');
+const fs=require('node:fs');
+const http=require('node:http');
+const os=require('node:os');
+const path=require('node:path');
+const {execFile,spawnSync}=require('node:child_process');
+const {promisify}=require('node:util');
+const {signedPayload}=require('../src/engine/bundledEngineManager');
 const {
  evaluateCamoufoxReleasePreflight,gate,GATE_IDS,validateEvidence,
  evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,
@@ -980,5 +988,328 @@ test('composed ten-gate report marks both absent owner receipts as manual assert
  ]);
 });
 
-test('prints only the required success line',()=>{});
-console.log('Camoufox release preflight evaluator PASS');
+const cliPath=path.join(__dirname,'..','tools','camoufox-release-preflight.js');
+const hash=data=>crypto.createHash('sha256').update(data).digest('hex');
+const writeJson=(file,value)=>fs.writeFileSync(file,JSON.stringify(value));
+
+function makeCliFixture(root){
+ const resources=path.join(root,'resources');
+ const engine=path.join(root,'installed-engine');
+ const evidence=path.join(root,'evidence');
+ for(const dir of [resources,engine,evidence])fs.mkdirSync(dir);
+ const installer=path.join(root,'installer.exe');
+ const publisherReceipt=path.join(root,'publisher-ceremony.json');
+ const cleanInstallReceipt=path.join(root,'clean-install.json');
+ const indexFile=path.join(evidence,'evidence-index.json');
+ const releaseFile=path.join(resources,'release.json');
+ const installerBytes=Buffer.alloc(1024*1024+17,0x57);
+ const engineBytes=Buffer.from('Synthetic Camoufox executable fixture');
+ const archiveBytes=Buffer.alloc(1234,0x31);
+ const currentCandidate={...candidate,engineSha256:hash(engineBytes),installerSha256:hash(installerBytes)};
+ const generatedAt=new Date().toISOString();
+ const pair=crypto.generateKeyPairSync('ed25519');
+ const manifest={schema:1,engine:'camoufox',version:currentCandidate.engineVersion,entry:'camoufox.exe',
+  files:[{path:'camoufox.exe',bytes:engineBytes.length,sha256:currentCandidate.engineSha256}]};
+ manifest.signature=crypto.sign(null,signedPayload(manifest),pair.privateKey).toString('base64url');
+ fs.writeFileSync(installer,installerBytes);
+ fs.writeFileSync(path.join(engine,manifest.entry),engineBytes);
+ fs.writeFileSync(path.join(resources,'publisher-ed25519.pub'),pair.publicKey.export({format:'pem',type:'spki'}));
+ writeJson(path.join(engine,'manifest.json'),manifest);
+ writeJson(path.join(resources,'capabilities.json'),{schema:1});
+ const descriptor={schema:1,manifest,archiveSha256:hash(archiveBytes),archiveBytes:archiveBytes.length,
+  url:'https://github.com/example/fixture/releases/download/v1/camoufox.zip'};
+ writeJson(releaseFile,descriptor);
+ writeJson(publisherReceipt,{...ceremonyReceipt,generatedAt,
+  publicKeySpkiSha256:hash(pair.publicKey.export({format:'der',type:'spki'}))});
+ writeJson(cleanInstallReceipt,{...installReceipt,generatedAt,installerSha256:currentCandidate.installerSha256});
+ const reportNames={resources:[]};
+ const saveEnvelope=(field,kind,result,environment='windows-installed-engine')=>{
+  const name=`${kind}.json`;
+  reportNames[field]=name;
+  writeJson(path.join(evidence,name),installedEnvelope(kind,result,{candidate:currentCandidate,generatedAt,environment}));
+ };
+ saveEnvelope('artifactArchive','artifact-archive',{
+  observedArchiveSha256:descriptor.archiveSha256,observedArchiveBytes:descriptor.archiveBytes
+ },'windows-release-archive');
+ saveEnvelope('identity','identity',identityResult);
+ saveEnvelope('isolation','isolation',isolationResult);
+ saveEnvelope('crash','crash',crashResult);
+ saveEnvelope('graphics','graphics',graphicsResult);
+ saveEnvelope('network','network',networkResult);
+ saveEnvelope('packagedUi','packaged-ui',packagedUiResult,'windows-packaged-app');
+ REQUIRED_RESOURCE_MATRIX.forEach((row,i)=>{
+  const name=`resource-${i+1}.json`;
+  reportNames.resources.push(name);
+  writeJson(path.join(evidence,name),resourceReport(row,{
+   generatedAt,commit:currentCandidate.commit,app:{sha256:currentCandidate.installerSha256},
+   engine:{id:'camoufox',version:currentCandidate.engineVersion,sha256:currentCandidate.engineSha256}
+  }));
+ });
+ const index={schema:'lhm.camoufox-preflight.index.v1',candidate:currentCandidate,reports:reportNames};
+ writeJson(indexFile,index);
+ const args=['--resources-dir',resources,'--engine-dir',engine,'--installer',installer,
+  '--evidence-dir',evidence,'--publisher-receipt',publisherReceipt,'--clean-install-receipt',cleanInstallReceipt];
+ return {args,index,indexFile,resources,engine,evidence,installer,publisherReceipt,cleanInstallReceipt,releaseFile,pair};
+}
+
+function runCli(args){
+ const result=spawnSync(process.execPath,[cliPath,...args],{encoding:'utf8',timeout:10000});
+ if(result.error)throw result.error;
+ return result;
+}
+
+function expectCliReport(result,exitCode){
+ assert.strictEqual(result.status,exitCode,result.stderr);
+ assert.strictEqual(result.stderr,'');
+ const report=JSON.parse(result.stdout);
+ assert.strictEqual(result.stdout,JSON.stringify(report)+'\n');
+ return report;
+}
+
+function expectCliError(result){
+ assert.strictEqual(result.status,1,result.stdout||result.stderr);
+ assert.strictEqual(result.stdout,'');
+ assert.match(result.stderr,
+  /^Camoufox release preflight: (?:invalid command-line arguments|input or verification failed)\n$/);
+}
+
+function replaceArg(args,flag,value){
+ const replacement=[...args];
+ replacement[replacement.indexOf(flag)+1]=value;
+ return replacement;
+}
+
+function snapshotFile(file){
+ const stat=fs.lstatSync(file);
+ return {size:stat.size,mtime:stat.mtimeMs,sha256:hash(fs.readFileSync(file))};
+}
+
+function snapshotTree(root){
+ const entries={'.':{directory:true,mtime:fs.lstatSync(root).mtimeMs}};
+ function visit(directory){
+  for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
+   const file=path.join(directory,entry.name);
+   const name=path.relative(root,file);
+   if(entry.isDirectory()){
+    entries[name]={directory:true,mtime:fs.lstatSync(file).mtimeMs};
+    visit(file);
+   }else entries[name]=snapshotFile(file);
+  }
+ }
+ visit(root);
+ return entries;
+}
+
+function withFileContents(file,contents,run){
+ const original=fs.readFileSync(file);
+ try{fs.writeFileSync(file,contents);run();}
+ finally{fs.writeFileSync(file,original);}
+}
+
+function expectSingleBlocker(result,id,reason){
+ const report=expectCliReport(result,2);
+ assert.strictEqual(report.overall,'BLOCKED');
+ assert.deepStrictEqual(report.blockers,[{gate:id,status:'BLOCKED',reason}]);
+ return report;
+}
+
+async function testCli(){
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-camoufox-preflight-'));
+ try{
+  const fixture=makeCliFixture(root);
+  const {args,index,indexFile,evidence,engine,resources,installer,publisherReceipt,cleanInstallReceipt,releaseFile}=fixture;
+  const evidenceFile=key=>path.join(evidence,index.reports[key]);
+  const invalid=()=>expectCliError(runCli(args));
+  const repoResources=path.join(__dirname,'..','resources','camoufox-engine');
+  const protectedFiles=['capabilities.json','release.json'].map(name=>path.join(repoResources,name));
+  const repoBefore=protectedFiles.map(snapshotFile);
+  const readyBefore=snapshotTree(root);
+  const report=expectCliReport(runCli(args),0);
+  assert.strictEqual(report.overall,'READY_FOR_OWNER_REVIEW');
+  assert.deepStrictEqual(report.candidate,index.candidate);
+  assert.deepStrictEqual(report.gates.map(item=>item.id),GATE_IDS);
+  assert(report.gates.every(item=>item.status==='PASS'));
+  assert(report.gates.every(item=>[].concat(item.evidence).every(file=>
+   typeof file==='string'&&/^[A-Za-z0-9.-]+\.json$/.test(file))));
+  assert.deepStrictEqual(snapshotTree(root),readyBefore);
+
+  test('CLI is read-only when one installed graphics check blocks',()=>{
+   const file=evidenceFile('graphics');
+   const graphics=JSON.parse(fs.readFileSync(file));
+   graphics.result.realGpu=false;
+   withFileContents(file,JSON.stringify(graphics),()=>{
+    const before=snapshotTree(root);
+    const result=expectCliReport(runCli(args),2);
+    assert.strictEqual(result.overall,'BLOCKED');
+    assert.deepStrictEqual(result.blockers.map(item=>[item.gate,item.status]),[['graphics-fingerprint','BLOCKED']]);
+    assert.deepStrictEqual(snapshotTree(root),before);
+   });
+  });
+  assert.deepStrictEqual(protectedFiles.map(snapshotFile),repoBefore);
+
+  test('CLI reports absent owner receipts as manual requirements',()=>{
+   let missing=replaceArg(args,'--publisher-receipt',path.join(root,'missing-ceremony.json'));
+   missing=replaceArg(missing,'--clean-install-receipt',path.join(root,'missing-install.json'));
+   const result=expectCliReport(runCli(missing),2);
+   assert.strictEqual(result.overall,'BLOCKED');
+   assert.deepStrictEqual(result.blockers.map(item=>[item.gate,item.status]),[
+    ['publisher-ceremony','MANUAL_REQUIRED'],['clean-install-upgrade','MANUAL_REQUIRED']
+   ]);
+   assert(result.gates.filter(item=>item.status==='MANUAL_REQUIRED').every(item=>item.evidence===null));
+  });
+
+  test('CLI accepts existing owner receipts whose basenames cannot be reported',()=>{
+   const publisher=path.join(root,'owner review.json');
+   const clean=path.join(root,'192.0.2.1.json');
+   fs.copyFileSync(publisherReceipt,publisher);
+   fs.copyFileSync(cleanInstallReceipt,clean);
+   const withPublisher=replaceArg(args,'--publisher-receipt',publisher);
+   const result=expectCliReport(runCli(replaceArg(withPublisher,'--clean-install-receipt',clean)),0);
+   const manualGates=result.gates.filter(item=>result.manualAssertions.some(manual=>manual.gate===item.id));
+   assert.strictEqual(manualGates.length,2);
+   assert(manualGates.every(item=>item.status==='PASS'&&item.evidence===null));
+  });
+
+  test('CLI reports valid JSON with an invalid owner receipt shape as blocked',()=>{
+   withFileContents(publisherReceipt,'[]',()=>{
+    expectSingleBlocker(runCli(args),'publisher-ceremony','Publisher ceremony receipt is invalid');
+   });
+  });
+
+  test('CLI blocks when the installer bytes disagree with the indexed digest',()=>{
+   withFileContents(installer,'different installer bytes',()=>{
+    const result=expectSingleBlocker(runCli(args),'artifact-trust','Installer digest does not match the release candidate');
+    assert.deepStrictEqual(result.candidate,index.candidate);
+   });
+  });
+
+  test('CLI blocks when the signed descriptor entry disagrees with the verified installed engine',()=>{
+   const descriptor=JSON.parse(fs.readFileSync(releaseFile));
+   descriptor.manifest.files[0].sha256='e'.repeat(64);
+   descriptor.manifest.signature=crypto.sign(null,signedPayload(descriptor.manifest),fixture.pair.privateKey).toString('base64url');
+   withFileContents(releaseFile,JSON.stringify(descriptor),()=>{
+    expectSingleBlocker(runCli(args),'artifact-trust','Release descriptor and installed manifest disagree');
+   });
+  });
+
+  test('CLI blocks stale archive evidence bound to the candidate',()=>{
+   const file=evidenceFile('artifactArchive');
+   const archive=JSON.parse(fs.readFileSync(file));
+   archive.generatedAt='2000-01-01T00:00:00.000Z';
+   withFileContents(file,JSON.stringify(archive),()=>{
+    expectSingleBlocker(runCli(args),'artifact-trust','Evidence is older than 30 days');
+   });
+  });
+
+  test('CLI blocks a valid but different indexed engine version or digest',()=>{
+   for(const changes of [{engineVersion:'156.0.2'},{engineSha256:'e'.repeat(64)}]){
+    const changed={...index,candidate:{...index.candidate,...changes}};
+    withFileContents(indexFile,JSON.stringify(changed),()=>{
+     const result=expectCliReport(runCli(args),2);
+     assert.deepStrictEqual(result.candidate,changed.candidate);
+     assert.strictEqual(result.gates[0].status,'BLOCKED');
+    });
+   }
+  });
+
+  test('CLI rejects bad flag lists and relative paths',()=>{
+   for(const bad of [[],args.slice(0,-2),args.slice(0,-1),[...args,'positional'],
+    [...args,...args.slice(0,2)],['--unknown',...args.slice(1)],
+    ['--resources-dir='+resources,...args.slice(2)],
+    replaceArg(args,'--installer','installer.exe'),replaceArg(args,'--publisher-receipt','receipt.json')]){
+    expectCliError(runCli(bad));
+   }
+  });
+
+  test('CLI rejects directories used as files and files used as roots',()=>{
+   for(const [flag,value] of [['--installer',root],['--clean-install-receipt',root],
+    ['--evidence-dir',indexFile],['--resources-dir',installer],['--engine-dir',installer]])
+    expectCliError(runCli(replaceArg(args,flag,value)));
+   const directory=path.join(evidence,'directory.json');
+   fs.mkdirSync(directory);
+   const badIndex={...index,reports:{...index.reports,identity:'directory.json'}};
+   withFileContents(indexFile,JSON.stringify(badIndex),invalid);
+  });
+
+  test('CLI rejects traversal, Windows reserved names, and duplicate report names',()=>{
+   for(const name of ['../identity.json','nested/identity.json','nested\\identity.json',
+    path.join(evidence,'identity.json'),'C:\\identity.json','identity.json:alternate','CON.json',
+    'NUL.extra.json','identity.json.','identity.json\n','evidence-index.json','GRAPHICS.json']){
+    const bad={...index,reports:{...index.reports,identity:name}};
+    withFileContents(indexFile,JSON.stringify(bad),invalid);
+   }
+   const shorter={...index,reports:{...index.reports,resources:index.reports.resources.slice(1)}};
+   withFileContents(indexFile,JSON.stringify(shorter),invalid);
+   const duplicate={...index,reports:{...index.reports,
+    resources:[index.reports.resources[1].toUpperCase(),...index.reports.resources.slice(1)]}};
+   withFileContents(indexFile,JSON.stringify(duplicate),invalid);
+  });
+
+  test('CLI rejects invalid JSON files, invalid index schema, and failed internal verification',()=>{
+   const oversized=JSON.stringify({padding:' '.repeat(1024*1024)});
+   for(const file of [indexFile,evidenceFile('identity'),publisherReceipt,cleanInstallReceipt]){
+    for(const value of ['{broken',oversized,'null'])withFileContents(file,value,invalid);
+   }
+   withFileContents(indexFile,JSON.stringify({...index,schema:'future-index'}),invalid);
+   withFileContents(indexFile,JSON.stringify({...index,candidate:{...index.candidate,commit:'bad'}}),invalid);
+   withFileContents(evidenceFile('identity'),Buffer.from([0x7b,0xff,0x7d]),invalid);
+   withFileContents(path.join(engine,'camoufox.exe'),'tampered engine fixture',invalid);
+  });
+
+  test('CLI rejects symlink roots, files, and dangling receipt targets',()=>{
+   let skipped=false;
+   const directoryLink=process.platform==='win32'?'junction':'dir';
+   for(const [flag,target,link,type] of [
+    ['--resources-dir',resources,path.join(root,'resources-link'),directoryLink],
+    ['--engine-dir',engine,path.join(root,'engine-link'),directoryLink],
+    ['--evidence-dir',evidence,path.join(root,'evidence-link'),directoryLink],
+    ['--installer',installer,path.join(root,'installer-link.exe'),'file'],
+    ['--publisher-receipt',publisherReceipt,path.join(root,'ceremony-link.json'),'file'],
+    ['--clean-install-receipt',path.join(root,'missing'),path.join(root,'dangling-receipt.json'),'file'],
+    [null,evidenceFile('identity'),path.join(evidence,'report-link.json'),'file']
+   ]){
+    try{fs.symlinkSync(target,link,type);}catch(error){
+     if(process.platform==='win32'&&error.code==='EPERM'){
+      skipped=true;
+      continue;
+     }
+     throw error;
+    }
+    try{
+     if(flag)expectCliError(runCli(replaceArg(args,flag,link)));
+     else withFileContents(indexFile,JSON.stringify({...index,reports:{...index.reports,identity:path.basename(link)}}),invalid);
+    }finally{fs.unlinkSync(link);}
+   }
+   if(skipped)console.error('Skipping Camoufox preflight symlink cases where Windows denied symlink creation');
+  });
+
+  const {streamingSha256}=require('../tools/camoufox-release-preflight');
+  assert(fs.statSync(installer).size>1024*1024);
+  assert.strictEqual(await streamingSha256(installer),index.candidate.installerSha256);
+
+  let requests=0;
+  const trap=http.createServer((_request,response)=>{requests++;response.end('network trap');});
+  await new Promise((resolve,reject)=>{
+   trap.once('error',reject);
+   trap.listen(0,'127.0.0.1',resolve);
+  });
+  try{
+   const origin=`http://127.0.0.1:${trap.address().port}`;
+   const url=`${origin}/unexpected`;
+   writeJson(indexFile,{...index,ignored:url,candidate:{...index.candidate,ignored:url},
+    reports:{...index.reports,ignored:url}});
+   const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>!/(?:^|_)proxy$/i.test(key)));
+   const output=await promisify(execFile)(process.execPath,[cliPath,...args],{encoding:'utf8',timeout:10000,
+    env:{...env,HTTP_PROXY:origin,HTTPS_PROXY:origin,NO_PROXY:'',NODE_USE_ENV_PROXY:'1'}});
+   const result=expectCliReport({...output,status:0},0);
+   assert.deepStrictEqual(result.candidate,index.candidate);
+   assert(!output.stdout.includes(url));
+   assert.strictEqual(requests,0);
+  }finally{await new Promise(resolve=>trap.close(resolve));}
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+}
+
+testCli().then(()=>console.log('Camoufox release preflight evaluator and CLI PASS'),error=>{
+ console.error(error);
+ process.exitCode=1;
+});
