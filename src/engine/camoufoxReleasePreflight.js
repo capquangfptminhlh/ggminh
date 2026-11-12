@@ -167,6 +167,10 @@ function exactKeys(value,keys){
   Reflect.ownKeys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
 }
 
+function hasFields(value,keys){
+ return value&&typeof value==='object'&&!Array.isArray(value)&&keys.every(key=>Object.hasOwn(value,key));
+}
+
 function gateEvidenceName(evidenceName){
  return evidenceName==null?null:evidenceBasename(evidenceName);
 }
@@ -181,10 +185,11 @@ function evaluateEvidenceGate(envelope,{candidate,now=new Date(),evidenceName}={
 
 function evaluateConfiguredIdentity(envelope,options={}){
  return evaluateEvidenceGate(envelope,options,'configured-identity','identity',result=>{
-  if(!exactKeys(result,['profiles'])||!Array.isArray(result.profiles)||result.profiles.length!==2)return false;
+  if(!hasFields(result,['profiles'])||!Array.isArray(result.profiles)||result.profiles.length!==2)return false;
   const ids=new Set();
   for(const profile of result.profiles){
    if(!profile||typeof profile!=='object'||Array.isArray(profile)||
+    !hasFields(profile,['syntheticId','launchMatches','restartMatches','extended'])||
     typeof profile.syntheticId!=='string'||!profile.syntheticId.trim()||ids.has(profile.syntheticId)||
     profile.launchMatches!==true||profile.restartMatches!==true||
     !profile.extended||typeof profile.extended!=='object'||Array.isArray(profile.extended))return false;
@@ -203,16 +208,16 @@ const ISOLATION_CONDITIONS=Object.freeze([
 
 function evaluateStorageIsolation(envelope,options={}){
  return evaluateEvidenceGate(envelope,options,'storage-isolation','isolation',result=>
-  exactKeys(result,ISOLATION_CONDITIONS)&&ISOLATION_CONDITIONS.every(condition=>result[condition]==='PASS'),
+  hasFields(result,ISOLATION_CONDITIONS)&&ISOLATION_CONDITIONS.every(condition=>result[condition]==='PASS'),
  'All six required storage isolation conditions passed');
 }
 
 function evaluateCrashDurability(envelope,options={}){
  return evaluateEvidenceGate(envelope,options,'crash-durability','crash',result=>{
-  if(!exactKeys(result,['idleFlush','shortCrash'])||
-   !exactKeys(result.idleFlush,['status','idleMs'])||result.idleFlush.status!=='PASS'||result.idleFlush.idleMs!==10000||
+  if(!hasFields(result,['idleFlush','shortCrash'])||
+   !hasFields(result.idleFlush,['status','idleMs'])||result.idleFlush.status!=='PASS'||result.idleFlush.idleMs!==10000||
    !result.shortCrash||typeof result.shortCrash!=='object'||Array.isArray(result.shortCrash))return false;
-  if(exactKeys(result.shortCrash,['status','idleMs'])&&
+  if(hasFields(result.shortCrash,['status','idleMs'])&&
    result.shortCrash.status==='PASS'&&result.shortCrash.idleMs===1500)return true;
   return exactKeys(result.shortCrash,[
    'status','idleMs','revertedFields','aLocalStorageEqualsPriorCommitted',
@@ -234,13 +239,14 @@ function evaluateCrashDurability(envelope,options={}){
  */
 function evaluateGraphicsFingerprint(envelope,options={}){
  return evaluateEvidenceGate(envelope,options,'graphics-fingerprint','graphics',result=>{
-  if(!exactKeys(result,['headful','realGpu','profiles'])||result.headful!==true||result.realGpu!==true||
+  if(!hasFields(result,['headful','realGpu','profiles'])||result.headful!==true||result.realGpu!==true||
    !Array.isArray(result.profiles)||result.profiles.length!==2)return false;
   return result.profiles.every(profile=>profile&&typeof profile==='object'&&!Array.isArray(profile)&&
+   hasFields(profile,['vendorCompared','rendererCompared','vendorMatches','rendererMatches','canvas','offlineAudio','font'])&&
    profile.vendorCompared===2&&profile.rendererCompared===2&&
    profile.vendorMatches===true&&profile.rendererMatches===true&&
    profile.canvas==='MEASURED'&&profile.offlineAudio==='MEASURED'&&
-   exactKeys(profile.font,['status','claim'])&&profile.font.status==='MEASURED'&&
+   hasFields(profile.font,['status','claim'])&&profile.font.status==='MEASURED'&&
    profile.font.claim==='probe-only');
  },'Headful real-GPU checks matched both profiles; canvas and audio were measured and font was probe-only');
 }

@@ -357,6 +357,15 @@ test('configured identity accepts two distinct measured synthetic identities',()
  assert.strictEqual(result.evidence,'gate.json');
  assert(!JSON.stringify(result).includes('SYN-'));
 });
+test('configured identity ignores safe unknown fields without emitting evidence data',()=>{
+ const input=JSON.parse(JSON.stringify(identityResult));
+ input.futureEvidence={revision:7};
+ input.profiles[0].futureEvidence='candidate note';
+ const result=detachedGate(evaluateConfiguredIdentity,'identity',input);
+ assert.strictEqual(result.status,'PASS');
+ assert.strictEqual(result.evidence,'gate.json');
+ assert(!JSON.stringify(result).includes('futureEvidence'));
+});
 for(const [label,mutate] of [
  ['duplicate IDs',r=>r.profiles[1].syntheticId=r.profiles[0].syntheticId],
  ['launch mismatch',r=>r.profiles[0].launchMatches=false],
@@ -383,11 +392,20 @@ test('configured identity blocks a wrong candidate and stale evidence through va
  ]) assert.strictEqual(detachedGate(evaluateConfiguredIdentity,'identity',identityResult,changes).status,'BLOCKED');
 });
 
-test('storage isolation accepts exactly the six required passing conditions',()=>{
+test('storage isolation accepts the six required passing conditions',()=>{
  const result=detachedGate(evaluateStorageIsolation,'isolation',isolationResult);
  assert.strictEqual(result.status,'PASS');
  assert.strictEqual(result.id,'storage-isolation');
  assert.strictEqual(result.evidence,'gate.json');
+});
+test('storage isolation ignores a safe unknown field without emitting evidence data',()=>{
+ const input={...isolationResult,futureEvidence:{revision:7},unlisted:'PASS'};
+ Object.defineProperty(input,'hiddenFutureEvidence',{value:'unreported'});
+ const result=detachedGate(evaluateStorageIsolation,'isolation',input);
+ assert.strictEqual(result.status,'PASS');
+ assert(!JSON.stringify(result).includes('futureEvidence'));
+ assert(!JSON.stringify(result).includes('unlisted'));
+ assert(!JSON.stringify(result).includes('hiddenFutureEvidence'));
 });
 for(const condition of ['baseline','concurrentCrossWrite','snapshotRestore',
  'configBackupRestore','httpCache','faviconCache']){
@@ -402,8 +420,6 @@ for(const condition of ['baseline','concurrentCrossWrite','snapshotRestore',
 }
 for(const [label,change] of [
  ['missing condition',r=>delete r.baseline],
- ['extra condition',r=>r.unlisted='PASS'],
- ['non-enumerable extra condition',r=>Object.defineProperty(r,'hidden',{value:'PASS'})],
  ['array conditions',r=>r.baseline=['PASS']]
 ]) test('storage isolation blocks '+label,()=>{
  const input={...isolationResult};change(input);
@@ -421,6 +437,15 @@ test('crash durability accepts regular idle-flush and short-crash PASS',()=>{
  assert.strictEqual(result.status,'PASS');
  assert.strictEqual(result.id,'crash-durability');
  assert.strictEqual(result.evidence,'gate.json');
+});
+test('crash durability ignores safe unknown fields on ordinary evidence shapes',()=>{
+ const result=detachedGate(evaluateCrashDurability,'crash',{
+  futureEvidence:{revision:7},
+  idleFlush:{status:'PASS',idleMs:10000,futureEvidence:'flush note'},
+  shortCrash:{status:'PASS',idleMs:1500,futureEvidence:'recovery note'}
+ });
+ assert.strictEqual(result.status,'PASS');
+ assert(!JSON.stringify(result).includes('futureEvidence'));
 });
 test('crash durability accepts and names only the bounded localStorage known finding',()=>{
  const result=detachedGate(evaluateCrashDurability,'crash',{
@@ -467,6 +492,20 @@ test('graphics fingerprint accepts headful real GPU with two complete profiles',
  assert.strictEqual(result.status,'PASS');
  assert.strictEqual(result.id,'graphics-fingerprint');
  assert.strictEqual(result.evidence,'gate.json');
+});
+test('graphics fingerprint ignores safe unknown fields without emitting evidence data',()=>{
+ const input=JSON.parse(JSON.stringify(graphicsResult));
+ input.futureEvidence={revision:7};
+ input.profiles[0].futureEvidence='profile note';
+ input.profiles[0].font.futureEvidence='font note';
+ const result=detachedGate(evaluateGraphicsFingerprint,'graphics',input);
+ assert.strictEqual(result.status,'PASS');
+ assert(!JSON.stringify(result).includes('futureEvidence'));
+});
+test('evaluator evidence still rejects privacy-forbidden unknown fields',()=>{
+ assert.throws(()=>detachedGate(evaluateStorageIsolation,'isolation',{
+  ...isolationResult,profileName:'private-label'
+ }),/^Error: Camoufox preflight data contains private information$/);
 });
 for(const [label,change] of [
  ['headless mode',r=>r.headful=false],
