@@ -55,3 +55,24 @@ Do not claim completion or create receipts to fill these gaps.
 
 `resources/camoufox-engine/capabilities.json` intentionally keeps `releases: []`.
 Do not publish the draft release or market Camoufox as “100%”, “sub-50ms”, or approved for Google/Facebook. Customer enablement remains fail-closed until the real-proxy/DNS/runtime, resource, clean-install and production-key gates are completed.
+
+## Observed preflight run (2026-11-12)
+
+The live preflight ran against the previously documented installer, SHA-256
+`f0a876bd8b7b4e39bd2f7f428743a8e7e53b96841b14a5b53e098079f5c62f81`
+(128,194,866 bytes), candidate commit
+`94c5ef88fdc421a2b276a2c286144f88a4d002ed`. It exited 2 with overall
+`BLOCKED`: artifact trust PASS; publisher ceremony MANUAL_REQUIRED; configured
+identity PASS; storage isolation BLOCKED (wrong environment); crash durability
+BLOCKED (wrong environment); graphics fingerprint PASS; real-proxy network
+BLOCKED (P2 not measured); resource capacity BLOCKED (required report missing);
+packaged UI BLOCKED (process exit not measured); clean install/upgrade
+MANUAL_REQUIRED. These results apply only to that installer hash.
+
+A separate Windows build at source commit `a66a1099959951248f344523eca860cbeebaac4b`
+produced an installer of 128,201,560 bytes with SHA-256
+`0157436f31d798587ca6f48ba83cab8a141384efe950fc9ee31d0855f9fc37dd`.
+Because this differs from the preflight candidate, the prior packaged-UI
+evidence is stale for this build; packaged UI remains BLOCKED pending a rerun
+against this exact installer hash. Clean install/upgrade remains NOT_RUN and
+MANUAL_REQUIRED. The new build is not approved for release.
