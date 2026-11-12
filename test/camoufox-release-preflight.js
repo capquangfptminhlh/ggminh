@@ -992,7 +992,7 @@ const cliPath=path.join(__dirname,'..','tools','camoufox-release-preflight.js');
 const hash=data=>crypto.createHash('sha256').update(data).digest('hex');
 const writeJson=(file,value)=>fs.writeFileSync(file,JSON.stringify(value));
 
-function makeCliFixture(root){
+function makeCliFixture(root,{uppercaseInstallerDigest=false}={}){
  const resources=path.join(root,'resources');
  const engine=path.join(root,'installed-engine');
  const evidence=path.join(root,'evidence');
@@ -1004,15 +1004,20 @@ function makeCliFixture(root){
  const releaseFile=path.join(resources,'release.json');
  const installerBytes=Buffer.alloc(1024*1024+17,0x57);
  const engineBytes=Buffer.from('Synthetic Camoufox executable fixture');
+ const supportBytes=Buffer.from('Synthetic engine support file');
  const archiveBytes=Buffer.alloc(1234,0x31);
- const currentCandidate={...candidate,engineSha256:hash(engineBytes),installerSha256:hash(installerBytes)};
+ const installerSha256=hash(installerBytes);
+ const currentCandidate={...candidate,engineSha256:hash(engineBytes),
+  installerSha256:uppercaseInstallerDigest?installerSha256.toUpperCase():installerSha256};
  const generatedAt=new Date().toISOString();
  const pair=crypto.generateKeyPairSync('ed25519');
  const manifest={schema:1,engine:'camoufox',version:currentCandidate.engineVersion,entry:'camoufox.exe',
-  files:[{path:'camoufox.exe',bytes:engineBytes.length,sha256:currentCandidate.engineSha256}]};
+  files:[{path:'camoufox.exe',bytes:engineBytes.length,sha256:currentCandidate.engineSha256},
+   {path:'support.dat',bytes:supportBytes.length,sha256:hash(supportBytes)}]};
  manifest.signature=crypto.sign(null,signedPayload(manifest),pair.privateKey).toString('base64url');
  fs.writeFileSync(installer,installerBytes);
  fs.writeFileSync(path.join(engine,manifest.entry),engineBytes);
+ fs.writeFileSync(path.join(engine,'support.dat'),supportBytes);
  fs.writeFileSync(path.join(resources,'publisher-ed25519.pub'),pair.publicKey.export({format:'pem',type:'spki'}));
  writeJson(path.join(engine,'manifest.json'),manifest);
  writeJson(path.join(resources,'capabilities.json'),{schema:1});
@@ -1029,7 +1034,7 @@ function makeCliFixture(root){
   writeJson(path.join(evidence,name),installedEnvelope(kind,result,{candidate:currentCandidate,generatedAt,environment}));
  };
  saveEnvelope('artifactArchive','artifact-archive',{
-  observedArchiveSha256:descriptor.archiveSha256,observedArchiveBytes:descriptor.archiveBytes
+  status:'PASS',observedArchiveSha256:descriptor.archiveSha256,observedArchiveBytes:descriptor.archiveBytes
  },'windows-release-archive');
  saveEnvelope('identity','identity',identityResult);
  saveEnvelope('isolation','isolation',isolationResult);
@@ -1114,7 +1119,7 @@ function expectSingleBlocker(result,id,reason){
 }
 
 async function testCli(){
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-camoufox-preflight-'));
+ const root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'lhm-camoufox-preflight-'));
  try{
   const fixture=makeCliFixture(root);
   const {args,index,indexFile,evidence,engine,resources,installer,publisherReceipt,cleanInstallReceipt,releaseFile}=fixture;
@@ -1148,7 +1153,7 @@ async function testCli(){
   assert.deepStrictEqual(protectedFiles.map(snapshotFile),repoBefore);
 
   test('CLI reports absent owner receipts as manual requirements',()=>{
-   let missing=replaceArg(args,'--publisher-receipt',path.join(root,'missing-ceremony.json'));
+   let missing=replaceArg(args,'--publisher-receipt',path.join(root,'missing-parent','ceremony.json'));
    missing=replaceArg(missing,'--clean-install-receipt',path.join(root,'missing-install.json'));
    const result=expectCliReport(runCli(missing),2);
    assert.strictEqual(result.overall,'BLOCKED');
@@ -1192,6 +1197,32 @@ async function testCli(){
    });
   });
 
+  test('CLI blocks when the signed descriptor changes only a non-entry engine file',()=>{
+   const descriptor=JSON.parse(fs.readFileSync(releaseFile));
+   descriptor.manifest.files[1].sha256='e'.repeat(64);
+   descriptor.manifest.signature=crypto.sign(null,signedPayload(descriptor.manifest),fixture.pair.privateKey).toString('base64url');
+   withFileContents(releaseFile,JSON.stringify(descriptor),()=>{
+    expectSingleBlocker(runCli(args),'artifact-trust','Release descriptor and installed manifest disagree');
+   });
+  });
+
+  test('CLI compares the signed manifests independently of JSON property order',()=>{
+   const descriptor=JSON.parse(fs.readFileSync(releaseFile));
+   descriptor.manifest=Object.fromEntries(Object.entries(descriptor.manifest).reverse());
+   withFileContents(releaseFile,JSON.stringify(descriptor),()=>{
+    assert.strictEqual(expectCliReport(runCli(args),0).overall,'READY_FOR_OWNER_REVIEW');
+   });
+  });
+
+  test('CLI accepts the same installer digest in uppercase across the index and reports',()=>{
+   const uppercaseRoot=path.join(root,'uppercase-installer-digest');
+   fs.mkdirSync(uppercaseRoot);
+   const uppercase=makeCliFixture(uppercaseRoot,{uppercaseInstallerDigest:true});
+   const result=expectCliReport(runCli(uppercase.args),0);
+   assert.strictEqual(result.overall,'READY_FOR_OWNER_REVIEW');
+   assert.strictEqual(result.candidate.installerSha256,uppercase.index.candidate.installerSha256);
+  });
+
   test('CLI blocks stale archive evidence bound to the candidate',()=>{
    const file=evidenceFile('artifactArchive');
    const archive=JSON.parse(fs.readFileSync(file));
@@ -1199,6 +1230,22 @@ async function testCli(){
    withFileContents(file,JSON.stringify(archive),()=>{
     expectSingleBlocker(runCli(args),'artifact-trust','Evidence is older than 30 days');
    });
+  });
+
+  test('CLI blocks archive evidence from the wrong environment or without a passing run',()=>{
+   const file=evidenceFile('artifactArchive');
+   const archive=JSON.parse(fs.readFileSync(file));
+   for(const [changed,reason] of [
+    [{...archive,environment:'windows-installed-engine'},'Archive evidence must come from the Windows release archive'],
+    ...[undefined,'NOT_RUN','FAIL'].map(status=>[
+     {...archive,result:{...archive.result,status}},'Archive evidence must record a passing run']),
+    [{...archive,status:'PASS',result:{...archive.result,status:'NOT_RUN'}},'Archive evidence must record a passing run'],
+    ...['NOT_RUN','FAIL'].map(status=>[{...archive,status},'Archive evidence must record a passing run'])
+   ]){
+    withFileContents(file,JSON.stringify(changed),()=>{
+     expectSingleBlocker(runCli(args),'artifact-trust',reason);
+    });
+   }
   });
 
   test('CLI blocks a valid but different indexed engine version or digest',()=>{
@@ -1281,6 +1328,29 @@ async function testCli(){
     }finally{fs.unlinkSync(link);}
    }
    if(skipped)console.error('Skipping Camoufox preflight symlink cases where Windows denied symlink creation');
+  });
+
+  test('CLI rejects symlinks in any input parent even for a missing receipt',()=>{
+   const link=path.join(root,'linked-parent');
+   try{
+    fs.symlinkSync(root,link,process.platform==='win32'?'junction':'dir');
+   }catch(error){
+    if(process.platform==='win32'&&error.code==='EPERM'){
+     console.error('Skipping Camoufox preflight parent-junction cases because Windows denied junction creation');
+     return;
+    }
+    throw error;
+   }
+   try{
+    for(let i=0;i<args.length;i+=2){
+     const [flag,file]=[args[i],args[i+1]];
+     expectCliError(runCli(replaceArg(args,flag,path.join(link,path.relative(root,file)))));
+    }
+    for(const flag of ['--publisher-receipt','--clean-install-receipt'])
+     expectCliError(runCli(replaceArg(args,flag,path.join(link,'missing','receipt.json'))));
+    const linkedThenParent=[link,'..','installer.exe'].join(path.sep);
+    expectCliError(runCli(replaceArg(args,'--installer',linkedThenParent)));
+   }finally{fs.unlinkSync(link);}
   });
 
   const {streamingSha256}=require('../tools/camoufox-release-preflight');

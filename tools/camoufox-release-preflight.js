@@ -9,7 +9,7 @@ const {TextDecoder}=require('node:util');
 const {verifyCamoufoxReleaseResources}=require('./verify-camoufox-release-resources');
 const {loadCamoufoxPublisherKey}=require('../src/engine/camoufoxPublisherTrust');
 const {validateRelease}=require('../src/engine/camoufoxInstallService');
-const {BundledEngineManager,sha256File}=require('../src/engine/bundledEngineManager');
+const {BundledEngineManager,sha256File,signedPayload}=require('../src/engine/bundledEngineManager');
 const {
  gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,evaluateArtifactTrust,
  evaluatePublisherCeremony,evaluateConfiguredIdentity,evaluateStorageIsolation,
@@ -34,7 +34,7 @@ function parseArgs(args){
   if(!FLAGS.has(flag)||parsed.has(flag)||typeof value!=='string'||!path.isAbsolute(value)||
    (process.platform==='win32'&&!/^[a-z]:[\\/][^:]*$/i.test(value)))
    throw Error('Invalid command-line arguments');
-  parsed.set(flag,path.resolve(value));
+  parsed.set(flag,value);
  }
  if(parsed.size!==FLAGS.size)throw Error('Invalid command-line arguments');
  return parsed;
@@ -49,6 +49,24 @@ function checkedStat(file,type,optional=false){
  if(stat.isSymbolicLink()||!(type==='directory'?stat.isDirectory():stat.isFile()))
   throw Error('Invalid input file or directory');
  return stat;
+}
+
+function checkedInputPath(file,type,optional=false){
+ const {root}=path.parse(file);
+ const separator=process.platform==='win32'?/[\\/]/:'/';
+ const components=file.slice(root.length).split(separator).filter(Boolean);
+ let current=root;
+ checkedStat(current,components.length?'directory':type);
+ // Walk the original components so normalization cannot hide a link before '..'.
+ for(let i=0;i<components.length;i++){
+  current=path.join(current,components[i]);
+  const leaf=i===components.length-1;
+  if(!checkedStat(current,leaf?type:'directory',optional)){
+   if(components.includes('..',i+1))throw Error('Invalid missing input path');
+   return null;
+  }
+ }
+ return path.resolve(current);
 }
 
 function readJson(file,optional=false){
@@ -134,25 +152,28 @@ async function streamingSha256(file){
 }
 
 async function evaluateRelease(args,now){
- const resourcesDir=args.get('--resources-dir');
- const engineDir=args.get('--engine-dir');
- const evidenceDir=args.get('--evidence-dir');
- for(const dir of [resourcesDir,engineDir,evidenceDir])checkedStat(dir,'directory');
- const publisherFile=args.get('--publisher-receipt');
- const cleanInstallFile=args.get('--clean-install-receipt');
- const publisherReceipt=readJson(publisherFile,true);
- const cleanInstallReceipt=readJson(cleanInstallFile,true);
+ const resourcesDir=checkedInputPath(args.get('--resources-dir'),'directory');
+ const engineDir=checkedInputPath(args.get('--engine-dir'),'directory');
+ const evidenceDir=checkedInputPath(args.get('--evidence-dir'),'directory');
+ const installerFile=checkedInputPath(args.get('--installer'),'file');
+ const publisherFile=checkedInputPath(args.get('--publisher-receipt'),'file',true);
+ const cleanInstallFile=checkedInputPath(args.get('--clean-install-receipt'),'file',true);
+ const publisherReceipt=publisherFile===null?null:readJson(publisherFile,true);
+ const cleanInstallReceipt=cleanInstallFile===null?null:readJson(cleanInstallFile,true);
  const {candidate,archive,envelopes,resources}=loadEvidence(evidenceDir);
  const archiveCheck=validateEvidence(archive.report,{candidate,kind:'artifact-archive',now});
 
  const verifiedResources=verifyCamoufoxReleaseResources(resourcesDir);
  const publicKey=loadCamoufoxPublisherKey(resourcesDir);
  if(!verifiedResources.configured||!publicKey)throw Error('Publisher resources are unavailable');
- const release=validateRelease(readJson(path.join(resourcesDir,'release.json')),{publicKey});
+ const descriptor=readJson(path.join(resourcesDir,'release.json'));
+ const release=validateRelease(descriptor,{publicKey});
  const installed=new BundledEngineManager(engineDir,{publicKey,platform:'win32',engine:'camoufox',
   inspect:(_family,file)=>sha256File(file)}).verify();
- const declaredEntry=release.manifest.files.find(item=>item.path===release.manifest.entry);
- const installerSha256=await streamingSha256(args.get('--installer'));
+ const installedManifest=validateRelease({
+  ...descriptor,manifest:readJson(path.join(engineDir,'manifest.json'))
+ },{publicKey}).manifest;
+ const installerSha256=await streamingSha256(installerFile);
  const packagedPublicKeySpkiSha256=crypto.createHash('sha256')
   .update(publicKey.export({format:'der',type:'spki'})).digest('hex');
 
@@ -162,13 +183,18 @@ async function evaluateRelease(args,now){
   observedArchiveSha256:archiveCheck.result?.observedArchiveSha256,
   observedArchiveBytes:archiveCheck.result?.observedArchiveBytes,
   installedVersion:installed.version,installedEntrySha256:installed.sha256,installedFileCount:installed.fileCount,
-  installedVerified:true,descriptorManifestAgrees:release.manifest.version===installed.version&&
-   release.manifest.files.length===installed.fileCount&&declaredEntry.sha256===installed.sha256,
+  installedVerified:true,descriptorManifestAgrees:release.manifest.signature===installedManifest.signature&&
+   signedPayload(release.manifest).equals(signedPayload(installedManifest)),
   noPackagedPayload:true,noPrivateKeyMaterial:true
  },{evidenceName:archive.file});
  let artifactGate=artifact;
  if(archiveCheck.status==='BLOCKED')artifactGate=gate('artifact-trust','BLOCKED',archiveCheck.reason,archive.file);
- if(installerSha256!==candidate.installerSha256)
+ else if(archive.report.environment!=='windows-release-archive')
+  artifactGate=gate('artifact-trust','BLOCKED','Archive evidence must come from the Windows release archive',archive.file);
+ // The run status belongs in result. An envelope status cannot override it.
+ else if(archiveCheck.result.status!=='PASS'||(Object.hasOwn(archive.report,'status')&&archive.report.status!=='PASS'))
+  artifactGate=gate('artifact-trust','BLOCKED','Archive evidence must record a passing run',archive.file);
+ if(installerSha256!==candidate.installerSha256.toLowerCase())
   artifactGate=gate('artifact-trust','BLOCKED','Installer digest does not match the release candidate',archive.file);
 
  const context={candidate,now};
