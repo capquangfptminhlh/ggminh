@@ -3,7 +3,8 @@ const assert=require('assert');
 const {
  evaluateCamoufoxReleasePreflight,gate,GATE_IDS,validateEvidence,
  evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,
- evaluateGraphicsFingerprint
+ evaluateGraphicsFingerprint,evaluateRealProxyNetwork,evaluateResourceCapacity,
+ evaluatePackagedUi,REQUIRED_RESOURCE_MATRIX
 }=require('../src/engine/camoufoxReleasePreflight');
 
 function test(name,run){try{run();}catch(error){console.error(name);throw error;}}
@@ -348,6 +349,164 @@ const graphicsResult={
    canvas:'MEASURED',offlineAudio:'MEASURED',font:{status:'MEASURED',claim:'probe-only'}}
  ]
 };
+
+const networkResult={
+ transportControl:{status:'PASS',udpWorks:true},
+ directPublicStun:{status:'PASS',candidatesClassified:true},
+ realProxyP2:{status:'PASS',unexpectedPublicCandidateCount:0},
+ dns:{status:'PASS',followedRealProxyRoute:true},
+ runtimeVsManager:{status:'PASS',bothObserved:true,agree:true},
+ labProxyP1:{status:'PASS',supportingOnly:true}
+};
+const packagedUiResult={exitCode:0,stderr:'',requiredCaptureCount:13,
+ captures:Array.from({length:13},(_,i)=>({name:`capture-${i+1}.png`,bytes:110000+i}))};
+const gib=1024**3;
+const resourceReport=(row,overrides={})=>({
+ schema:'lhm.browser-resource.evidence.v1',generatedAt:'2026-11-11T04:00:00.000Z',
+ commit:candidate.commit,app:{sha256:candidate.installerSha256},
+ engine:{id:'camoufox',version:candidate.engineVersion,sha256:candidate.engineSha256},
+ system:{totalRamBytes:row.ramGiB*gib},workload:{id:row.workload,concurrency:row.concurrency},
+ sampleCount:10,samples:Array(10).fill({availableRatio:0.3}),crashCount:0,
+ cleanup:{status:'PASS',remainingPids:0},headroomPolicy:{minimumAvailableRatio:0.20},...overrides
+});
+const resourceEntries=()=>REQUIRED_RESOURCE_MATRIX.map((row,index)=>({
+ evidenceName:`reports/resource-${String(index+1).padStart(2,'0')}.json`,report:resourceReport(row)
+}));
+
+test('real proxy network accepts the complete installed-engine P2 result',()=>{
+ const result=evaluateRealProxyNetwork(installedEnvelope('network',networkResult),gateContext);
+ assert.deepStrictEqual(result,gate('real-proxy-network','PASS',result.reason,'gate.json'));
+});
+for(const [section,change] of [
+ ['transportControl',r=>r.transportControl={status:'NOT_RUN',udpWorks:false}],
+ ['directPublicStun',r=>r.directPublicStun={status:'PASS',candidatesClassified:false}],
+ ['realProxyP2',r=>r.realProxyP2={status:'PASS',unexpectedPublicCandidateCount:1}],
+ ['dns',r=>r.dns={status:'FAIL',followedRealProxyRoute:false}],
+ ['runtimeVsManager',r=>r.runtimeVsManager={status:'PASS',bothObserved:true,agree:false}],
+ ['labProxyP1',r=>r.labProxyP1={status:'FAIL',supportingOnly:false}]
+]) test(`real proxy network blocks invalid ${section}`,()=>{
+ const input=JSON.parse(JSON.stringify(networkResult));change(input);
+ assert.strictEqual(evaluateRealProxyNetwork(installedEnvelope('network',input),gateContext).status,'BLOCKED');
+});
+test('real proxy P1 supporting evidence cannot substitute for P2',()=>{
+ const input={...networkResult};delete input.realProxyP2;
+ assert.strictEqual(evaluateRealProxyNetwork(installedEnvelope('network',input),gateContext).status,'BLOCKED');
+});
+test('real proxy network requires a typed zero count for unexpected P2 candidates',()=>{
+ for(const value of ['0',null,undefined]){
+  const input={...networkResult,realProxyP2:{status:'PASS',unexpectedPublicCandidateCount:value}};
+  assert.strictEqual(evaluateRealProxyNetwork(installedEnvelope('network',input),gateContext).status,'BLOCKED');
+ }
+});
+test('real proxy network blocks wrong-candidate and stale evidence',()=>{
+ for(const changes of [{candidate:{...candidate,commit:'b'.repeat(40)}},{generatedAt:'2026-10-01T00:00:00.000Z'}])
+  assert.strictEqual(evaluateRealProxyNetwork(installedEnvelope('network',networkResult,changes),gateContext).status,'BLOCKED');
+});
+test('real proxy network ignores safe unknown fields without emitting them',()=>{
+ const result=evaluateRealProxyNetwork(installedEnvelope('network',{...networkResult,futureEvidence:'safe'}),gateContext);
+ assert.strictEqual(result.status,'PASS');assert(!JSON.stringify(result).includes('futureEvidence'));
+});
+test('real proxy network rejects privacy-forbidden extra evidence fields',()=>{
+ assert.throws(()=>evaluateRealProxyNetwork(installedEnvelope('network',{...networkResult,proxyPassword:'private'}),gateContext),
+  /^Error: Camoufox preflight data contains private information$/);
+});
+
+test('resource capacity accepts exactly one valid report for all 36 matrix rows',()=>{
+ assert.strictEqual(REQUIRED_RESOURCE_MATRIX.length,36);
+ const result=evaluateResourceCapacity(resourceEntries(),{candidate,now,evidenceName:'reports/summary.json'});
+ assert.strictEqual(result.status,'PASS');
+ assert.deepStrictEqual(result.evidence,resourceEntries().map(entry=>entry.evidenceName.split('/').pop()).sort());
+ assert(!JSON.stringify(result).includes('availableRatio'));
+});
+for(const row of REQUIRED_RESOURCE_MATRIX) test(`resource capacity blocks missing ${row.ramGiB}GiB-${row.workload}-c${row.concurrency}`,()=>{
+ const entries=resourceEntries().filter(entry=>{
+  const report=entry.report;return !(report.system.totalRamBytes===row.ramGiB*gib&&report.workload.id===row.workload&&report.workload.concurrency===row.concurrency);
+ });
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+});
+test('resource capacity blocks duplicate matrix rows',()=>{
+ const entries=resourceEntries();entries.push({...entries[0],evidenceName:'duplicate.json'});
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+});
+for(const [label,overrides] of [
+ ['wrong schema',{schema:'lhm.browser-resource.evidence.v2'}],
+ ['wrong commit',{commit:'b'.repeat(40)}],
+ ['wrong app binding',{app:{sha256:'e'.repeat(64)}}],
+ ['wrong engine version',{engine:{id:'camoufox',version:'156.0.2',sha256:candidate.engineSha256}}],
+ ['wrong engine hash',{engine:{id:'camoufox',version:candidate.engineVersion,sha256:'e'.repeat(64)}}],
+ ['wrong engine',{engine:{id:'other',version:candidate.engineVersion,sha256:candidate.engineSha256}}],
+ ['tier outside tolerance',{system:{totalRamBytes:8*gib*1.051}}],
+ ['bad workload',{workload:{id:'other',concurrency:1}}],
+ ['bad concurrency',{workload:{id:'light',concurrency:2}}],
+ ['too few sample count',{sampleCount:9}],
+ ['too few samples',{samples:Array(9).fill({availableRatio:0.3})}],
+ ['inconsistent samples',{sampleCount:11}],
+ ['crash',{crashCount:1}],
+ ['cleanup status',{cleanup:{status:'FAIL',remainingPids:0}}],
+ ['remaining process',{cleanup:{status:'PASS',remainingPids:1}}],
+ ['headroom policy',{headroomPolicy:{minimumAvailableRatio:0.19}}],
+ ['stale report',{generatedAt:'2026-10-01T00:00:00.000Z'}],
+ ['future report',{generatedAt:'2026-11-11T12:05:00.001Z'}]
+]) test(`resource capacity blocks ${label}`,()=>{
+ const entries=resourceEntries();entries[0].report={...entries[0].report,...overrides};
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+});
+test('resource capacity accepts tier boundary within five percent',()=>{
+ const entries=resourceEntries();entries[0].report.system.totalRamBytes=8*gib*1.05;
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'PASS');
+});
+test('resource capacity reduces evidence paths to sorted safe basenames',()=>{
+ const entries=resourceEntries();entries[0].evidenceName='C:\\private\\deep\\report.json';
+ const result=evaluateResourceCapacity(entries,{candidate,now});
+ assert(result.evidence.includes('report.json'));assert(!JSON.stringify(result).includes('private'));
+});
+test('resource capacity ignores safe unknown report fields without emitting them',()=>{
+ const entries=resourceEntries();entries[0].report.futureEvidence='safe note';
+ const result=evaluateResourceCapacity(entries,{candidate,now});
+ assert.strictEqual(result.status,'PASS');assert(!JSON.stringify(result).includes('futureEvidence'));
+});
+test('resource capacity rejects privacy-forbidden extra report fields',()=>{
+ const entries=resourceEntries();entries[0].report.profileName='private-label';
+ assert.throws(()=>evaluateResourceCapacity(entries,{candidate,now}),/^Error: Camoufox preflight data contains private information$/);
+});
+
+test('packaged UI accepts 13 sufficiently sized distinct PNG captures',()=>{
+ const result=evaluatePackagedUi(installedEnvelope('packaged-ui',packagedUiResult,{environment:'windows-packaged-app'}),gateContext);
+ assert.deepStrictEqual(result,gate('packaged-ui','PASS',result.reason,'gate.json'));
+});
+for(const [label,change] of [
+ ['nonzero exit',r=>r.exitCode=1],['stderr',r=>r.stderr='warning'],
+ ['wrong required count',r=>r.requiredCaptureCount=12],['missing capture',r=>r.captures.pop()],
+ ['duplicate capture',r=>r.captures[1].name=r.captures[0].name],
+ ['case-insensitive duplicate capture',r=>r.captures[1].name=r.captures[0].name.toUpperCase()],
+ ['unsafe capture',r=>r.captures[0].name='..\\private.png'],
+ ['small capture',r=>r.captures[0].bytes=99999]
+]) test(`packaged UI blocks ${label}`,()=>{
+ const input=JSON.parse(JSON.stringify(packagedUiResult));change(input);
+ assert.strictEqual(evaluatePackagedUi(installedEnvelope('packaged-ui',input,{environment:'windows-packaged-app'}),gateContext).status,'BLOCKED');
+});
+test('packaged UI rejects Windows and POSIX capture paths safely',()=>{
+ for(const name of ['C:\\private\\capture.png','/private/capture.png']){
+  const input=JSON.parse(JSON.stringify(packagedUiResult));input.captures[0].name=name;
+  assert.strictEqual(evaluatePackagedUi(installedEnvelope('packaged-ui',input,{environment:'windows-packaged-app'}),gateContext).status,'BLOCKED');
+ }
+});
+test('packaged UI blocks wrong-candidate and stale evidence',()=>{
+ for(const changes of [{candidate:{...candidate,engineVersion:'156.0.2'}},{generatedAt:'2026-10-01T00:00:00.000Z'}])
+  assert.strictEqual(evaluatePackagedUi(installedEnvelope('packaged-ui',packagedUiResult,{...changes,environment:'windows-packaged-app'}),gateContext).status,'BLOCKED');
+});
+test('packaged UI requires its packaged-app environment',()=>{
+ assert.strictEqual(evaluatePackagedUi(installedEnvelope('packaged-ui',packagedUiResult),gateContext).status,'BLOCKED');
+});
+test('packaged UI ignores safe unknown fields and emits only the evidence basename',()=>{
+ const result=evaluatePackagedUi(installedEnvelope('packaged-ui',{...packagedUiResult,futureEvidence:'safe'},
+  {environment:'windows-packaged-app'}),gateContext);
+ assert.strictEqual(result.evidence,'gate.json');assert(!JSON.stringify(result).includes('capture-1'));
+});
+test('packaged UI rejects privacy-forbidden extra evidence fields',()=>{
+ assert.throws(()=>evaluatePackagedUi(installedEnvelope('packaged-ui',{...packagedUiResult,accountName:'private'},
+  {environment:'windows-packaged-app'}),gateContext),/^Error: Camoufox preflight data contains private information$/);
+});
 const detachedGate=(evaluator,kind,result,changes={})=>evaluator(
  installedEnvelope(kind,result,changes),gateContext);
 

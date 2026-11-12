@@ -25,7 +25,15 @@ const MAX_FUTURE_MS=5*60*1000;
 const CANDIDATE_FIELDS=['commit','engineVersion','engineSha256','installerSha256'];
 const FORBIDDEN_KEY=/proxy|password|secret|token|cookie|account|profileName|privateKey|identityBlob|ipAddress/i;
 const SAFE_PRIVATE_KEY_FIELD='privateKeyEncryptedOutsideGit';
+const SAFE_NETWORK_FIELDS=new Set(['realProxyP2','labProxyP1','followedRealProxyRoute']);
 const FORBIDDEN_TEXT=/https?:\/\/|-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|CAMOU_CONFIG_/i;
+const RESOURCE_RAM_TIERS=Object.freeze([8,16,32]);
+const RESOURCE_WORKLOADS=Object.freeze(['light','medium','heavy']);
+const RESOURCE_CONCURRENCY=Object.freeze([1,3,5,10]);
+const REQUIRED_RESOURCE_MATRIX=Object.freeze(RESOURCE_RAM_TIERS.flatMap(ramGiB=>
+ RESOURCE_WORKLOADS.flatMap(workload=>RESOURCE_CONCURRENCY.map(concurrency=>
+  Object.freeze({ramGiB,workload,concurrency})
+ ))));
 
 function containsIpAddress(value){
  const ipv4=value.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)||[];
@@ -56,7 +64,7 @@ function assertPrivacySafe(value,ancestors=new Set()){
  for(const key of Reflect.ownKeys(value)){
   if(typeof key!=='string')throw Error('Invalid Camoufox preflight data');
   const property=Object.getOwnPropertyDescriptor(value,key);
-  if(key!==SAFE_PRIVATE_KEY_FIELD&&FORBIDDEN_KEY.test(key))
+  if(key!==SAFE_PRIVATE_KEY_FIELD&&!SAFE_NETWORK_FIELDS.has(key)&&FORBIDDEN_KEY.test(key))
    throw Error('Camoufox preflight data contains private information');
   if(!Object.hasOwn(property,'value'))throw Error('Invalid Camoufox preflight data');
   assertPrivacySafe(key,ancestors);
@@ -251,6 +259,116 @@ function evaluateGraphicsFingerprint(envelope,options={}){
  },'Headful real-GPU checks matched both profiles; canvas and audio were measured and font was probe-only');
 }
 
+const NETWORK_REQUIREMENTS=Object.freeze([
+ ['transportControl',value=>hasFields(value,['status','udpWorks'])&&value.status==='PASS'&&value.udpWorks===true,
+  'Measure transport control and verify UDP works'],
+ ['directPublicStun',value=>hasFields(value,['status','candidatesClassified'])&&value.status==='PASS'&&value.candidatesClassified===true,
+  'Classify direct public STUN candidates'],
+ ['realProxyP2',value=>hasFields(value,['status','unexpectedPublicCandidateCount'])&&value.status==='PASS'&&
+  Number.isSafeInteger(value.unexpectedPublicCandidateCount)&&value.unexpectedPublicCandidateCount===0,
+  'Measure P2 real-proxy public candidate count'],
+ ['dns',value=>hasFields(value,['status','followedRealProxyRoute'])&&value.status==='PASS'&&value.followedRealProxyRoute===true,
+  'Measure DNS routing through the real proxy'],
+ ['runtimeVsManager',value=>hasFields(value,['status','bothObserved','agree'])&&value.status==='PASS'&&
+  value.bothObserved===true&&value.agree===true,
+  'Observe runtime and manager routing and compare them'],
+ ['labProxyP1',value=>hasFields(value,['status','supportingOnly'])&&value.status==='PASS'&&value.supportingOnly===true,
+  'Measure supporting P1 lab-proxy evidence']
+]);
+
+function evaluateRealProxyNetwork(envelope,options={}){
+ const checked=validateEvidence(envelope,{candidate:options.candidate,kind:'network',now:options.now||new Date(),requireInstalled:true});
+ const evidence=gateEvidenceName(options.evidenceName);
+ if(checked.status==='BLOCKED')return gate('real-proxy-network','BLOCKED',checked.reason,evidence);
+ for(const [field,check,reason] of NETWORK_REQUIREMENTS){
+  if(!check(checked.result[field]))return gate('real-proxy-network','BLOCKED',reason,evidence);
+ }
+ return gate('real-proxy-network','PASS','Real-proxy transport, P2, DNS and runtime routing checks passed',evidence);
+}
+
+function resourceMatrixLabel(row){return `${row.ramGiB}GiB-${row.workload}-c${row.concurrency}`;}
+
+function resourceReportRow(report,candidate,now){
+ if(!report||typeof report!=='object'||Array.isArray(report)||
+  report.schema!=='lhm.browser-resource.evidence.v1')return {reason:'schema or report shape'};
+ let generatedAt;
+ try{generatedAt=normalizeEvidenceTimestamp(report.generatedAt);}catch{return {reason:'generated timestamp'};}
+ const age=preflightTime(now).getTime()-generatedAt.getTime();
+ if(age>MAX_AGE_MS)return {reason:'stale report'};
+ if(age< -MAX_FUTURE_MS)return {reason:'future report'};
+ if(report.commit!==candidate.commit||!report.app||report.app.sha256!==candidate.installerSha256||
+  !report.engine||report.engine.id!=='camoufox'||report.engine.version!==candidate.engineVersion||
+  report.engine.sha256!==candidate.engineSha256)return {reason:'candidate binding'};
+ if(!report.system||!Number.isFinite(report.system.totalRamBytes))return {reason:'RAM tier'};
+ const ramGiB=RESOURCE_RAM_TIERS.find(tier=>report.system.totalRamBytes>=tier*1024**3*0.95&&
+  report.system.totalRamBytes<=tier*1024**3*1.05);
+ if(!ramGiB)return {reason:'RAM tier'};
+ const workload=report.workload&&report.workload.id;
+ const concurrency=report.workload&&report.workload.concurrency;
+ if(!RESOURCE_WORKLOADS.includes(workload)||!RESOURCE_CONCURRENCY.includes(concurrency))return {reason:'workload matrix row'};
+ const row={ramGiB,workload,concurrency};
+ if(!Number.isSafeInteger(report.sampleCount)||report.sampleCount<10||!Array.isArray(report.samples)||
+  report.samples.length<10||report.samples.length!==report.sampleCount)return {reason:'sample count'};
+ if(report.crashCount!==0)return {reason:'crash count'};
+ if(!report.cleanup||report.cleanup.status!=='PASS'||report.cleanup.remainingPids!==0)return {reason:'cleanup'};
+ if(!report.headroomPolicy||report.headroomPolicy.minimumAvailableRatio!==0.20)return {reason:'headroom policy'};
+ return {row};
+}
+
+function evaluateResourceCapacity(entries,options={}){
+ const candidate=options.candidate,now=options.now||new Date();
+ assertPrivacySafe(entries);assertPrivacySafe(candidate);validateCandidate(candidate);
+ if(!Array.isArray(entries))throw Error('Resource capacity reports must be an array');
+ const reportNames=[];const found=new Map();let invalidReason;
+ for(const entry of entries){
+  if(!entry||typeof entry!=='object'||Array.isArray(entry)){
+   invalidReason='Resource report entry did not validate';continue;
+  }
+  const suppliedName=entry.evidenceName??entry.file??entry.name;
+  const name=evidenceBasename(suppliedName);reportNames.push(name);
+  const report=Object.hasOwn(entry,'report')?entry.report:entry;
+  const checked=resourceReportRow(report,candidate,now);
+  if(!checked.row){invalidReason=`Resource report did not validate: ${name}`;continue;}
+  const key=resourceMatrixLabel(checked.row);
+  if(found.has(key)){invalidReason=`Duplicate resource report: ${key}`;continue;}
+  found.set(key,name);
+ }
+ const evidence=[...new Set(reportNames)].sort((a,b)=>a<b?-1:a>b?1:0);
+ if(invalidReason)return gate('resource-capacity','BLOCKED',invalidReason,evidence);
+ for(const row of REQUIRED_RESOURCE_MATRIX){
+  const key=resourceMatrixLabel(row);
+  if(!found.has(key))return gate('resource-capacity','BLOCKED',`Missing resource report: ${key}`,evidence);
+ }
+ return gate('resource-capacity','PASS','All 36 required resource-capacity reports passed',evidence);
+}
+
+function safeCaptureName(value){
+ if(typeof value!=='string'||! /^[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?\.png$/i.test(value)||/[\\/]/.test(value))return false;
+ return !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(value.split('.')[0]);
+}
+
+function evaluatePackagedUi(envelope,options={}){
+ const checked=validateEvidence(envelope,{candidate:options.candidate,kind:'packaged-ui',now:options.now||new Date(),requireInstalled:false});
+ const evidence=gateEvidenceName(options.evidenceName);
+ if(checked.status==='BLOCKED')return gate('packaged-ui','BLOCKED',checked.reason,evidence);
+ if(envelope.environment!=='windows-packaged-app')
+  return gate('packaged-ui','BLOCKED','Packaged UI evidence must come from the Windows packaged app',evidence);
+ const result=checked.result;
+ const captures=result.captures;
+ if(result.exitCode!==0)return gate('packaged-ui','BLOCKED','Measure packaged UI process exit code',evidence);
+ if(result.stderr!=='')return gate('packaged-ui','BLOCKED','Measure packaged UI stderr and require it to be empty',evidence);
+ if(result.requiredCaptureCount!==13||!Array.isArray(captures)||captures.length!==13)
+  return gate('packaged-ui','BLOCKED','Capture all 13 required packaged UI screenshots',evidence);
+ const names=new Set();
+ for(const capture of captures){
+  if(!capture||typeof capture!=='object'||Array.isArray(capture)||!safeCaptureName(capture.name)||
+   names.has(capture.name.toLowerCase())||!Number.isSafeInteger(capture.bytes)||capture.bytes<100000)
+   return gate('packaged-ui','BLOCKED','Capture 13 distinct safe packaged UI PNGs of at least 100000 bytes',evidence);
+  names.add(capture.name.toLowerCase());
+ }
+ return gate('packaged-ui','PASS','Packaged UI exited cleanly and all 13 required screenshots were captured',evidence);
+}
+
 function finalize(candidate,gates,generatedAt){
  const ordered=GATE_IDS.map(id=>gates.find(item=>item&&item.id===id));
  if(ordered.some(item=>!item))throw Error('Camoufox preflight omitted a required gate');
@@ -285,4 +403,5 @@ function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
 }
 
 module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,
- evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,evaluateGraphicsFingerprint};
+ evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,evaluateGraphicsFingerprint,
+ evaluateRealProxyNetwork,evaluateResourceCapacity,evaluatePackagedUi,REQUIRED_RESOURCE_MATRIX};
