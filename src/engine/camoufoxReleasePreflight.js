@@ -26,7 +26,7 @@ const CANDIDATE_FIELDS=['commit','engineVersion','engineSha256','installerSha256
 const FORBIDDEN_KEY=/proxy|password|secret|token|cookie|account|profileName|privateKey|identityBlob|ipAddress/i;
 const SAFE_PRIVACY_FIELDS=new Set(['privateKeyEncryptedOutsideGit']);
 const SAFE_NETWORK_FIELDS=new Set(['realProxyP2','labProxyP1','followedRealProxyRoute']);
-const FORBIDDEN_TEXT=/https?:\/\/|-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|CAMOU_CONFIG_/i;
+const FORBIDDEN_TEXT=/https?:\/\/|\b(?:https?|ftp)[._-][a-z0-9.-]+|-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|CAMOU_CONFIG_/i;
 const RESOURCE_RAM_TIERS=Object.freeze([8,16,32]);
 const RESOURCE_WORKLOADS=Object.freeze(['light','medium','heavy']);
 const RESOURCE_CONCURRENCY=Object.freeze([1,3,5,10]);
@@ -112,7 +112,7 @@ function validateCandidate(candidate){
   typeof candidate.engineSha256!=='string'||!hash.test(candidate.engineSha256)||
   typeof candidate.installerSha256!=='string'||!hash.test(candidate.installerSha256)||
   typeof candidate.engineVersion!=='string'||
-  !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(candidate.engineVersion))
+  !/^\d{1,3}\.\d{1,5}\.\d{1,5}(?:\.\d{1,6})?$/.test(candidate.engineVersion))
   throw Error('Invalid Camoufox preflight candidate');
 }
 
@@ -186,7 +186,10 @@ function hasFields(value,keys){
 }
 
 function gateEvidenceName(evidenceName){
- return evidenceName==null?null:evidenceBasename(evidenceName);
+ if(evidenceName==null)return null;
+ const basename=evidenceBasename(evidenceName);
+ assertPrivacySafe(basename);
+ return basename;
 }
 
 function evaluateEvidenceGate(envelope,{candidate,now=new Date(),evidenceName}={},id,kind,check,passReason){
@@ -417,7 +420,8 @@ function evaluateArtifactTrust(candidate,artifact,options={}){
  if(!Number.isSafeInteger(releaseBytes)||releaseBytes<=0||!Number.isSafeInteger(observedBytes)||
   observedBytes<=0||releaseBytes!==observedBytes)
   return blocked('Observed archive size does not match the release descriptor');
- if(artifact.installedEntrySha256!==candidate.engineSha256)
+ if(typeof artifact.installedEntrySha256!=='string'||!/^[a-f0-9]{64}$/i.test(artifact.installedEntrySha256)||
+  artifact.installedEntrySha256.toLowerCase()!==candidate.engineSha256.toLowerCase())
   return blocked('Installed entry digest does not match the release candidate');
  if(!Number.isSafeInteger(artifact.installedFileCount)||artifact.installedFileCount<=0)
   return blocked('Installed file manifest is incomplete');
@@ -441,13 +445,14 @@ function evaluatePublisherCeremony(receipt,options={}){
   'Owner publisher ceremony receipt is required',evidence);
  const blocked=reason=>gate('publisher-ceremony','BLOCKED',reason,evidence);
  if(typeof receipt!=='object'||Array.isArray(receipt))return blocked('Publisher ceremony receipt is invalid');
- const generatedAt=freshReceiptTime(receipt.generatedAt,options.now||new Date());
+ const generatedAt=freshReceiptTime(receipt.generatedAt,options.now??new Date());
  if(!generatedAt)return blocked('Publisher ceremony receipt timestamp is invalid or stale');
  const packagedDigest=options.packagedPublicKeySpkiSha256;
  if(receipt.schema!=='lhm.camoufox-publisher-ceremony.v1')return blocked('Publisher ceremony receipt schema is unsupported');
- if(typeof receipt.publicKeySpkiSha256!=='string'||! /^[a-f0-9]{64}$/.test(receipt.publicKeySpkiSha256)||
-  typeof packagedDigest!=='string'||! /^[a-f0-9]{64}$/.test(packagedDigest)||
-  receipt.publicKeySpkiSha256!==packagedDigest)return blocked('Publisher ceremony key digest does not match the packaged key');
+ if(typeof receipt.publicKeySpkiSha256!=='string'||! /^[a-f0-9]{64}$/i.test(receipt.publicKeySpkiSha256)||
+  typeof packagedDigest!=='string'||! /^[a-f0-9]{64}$/i.test(packagedDigest)||
+  receipt.publicKeySpkiSha256.toLowerCase()!==packagedDigest.toLowerCase())
+  return blocked('Publisher ceremony key digest does not match the packaged key');
  if(receipt.environmentClass!=='owner-offline-production')return blocked('Publisher ceremony must be performed in the owner offline production environment');
  if(receipt.privateKeyEncryptedOutsideGit!==true||receipt.independentFromLicenseKey!==true||
   receipt.twoOfflineBackups!==true)return blocked('Publisher ceremony owner assertions are incomplete');
@@ -464,10 +469,11 @@ function evaluateCleanInstallUpgrade(receipt,options={}){
   'Owner clean install and upgrade receipt is required',evidence);
  const blocked=reason=>gate('clean-install-upgrade','BLOCKED',reason,evidence);
  if(typeof receipt!=='object'||Array.isArray(receipt))return blocked('Clean install and upgrade receipt is invalid');
- const generatedAt=freshReceiptTime(receipt.generatedAt,options.now||new Date());
+ const generatedAt=freshReceiptTime(receipt.generatedAt,options.now??new Date());
  if(!generatedAt)return blocked('Clean install and upgrade receipt timestamp is invalid or stale');
  if(receipt.schema!=='lhm.camoufox-clean-install.v1')return blocked('Clean install and upgrade receipt schema is unsupported');
- if(receipt.installerSha256!==options.candidate.installerSha256)
+ if(typeof receipt.installerSha256!=='string'||!/^[a-f0-9]{64}$/i.test(receipt.installerSha256)||
+  receipt.installerSha256.toLowerCase()!==options.candidate.installerSha256.toLowerCase())
   return blocked('Clean install and upgrade receipt is for a different installer');
  if(receipt.environmentClass!=='clean-windows-vm')return blocked('Clean install and upgrade receipt must come from a clean Windows VM');
  if(receipt.freshInstallPass!==true||receipt.upgradePass!==true||receipt.uninstallRetentionChecked!==true)
