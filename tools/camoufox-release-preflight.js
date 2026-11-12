@@ -6,10 +6,9 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {pipeline}=require('node:stream/promises');
 const {TextDecoder}=require('node:util');
-const {verifyCamoufoxReleaseResources}=require('./verify-camoufox-release-resources');
-const {loadCamoufoxPublisherKey}=require('../src/engine/camoufoxPublisherTrust');
-const {validateRelease}=require('../src/engine/camoufoxInstallService');
-const {BundledEngineManager,sha256File,signedPayload}=require('../src/engine/bundledEngineManager');
+const {loadVerifiedCamoufoxReleaseResources}=require('./verify-camoufox-release-resources');
+const {PUBLIC_KEY}=require('../src/licensing/manager');
+const {BundledEngineManager,sha256File,signedManifestSha256}=require('../src/engine/bundledEngineManager');
 const {
  gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,evaluateArtifactTrust,
  evaluatePublisherCeremony,evaluateConfiguredIdentity,evaluateStorageIsolation,
@@ -87,7 +86,8 @@ function readJson(file,optional=false){
   }
   if(length!==stat.size)throw Error('Input file changed during verification');
   const value=JSON.parse(utf8.decode(buffer.subarray(0,length)));
-  if(optional&&value===null)throw Error('An existing receipt cannot be null');
+  if(optional&&(!value||typeof value!=='object'||Array.isArray(value)))
+   throw Error('An existing receipt must be an object');
   return value;
  }finally{fs.closeSync(fd);}
 }
@@ -118,7 +118,7 @@ function loadEvidence(root){
  const {candidate,reports}=index;
  if(index.schema!=='lhm.camoufox-preflight.index.v1'||!candidate||typeof candidate!=='object'||
   Array.isArray(candidate)||!reports||typeof reports!=='object'||Array.isArray(reports)||
-  !Array.isArray(reports.resources)||reports.resources.length!==REQUIRED_RESOURCE_MATRIX.length)
+  !Array.isArray(reports.resources)||reports.resources.length>REQUIRED_RESOURCE_MATRIX.length)
   throw Error('Invalid evidence index');
 
  const seen=new Set([INDEX_FILE]);
@@ -163,28 +163,21 @@ async function evaluateRelease(args,now){
  const {candidate,archive,envelopes,resources}=loadEvidence(evidenceDir);
  const archiveCheck=validateEvidence(archive.report,{candidate,kind:'artifact-archive',now});
 
- const verifiedResources=verifyCamoufoxReleaseResources(resourcesDir);
- const publicKey=loadCamoufoxPublisherKey(resourcesDir);
- if(!verifiedResources.configured||!publicKey)throw Error('Publisher resources are unavailable');
- const descriptor=readJson(path.join(resourcesDir,'release.json'));
- const release=validateRelease(descriptor,{publicKey});
+ const {summary,publicKey,release}=loadVerifiedCamoufoxReleaseResources(resourcesDir,{licenseKey:PUBLIC_KEY});
+ if(!summary.configured)throw Error('Publisher resources are unavailable');
  const installed=new BundledEngineManager(engineDir,{publicKey,platform:'win32',engine:'camoufox',
   inspect:(_family,file)=>sha256File(file)}).verify();
- const installedManifest=validateRelease({
-  ...descriptor,manifest:readJson(path.join(engineDir,'manifest.json'))
- },{publicKey}).manifest;
  const installerSha256=await streamingSha256(installerFile);
  const packagedPublicKeySpkiSha256=crypto.createHash('sha256')
   .update(publicKey.export({format:'der',type:'spki'})).digest('hex');
 
  const artifact=evaluateArtifactTrust(candidate,{
-  resourcesConfigured:verifiedResources.configured,releaseVersion:release.manifest.version,
+  resourcesConfigured:summary.configured,releaseVersion:release.manifest.version,
   releaseArchiveSha256:release.sha256,releaseArchiveBytes:release.bytes,
   observedArchiveSha256:archiveCheck.result?.observedArchiveSha256,
   observedArchiveBytes:archiveCheck.result?.observedArchiveBytes,
   installedVersion:installed.version,installedEntrySha256:installed.sha256,installedFileCount:installed.fileCount,
-  installedVerified:true,descriptorManifestAgrees:release.manifest.signature===installedManifest.signature&&
-   signedPayload(release.manifest).equals(signedPayload(installedManifest)),
+  installedVerified:true,descriptorManifestAgrees:signedManifestSha256(release.manifest)===installed.manifestSha256,
   noPackagedPayload:true,noPrivateKeyMaterial:true
  },{evidenceName:archive.file});
  let artifactGate=artifact;

@@ -3,7 +3,9 @@ const assert=require('assert');
 const fs=require('fs');
 const os=require('os');
 const path=require('path');
-const {verifyCamoufoxReleaseResources}=require('../tools/verify-camoufox-release-resources');
+const {PUBLIC_KEY}=require('../src/licensing/manager');
+const {verifyCamoufoxReleaseResources,loadVerifiedCamoufoxReleaseResources}=
+ require('../tools/verify-camoufox-release-resources');
 
 const repoResources=path.join(__dirname,'..','resources','camoufox-engine');
 const verified=verifyCamoufoxReleaseResources(repoResources);
@@ -12,6 +14,12 @@ assert.strictEqual(verified.version,'156.0.1');
 assert.strictEqual(verified.fileCount,1579);
 assert.strictEqual(verified.archiveSha256,
  'd619b42d96cbc9bfadbf2e89dea5aba860b3d29c8b700b4af099a0412914b869');
+const snapshot=loadVerifiedCamoufoxReleaseResources(repoResources,{licenseKey:PUBLIC_KEY});
+assert.deepStrictEqual(snapshot.summary,verified);
+assert.strictEqual(snapshot.publicKey.asymmetricKeyType,'ed25519');
+assert.strictEqual(snapshot.descriptor.manifest,snapshot.release.manifest);
+assert.throws(()=>loadVerifiedCamoufoxReleaseResources(repoResources,{licenseKey:snapshot.publicKey}),
+ /must be independent of license signing key/);
 const workflow=fs.readFileSync(path.join(__dirname,'..','.github','workflows',
  'windows-exe.yml'),'utf8');
 assert(workflow.includes('verify-camoufox-release-resources.js')&&

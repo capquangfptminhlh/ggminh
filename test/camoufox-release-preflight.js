@@ -1057,8 +1057,9 @@ function makeCliFixture(root,{uppercaseInstallerDigest=false}={}){
  return {args,index,indexFile,resources,engine,evidence,installer,publisherReceipt,cleanInstallReceipt,releaseFile,pair};
 }
 
-function runCli(args){
- const result=spawnSync(process.execPath,[cliPath,...args],{encoding:'utf8',timeout:10000});
+function runCli(args,preload){
+ const options=preload?['--require',preload]:[];
+ const result=spawnSync(process.execPath,[...options,cliPath,...args],{encoding:'utf8',timeout:10000});
  if(result.error)throw result.error;
  return result;
 }
@@ -1138,6 +1139,33 @@ async function testCli(){
    typeof file==='string'&&/^[A-Za-z0-9.-]+\.json$/.test(file))));
   assert.deepStrictEqual(snapshotTree(root),readyBefore);
 
+  test('CLI reads each trust metadata file only once',()=>{
+   const metadata=[path.join(resources,'publisher-ed25519.pub'),releaseFile];
+   const preload=path.join(root,'count-resource-reads.js');
+   fs.writeFileSync(preload,`const fs=require('node:fs');
+const reads=new Map(${JSON.stringify(metadata)}.map(file=>[file,0]));
+const open=fs.openSync;
+const read=fs.readFileSync;
+let reading=false;
+function record(file){
+ if(!reads.has(file))return;
+ const count=reads.get(file)+1;
+ reads.set(file,count);
+ if(count>1)throw Error('Trust metadata was read again');
+}
+fs.openSync=function(file,...args){
+ if(!reading)record(file);
+ return open.call(this,file,...args);
+};
+fs.readFileSync=function(file,...args){
+ record(file);
+ reading=true;
+ try{return read.call(this,file,...args);}finally{reading=false;}
+};
+process.on('exit',()=>{if([...reads.values()].some(count=>count!==1))process.exitCode=3;});`);
+   assert.strictEqual(expectCliReport(runCli(args,preload),0).overall,'READY_FOR_OWNER_REVIEW');
+  });
+
   test('CLI is read-only when one installed graphics check blocks',()=>{
    const file=evidenceFile('graphics');
    const graphics=JSON.parse(fs.readFileSync(file));
@@ -1175,9 +1203,14 @@ async function testCli(){
    assert(manualGates.every(item=>item.status==='PASS'&&item.evidence===null));
   });
 
-  test('CLI reports valid JSON with an invalid owner receipt shape as blocked',()=>{
-   withFileContents(publisherReceipt,'[]',()=>{
-    expectSingleBlocker(runCli(args),'publisher-ceremony','Publisher ceremony receipt is invalid');
+  test('CLI rejects non-object owner receipts and blocks incomplete object receipts',()=>{
+   for(const file of [publisherReceipt,cleanInstallReceipt]){
+    for(const value of ['[]','false','42','"receipt"','null'])withFileContents(file,value,invalid);
+   }
+   const receipt=JSON.parse(fs.readFileSync(publisherReceipt));
+   delete receipt.ownerApprovalId;
+   withFileContents(publisherReceipt,JSON.stringify(receipt),()=>{
+    expectSingleBlocker(runCli(args),'publisher-ceremony','Publisher ceremony owner approval is missing');
    });
   });
 
@@ -1212,6 +1245,31 @@ async function testCli(){
    withFileContents(releaseFile,JSON.stringify(descriptor),()=>{
     assert.strictEqual(expectCliReport(runCli(args),0).overall,'READY_FOR_OWNER_REVIEW');
    });
+  });
+
+  test('CLI compares the manifest verified by the engine manager before a later swap',()=>{
+   const descriptor=JSON.parse(fs.readFileSync(releaseFile));
+   descriptor.manifest.files[1].sha256='e'.repeat(64);
+   descriptor.manifest.signature=crypto.sign(null,signedPayload(descriptor.manifest),fixture.pair.privateKey).toString('base64url');
+   const manifestFile=path.join(engine,'manifest.json');
+   const managerPath=require.resolve('../src/engine/bundledEngineManager');
+   const preload=path.join(root,'swap-after-verification.js');
+   fs.writeFileSync(preload,`const fs=require('node:fs');
+const {BundledEngineManager}=require(${JSON.stringify(managerPath)});
+const original=BundledEngineManager.prototype.verify;
+BundledEngineManager.prototype.verify=function(){
+ const verified=original.call(this);
+ fs.writeFileSync(${JSON.stringify(manifestFile)},${JSON.stringify(JSON.stringify(descriptor.manifest))});
+ return verified;
+};`);
+   const original=fs.readFileSync(manifestFile);
+   try{
+    withFileContents(releaseFile,JSON.stringify(descriptor),()=>{
+     const result=runCli(args,preload);
+     assert.deepStrictEqual(JSON.parse(fs.readFileSync(manifestFile)),descriptor.manifest);
+     expectSingleBlocker(result,'artifact-trust','Release descriptor and installed manifest disagree');
+    });
+   }finally{fs.writeFileSync(manifestFile,original);}
   });
 
   test('CLI accepts the same installer digest in uppercase across the index and reports',()=>{
@@ -1285,11 +1343,22 @@ async function testCli(){
     const bad={...index,reports:{...index.reports,identity:name}};
     withFileContents(indexFile,JSON.stringify(bad),invalid);
    }
-   const shorter={...index,reports:{...index.reports,resources:index.reports.resources.slice(1)}};
-   withFileContents(indexFile,JSON.stringify(shorter),invalid);
+   const longer={...index,reports:{...index.reports,resources:[...index.reports.resources,'resource-extra.json']}};
+   withFileContents(indexFile,JSON.stringify(longer),invalid);
    const duplicate={...index,reports:{...index.reports,
     resources:[index.reports.resources[1].toUpperCase(),...index.reports.resources.slice(1)]}};
    withFileContents(indexFile,JSON.stringify(duplicate),invalid);
+  });
+
+  test('CLI reports missing resource rows as a resource-capacity blocker',()=>{
+   for(const count of [0,35]){
+    const shorter={...index,reports:{...index.reports,resources:index.reports.resources.slice(0,count)}};
+    withFileContents(indexFile,JSON.stringify(shorter),()=>{
+     const result=expectCliReport(runCli(args),2);
+     assert.deepStrictEqual(result.blockers.map(({gate,status})=>[gate,status]),[['resource-capacity','BLOCKED']]);
+     assert.match(result.blockers[0].reason,/^Missing resource report: /);
+    });
+   }
   });
 
   test('CLI rejects invalid JSON files, invalid index schema, and failed internal verification',()=>{
@@ -1316,7 +1385,7 @@ async function testCli(){
     [null,evidenceFile('identity'),path.join(evidence,'report-link.json'),'file']
    ]){
     try{fs.symlinkSync(target,link,type);}catch(error){
-     if(process.platform==='win32'&&error.code==='EPERM'){
+     if(type==='file'&&process.platform==='win32'&&error.code==='EPERM'){
       skipped=true;
       continue;
      }
@@ -1332,15 +1401,7 @@ async function testCli(){
 
   test('CLI rejects symlinks in any input parent even for a missing receipt',()=>{
    const link=path.join(root,'linked-parent');
-   try{
-    fs.symlinkSync(root,link,process.platform==='win32'?'junction':'dir');
-   }catch(error){
-    if(process.platform==='win32'&&error.code==='EPERM'){
-     console.error('Skipping Camoufox preflight parent-junction cases because Windows denied junction creation');
-     return;
-    }
-    throw error;
-   }
+   fs.symlinkSync(root,link,process.platform==='win32'?'junction':'dir');
    try{
     for(let i=0;i<args.length;i+=2){
      const [flag,file]=[args[i],args[i+1]];

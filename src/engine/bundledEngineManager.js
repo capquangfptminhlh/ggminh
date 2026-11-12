@@ -84,6 +84,10 @@ function signedPayload(manifest){
   version:manifest.version,entry:manifest.entry,files:manifest.files};
  return Buffer.from(DOMAIN+canonicalManifest(signed),'utf8');
 }
+function signedManifestSha256(manifest){
+ return crypto.createHash('sha256').update(signedPayload(manifest)).update('\n')
+  .update(manifest.signature,'ascii').digest('hex');
+}
 function decodeSignature(signature){
  if(typeof signature!=='string'||signature.length>100||
     !/^[A-Za-z0-9_-]+$/.test(signature))
@@ -197,7 +201,7 @@ class BundledEngineManager{
   if(binary.sha256!==declared.sha256||binary.bytes!==declared.bytes)
    throw Error('Bundled browser executable changed during verification');
   return {executable,version:doc.version,fileCount:doc.files.length,
-   sha256:declared.sha256,engine:this.engine};
+   sha256:declared.sha256,engine:this.engine,manifestSha256:signedManifestSha256(doc)};
  }
  resolve(engine){
   if(engine!==this.engine)throw Error('Bundled engine not available for this browser family');
@@ -213,6 +217,6 @@ class BundledEngineManager{
   }
  }
 }
-module.exports={BundledEngineManager,canonicalManifest,signedPayload,
+module.exports={BundledEngineManager,canonicalManifest,signedPayload,signedManifestSha256,
  decodeSignature,fileName,normalizeEngineRelativePath,listFiles,sha256File,DOMAIN,
  containsPrivateKeyMaterial,PRIVATE_KEY_MARKERS};
