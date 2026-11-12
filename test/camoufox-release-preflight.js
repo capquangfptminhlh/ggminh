@@ -366,7 +366,8 @@ const resourceReport=(row,overrides={})=>({
  commit:candidate.commit,app:{sha256:candidate.installerSha256},
  engine:{id:'camoufox',version:candidate.engineVersion,sha256:candidate.engineSha256},
  system:{totalRamBytes:row.ramGiB*gib},workload:{id:row.workload,concurrency:row.concurrency},
- sampleCount:10,samples:Array(10).fill({availableRatio:0.3}),crashCount:0,
+ sampleCount:10,samples:Array(10).fill({startupMs:100,peakWorkingSetBytes:200000,
+  peakCpuPercent:5,crashed:false,cleanupOk:true}),crashCount:0,
  cleanup:{status:'PASS',remainingPids:0},headroomPolicy:{minimumAvailableRatio:0.20},...overrides
 });
 const resourceEntries=()=>REQUIRED_RESOURCE_MATRIX.map((row,index)=>({
@@ -428,6 +429,12 @@ test('resource capacity blocks duplicate matrix rows',()=>{
  const entries=resourceEntries();entries.push({...entries[0],evidenceName:'duplicate.json'});
  assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
 });
+test('resource capacity blocks duplicate normalized report basenames',()=>{
+ const entries=resourceEntries();
+ entries[0].evidenceName='C:\\first\\shared.json';
+ entries[1].evidenceName='/second/shared.json';
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+});
 for(const [label,overrides] of [
  ['wrong schema',{schema:'lhm.browser-resource.evidence.v2'}],
  ['wrong commit',{commit:'b'.repeat(40)}],
@@ -439,7 +446,7 @@ for(const [label,overrides] of [
  ['bad workload',{workload:{id:'other',concurrency:1}}],
  ['bad concurrency',{workload:{id:'light',concurrency:2}}],
  ['too few sample count',{sampleCount:9}],
- ['too few samples',{samples:Array(9).fill({availableRatio:0.3})}],
+ ['too few samples',{samples:Array(9).fill({startupMs:100,peakWorkingSetBytes:200000,peakCpuPercent:5,crashed:false,cleanupOk:true})}],
  ['inconsistent samples',{sampleCount:11}],
  ['crash',{crashCount:1}],
  ['cleanup status',{cleanup:{status:'FAIL',remainingPids:0}}],
@@ -451,9 +458,44 @@ for(const [label,overrides] of [
  const entries=resourceEntries();entries[0].report={...entries[0].report,...overrides};
  assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
 });
-test('resource capacity accepts tier boundary within five percent',()=>{
- const entries=resourceEntries();entries[0].report.system.totalRamBytes=8*gib*1.05;
+for(const tier of [8,16,32]) for(const boundary of ['lower','upper']) test(`resource capacity accepts ${boundary} five-percent boundary for ${tier}GiB`,()=>{
+ const entries=resourceEntries();
+ const target=entries.find(entry=>entry.report.system.totalRamBytes===tier*gib&&
+  entry.report.workload.id==='light'&&entry.report.workload.concurrency===1);
+ target.report.system.totalRamBytes=tier*gib*(boundary==='lower'?0.95:1.05);
  assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'PASS');
+});
+for(const tier of [8,16,32]) for(const boundary of ['lower','upper']) test(`resource capacity rejects immediately outside ${boundary} boundary for ${tier}GiB`,()=>{
+ const entries=resourceEntries();
+ const target=entries.find(entry=>entry.report.system.totalRamBytes===tier*gib&&
+  entry.report.workload.id==='light'&&entry.report.workload.concurrency===1);
+ target.report.system.totalRamBytes=tier*gib*(boundary==='lower'?0.95:1.05)+(boundary==='lower'?-1:1);
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+});
+test('resource RAM classification ranges never overlap',()=>{
+ const tiers=[8,16,32].map(tier=>({lower:tier*gib*0.95,upper:tier*gib*1.05}));
+ for(let i=1;i<tiers.length;i++)assert(tiers[i-1].upper<tiers[i].lower);
+ for(const {lower,upper} of tiers) for(const value of [lower-1,lower,upper,upper+1])
+  assert(tiers.filter(tier=>value>=tier.lower&&value<=tier.upper).length<=1);
+});
+for(const [label,change] of [
+ ['null sample',samples=>samples[0]=null],
+ ['array sample',samples=>samples[0]=[]],
+ ['missing metric',samples=>delete samples[0].startupMs],
+ ['nonnumeric metric',samples=>samples[0].peakCpuPercent='5'],
+ ['nonfinite metric',samples=>samples[0].peakCpuPercent=Infinity],
+ ['negative metric',samples=>samples[0].peakWorkingSetBytes=-1],
+ ['nonboolean crash flag',samples=>samples[0].crashed=0],
+ ['sample crash',samples=>samples[0].crashed=true],
+ ['sample cleanup failure',samples=>samples[0].cleanupOk=false]
+]) test(`resource capacity blocks ${label}`,()=>{
+ const entries=resourceEntries();change(entries[0].report.samples);
+ if(label==='sample crash')entries[0].report.crashCount=1;
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
+});
+test('resource capacity blocks aggregate crash count inconsistent with samples',()=>{
+ const entries=resourceEntries();entries[0].report.crashCount=1;
+ assert.strictEqual(evaluateResourceCapacity(entries,{candidate,now}).status,'BLOCKED');
 });
 test('resource capacity reduces evidence paths to sorted safe basenames',()=>{
  const entries=resourceEntries();entries[0].evidenceName='C:\\private\\deep\\report.json';

@@ -309,7 +309,18 @@ function resourceReportRow(report,candidate,now){
  const row={ramGiB,workload,concurrency};
  if(!Number.isSafeInteger(report.sampleCount)||report.sampleCount<10||!Array.isArray(report.samples)||
   report.samples.length<10||report.samples.length!==report.sampleCount)return {reason:'sample count'};
- if(report.crashCount!==0)return {reason:'crash count'};
+ let derivedCrashCount=0;
+ for(const sample of report.samples){
+  if(!sample||typeof sample!=='object'||Array.isArray(sample)||
+   !['startupMs','peakWorkingSetBytes','peakCpuPercent','crashed','cleanupOk'].every(key=>Object.hasOwn(sample,key))||
+   !Number.isFinite(sample.startupMs)||sample.startupMs<0||
+   !Number.isFinite(sample.peakWorkingSetBytes)||sample.peakWorkingSetBytes<0||
+   !Number.isFinite(sample.peakCpuPercent)||sample.peakCpuPercent<0||
+   typeof sample.crashed!=='boolean'||typeof sample.cleanupOk!=='boolean')return {reason:'sample integrity'};
+  if(sample.crashed)derivedCrashCount++;
+  if(sample.crashed!==false||sample.cleanupOk!==true)return {reason:'sample integrity'};
+ }
+ if(report.crashCount!==derivedCrashCount||report.crashCount!==0)return {reason:'crash count'};
  if(!report.cleanup||report.cleanup.status!=='PASS'||report.cleanup.remainingPids!==0)return {reason:'cleanup'};
  if(!report.headroomPolicy||report.headroomPolicy.minimumAvailableRatio!==0.20)return {reason:'headroom policy'};
  return {row};
@@ -319,13 +330,16 @@ function evaluateResourceCapacity(entries,options={}){
  const candidate=options.candidate,now=options.now||new Date();
  assertPrivacySafe(entries);assertPrivacySafe(candidate);validateCandidate(candidate);
  if(!Array.isArray(entries))throw Error('Resource capacity reports must be an array');
- const reportNames=[];const found=new Map();let invalidReason;
+ const reportNames=[];const normalizedNames=new Set();const found=new Map();let invalidReason;
  for(const entry of entries){
   if(!entry||typeof entry!=='object'||Array.isArray(entry)){
    invalidReason='Resource report entry did not validate';continue;
   }
   const suppliedName=entry.evidenceName??entry.file??entry.name;
   const name=evidenceBasename(suppliedName);reportNames.push(name);
+  const normalizedName=name.toLowerCase();
+  if(normalizedNames.has(normalizedName))invalidReason=`Duplicate resource evidence basename: ${name}`;
+  normalizedNames.add(normalizedName);
   const report=Object.hasOwn(entry,'report')?entry.report:entry;
   const checked=resourceReportRow(report,candidate,now);
   if(!checked.row){invalidReason=`Resource report did not validate: ${name}`;continue;}
