@@ -187,8 +187,8 @@ jobs:
         shell: pwsh
         run: |
           $source='./resources/camoufox-engine'
-          $files=@(Get-ChildItem -LiteralPath $source -Recurse -File)
-          if ($files.Count -ne 1 -or $files[0].Name -ne 'README.md') {
+          node tools/verify-camoufox-release-resources.js $source
+          if ($LASTEXITCODE -ne 0) {
             throw 'Unreviewed Camoufox browser resource entered the product staging directory'
           }
           if (Test-Path './dist/win-unpacked/resources/lhm-camoufox/camoufox.exe') {

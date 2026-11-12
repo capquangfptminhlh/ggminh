@@ -27,6 +27,11 @@ assert(workflow.includes('verify-camoufox-release-resources.js')&&
  'Windows CI must validate both source and packaged Camoufox release metadata');
 assert(!workflow.includes('@("camoufox.exe", "release.json", "publisher-ed25519.pub")'),
  'Windows CI must allow only the verified public key + descriptor pair');
+const upstreamWorkflow=fs.readFileSync(path.join(__dirname,'..','.github','workflows',
+ 'camoufox-upstream-smoke.yml'),'utf8');
+assert(upstreamWorkflow.includes('verify-camoufox-release-resources.js')&&
+ !upstreamWorkflow.includes("$files.Count -ne 1"),
+ 'Upstream smoke must verify signed metadata instead of assuming README-only resources');
 
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-release-resources-'));
 try{
