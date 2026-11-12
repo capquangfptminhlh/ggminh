@@ -65,6 +65,26 @@ function assertPrivacySafe(value,ancestors=new Set()){
  ancestors.delete(value);
 }
 
+function copyPlainData(value){
+ if(value===null||typeof value!=='object')return value;
+ const copy=Array.isArray(value)?new Array(value.length):Object.create(Object.getPrototypeOf(value));
+ for(const key of Reflect.ownKeys(value)){
+  if(Array.isArray(value)&&key==='length')continue;
+  const descriptor=Object.getOwnPropertyDescriptor(value,key);
+  Object.defineProperty(copy,key,{...descriptor,value:copyPlainData(descriptor.value)});
+ }
+ return copy;
+}
+
+function projectCandidate(candidate){
+ return {
+  commit:candidate.commit,
+  engineVersion:candidate.engineVersion,
+  engineSha256:candidate.engineSha256,
+  installerSha256:candidate.installerSha256
+ };
+}
+
 function gate(id,status,reason,evidence=null){
  if(!GATE_IDS.includes(id)||!STATUS.has(status)||typeof reason!=='string'||!reason)
   throw Error('Invalid Camoufox preflight gate');
@@ -121,7 +141,7 @@ function validateEvidence(envelope,{candidate,kind,now=new Date(),requireInstall
  else if(age>MAX_AGE_MS)reason='Evidence is older than 30 days';
  else if(age< -MAX_FUTURE_MS)reason='Evidence is more than five minutes in the future';
  if(reason)return {status:'BLOCKED',reason};
- return {status:'PASS',generatedAt:generatedAt.toISOString(),result:envelope.result};
+ return {status:'PASS',generatedAt:generatedAt.toISOString(),result:copyPlainData(envelope.result)};
 }
 
 function evidenceBasename(value){
@@ -169,10 +189,10 @@ function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
   const validated=gate(item.id,item.status,item.reason,item.evidence);
   if(seen.has(item.id))throw Error('Invalid Camoufox preflight gate');
   seen.add(item.id);
-  validated.evidence=sanitizeEvidence(validated.evidence);
+  validated.evidence=sanitizeEvidence(copyPlainData(validated.evidence));
   sanitizedGates.push(validated);
  }
- return finalize(candidate,sanitizedGates,preflightTime(now).toISOString());
+ return finalize(projectCandidate(candidate),sanitizedGates,preflightTime(now).toISOString());
 }
 
 module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight};

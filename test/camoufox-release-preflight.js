@@ -275,6 +275,38 @@ test('outputs only the basename of Windows and POSIX evidence paths',()=>{
  }
 });
 
+test('detaches candidate data and excludes extra candidate fields from reports',()=>{
+ const input={...candidate,buildMetadata:{branch:'release'}};
+ const report=evaluateCamoufoxReleasePreflight(input,gates,now);
+ assert.deepStrictEqual(report.candidate,candidate);
+ assert.deepStrictEqual(Object.keys(report.candidate),[
+  'commit','engineVersion','engineSha256','installerSha256'
+ ]);
+ input.commit='a'.repeat(39)+'b';
+ input.buildMetadata.branch='injected-after-validation';
+ assert.deepStrictEqual(report.candidate,candidate);
+ assert(!JSON.stringify(report).includes('buildMetadata'));
+});
+
+test('detaches nested gate evidence after evaluation',()=>{
+ const input={details:[{verified:true}]};
+ const report=evaluateCamoufoxReleasePreflight(candidate,
+  withGate(gate('publisher-ceremony','PASS','Reviewed',input)),now);
+ input.details[0].verified='http://example.invalid/injected-value';
+ input.details.push({later:true});
+ assert.deepStrictEqual(report.gates[1].evidence,{details:[{verified:true}]});
+ assert(!JSON.stringify(report).includes('example.invalid'));
+});
+
+test('detaches validated envelope results after evidence validation',()=>{
+ const input={details:[{verified:true}]};
+ const checked=validateEvidence({...envelope,result:input},evidenceOptions);
+ input.details[0].verified='http://example.invalid/injected-value';
+ input.details.push({later:true});
+ assert.deepStrictEqual(checked.result,{details:[{verified:true}]});
+ assert(!JSON.stringify(checked).includes('example.invalid'));
+});
+
 for(const file of ['/review/deep/..','C:\\review\\deep\\..','/review/identity.json:alternate',
  '/review/.','C:\\review\\.','/review/../identity.json','\\\\?\\C:\\review\\identity.json',
  '','relative/path/bad name.json','relative/path/file.json.','C:\\review\\CON.txt']){
