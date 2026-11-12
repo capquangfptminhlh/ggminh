@@ -8,6 +8,12 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
 
 (async()=>{
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-camoufox-native-'));
+ const nativeWindowsSmoke=fs.readFileSync(path.join(__dirname,'..','tools',
+  'test-camoufox-native-windows.js'),'utf8');
+ assert(nativeWindowsSmoke.includes('capabilityResolver:')&&
+  nativeWindowsSmoke.includes("engineVersion==='upstream-verified-test-only'")&&
+  nativeWindowsSmoke.includes("proxyTypes:[]"),
+ 'Windows upstream smoke must opt into only its exact manual test capability');
  const processes=[],invocations=[];
  const mockSpawn=(executable,args,options)=>{
   const child=new EventEmitter();
