@@ -1638,8 +1638,12 @@ BundledEngineManager.prototype.verify=function(){
    writeJson(indexFile,{...index,ignored:url,candidate:{...index.candidate,ignored:url},
     reports:{...index.reports,ignored:url}});
    const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>!/(?:^|_)proxy$/i.test(key)));
+   const proxyTestEnv={...env,HTTP_PROXY:origin,HTTPS_PROXY:origin,NO_PROXY:'',
+    NODE_USE_ENV_PROXY:'1',NODE_NO_WARNINGS:'1'};
+   assert.strictEqual(proxyTestEnv.NODE_NO_WARNINGS,'1',
+    'network-trap subprocess must suppress expected Node runtime experimental warnings');
    const output=await promisify(execFile)(process.execPath,[cliPath,...args],{encoding:'utf8',timeout:10000,
-    env:{...env,HTTP_PROXY:origin,HTTPS_PROXY:origin,NO_PROXY:'',NODE_USE_ENV_PROXY:'1'}});
+    env:proxyTestEnv});
    const result=expectCliReport({...output,status:0},0);
    assert.deepStrictEqual(result.candidate,index.candidate);
    assert(!output.stdout.includes(url));
