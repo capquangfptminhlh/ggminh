@@ -4,7 +4,8 @@ const {
  evaluateCamoufoxReleasePreflight,gate,GATE_IDS,validateEvidence,
  evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,
  evaluateGraphicsFingerprint,evaluateRealProxyNetwork,evaluateResourceCapacity,
- evaluatePackagedUi,REQUIRED_RESOURCE_MATRIX
+ evaluatePackagedUi,REQUIRED_RESOURCE_MATRIX,evaluateArtifactTrust,
+ evaluatePublisherCeremony,evaluateCleanInstallUpgrade
 }=require('../src/engine/camoufoxReleasePreflight');
 
 function test(name,run){try{run();}catch(error){console.error(name);throw error;}}
@@ -730,6 +731,184 @@ test('graphics fingerprint blocks wrong-candidate and stale evidence',()=>{
   {candidate:{...candidate,engineSha256:'f'.repeat(64)}},
   {generatedAt:'2026-10-01T00:00:00.000Z'}
  ]) assert.strictEqual(detachedGate(evaluateGraphicsFingerprint,'graphics',graphicsResult,changes).status,'BLOCKED');
+});
+
+const artifactResult={
+ resourcesConfigured:true,
+ releaseVersion:'156.0.1',installedVersion:'156.0.1',
+ releaseArchiveSha256:'d619'.padEnd(64,'b'),releaseArchiveBytes:1355084308,
+ observedArchiveSha256:'d619'.padEnd(64,'b'),observedArchiveBytes:1355084308,
+ installedEntrySha256:'c'.repeat(64),installedFileCount:1579,
+ installedVerified:true,descriptorManifestAgrees:true,
+ noPackagedPayload:true,noPrivateKeyMaterial:true
+};
+const ceremonyReceipt={
+ schema:'lhm.camoufox-publisher-ceremony.v1',generatedAt:'2026-11-11T04:00:00.000Z',
+ publicKeySpkiSha256:'c'.repeat(64),environmentClass:'owner-offline-production',
+ privateKeyEncryptedOutsideGit:true,independentFromLicenseKey:true,twoOfflineBackups:true,
+ ownerApprovalId:'QD-02'
+};
+const installReceipt={
+ schema:'lhm.camoufox-clean-install.v1',generatedAt:'2026-11-11T04:00:00.000Z',
+ installerSha256:candidate.installerSha256,environmentClass:'clean-windows-vm',
+ freshInstallPass:true,upgradePass:true,uninstallRetentionChecked:true,ownerApprovalId:'release-owner'
+};
+const gateOptions={candidate,now,evidenceName:'C:\\private\\evidence\\receipt.json'};
+
+test('artifact trust passes a fully verified adapter result and emits only safe evidence basename',()=>{
+ const result=evaluateArtifactTrust(candidate,artifactResult,gateOptions);
+ assert.deepStrictEqual(result,{id:'artifact-trust',status:'PASS',
+  reason:'Installed Camoufox artifacts match the release descriptor and trust checks',evidence:'receipt.json'});
+ assert(!JSON.stringify(result).includes('d619'));
+});
+for(const [label,change] of [
+ ['resources not configured',a=>a.resourcesConfigured=false],
+ ['release version mismatch',a=>a.releaseVersion='156.0.2'],
+ ['installed version mismatch',a=>a.installedVersion='156.0.2'],
+ ['observed archive hash mismatch',a=>a.observedArchiveSha256='e'.repeat(64)],
+ ['archive byte mismatch',a=>a.observedArchiveBytes++],
+ ['invalid archive hash',a=>a.releaseArchiveSha256='not-a-hash'],
+ ['invalid archive size',a=>a.releaseArchiveBytes=Number.MAX_SAFE_INTEGER+1],
+ ['installed manifest false',a=>a.installedVerified=false],
+ ['descriptor disagreement',a=>a.descriptorManifestAgrees=false],
+ ['installed entry hash mismatch',a=>a.installedEntrySha256='f'.repeat(64)],
+ ['zero installed file count',a=>a.installedFileCount=0],
+ ['invalid installed file count',a=>a.installedFileCount=1.5],
+ ['packaged payload present',a=>a.noPackagedPayload=false],
+ ['private material found',a=>a.noPrivateKeyMaterial=false]
+]) test('artifact trust blocks '+label,()=>{
+ const input={...artifactResult};change(input);
+ assert.strictEqual(evaluateArtifactTrust(candidate,input,gateOptions).status,'BLOCKED');
+});
+test('artifact trust blocks candidate version and entry digest mismatches',()=>{
+ assert.strictEqual(evaluateArtifactTrust({...candidate,engineVersion:'156.0.2'},artifactResult,gateOptions).status,'BLOCKED');
+ assert.strictEqual(evaluateArtifactTrust({...candidate,engineSha256:'e'.repeat(64)},artifactResult,gateOptions).status,'BLOCKED');
+});
+test('artifact trust requires both release resource configuration flags',()=>{
+ const input={...artifactResult,resources:{release:false,installed:true}};
+ delete input.resourcesConfigured;
+ assert.strictEqual(evaluateArtifactTrust(candidate,input,gateOptions).status,'BLOCKED');
+});
+test('artifact trust ignores safe unknown fields and does not alias adapter input',()=>{
+ const input={...artifactResult,futureEvidence:'note'};
+ const result=evaluateArtifactTrust(candidate,input,gateOptions);
+ input.releaseVersion='156.0.2';input.futureEvidence='changed';
+ assert.strictEqual(result.status,'PASS');
+ assert(!JSON.stringify(result).includes('futureEvidence'));
+});
+test('artifact trust rejects forbidden unknown fields',()=>{
+ assert.throws(()=>evaluateArtifactTrust(candidate,{...artifactResult,privateKey:'secret'},gateOptions),
+  /^Error: Camoufox preflight data contains private information$/);
+});
+
+test('publisher ceremony passes only the matching owner receipt and SPKI digest',()=>{
+ const result=evaluatePublisherCeremony(ceremonyReceipt,{...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)});
+ assert.strictEqual(result.status,'PASS');assert.strictEqual(result.evidence,'receipt.json');
+ assert(!JSON.stringify(result).includes('QD-02'));
+});
+test('publisher ceremony missing receipt remains manual required',()=>{
+ assert.strictEqual(evaluatePublisherCeremony(null,{...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'MANUAL_REQUIRED');
+});
+for(const [label,change] of [
+ ['schema',r=>r.schema='wrong'],
+ ['stale timestamp',r=>r.generatedAt='2026-10-12T11:59:59.999Z'],
+ ['future timestamp',r=>r.generatedAt='2026-11-11T12:05:00.001Z'],
+ ['wrong SPKI digest',r=>r.publicKeySpkiSha256='d'.repeat(64)],
+ ['wrong environment',r=>r.environmentClass='development'],
+ ['unencrypted key assertion',r=>r.privateKeyEncryptedOutsideGit=false],
+ ['not independent from license key',r=>r.independentFromLicenseKey=false],
+ ['backups missing',r=>r.twoOfflineBackups=false],
+ ['approval mismatch',r=>r.ownerApprovalId='OTHER'],
+ ['approval missing',r=>delete r.ownerApprovalId]
+]) test('publisher ceremony blocks '+label,()=>{
+ const receipt={...ceremonyReceipt};change(receipt);
+ assert.strictEqual(evaluatePublisherCeremony(receipt,{...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'BLOCKED');
+});
+test('publisher ceremony treats malformed timestamp as an explicit safe block',()=>{
+ const result=evaluatePublisherCeremony({...ceremonyReceipt,generatedAt:'bad'},
+  {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)});
+ assert.strictEqual(result.status,'BLOCKED');
+});
+test('publisher ceremony ignores safe extras without claiming independent custody proof',()=>{
+ const result=evaluatePublisherCeremony({...ceremonyReceipt,futureEvidence:{revision:2}},
+  {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)});
+ assert.strictEqual(result.status,'PASS');
+ assert(!JSON.stringify(result).includes('revision'));
+});
+test('publisher ceremony rejects forbidden extra fields',()=>{
+ assert.throws(()=>evaluatePublisherCeremony({...ceremonyReceipt,privateKey:'secret'},
+  {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}),
+  /^Error: Camoufox preflight data contains private information$/);
+});
+test('publisher ceremony accepts the safe private-key custody assertion field',()=>{
+ assert.strictEqual(evaluatePublisherCeremony(ceremonyReceipt,
+  {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'PASS');
+});
+
+test('clean install and upgrade passes the matching fresh-install receipt',()=>{
+ const result=evaluateCleanInstallUpgrade(installReceipt,gateOptions);
+ assert.strictEqual(result.status,'PASS');assert.strictEqual(result.evidence,'receipt.json');
+});
+test('clean install and upgrade missing receipt remains manual required',()=>{
+ assert.strictEqual(evaluateCleanInstallUpgrade(null,gateOptions).status,'MANUAL_REQUIRED');
+});
+for(const [label,change] of [
+ ['schema',r=>r.schema='wrong'],
+ ['stale timestamp',r=>r.generatedAt='2026-10-12T11:59:59.999Z'],
+ ['future timestamp',r=>r.generatedAt='2026-11-11T12:05:00.001Z'],
+ ['installer hash mismatch',r=>r.installerSha256='e'.repeat(64)],
+ ['wrong environment',r=>r.environmentClass='windows-dev'],
+ ['fresh install false',r=>r.freshInstallPass=false],
+ ['upgrade false',r=>r.upgradePass=false],
+ ['uninstall retention unchecked',r=>r.uninstallRetentionChecked=false],
+ ['approval missing',r=>delete r.ownerApprovalId],
+ ['approval unsafe',r=>r.ownerApprovalId='../release-owner']
+]) test('clean install and upgrade blocks '+label,()=>{
+ const receipt={...installReceipt};change(receipt);
+ assert.strictEqual(evaluateCleanInstallUpgrade(receipt,gateOptions).status,'BLOCKED');
+});
+test('clean install and upgrade blocks malformed timestamp',()=>{
+ assert.strictEqual(evaluateCleanInstallUpgrade({...installReceipt,generatedAt:'bad'},gateOptions).status,'BLOCKED');
+});
+test('clean install and upgrade ignores safe extras and rejects private extras',()=>{
+ const result=evaluateCleanInstallUpgrade({...installReceipt,futureEvidence:'note'},gateOptions);
+ assert.strictEqual(result.status,'PASS');assert(!JSON.stringify(result).includes('futureEvidence'));
+ assert.throws(()=>evaluateCleanInstallUpgrade({...installReceipt,profileName:'private'},gateOptions),
+  /^Error: Camoufox preflight data contains private information$/);
+});
+test('owner receipt evaluators detach results from mutable inputs',()=>{
+ const receipt={...installReceipt};const result=evaluateCleanInstallUpgrade(receipt,gateOptions);
+ receipt.installerSha256='e'.repeat(64);receipt.generatedAt='bad';
+ assert.strictEqual(result.status,'PASS');
+});
+test('receipt freshness boundaries allow exactly maximum age and future skew',()=>{
+ for(const generatedAt of ['2026-10-12T12:00:00.000Z','2026-11-11T12:05:00.000Z']){
+  assert.strictEqual(evaluateCleanInstallUpgrade({...installReceipt,generatedAt},{...gateOptions}).status,'PASS');
+  assert.strictEqual(evaluatePublisherCeremony({...ceremonyReceipt,generatedAt},
+   {...gateOptions,packagedPublicKeySpkiSha256:'c'.repeat(64)}).status,'PASS');
+ }
+});
+test('composed ten-gate report preserves exact owner manual assertions',()=>{
+ const composed=GATE_IDS.map(id=>id==='artifact-trust'?evaluateArtifactTrust(candidate,artifactResult):
+  id==='publisher-ceremony'?evaluatePublisherCeremony(ceremonyReceipt,{candidate,now,packagedPublicKeySpkiSha256:'c'.repeat(64)}):
+  id==='clean-install-upgrade'?evaluateCleanInstallUpgrade(installReceipt,{candidate,now}):
+  gate(id,'PASS',`${id} verified`));
+ const report=evaluateCamoufoxReleasePreflight(candidate,composed,now);
+ assert.deepStrictEqual(report.manualAssertions,[
+  {gate:'publisher-ceremony',status:'PASS'},
+  {gate:'clean-install-upgrade',status:'PASS'}
+ ]);
+});
+test('composed ten-gate report marks both absent owner receipts as manual assertions',()=>{
+ const composed=GATE_IDS.map(id=>id==='artifact-trust'?evaluateArtifactTrust(candidate,artifactResult):
+  id==='publisher-ceremony'?evaluatePublisherCeremony(null,{candidate,now,packagedPublicKeySpkiSha256:'c'.repeat(64)}):
+  id==='clean-install-upgrade'?evaluateCleanInstallUpgrade(null,{candidate,now}):
+  gate(id,'PASS',`${id} verified`));
+ const report=evaluateCamoufoxReleasePreflight(candidate,composed,now);
+ assert.deepStrictEqual(report.manualAssertions,[
+  {gate:'publisher-ceremony',status:'MANUAL_REQUIRED'},
+  {gate:'clean-install-upgrade',status:'MANUAL_REQUIRED'}
+ ]);
 });
 
 test('prints only the required success line',()=>{});

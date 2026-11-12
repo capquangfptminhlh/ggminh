@@ -24,7 +24,7 @@ const MAX_AGE_MS=30*24*60*60*1000;
 const MAX_FUTURE_MS=5*60*1000;
 const CANDIDATE_FIELDS=['commit','engineVersion','engineSha256','installerSha256'];
 const FORBIDDEN_KEY=/proxy|password|secret|token|cookie|account|profileName|privateKey|identityBlob|ipAddress/i;
-const SAFE_PRIVATE_KEY_FIELD='privateKeyEncryptedOutsideGit';
+const SAFE_PRIVACY_FIELDS=new Set(['privateKeyEncryptedOutsideGit','noPrivateKeyMaterial']);
 const SAFE_NETWORK_FIELDS=new Set(['realProxyP2','labProxyP1','followedRealProxyRoute']);
 const FORBIDDEN_TEXT=/https?:\/\/|-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|CAMOU_CONFIG_/i;
 const RESOURCE_RAM_TIERS=Object.freeze([8,16,32]);
@@ -64,7 +64,7 @@ function assertPrivacySafe(value,ancestors=new Set()){
  for(const key of Reflect.ownKeys(value)){
   if(typeof key!=='string')throw Error('Invalid Camoufox preflight data');
   const property=Object.getOwnPropertyDescriptor(value,key);
-  if(key!==SAFE_PRIVATE_KEY_FIELD&&!SAFE_NETWORK_FIELDS.has(key)&&FORBIDDEN_KEY.test(key))
+  if(!SAFE_PRIVACY_FIELDS.has(key)&&!SAFE_NETWORK_FIELDS.has(key)&&FORBIDDEN_KEY.test(key))
    throw Error('Camoufox preflight data contains private information');
   if(!Object.hasOwn(property,'value'))throw Error('Invalid Camoufox preflight data');
   assertPrivacySafe(key,ancestors);
@@ -383,6 +383,94 @@ function evaluatePackagedUi(envelope,options={}){
  return gate('packaged-ui','PASS','Packaged UI exited cleanly and all 13 required screenshots were captured',evidence);
 }
 
+function freshReceiptTime(value,now){
+ let generatedAt;
+ try{generatedAt=normalizeEvidenceTimestamp(value);}catch{return null;}
+ const age=preflightTime(now).getTime()-generatedAt.getTime();
+ if(age>MAX_AGE_MS||age< -MAX_FUTURE_MS)return null;
+ return generatedAt;
+}
+
+function evaluateArtifactTrust(candidate,artifact,options={}){
+ assertPrivacySafe(candidate);assertPrivacySafe(artifact);
+ validateCandidate(candidate);
+ const evidence=gateEvidenceName(options.evidenceName);
+ const blocked=reason=>gate('artifact-trust','BLOCKED',reason,evidence);
+ if(!artifact||typeof artifact!=='object'||Array.isArray(artifact))
+  return blocked('Artifact trust adapter result is unavailable');
+ const hash=value=>typeof value==='string'&&/^[a-f0-9]{64}$/i.test(value)?value.toLowerCase():null;
+ const releaseHash=hash(artifact.releaseArchiveSha256),observedHash=hash(artifact.observedArchiveSha256);
+ const releaseBytes=artifact.releaseArchiveBytes,observedBytes=artifact.observedArchiveBytes;
+ if(artifact.resourcesConfigured!==true)
+  return blocked('Artifact resources are not configured');
+ if(artifact.releaseVersion!==candidate.engineVersion||artifact.installedVersion!==candidate.engineVersion)
+  return blocked('Artifact engine version does not match the release candidate');
+ if(!releaseHash||!observedHash||releaseHash!==observedHash)
+  return blocked('Observed archive digest does not match the release descriptor');
+ if(!Number.isSafeInteger(releaseBytes)||releaseBytes<=0||!Number.isSafeInteger(observedBytes)||
+  observedBytes<=0||releaseBytes!==observedBytes)
+  return blocked('Observed archive size does not match the release descriptor');
+ if(artifact.installedEntrySha256!==candidate.engineSha256)
+  return blocked('Installed entry digest does not match the release candidate');
+ if(!Number.isSafeInteger(artifact.installedFileCount)||artifact.installedFileCount<=0)
+  return blocked('Installed file manifest is incomplete');
+ if(artifact.installedVerified!==true)
+  return blocked('Installed artifact verification failed');
+ if(artifact.descriptorManifestAgrees!==true)
+  return blocked('Release descriptor and installed manifest disagree');
+ if(artifact.noPackagedPayload!==true)
+  return blocked('Packaged payload check failed');
+ if(artifact.noPrivateKeyMaterial!==true)
+  return blocked('Private key material check failed');
+ return gate('artifact-trust','PASS',
+  'Installed Camoufox artifacts match the release descriptor and trust checks',evidence);
+}
+
+function evaluatePublisherCeremony(receipt,options={}){
+ assertPrivacySafe(receipt);assertPrivacySafe(options.candidate);
+ validateCandidate(options.candidate);
+ const evidence=gateEvidenceName(options.evidenceName);
+ if(receipt==null)return gate('publisher-ceremony','MANUAL_REQUIRED',
+  'Owner publisher ceremony receipt is required',evidence);
+ const blocked=reason=>gate('publisher-ceremony','BLOCKED',reason,evidence);
+ if(typeof receipt!=='object'||Array.isArray(receipt))return blocked('Publisher ceremony receipt is invalid');
+ const generatedAt=freshReceiptTime(receipt.generatedAt,options.now||new Date());
+ if(!generatedAt)return blocked('Publisher ceremony receipt timestamp is invalid or stale');
+ const packagedDigest=options.packagedPublicKeySpkiSha256;
+ if(receipt.schema!=='lhm.camoufox-publisher-ceremony.v1')return blocked('Publisher ceremony receipt schema is unsupported');
+ if(typeof receipt.publicKeySpkiSha256!=='string'||! /^[a-f0-9]{64}$/.test(receipt.publicKeySpkiSha256)||
+  typeof packagedDigest!=='string'||! /^[a-f0-9]{64}$/.test(packagedDigest)||
+  receipt.publicKeySpkiSha256!==packagedDigest)return blocked('Publisher ceremony key digest does not match the packaged key');
+ if(receipt.environmentClass!=='owner-offline-production')return blocked('Publisher ceremony must be performed in the owner offline production environment');
+ if(receipt.privateKeyEncryptedOutsideGit!==true||receipt.independentFromLicenseKey!==true||
+  receipt.twoOfflineBackups!==true)return blocked('Publisher ceremony owner assertions are incomplete');
+ if(receipt.ownerApprovalId!=='QD-02')return blocked('Publisher ceremony owner approval is missing');
+ return gate('publisher-ceremony','PASS',
+  'Owner publisher ceremony assertions are recorded for the packaged key',evidence);
+}
+
+function evaluateCleanInstallUpgrade(receipt,options={}){
+ assertPrivacySafe(receipt);assertPrivacySafe(options.candidate);
+ validateCandidate(options.candidate);
+ const evidence=gateEvidenceName(options.evidenceName);
+ if(receipt==null)return gate('clean-install-upgrade','MANUAL_REQUIRED',
+  'Owner clean install and upgrade receipt is required',evidence);
+ const blocked=reason=>gate('clean-install-upgrade','BLOCKED',reason,evidence);
+ if(typeof receipt!=='object'||Array.isArray(receipt))return blocked('Clean install and upgrade receipt is invalid');
+ const generatedAt=freshReceiptTime(receipt.generatedAt,options.now||new Date());
+ if(!generatedAt)return blocked('Clean install and upgrade receipt timestamp is invalid or stale');
+ if(receipt.schema!=='lhm.camoufox-clean-install.v1')return blocked('Clean install and upgrade receipt schema is unsupported');
+ if(receipt.installerSha256!==options.candidate.installerSha256)
+  return blocked('Clean install and upgrade receipt is for a different installer');
+ if(receipt.environmentClass!=='clean-windows-vm')return blocked('Clean install and upgrade receipt must come from a clean Windows VM');
+ if(receipt.freshInstallPass!==true||receipt.upgradePass!==true||receipt.uninstallRetentionChecked!==true)
+  return blocked('Clean install and upgrade owner assertions are incomplete');
+ if(typeof receipt.ownerApprovalId!=='string'||! /^[A-Za-z0-9._-]{1,80}$/.test(receipt.ownerApprovalId))
+  return blocked('Clean install and upgrade owner approval is missing or invalid');
+ return gate('clean-install-upgrade','PASS',
+  'Owner clean install, upgrade, and uninstall retention assertions are recorded',evidence);
+}
+
 function finalize(candidate,gates,generatedAt){
  const ordered=GATE_IDS.map(id=>gates.find(item=>item&&item.id===id));
  if(ordered.some(item=>!item))throw Error('Camoufox preflight omitted a required gate');
@@ -418,4 +506,5 @@ function evaluateCamoufoxReleasePreflight(candidate,gates,now=new Date()){
 
 module.exports={GATE_IDS,LIMITATION,gate,assertPrivacySafe,validateEvidence,evaluateCamoufoxReleasePreflight,
  evaluateConfiguredIdentity,evaluateStorageIsolation,evaluateCrashDurability,evaluateGraphicsFingerprint,
- evaluateRealProxyNetwork,evaluateResourceCapacity,evaluatePackagedUi,REQUIRED_RESOURCE_MATRIX};
+ evaluateRealProxyNetwork,evaluateResourceCapacity,evaluatePackagedUi,evaluateArtifactTrust,
+ evaluatePublisherCeremony,evaluateCleanInstallUpgrade,REQUIRED_RESOURCE_MATRIX};
