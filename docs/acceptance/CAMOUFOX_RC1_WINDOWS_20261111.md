@@ -37,9 +37,10 @@ Status: **RC evidence only; not approved for customer release**.
 
 ## Expected release preflight state
 
-For the current RC evidence, the expected preflight state is **BLOCKED**.
-This records the evidence gaps for owner review. Task 8 and the live release
-preflight have NOT run.
+For the RC evidence at the pre-run checkpoint recorded before commit
+`116555f`, the expected preflight state was **BLOCKED**. At that checkpoint,
+Task 8 and the live release preflight had not yet run; the observed run is
+recorded below.
 
 The incomplete categories are:
 

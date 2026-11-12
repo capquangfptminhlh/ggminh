@@ -57,7 +57,10 @@ test('release preflight package wiring and operator documentation are explicit',
  const rcStart=acceptance.indexOf('## Expected release preflight state');
  const rcEnd=acceptance.indexOf('\n## Release decision',rcStart);
  const rcSection=acceptance.slice(rcStart,rcEnd);
+ const observedStart=acceptance.indexOf('## Observed preflight run');
+ const observedSection=acceptance.slice(observedStart);
  assert(rcSection.length>0);
+ assert(observedStart>rcEnd&&observedSection.length>0);
  assert.match(rcSection,/BLOCKED/);
  for(const blocker of [
   /production publisher ceremony receipt/i,
@@ -67,8 +70,12 @@ test('release preflight package wiring and operator documentation are explicit',
  ])assert.match(rcSection,blocker);
  assert.match(rcSection,/capability releases remain empty/i);
  assert.match(rcSection,/draft release remains unpublished/i);
- assert.match(rcSection,/Task 8 and the live release\s+preflight\s+have NOT run\./);
- assert.doesNotMatch(rcSection,/\b(?:Task 8|live (?:release )?preflight)\b[^.\n]{0,80}\b(?:has run|was run|executed|completed|passed)\b/i);
+ assert.match(rcSection,/pre-run checkpoint recorded before commit\s+`116555f`/i);
+ assert.match(rcSection,/Task 8 and the live release preflight had not yet run; the observed run is\s+recorded below\./i);
+ assert.doesNotMatch(acceptance,/Task 8 and the live release\s+preflight\s+have NOT run\./i);
+ assert.match(observedSection,/The live preflight ran[\s\S]{0,240}exited 2 with overall\s+`BLOCKED`/i);
+ assert.doesNotMatch(observedSection,/overall\s+(?:is\s+)?(?:READY_FOR_OWNER_REVIEW|PASS)\b/i);
+ assert.doesNotMatch(acceptance,/\b(?:Task 8|live release preflight)\b[^.\n]{0,100}\b(?:READY_FOR_OWNER_REVIEW|complete(?:d)?|passed)\b/i);
  assert.doesNotMatch(rcSection,/100%|undetectable|evasion|advertising account safety|platform non.association/i);
 });
 
