@@ -206,4 +206,3 @@ After merge, operational acceptance additionally requires a successful manual
 dispatch whose uploaded JSON binds the then-current `main` commit and exact
 installer bytes. Until that run succeeds, the hosted-runner evidence gate
 remains incomplete.
-
