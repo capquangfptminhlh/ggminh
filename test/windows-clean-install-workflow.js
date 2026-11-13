@@ -21,4 +21,22 @@ assert(!/Stop-Process\s+[^\r\n]*-Name/i.test(ps),
  'cleanup must be PID-scoped');
 assert(!/Set-MpPreference|DisableRealtimeMonitoring|SmartScreenEnabled/i.test(ps),
  'runner must not weaken Windows protection');
+
+const workflowFile=path.join(root,'.github','workflows',
+ 'windows-clean-install-acceptance.yml');
+assert(fs.existsSync(workflowFile),'manual clean-install workflow missing');
+const workflow=fs.readFileSync(workflowFile,'utf8');
+for(const token of [
+ 'workflow_dispatch:','candidate_run_id:','baseline_run_id:',
+ 'contents: read','actions: read','runs-on: windows-latest','timeout-minutes:',
+ '.github/workflows/windows-exe.yml','head_branch','head_repository',
+ 'compare/','LHM-Ads-Browser-Windows-x64','LHM-Release-Evidence-Windows',
+ 'verify-build','run-windows-clean-install-acceptance.ps1',
+ 'windows-clean-install-evidence.js build','if: always()',
+ 'LHM-Windows-Clean-Install-Evidence','AUTOMATED_HOSTED_RUNNER_EVIDENCE_ONLY'
+]) assert(workflow.includes(token),`workflow contract missing ${token}`);
+assert(!workflow.includes('contents: write'));
+assert(!/gh release (create|edit|upload)/.test(workflow));
+assert(!/capabilities\.json/.test(workflow));
+assert(!/publisher-ceremony|ownerApprovalId|READY_FOR_OWNER_REVIEW/.test(workflow));
 console.log('Windows clean-install runner contract PASS');
