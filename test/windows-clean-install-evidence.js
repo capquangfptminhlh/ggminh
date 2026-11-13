@@ -82,6 +82,81 @@ try{
  assert.strictEqual(cli.stderr,'');
  assert.strictEqual(JSON.parse(cli.stdout).sha256,
   fixture.evidence.build.windowsInstaller.sha256);
+
+ const baselineDir=path.join(root,'baseline');
+ const candidateDir=path.join(root,'current');
+ fs.mkdirSync(baselineDir);fs.mkdirSync(candidateDir);
+ const baseline=buildFixture(baselineDir,'baseline','2'.repeat(40),'42755402012');
+ const candidate=buildFixture(candidateDir,'current','3'.repeat(40),'43176842323');
+ const passKeys=[
+  'baselineInstall','baselineLaunch','installOverExisting','candidateLaunch',
+  'packagedUiCapture','uninstall','processCleanup','retention'
+ ];
+ const measurement={
+  schema:'lhm.windows-clean-install-measurement.v1',
+  environmentClass:'github-hosted-windows-ephemeral',
+  hostedRunnerImage:'windows-latest',
+  baseline:{
+   commit:baseline.evidence.build.commit,runId:baseline.evidence.build.runId,
+   installerName:baseline.name,bytes:baseline.bytes.length,
+   sha256:baseline.evidence.build.windowsInstaller.sha256,version:'5.8.0',
+   authenticodeStatus:'NotSigned'
+  },
+  candidate:{
+   commit:candidate.evidence.build.commit,runId:candidate.evidence.build.runId,
+   installerName:candidate.name,bytes:candidate.bytes.length,
+   sha256:candidate.evidence.build.windowsInstaller.sha256,version:'5.8.0',
+   authenticodeStatus:'NotSigned'
+  },
+  results:Object.fromEntries(passKeys.map(key=>[key,'PASS'])),
+  markerSha256:'4'.repeat(64),uiCaptureCount:12,
+  privacy:'Synthetic local data only; no customer, profile, token, cookie, proxy or network data'
+ };
+ const report=mod.buildEvidence({
+  measurement,baselineEvidenceFile:baseline.evidenceFile,
+  candidateEvidenceFile:candidate.evidenceFile,now:'2026-11-12T08:30:00.000Z'
+ });
+ assert.strictEqual(report.schema,'lhm.windows-clean-install-evidence.v1');
+ assert.strictEqual(report.outcome,'AUTOMATED_HOSTED_RUNNER_EVIDENCE_ONLY');
+ assert.deepStrictEqual(report.limitations,{
+  sameVersionMayBeReinstall:true,notOwnerReceipt:true,
+  notCleanMachineManualGate:true,notCamoufoxEngineAcceptance:true,
+  notCommercialApproval:true
+ });
+ assert(!JSON.stringify(report).includes(root));
+ assert.strictEqual(report.baseline.installer.sha256,
+  baseline.evidence.build.windowsInstaller.sha256);
+ assert.strictEqual(report.candidate.installer.sha256,
+  candidate.evidence.build.windowsInstaller.sha256);
+ for(const mutate of [
+  x=>x.results.retention='NOT_RUN',
+  x=>x.uiCaptureCount=11,
+  x=>x.unexpected=true,
+  x=>x.privacy='C:\\Users\\alice\\secret',
+  x=>x.privacy='access_token=secret',
+  x=>x.privacy='proxy://user:pass@example',
+  x=>x.privacy='Observed 192.168.1.9',
+  x=>x.markerSha256='bad'
+ ]){
+  const changed=JSON.parse(JSON.stringify(measurement));
+  mutate(changed);
+  assert.throws(()=>mod.buildEvidence({
+   measurement:changed,baselineEvidenceFile:baseline.evidenceFile,
+   candidateEvidenceFile:candidate.evidenceFile
+  }),/measurement|privacy|PASS|capture|SHA-256|field|sensitive/i);
+ }
+ const measurementFile=path.join(root,'measurement.json');
+ const reportFile=path.join(root,'final-report.json');
+ fs.writeFileSync(measurementFile,JSON.stringify(measurement));
+ const buildCli=spawnSync(process.execPath,[
+  toolPath,'build','--measurement',measurementFile,
+  '--baseline-evidence',baseline.evidenceFile,
+  '--candidate-evidence',candidate.evidenceFile,'--out',reportFile
+ ],{encoding:'utf8'});
+ assert.strictEqual(buildCli.status,0,buildCli.stderr);
+ assert.strictEqual(buildCli.stderr,'');
+ assert.strictEqual(JSON.parse(fs.readFileSync(reportFile,'utf8')).outcome,
+  'AUTOMATED_HOSTED_RUNNER_EVIDENCE_ONLY');
  console.log('Windows clean-install exact artifact verification PASS');
 }finally{
  fs.rmSync(root,{recursive:true,force:true});
