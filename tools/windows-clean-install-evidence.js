@@ -19,7 +19,7 @@ const BUILD_IDENTITY_KEYS=[
 const INSTALLER_KEYS=['bytes','name','sha256'];
 const MEASUREMENT_KEYS=[
  'baseline','candidate','environmentClass','hostedRunnerImage','markerSha256',
- 'privacy','results','schema','uiCaptureCount'
+ 'privacy','results','schema','storageSha256','uiCaptureCount'
 ];
 const MEASURED_BUILD_KEYS=[
  'authenticodeStatus','bytes','commit','installerName','runId','sha256','version'
@@ -188,6 +188,8 @@ function buildEvidence({measurement,baselineEvidenceFile,candidateEvidenceFile,n
  if(measurement.uiCaptureCount!==12)throw Error('Measurement capture count must be 12');
  if(!HASH.test(measurement.markerSha256||''))
   throw Error('Measurement marker SHA-256 is invalid');
+ if(!HASH.test(measurement.storageSha256||''))
+  throw Error('Measurement storage SHA-256 is invalid');
  if(baselineMeasured.commit===candidateMeasured.commit)
   throw Error('Baseline and candidate measurement commits must differ');
  const generatedAt=now||new Date().toISOString();
@@ -200,7 +202,7 @@ function buildEvidence({measurement,baselineEvidenceFile,candidateEvidenceFile,n
   environment:{class:'github-hosted-windows-ephemeral',image:'windows-latest'},
   baseline,candidate,
   observations:{...measurement.results,uiCaptureCount:measurement.uiCaptureCount,
-   markerSha256:measurement.markerSha256},
+   markerSha256:measurement.markerSha256,storageSha256:measurement.storageSha256},
   privacy:'Synthetic local data only; no customer data was collected',
   limitations:{
    sameVersionMayBeReinstall:true,notOwnerReceipt:true,

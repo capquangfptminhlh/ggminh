@@ -47,6 +47,7 @@ function Invoke-Bounded(
   [string]$File,[string[]]$Arguments,[int]$TimeoutSeconds
 ) {
   $process=Start-Process -FilePath $File -ArgumentList $Arguments -PassThru
+  $script:OwnedProcesses.Add($process)
   if(-not $process.WaitForExit($TimeoutSeconds*1000)) {
     & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
     throw 'Bounded process timed out'
@@ -69,18 +70,25 @@ function Stop-Owned([Diagnostics.Process]$Process) {
 
 function Start-IsolatedApp(
   [string]$Executable,[string]$WorkingDirectory,[string]$AppData,
-  [string]$LocalAppData,[string]$CaptureDirectory=''
+  [string]$LocalAppData,[string]$TempData,[string]$UserData,
+  [string]$CaptureDirectory=''
 ) {
   $info=[Diagnostics.ProcessStartInfo]::new()
   $info.FileName=$Executable
   $info.WorkingDirectory=$WorkingDirectory
   $info.UseShellExecute=$false
   $info.CreateNoWindow=$false
+  $info.ArgumentList.Add('--user-data-dir='+$UserData)
   $info.Environment['APPDATA']=$AppData
   $info.Environment['LOCALAPPDATA']=$LocalAppData
+  $info.Environment['TEMP']=$TempData
+  $info.Environment['TMP']=$TempData
   if($CaptureDirectory) {
     $info.Environment['LHM_CI_UI_CAPTURE']='1'
     $info.Environment['LHM_CI_UI_CAPTURE_DIR']=$CaptureDirectory
+  } else {
+    $info.Environment['LHM_CI_INSTALL_ACCEPTANCE']='1'
+    $info.Environment['LHM_CI_ACCEPTANCE_USER_DATA_DIR']=$UserData
   }
   $process=[Diagnostics.Process]::Start($info)
   if($null -eq $process) { throw 'Installed application did not start' }
@@ -151,6 +159,7 @@ $measurementFile=Join-Path $outputRoot 'measurement.json'
 $installRoot=Join-Path $outputRoot 'installed'
 $appData=Join-Path $outputRoot 'appdata'
 $localAppData=Join-Path $outputRoot 'localappdata'
+$tempData=Join-Path $outputRoot 'temp'
 $captureRoot=Join-Path $outputRoot 'captures'
 $baselineInstallerFile=Resolve-InputFile -Path $BaselineInstaller -Root $runnerRoot
 $candidateInstallerFile=Resolve-InputFile -Path $CandidateInstaller -Root $runnerRoot
@@ -163,7 +172,7 @@ foreach($installerFile in @($baselineInstallerFile,$candidateInstallerFile)) {
   }
 }
 $installedExe=Join-Path $installRoot 'LHM Ads Browser.exe'
-$userData=Join-Path $appData 'LHM Ads Browser'
+$userData=Join-Path $outputRoot 'user-data'
 $storageFile=Join-Path $userData 'storage\db.json'
 $markerFile=Join-Path $userData 'storage\acceptance-synthetic-marker.txt'
 $results=[ordered]@{
@@ -173,7 +182,7 @@ $results=[ordered]@{
 }
 
 try {
-  foreach($dir in @($appData,$localAppData,$captureRoot)) {
+  foreach($dir in @($appData,$localAppData,$tempData,$captureRoot)) {
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
   }
   $script:Stage='baseline-install'
@@ -185,12 +194,15 @@ try {
 
   $script:Stage='baseline-launch'
   $baselineProcess=Start-IsolatedApp -Executable $installedExe -WorkingDirectory $installRoot `
-    -AppData $appData -LocalAppData $localAppData
+    -AppData $appData -LocalAppData $localAppData -TempData $tempData `
+    -UserData $userData
   Wait-ForFileWhileAlive -Process $baselineProcess -File $storageFile -TimeoutSeconds 45
   Start-Sleep -Seconds 2
   if($baselineProcess.HasExited) { throw 'Baseline application exited during observation' }
   Stop-Owned -Process $baselineProcess
+  & (Join-Path $PSScriptRoot 'stop-windows-install-processes.ps1') -InstallRoot $installRoot
   $results.baselineLaunch='PASS'
+  $baselineStorageSha=(Get-FileHash -LiteralPath $storageFile -Algorithm SHA256).Hash.ToLowerInvariant()
   $markerText='LHM_SYNTHETIC_CONTINUITY_MARKER_V1'
   Set-Content -LiteralPath $markerFile -Value $markerText -NoNewline -Encoding utf8
   $markerSha=(Get-FileHash -LiteralPath $markerFile -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -208,7 +220,8 @@ try {
 
   $script:Stage='candidate-launch'
   $candidateProcess=Start-IsolatedApp -Executable $installedExe -WorkingDirectory $installRoot `
-    -AppData $appData -LocalAppData $localAppData
+    -AppData $appData -LocalAppData $localAppData -TempData $tempData `
+    -UserData $userData
   Wait-ForFileWhileAlive -Process $candidateProcess -File $storageFile -TimeoutSeconds 45
   Start-Sleep -Seconds 2
   if($candidateProcess.HasExited) { throw 'Candidate application exited during observation' }
@@ -217,16 +230,24 @@ try {
     throw 'Synthetic continuity marker changed during install-over-existing'
   }
   Stop-Owned -Process $candidateProcess
+  & (Join-Path $PSScriptRoot 'stop-windows-install-processes.ps1') -InstallRoot $installRoot
+  $candidateStorageSha=(Get-FileHash -LiteralPath $storageFile -Algorithm SHA256).Hash.ToLowerInvariant()
+  if($candidateStorageSha -ne $baselineStorageSha) {
+    throw 'Application storage changed during install-over-existing'
+  }
   $results.candidateLaunch='PASS'
 
   $script:Stage='installed-ui-capture'
   $captureProcess=Start-IsolatedApp -Executable $installedExe -WorkingDirectory $installRoot `
-    -AppData $appData -LocalAppData $localAppData -CaptureDirectory $captureRoot
+    -AppData $appData -LocalAppData $localAppData -TempData $tempData `
+    -UserData $userData `
+    -CaptureDirectory $captureRoot
   if(-not $captureProcess.WaitForExit(60000)) {
     Stop-Owned -Process $captureProcess
     throw 'Installed UI capture timed out'
   }
   if($captureProcess.ExitCode -ne 0) { throw 'Installed UI capture failed' }
+  & (Join-Path $PSScriptRoot 'stop-windows-install-processes.ps1') -InstallRoot $installRoot
   $captureCount=Assert-Captures -CaptureRoot $captureRoot
   $results.packagedUiCapture='PASS'
 
@@ -238,13 +259,12 @@ try {
   $script:UninstallCompleted=$true
   Wait-UntilRemoved -File $installedExe -TimeoutSeconds 30
   $results.uninstall='PASS'
-  foreach($owned in $script:OwnedProcesses) {
-    if(-not $owned.HasExited) { throw 'Owned application process survived cleanup' }
-  }
+  & (Join-Path $PSScriptRoot 'stop-windows-install-processes.ps1') -InstallRoot $installRoot
   $results.processCleanup='PASS'
   if(-not (Test-Path -LiteralPath $storageFile -PathType Leaf) -or
      -not (Test-Path -LiteralPath $markerFile -PathType Leaf) -or
-     (Get-FileHash -LiteralPath $markerFile -Algorithm SHA256).Hash.ToLowerInvariant() -ne $markerSha) {
+     (Get-FileHash -LiteralPath $markerFile -Algorithm SHA256).Hash.ToLowerInvariant() -ne $markerSha -or
+     (Get-FileHash -LiteralPath $storageFile -Algorithm SHA256).Hash.ToLowerInvariant() -ne $candidateStorageSha) {
     throw 'Synthetic application data was not retained after uninstall'
   }
   $results.retention='PASS'
@@ -258,6 +278,7 @@ try {
     candidate=Get-BuildIdentity -EvidenceFile $candidateEvidenceFile -InstallerFile $candidateInstallerFile
     results=$results
     markerSha256=$markerSha
+    storageSha256=$candidateStorageSha
     uiCaptureCount=$captureCount
     privacy='Synthetic local data only; no customer, profile, token, cookie, proxy or network data'
   }
@@ -271,6 +292,9 @@ try {
   throw
 } finally {
   foreach($owned in @($script:OwnedProcesses)) { Stop-Owned -Process $owned }
+  try {
+    & (Join-Path $PSScriptRoot 'stop-windows-install-processes.ps1') -InstallRoot $installRoot
+  } catch { }
   if((-not $script:UninstallCompleted) -and (Test-Path -LiteralPath $installRoot -PathType Container)) {
     $cleanup=@(Get-ChildItem -LiteralPath $installRoot -Filter 'Uninstall*.exe' -File -ErrorAction SilentlyContinue)
     if($cleanup.Count -eq 1) {

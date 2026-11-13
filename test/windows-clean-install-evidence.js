@@ -109,7 +109,7 @@ try{
    authenticodeStatus:'NotSigned'
   },
   results:Object.fromEntries(passKeys.map(key=>[key,'PASS'])),
-  markerSha256:'4'.repeat(64),uiCaptureCount:12,
+  markerSha256:'4'.repeat(64),storageSha256:'5'.repeat(64),uiCaptureCount:12,
   privacy:'Synthetic local data only; no customer, profile, token, cookie, proxy or network data'
  };
  const report=mod.buildEvidence({
@@ -128,6 +128,7 @@ try{
   baseline.evidence.build.windowsInstaller.sha256);
  assert.strictEqual(report.candidate.installer.sha256,
   candidate.evidence.build.windowsInstaller.sha256);
+ assert.strictEqual(report.observations.storageSha256,'5'.repeat(64));
  for(const mutate of [
   x=>x.results.retention='NOT_RUN',
   x=>x.uiCaptureCount=11,
@@ -136,7 +137,8 @@ try{
   x=>x.privacy='access_token=secret',
   x=>x.privacy='proxy://user:pass@example',
   x=>x.privacy='Observed 192.168.1.9',
-  x=>x.markerSha256='bad'
+  x=>x.markerSha256='bad',
+  x=>x.storageSha256='bad'
  ]){
   const changed=JSON.parse(JSON.stringify(measurement));
   mutate(changed);
