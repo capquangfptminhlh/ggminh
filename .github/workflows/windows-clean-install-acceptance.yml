@@ -1,0 +1,195 @@
+name: Windows clean-install evidence (manual, no release)
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: Successful Build Windows EXE run for exact current main
+        required: true
+        type: string
+      baseline_run_id:
+        description: Earlier successful ancestor Build Windows EXE run
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lhm-windows-clean-install-evidence
+  cancel-in-progress: false
+jobs:
+  installed-windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact current main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate exact run provenance and ancestry
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          BASELINE_RUN_ID: ${{ inputs.baseline_run_id }}
+        run: |
+          $ErrorActionPreference='Stop'
+          Set-StrictMode -Version Latest
+          if($env:CANDIDATE_RUN_ID -notmatch '^[0-9]{6,18}$' -or
+             $env:BASELINE_RUN_ID -notmatch '^[0-9]{6,18}$' -or
+             $env:CANDIDATE_RUN_ID -eq $env:BASELINE_RUN_ID) {
+            throw 'Run IDs must be distinct decimal identifiers'
+          }
+          $main=gh api "repos/$env:GITHUB_REPOSITORY/branches/main" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0 -or $main.commit.sha -ne $env:GITHUB_SHA) {
+            throw 'Workflow must run from exact current main'
+          }
+          function Read-Run([string]$RunId,[string]$Label) {
+            $run=gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$RunId" | ConvertFrom-Json
+            if($LASTEXITCODE -ne 0 -or $run.status -ne 'completed' -or
+               $run.conclusion -ne 'success' -or
+               $run.path -ne '.github/workflows/windows-exe.yml' -or
+               $run.head_branch -ne 'main' -or
+               $run.head_repository.full_name -ne $env:GITHUB_REPOSITORY) {
+              throw "$Label run is not a trusted successful main Build Windows EXE run"
+            }
+            return $run
+          }
+          $candidate=Read-Run $env:CANDIDATE_RUN_ID 'Candidate'
+          $baseline=Read-Run $env:BASELINE_RUN_ID 'Baseline'
+          if($candidate.head_sha -ne $env:GITHUB_SHA -or
+             $baseline.head_sha -eq $candidate.head_sha) {
+            throw 'Candidate is not exact current main or baseline is not distinct'
+          }
+          $compare=gh api "repos/$env:GITHUB_REPOSITORY/compare/$($baseline.head_sha)...$($candidate.head_sha)" |
+            ConvertFrom-Json
+          if($LASTEXITCODE -ne 0 -or $compare.status -ne 'ahead' -or
+             $compare.merge_base_commit.sha -ne $baseline.head_sha) {
+            throw 'Baseline commit is not an ancestor of the candidate'
+          }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VERIFIED_CANDIDATE_SHA=$($candidate.head_sha)"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VERIFIED_BASELINE_SHA=$($baseline.head_sha)"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VERIFIED_CANDIDATE_RUN=$($candidate.id)"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VERIFIED_BASELINE_RUN=$($baseline.id)"
+      - name: Download exact candidate and baseline artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'lhm-clean-install-inputs'
+          $candidateInstallerDir=Join-Path $root 'candidate-installer'
+          $candidateEvidenceDir=Join-Path $root 'candidate-evidence'
+          $baselineInstallerDir=Join-Path $root 'baseline-installer'
+          $baselineEvidenceDir=Join-Path $root 'baseline-evidence'
+          foreach($dir in @($candidateInstallerDir,$candidateEvidenceDir,
+              $baselineInstallerDir,$baselineEvidenceDir)) {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          }
+          gh run download $env:VERIFIED_CANDIDATE_RUN --repo $env:GITHUB_REPOSITORY `
+            --name LHM-Ads-Browser-Windows-x64 --dir $candidateInstallerDir
+          if($LASTEXITCODE -ne 0){throw 'Candidate installer artifact download failed'}
+          gh run download $env:VERIFIED_CANDIDATE_RUN --repo $env:GITHUB_REPOSITORY `
+            --name LHM-Release-Evidence-Windows --dir $candidateEvidenceDir
+          if($LASTEXITCODE -ne 0){throw 'Candidate evidence artifact download failed'}
+          gh run download $env:VERIFIED_BASELINE_RUN --repo $env:GITHUB_REPOSITORY `
+            --name LHM-Ads-Browser-Windows-x64 --dir $baselineInstallerDir
+          if($LASTEXITCODE -ne 0){throw 'Baseline installer artifact download failed'}
+          gh run download $env:VERIFIED_BASELINE_RUN --repo $env:GITHUB_REPOSITORY `
+            --name LHM-Release-Evidence-Windows --dir $baselineEvidenceDir
+          if($LASTEXITCODE -ne 0){throw 'Baseline evidence artifact download failed'}
+          function One-File([string]$Directory,[string]$Pattern) {
+            $files=@(Get-ChildItem -LiteralPath $Directory -Recurse -File -Filter $Pattern)
+            if($files.Count -ne 1){throw "Expected exactly one $Pattern artifact file"}
+            return $files[0].FullName
+          }
+          $candidateInstaller=One-File $candidateInstallerDir '*.exe'
+          $candidateEvidence=One-File $candidateEvidenceDir 'release-evidence.json'
+          $baselineInstaller=One-File $baselineInstallerDir '*.exe'
+          $baselineEvidence=One-File $baselineEvidenceDir 'release-evidence.json'
+          $expectedName=node -p "require('./tools/ci-release-evidence').expectedExeName(require('./package.json'))"
+          if($LASTEXITCODE -ne 0){throw 'Cannot derive candidate artifact name'}
+          node tools/windows-clean-install-evidence.js verify-build `
+            --installer $candidateInstaller --evidence $candidateEvidence `
+            --commit $env:VERIFIED_CANDIDATE_SHA --run-id $env:VERIFIED_CANDIDATE_RUN `
+            --expected-name $expectedName
+          if($LASTEXITCODE -ne 0){throw 'Candidate artifact verification failed'}
+          node tools/windows-clean-install-evidence.js verify-build `
+            --installer $baselineInstaller --evidence $baselineEvidence `
+            --commit $env:VERIFIED_BASELINE_SHA --run-id $env:VERIFIED_BASELINE_RUN
+          if($LASTEXITCODE -ne 0){throw 'Baseline artifact verification failed'}
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CANDIDATE_INSTALLER=$candidateInstaller"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CANDIDATE_EVIDENCE=$candidateEvidence"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "BASELINE_INSTALLER=$baselineInstaller"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "BASELINE_EVIDENCE=$baselineEvidence"
+          $expectedVersion=node -p "require('./package.json').version"
+          if($LASTEXITCODE -ne 0){throw 'Cannot derive candidate version'}
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "EXPECTED_CANDIDATE_VERSION=$expectedVersion"
+      - name: Exercise installed builds with synthetic isolated data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $output=Join-Path $env:RUNNER_TEMP 'lhm-clean-install-execution'
+          & .\tools\run-windows-clean-install-acceptance.ps1 `
+            -BaselineInstaller $env:BASELINE_INSTALLER `
+            -CandidateInstaller $env:CANDIDATE_INSTALLER `
+            -BaselineEvidence $env:BASELINE_EVIDENCE `
+            -CandidateEvidence $env:CANDIDATE_EVIDENCE `
+            -OutputDirectory $output `
+            -ExpectedCandidateVersion $env:EXPECTED_CANDIDATE_VERSION
+          if($LASTEXITCODE -ne 0){throw 'Installed Windows acceptance runner failed'}
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "ACCEPTANCE_OUTPUT=$output"
+      - name: Build and validate privacy-minimal evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $final=Join-Path $env:RUNNER_TEMP 'lhm-windows-clean-install-evidence.json'
+          node tools/windows-clean-install-evidence.js build `
+            --measurement (Join-Path $env:ACCEPTANCE_OUTPUT 'measurement.json') `
+            --baseline-evidence $env:BASELINE_EVIDENCE `
+            --candidate-evidence $env:CANDIDATE_EVIDENCE --out $final
+          if($LASTEXITCODE -ne 0){throw 'Final evidence builder failed'}
+          $report=Get-Content -Raw -LiteralPath $final | ConvertFrom-Json
+          if($report.schema -ne 'lhm.windows-clean-install-evidence.v1' -or
+             $report.outcome -ne 'AUTOMATED_HOSTED_RUNNER_EVIDENCE_ONLY' -or
+             $report.limitations.sameVersionMayBeReinstall -ne $true -or
+             $report.limitations.notOwnerReceipt -ne $true -or
+             $report.limitations.notCleanMachineManualGate -ne $true -or
+             $report.limitations.notCamoufoxEngineAcceptance -ne $true -or
+             $report.limitations.notCommercialApproval -ne $true) {
+            throw 'Final evidence limitations or outcome are unsafe'
+          }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "FINAL_EVIDENCE=$final"
+      - name: Upload evidence-only result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LHM-Windows-Clean-Install-Evidence
+          path: ${{ env.FINAL_EVIDENCE }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload bounded diagnostic category
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LHM-Windows-Clean-Install-Diagnostic
+          path: ${{ runner.temp }}/lhm-clean-install-execution/diagnostic.log
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Remove disposable inputs and synthetic data
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $installRoot=Join-Path $env:RUNNER_TEMP 'lhm-clean-install-execution\installed'
+          & .\tools\stop-windows-install-processes.ps1 -InstallRoot $installRoot
+          foreach($name in @('lhm-clean-install-inputs','lhm-clean-install-execution')) {
+            $target=Join-Path $env:RUNNER_TEMP $name
+            if(Test-Path -LiteralPath $target) {
+              Remove-Item -LiteralPath $target -Recurse -Force
+            }
+          }

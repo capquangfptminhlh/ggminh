@@ -83,3 +83,15 @@ evidence is stale for this build; packaged UI remains BLOCKED pending a rerun
 against this exact installer hash. Clean install/upgrade remains NOT_RUN and
 MANUAL_REQUIRED. The strict resource verifier also passed against this build's
 packaged `resources/lhm-camoufox` directory. The build remains unapproved for release.
+
+## Automated hosted-runner install evidence
+
+The repository now provides a manual, read-only hosted-Windows workflow for
+exact-artifact clean install, install-over-existing continuity, UI capture,
+uninstall and synthetic-data retention. Its output is supporting CI evidence
+only. It does not satisfy the independent clean-Windows owner receipt, does not
+exercise a production-signed Camoufox engine or real customer proxy, and cannot
+change the `BLOCKED` release decision by itself.
+
+The first real dispatch is required after the workflow reaches `main`; until a
+successful report is recorded here, this automated gate remains **NOT_RUN**.

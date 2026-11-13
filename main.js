@@ -9,6 +9,7 @@ const { AndroidTargetGuard } = require('./src/android/targetGuard');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
+const {resolveCiAcceptanceUserData}=require('./src/ops/ciAcceptancePath');
 const { copyTextVerified } = require('./src/ops/clipboardCopy');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -1438,6 +1439,20 @@ app.on('second-instance', () => {
     mainWindow.focus();
   }
 });
+// Installed-build acceptance owns an explicit runner-temp data folder. This
+// path is accepted only inside GitHub Actions and before Electron becomes
+// ready; invalid input fails closed instead of touching the normal userData.
+if(process.env.LHM_CI_INSTALL_ACCEPTANCE==='1'){
+  if(process.env.LHM_CI_UI_CAPTURE==='1')
+    throw Error('CI install acceptance and UI capture modes are mutually exclusive');
+  const ciAcceptanceUserData=resolveCiAcceptanceUserData({
+    enabled:process.env.LHM_CI_INSTALL_ACCEPTANCE,
+    githubActions:process.env.GITHUB_ACTIONS,
+    runnerTemp:process.env.RUNNER_TEMP,
+    override:process.env.LHM_CI_ACCEPTANCE_USER_DATA_DIR
+  });
+  app.setPath('userData', ciAcceptanceUserData);
+}
 // CI UI capture owns a throwaway data folder. It must be set before 'ready':
 // Chromium writes Local State and its GPU caches to userData at startup, so a
 // later setPath leaves those files in the customer's real data folder.
