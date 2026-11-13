@@ -39,4 +39,9 @@ assert(!workflow.includes('contents: write'));
 assert(!/gh release (create|edit|upload)/.test(workflow));
 assert(!/capabilities\.json/.test(workflow));
 assert(!/publisher-ceremony|ownerApprovalId|READY_FOR_OWNER_REVIEW/.test(workflow));
+const pkg=require('../package.json');
+assert(pkg.scripts['test:steps'].includes(
+ 'node test/windows-clean-install-evidence.js'));
+assert(pkg.scripts['test:steps'].includes(
+ 'node test/windows-clean-install-workflow.js'));
 console.log('Windows clean-install runner contract PASS');
