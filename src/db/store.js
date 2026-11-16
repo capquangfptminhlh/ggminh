@@ -5,6 +5,7 @@ const { validateProxy } = require('../health/profileHealth');
 const { safeWebUrls } = require('../engine/launchArgs');
 const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
 const {hasIdentityCollision}=require('../engine/camoufoxIdentity');
+const {rejectSymlinks}=require('../privacy/isolation');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -108,6 +109,18 @@ class Store {
         (this.data.cleanupQueue||[]).some(entry=>
          typeof entry==='string' && entry.toLowerCase()===foldedId)))
       throw Error('Profile ID collides with a reserved profile directory');
+    if(existingIndex<0){
+      for(const folder of PROFILE_DATA_ROOTS){
+        const candidate=path.join(path.resolve(this.baseDir),folder,id);
+        rejectSymlinks(path.resolve(this.baseDir),candidate);
+        try{
+          fs.lstatSync(candidate);
+          throw Error('Existing profile data found; refusing to reuse directory');
+        }catch(error){
+          if(error.code!=='ENOENT')throw error;
+        }
+      }
+    }
     if (existingIndex < 0 && ((this.data.trash || []).some(t => t.profile?.id === id) ||
         (this.data.cleanupQueue || []).includes(id)))
       throw Error('Profile ID is reserved in trash or pending cleanup');

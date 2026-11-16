@@ -14,6 +14,15 @@ try{
   store.data.cleanupQueue=['pb_Cleanup'];
   assert.throws(()=>store.saveProfile({id:'pb_cleanup',name:'Pending cleanup'}),/profile ID.*collid/i);
   store.data.cleanupQueue=[];
+  for(const folder of ['profiles','gecko-profiles','camoufox-profiles','extensions']){
+    const orphan=path.join(dir,folder,'pb_orphan');
+    fs.mkdirSync(orphan,{recursive:true});
+    fs.writeFileSync(path.join(orphan,'preserve.txt'),'existing customer data');
+    assert.throws(()=>store.saveProfile({id:'pb_orphan',name:'Orphan'}),
+      /existing.*profile.*data/i,folder+' must not reuse orphaned data');
+    assert.strictEqual(fs.readFileSync(path.join(orphan,'preserve.txt'),'utf8'),'existing customer data');
+    fs.rmSync(orphan,{recursive:true,force:true});
+  }
   const p=store.saveProfile({name:'Original',proxy:{type:'direct'}});
   const baseline=fs.readFileSync(store.dbFile,'utf8');
   const previousSettings=store.data.settings;
