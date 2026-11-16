@@ -1505,7 +1505,7 @@ app.whenReady().then(async () => {
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
   aiAdvisor = new AIAdvisor(storageDir,safeStorage);
   licenseManager = new LicenseManager(storageDir);
-  licensePolicy = new LicensePolicy(storageDir,licenseManager,{bypass:true});
+  licensePolicy = new LicensePolicy(storageDir,licenseManager);
   onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
     endpoint:resolveLicenseEndpoint({
       packaged:app.isPackaged,
