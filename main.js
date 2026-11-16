@@ -1,5 +1,4 @@
 const { app, BrowserWindow, ipcMain, clipboard, dialog, safeStorage } = require('electron');
-process.env.LHM_SKIP_RAM_CHECK = process.env.LHM_SKIP_RAM_CHECK || '1';
 const { AndroidManager } = require('./src/android/androidManager');
 const { AvdProvisioner } = require('./src/android/avdProvisioner');
 const { AndroidControl, safeChromeUrl } = require('./src/android/androidControl');
@@ -9,7 +8,6 @@ const { AndroidTargetGuard } = require('./src/android/targetGuard');
 const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
-const {resolveCiAcceptanceUserData}=require('./src/ops/ciAcceptancePath');
 const { copyTextVerified } = require('./src/ops/clipboardCopy');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -61,8 +59,6 @@ const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
 const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
-const {loadCapabilityPolicy,evaluateCapabilities}=
- require('./src/engine/camoufoxCapabilityPolicy');
 const {assessRuntime}=require('./src/engine/camoufoxRuntimeGate');
 const {PUBLIC_KEY:LICENSE_PUBLIC_KEY}=require('./src/licensing/manager');
 const {resolveEngineType}=require('./src/engine/EngineFactory');
@@ -83,7 +79,6 @@ const {resolveLicenseEndpoint}=require('./src/licensing/authorityConfig');
 const {getLicenseServiceStatus}=require('./src/licensing/serviceDiagnostics');
 const { duplicateTemplate, batchStop, batchOpen, batchAssignGroup, batchAssignTags, overview, exportCsv, uniqueIds } = require('./src/ops/operations');
 const { buildDashboardSummary } = require('./src/ops/dashboard');
-const {createResourceGuard}=require('./src/ops/resourceGuard');
 
 process.on('uncaughtException', (err) => {
   console.error('[CRITICAL] Uncaught exception in main process:', err);
@@ -95,13 +90,11 @@ process.on('unhandledRejection', (reason) => {
 let mainWindow = null;
 let store = null;
 let launcher = null;
-let resourceGuard = null;
 let runtimeRegistry = null;
 let bundledEngine = null;
 let camoufoxAdapter = null;
 let camoufoxInstall = null;
 let camoufoxApprovedRelease = null;
-let publisherKey = null;
 let behaviorMonitor = null;
 let warningService = null;
 let warningHistory = null;
@@ -756,15 +749,8 @@ function initIPC() {
     camoufox:camoufoxAdapter.status()
   }));
   ipcMain.handle('camoufox-install-status',()=>{
-    const adapterStatus=camoufoxAdapter.status();
     const runtime=assessRuntime({
-      publisherTrusted:!!publisherKey,
-      releaseConfigured:!!camoufoxApprovedRelease,
-      verifiedBundle:adapterStatus.binaryVerified,
-      version:adapterStatus.version,
-      manualApproved:adapterStatus.ready,
-      approvedProxyTypes:adapterStatus.approvedProxyTypes,
-      evidence:adapterStatus.evidence
+      verifiedBundle:camoufoxAdapter.status().binaryVerified
     });
     return {
       available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.canInstall,
@@ -780,8 +766,7 @@ function initIPC() {
   ipcMain.handle('camoufox-install',async()=>{
     if(!camoufoxApprovedRelease||!camoufoxInstall)
       throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
-    const runtime=assessRuntime({publisherTrusted:!!publisherKey,
-      releaseConfigured:!!camoufoxApprovedRelease});
+    const runtime=assessRuntime();
     if(!runtime.canInstall)throw Error(runtime.reason);
     if(launcher.listActive().length||launcher.pendingStarts.size)
       throw Error('Đóng tất cả browser trước khi cài engine');
@@ -892,15 +877,6 @@ function initIPC() {
       automation: automationRunner.status(),
       behavior: behaviorMonitor.getReport()
     });
-  });
-  ipcMain.handle('resource-guard-status', async (_event,profileId) => {
-    const active=launcher.listActive();
-    if(typeof profileId==='string'&&profileId){
-      const profile=store.getProfile(profileId);
-      if(!profile)throw Error('Profile not found: '+profileId);
-      return resourceGuard.assess({profile,active});
-    }
-    return resourceGuard.status(active);
   });
   ipcMain.handle('control-tower-triage', () => {
     const profiles=store.getProfiles();
@@ -1015,25 +991,12 @@ function initIPC() {
   });
     ipcMain.handle('ads-landing-inspect', (_, input) => inspectLandingUrls(input));
   ipcMain.handle('ads-utm-build', (_, url, values) => buildUtmUrl(url, values));
-
-  ipcMain.handle('check-ip-collision', (_, { ip, profileId }) => {
-    if (!ip || !ipObservationStore) return { collision: false };
-    const list = ipObservationStore.list();
-    const matches = list.filter(o => o.profileId !== profileId && o.ip === ip);
-    if (!matches.length) return { collision: false };
-    const ids = [...new Set(matches.map(o => o.profileId))];
-    const names = ids.map(id => store.getProfile(id)?.name || id);
-    return { collision: true, names, ip };
-  });
-
-  ipcMain.handle('get-launch-readiness', (_, id) => {
+    ipcMain.handle('get-launch-readiness', (_, id) => {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Không tìm thấy hồ sơ');
     return launchReadiness(profile, {
       proxies: store.data.proxies,
-      vault: proxyVault,
-      allProfiles: store.getProfiles(),
-      exitIpStore: ipObservationStore
+      vault: proxyVault
     });
   });
   ipcMain.handle('get-profile-health', (_, id) => {
@@ -1251,7 +1214,6 @@ function initIPC() {
       // recorded on the profile (fingerprint.identityProvisioning).
       try{
         provisioning=await provisionCamoufoxIdentity(profile,{
-          existingProfiles:store.data.profiles,
           resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
       }catch(_){ provisioning=null; }
     }
@@ -1287,26 +1249,8 @@ function initIPC() {
     if (deleted) behaviorMonitor.record('profile_delete', id, 'manual');
     return deleted;
   });
-  ipcMain.handle('start-browser', async (_, id, options) => {
-    const preProfile = store.getProfile(id);
-    if (preProfile && resolveEngineType(preProfile, store.getSettings()) === 'camoufox' && !preProfile.fingerprint?.identity) {
-      const prov = await provisionCamoufoxIdentity(preProfile, {
-        existingProfiles: store.data.profiles,
-        resolveExecutable: () => { if (!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }
-      });
-      if (prov.status === 'provisioned') {
-        store.saveProfile(preProfile, { allowIdentity: true });
-      } else {
-        if (prov.reason && preProfile.fingerprint) {
-          preProfile.fingerprint.identityProvisioningReason = prov.reason;
-          store.saveProfile(preProfile, {});
-        }
-        throw new Error('CAMOUFOX_IDENTITY_REQUIRED: Không thể mở hồ sơ Camoufox khi chưa cấp được danh tính riêng biệt (' + (prov.reason || prov.status) + ').');
-      }
-    }
-    const opened = await launcher.start(id,null,{
-      allowResourceReview:options?.allowResourceReview===true
-    });
+  ipcMain.handle('start-browser', async (_, id) => {
+    const opened = await launcher.start(id);
     behaviorMonitor.record('profile_open', id, 'manual');
     // Exit-IP observation (Constitution s.19/22): record what the
     // profile's configured proxy actually exits as, feeding the
@@ -1410,7 +1354,6 @@ function initIPC() {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Profile not found');
     const result = await provisionCamoufoxIdentity(profile, {
-      existingProfiles: store.data.profiles,
       resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
     if (result.status === 'provisioned') store.saveProfile(profile, { allowIdentity: true });
     else if (result.reason && profile.fingerprint) {
@@ -1439,20 +1382,6 @@ app.on('second-instance', () => {
     mainWindow.focus();
   }
 });
-// Installed-build acceptance owns an explicit runner-temp data folder. This
-// path is accepted only inside GitHub Actions and before Electron becomes
-// ready; invalid input fails closed instead of touching the normal userData.
-if(process.env.LHM_CI_INSTALL_ACCEPTANCE==='1'){
-  if(process.env.LHM_CI_UI_CAPTURE==='1')
-    throw Error('CI install acceptance and UI capture modes are mutually exclusive');
-  const ciAcceptanceUserData=resolveCiAcceptanceUserData({
-    enabled:process.env.LHM_CI_INSTALL_ACCEPTANCE,
-    githubActions:process.env.GITHUB_ACTIONS,
-    runnerTemp:process.env.RUNNER_TEMP,
-    override:process.env.LHM_CI_ACCEPTANCE_USER_DATA_DIR
-  });
-  app.setPath('userData', ciAcceptanceUserData);
-}
 // CI UI capture owns a throwaway data folder. It must be set before 'ready':
 // Chromium writes Local State and its GPU caches to userData at startup, so a
 // later setPath leaves those files in the customer's real data folder.
@@ -1505,7 +1434,7 @@ app.whenReady().then(async () => {
   proxyVault = new ProxyCredentialVault(storageDir, safeStorage);
   aiAdvisor = new AIAdvisor(storageDir,safeStorage);
   licenseManager = new LicenseManager(storageDir);
-  licensePolicy = new LicensePolicy(storageDir,licenseManager,{bypass:true});
+  licensePolicy = new LicensePolicy(storageDir,licenseManager);
   onlineLicenseVerifier = new OnlineLicenseVerifier(storageDir,licenseManager,{
     endpoint:resolveLicenseEndpoint({
       packaged:app.isPackaged,
@@ -1517,8 +1446,7 @@ app.whenReady().then(async () => {
   store.licensePolicy = licensePolicy;
   // Per-profile download folders live where customers look for files.
   const downloadsRoot = path.join(app.getPath('downloads'), 'LHM Ads Browser');
-  resourceGuard=createResourceGuard();
-  launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot,resourceGuard});
+  launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot});
   bundledEngine=new BundledEngineManager(app.isPackaged
     ?path.join(process.resourcesPath,'lhm-engines')
     :path.join(__dirname,'resources','bundled-engines'));
@@ -1526,12 +1454,10 @@ app.whenReady().then(async () => {
   const releaseAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-camoufox')
     :path.join(__dirname,'resources','camoufox-engine');
-  const camoufoxCapabilityPolicy=loadCapabilityPolicy(
-    path.join(releaseAssets,'capabilities.json'));
   // Never use the app-license signing key to trust a downloadable browser.
   // Without a separately provisioned publisher-ed25519.pub the entire
   // Camoufox install/launch path remains disabled and fails closed.
-  publisherKey=null;
+  let publisherKey=null;
   try{
     publisherKey=loadCamoufoxPublisherKey(releaseAssets,{
       licenseKey:LICENSE_PUBLIC_KEY
@@ -1565,7 +1491,6 @@ app.whenReady().then(async () => {
     new BundledEngineManager(releaseAssets,{
       engine:'camoufox',publicKey:publisherKey
     }):null;
-  let cachedCamoufoxExe=null;
   const verifiedProviders={
     status(){
       if(!publisherKey)
@@ -1577,24 +1502,15 @@ app.whenReady().then(async () => {
     resolve(engine){
       if(engine!=='camoufox'||!publisherKey)
         throw Error('Camoufox publisher signature is not trusted');
-      if(cachedCamoufoxExe&&fs.existsSync(cachedCamoufoxExe))return cachedCamoufoxExe;
-      if(camoufoxBundle.status().valid){
-        cachedCamoufoxExe=camoufoxBundle.resolve(engine);
-        return cachedCamoufoxExe;
-      }
-      cachedCamoufoxExe=camoufoxInstall.verifier().resolve(engine);
-      return cachedCamoufoxExe;
+      if(camoufoxBundle.status().valid)return camoufoxBundle.resolve(engine);
+      return camoufoxInstall.verifier().resolve(engine);
     }
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
-    capabilityResolver:({engineVersion})=>evaluateCapabilities({
-      engineVersion,policy:camoufoxCapabilityPolicy
-    }),
-    // Development lab may exercise a candidate before its exact version is
-    // admitted to the packaged capability policy. Packaged builds cannot.
-    labProxyOverride:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1',
-    requirePinnedIdentity:true,
+    // Explicit operator-only opt-in. Production defaults fail closed until
+    // independently verified proxy/DNS/WebRTC lab acceptance.
+    allowProxyLab:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1'
   });
   launcher.camoufoxAdapter=camoufoxAdapter;
   // Independent preview mode. Never enable third-party automation in the
@@ -1612,7 +1528,7 @@ app.whenReady().then(async () => {
   launcher.extensionManager = extensionManager;
   proxyCenter = new ProxyCenter(store, launcher, {vault:proxyVault});
   behaviorMonitor = new BehaviorMonitor(storageDir);
-  try{ipObservationStore=new ExitIpObservationStore(storageDir); if (launcher) launcher.ipObservationStore = ipObservationStore;}catch(_){}
+  try{ipObservationStore=new ExitIpObservationStore(storageDir);}catch(_){}
   try{
     measurementRecordStore=new MeasurementRecordStore(storageDir);
     const loadedRecords=measurementRecordStore.status();

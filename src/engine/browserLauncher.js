@@ -5,7 +5,7 @@ const net = require('net');
 const { generateExtension } = require('./extensionGenerator');
 const { createLaunchArgs } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
-const { updateGeckoProxy, applyGeckoIdentityPrefs } = require('./geckoProxy');
+const { updateGeckoProxy } = require('./geckoProxy');
 const { stopBrowserProcess } = require('./processStopper');
 const { applyChromiumDownloadDir, applyGeckoDownloadDir } = require('./downloadDirectory');
 const { applyChromiumWebrtcPolicy } = require('./chromiumWebrtcPolicy');
@@ -18,8 +18,7 @@ const { cdpAllowed } = require('../security/cdpPolicy');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null,
-    stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory,
-    resourceGuard = null } = {}) {
+    stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory } = {}) {
     this.store = store;
     this.proxyVault = proxyVault;
     this.extensionManager = extensionManager;
@@ -36,8 +35,6 @@ class BrowserLauncher {
     // shared OS Downloads folder. main.js points this at the user's
     // Downloads/LHM Ads Browser; the default keeps files under app data.
     this.customDownloadsRoot = downloadsRoot;
-    this.resourceGuard = resourceGuard;
-    this.lastResourceAssessment = null;
     this.engineFactory=new EngineFactory(this);
   }
 
@@ -105,9 +102,9 @@ class BrowserLauncher {
     return this.pendingStarts.has(profileId) || this.activeProcesses.has(profileId);
   }
 
-  async start(profileId, customUrl = null, options = {}) {
+  async start(profileId, customUrl = null) {
     if (this.pendingStarts.has(profileId)) return this.pendingStarts.get(profileId);
-    const task = this._startInternal(profileId, customUrl, options);
+    const task = this._startInternal(profileId, customUrl);
     this.pendingStarts.set(profileId, task);
     try { return await task; }
     finally {
@@ -115,7 +112,7 @@ class BrowserLauncher {
     }
   }
 
-  async _startInternal(profileId, customUrl = null, options = {}) {
+  async _startInternal(profileId, customUrl = null) {
     if (this.activeProcesses.get(profileId)?.stopping) throw new Error('Hồ sơ đang đóng, vui lòng đợi tiến trình thoát');
     if (this.activeProcesses.has(profileId)) {
       return {
@@ -143,30 +140,12 @@ class BrowserLauncher {
     // Warning-only findings remain explanatory; remote platform decisions
     // can never be certified before a browser contacts the site.
     const readiness=launchReadiness(profile,{
-      proxies:this.store.data?.proxies||[],vault:this.proxyVault,
-      allProfiles:typeof this.store?.getProfiles === 'function' ? this.store.getProfiles() : (this.store?.data?.profiles || []),exitIpStore:this.ipObservationStore
+      proxies:this.store.data?.proxies||[],vault:this.proxyVault
     });
     if (!readiness.canLaunch) {
       const codes=readiness.issues.filter(issue=>issue.level==='error')
         .map(issue=>issue.code);
       throw Error('Launch readiness blocked: '+codes.join(', '));
-    }
-    // This assessment must stay ahead of engine resolution, authenticated
-    // proxy gateways and process spawn. A missing benchmark is review-only
-    // for an explicitly acknowledged manual launch; all other callers fail
-    // closed until they opt in for that one launch.
-    if(this.resourceGuard?.assess){
-      const assessment=await this.resourceGuard.assess({
-        profile,active:this.listActive()
-      });
-      this.lastResourceAssessment=assessment;
-      if(!assessment?.allowed||
-         (assessment.reviewRequired&&options?.allowResourceReview!==true)){
-        const error=Error(assessment?.reason||'Browser resource assessment blocked launch');
-        error.code=assessment?.code||'RESOURCE_STATUS_INVALID';
-        error.resourceAssessment=assessment||null;
-        throw error;
-      }
     }
     // Resolve provider using the saved per-profile selection. Never fallback
     // from a missing Camoufox release into a different browser engine.
@@ -226,7 +205,6 @@ class BrowserLauncher {
         ? profile.startUrls : [profile.startUrl || 'https://ads.google.com/']);
     if (engine === 'gecko') {
       updateGeckoProxy(profileDir, effectiveProxy);
-      applyGeckoIdentityPrefs(profileDir, profile);
       applyGeckoDownloadDir(profileDir, this.downloadsRoot, profile.id);
     } else {
       applyChromiumDownloadDir(profileDir, this.downloadsRoot, profile.id);
@@ -247,15 +225,9 @@ class BrowserLauncher {
       args.unshift('--edge-skip-compat-layer-relaunch');
 
     console.log(`[BrowserLauncher] Launching ${profile.name} (${profile.id}) on port ${port}...`);
-    const rawTz = profile.proxy?.timezone || profile.fingerprint?.timezone;
-    let validTz = null;
-    if (typeof rawTz === 'string' && rawTz.length > 0 && rawTz.length <= 80) {
-      try { new Intl.DateTimeFormat('en-US', { timeZone: rawTz }); validTz = rawTz; } catch (_) {}
-    }
     const proc = this.spawnProcess(browserBin, args, {
       detached: false,
-      stdio: 'ignore',
-      ...(validTz ? { env: { ...process.env, TZ: validTz } } : {})
+      stdio: 'ignore'
     });
     peerGuard?.setRoot(proc.pid);
 

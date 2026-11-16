@@ -17,13 +17,7 @@ async function main(){
   resolve(engine){assert.strictEqual(engine,'camoufox');return exe;},
   status(){return {valid:true,version:'upstream-verified-test-only'};}
  };
- const adapter=new CamoufoxAdapter(root,{
-  bundleVerifier:verifier,startupTimeoutMs:30000,
-  capabilityResolver:({engineVersion})=>({
-   manual:engineVersion==='upstream-verified-test-only',
-   proxyTypes:[],evidence:'upstream-sha256-verified-ci-smoke',reason:null
-  })
- });
+ const adapter=new CamoufoxAdapter(root,{bundleVerifier:verifier,startupTimeoutMs:30000});
  let completed=false;
  const profile=id=>({id,name:'Windows native '+id,engine:'gecko',
   fingerprint:{mode:'native'},proxy:{type:'direct'},
