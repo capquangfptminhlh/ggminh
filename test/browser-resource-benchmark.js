@@ -3,8 +3,13 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {
- parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion
+ parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
+ assertMemoryHeadroom
 }=require('../tools/browser-resource-benchmark');
+assert.doesNotThrow(()=>assertMemoryHeadroom(20,100));
+assert.throws(()=>assertMemoryHeadroom(19,100),/RESOURCE_LIMIT/);
+for(const values of [[NaN,100],[20,0],[-1,100],[101,100]])
+ assert.throws(()=>assertMemoryHeadroom(...values),/RESOURCE_LIMIT/);
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX
 }=require('../src/engine/camoufoxReleasePreflight');

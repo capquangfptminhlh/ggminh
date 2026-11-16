@@ -25,6 +25,12 @@ const ENGINES=new Set(['chromium','firefox','camoufox']);
 const CONCURRENCY=new Set([1,3,5,10]);
 const FORBIDDEN_KEYS=/name|url|cookie|proxy|identity|token|password|secret|account|camou_config/i;
 
+function assertMemoryHeadroom(available=os.freemem(),total=os.totalmem()){
+ if(!Number.isFinite(available)||!Number.isFinite(total)||total<=0||
+    available<0||available>total||available<total*0.20)
+  throw Error('RESOURCE_LIMIT: available RAM is below the 20% reserve or cannot be verified');
+}
+
 function valueAfter(argv,index,label){
  const value=argv[index+1];
  if(!value||value.startsWith('--'))throw Error('Missing '+label);
@@ -271,6 +277,7 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
  let intentionalClose=false,crashed=false,remainingPids=0;
  try{
   for(let index=0;index<options.concurrency;index++){
+   assertMemoryHeadroom();
    const runId='s'+sampleNumber+'-p'+index+'-'+crypto.randomBytes(4).toString('hex');
    runIds.push(runId);
    const profileDir=path.join(sampleRoot,'p'+index);
@@ -302,8 +309,7 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
      (cpu-previous.cpu)/(elapsed*1e7*Math.max(1,os.cpus().length))*100);
    }
    previous={at:observedAt,cpu};
-   if(os.freemem()<os.totalmem()*0.20)
-    throw Error('RESOURCE_LIMIT: available RAM fell below the 20% reserve during benchmark');
+   assertMemoryHeadroom();
    await delay(250);
   }
   intentionalClose=true;
@@ -321,7 +327,7 @@ async function run(argv=process.argv.slice(2)){
  const options=parseArgs(argv);
  for(const file of [options.appArtifact,options.binary,options.identityFile].filter(Boolean))
   if(!fs.existsSync(file))throw Error('Required benchmark input missing: '+file);
- if(os.freemem()<os.totalmem()*0.20)throw Error('RESOURCE_LIMIT: available RAM is below 20%');
+ assertMemoryHeadroom();
  const resolved=resolveExecutable(options);
  const server=createWorkloadServer();
  const port=await server.listen();
@@ -353,5 +359,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,assertMemoryHeadroom,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};
