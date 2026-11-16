@@ -4,6 +4,16 @@ const Store=require('../src/db/store');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-store-durable-'));
 try{
   const store=new Store(dir);
+  store.saveProfile({id:'pb_CaseGuard',name:'Case guard',proxy:{type:'direct'}});
+  assert.throws(()=>store.saveProfile({id:'pb_caseguard',name:'Conflicting folder',proxy:{type:'direct'}}),
+    /profile ID.*collid/i,'case-only IDs must never share a Windows profile folder');
+  store.deleteProfile('pb_CaseGuard');
+  store.data.trash=[{profile:{id:'pb_Reserved'}}];
+  assert.throws(()=>store.saveProfile({id:'pb_reserved',name:'Reserved'}),/profile ID.*collid/i);
+  store.data.trash=[];
+  store.data.cleanupQueue=['pb_Cleanup'];
+  assert.throws(()=>store.saveProfile({id:'pb_cleanup',name:'Pending cleanup'}),/profile ID.*collid/i);
+  store.data.cleanupQueue=[];
   const p=store.saveProfile({name:'Original',proxy:{type:'direct'}});
   const baseline=fs.readFileSync(store.dbFile,'utf8');
   const previousSettings=store.data.settings;

@@ -127,6 +127,10 @@ class BrowserLauncher {
 
     this.licensePolicy?.require('profiles');
     const profile = this.store.getProfile(profileId);
+    if(profile && Array.isArray(this.store.data?.profiles) &&
+       this.store.data.profiles.some(p=>p && p.id!==profile.id &&
+         typeof p.id==='string' && p.id.toLowerCase()===profile.id.toLowerCase()))
+      throw Error('Profile ID collides with another profile directory');
     if (!profile) {
       throw new Error(`Profile not found: ${profileId}`);
     }

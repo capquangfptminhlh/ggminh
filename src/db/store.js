@@ -99,6 +99,15 @@ class Store {
     const name = String(input.name || '').trim();
     if (!name || name.length > 160) throw new Error('Profile name must be 1–160 characters');
     const existingIndex = this.data.profiles.findIndex(p => p.id === id);
+    const foldedId=id.toLowerCase();
+    if(this.data.profiles.some((p,index)=>index!==existingIndex &&
+       typeof p?.id==='string' && p.id.toLowerCase()===foldedId))
+      throw Error('Profile ID collides with an existing profile directory');
+    if(existingIndex<0 && ((this.data.trash||[]).some(t=>
+        typeof t?.profile?.id==='string' && t.profile.id.toLowerCase()===foldedId) ||
+        (this.data.cleanupQueue||[]).some(entry=>
+         typeof entry==='string' && entry.toLowerCase()===foldedId)))
+      throw Error('Profile ID collides with a reserved profile directory');
     if (existingIndex < 0 && ((this.data.trash || []).some(t => t.profile?.id === id) ||
         (this.data.cleanupQueue || []).includes(id)))
       throw Error('Profile ID is reserved in trash or pending cleanup');

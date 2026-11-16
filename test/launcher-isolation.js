@@ -51,6 +51,11 @@ const { createApiServer } = require('../src/api/server');
     }
     const launcher=new BrowserLauncher(store,{spawnProcess:fakeSpawn});
     launcher.findBrowserBinary=()=>process.execPath;
+    store.data.profiles.push({...store.data.profiles.find(p=>p.id===first.id),
+      id:first.id.toUpperCase(),name:'Legacy collision'});
+    await assert.rejects(launcher.start(first.id),/profile ID.*collid/i);
+    assert.strictEqual(spawnCount,0,'legacy path collisions must be blocked before spawn');
+    store.data.profiles.pop();
     // Both callers get the exact same launched process (no competing profile lock).
     const [one,alsoOne]=await Promise.all([launcher.start(first.id),launcher.start(first.id)]);
     assert.strictEqual(spawnCount,1);
