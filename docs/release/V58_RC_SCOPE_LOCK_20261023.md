@@ -3,6 +3,8 @@
 **Locked on 2026-10-23 by product direction. Current decision: NOT READY TO SELL.**
 This is a release-control document, not proof of real customer activation, engine trust, or independent Windows acceptance. Do not fill untested fields with PASS.
 
+> **2026-10-25:** task-level breakdown for agents, verified facts and current blockers: [`V58_AGENT_EXECUTION_PLAN_20261025.md`](V58_AGENT_EXECUTION_PLAN_20261025.md). This scope lock still wins on any conflict.
+
 ## Scope — exactly five workstreams, in this order
 
 1. **Consolidate code** from accepted branches into a single release candidate. Compare [PR #46](https://github.com/capquangfptminhlh/ggminh/pull/46) against `main` at `4d63f006239aaab0d69caaacdc67df2e067c8dc2`. PR #46 is a *Draft*, not an approved main merge; it changes 70 files including user-facing fingerprint/UI behavior. Merge only release-critical verified changes after reviewing the exact diff. Do not take earlier PR #1–24 wholesale. Record rejected additions, conflicts, and the final candidate SHA.
