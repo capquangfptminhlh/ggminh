@@ -93,5 +93,24 @@ only. It does not satisfy the independent clean-Windows owner receipt, does not
 exercise a production-signed Camoufox engine or real customer proxy, and cannot
 change the `BLOCKED` release decision by itself.
 
-The first real dispatch is required after the workflow reaches `main`; until a
-successful report is recorded here, this automated gate remains **NOT_RUN**.
+The first operational dispatch completed successfully on 2026-11-13:
+
+- acceptance run: `43394773678` —
+  https://github.com/capquangfptminhlh/ggminh/actions/runs/43394773678
+- baseline: commit `4e46426c8e7ecb45f267c1fb8536697269b19d25`, build run
+  `43176842323`, installer SHA-256
+  `e6ab24c344b765781624fdfc10b0605ed8dcb68235d351f2c4f28309e6f1185b`;
+- candidate: merge commit `bfbbf6143ed9676d931cb2535e27a5916570f4a0`, build run
+  `43394224702`, installer SHA-256
+  `625b5cbb039d271ec5023acb19a7bef0891af166c06b23c8c77dd602ab29219d`;
+- evidence report SHA-256:
+  `7508cad10394b97d19773d751b55d23d0c50c65cfbf01ff7c936001c8be070db`;
+- outcome: `AUTOMATED_HOSTED_RUNNER_EVIDENCE_ONLY`.
+
+All eight automated observations passed, including install-over-existing,
+candidate relaunch, uninstall, scoped process cleanup and synthetic-data
+retention; the packaged UI capture count was 12. This closes only the automated
+hosted-runner evidence item. The independent owner clean-Windows receipt,
+production Camoufox publisher ceremony, real-proxy/DNS/runtime measurements and
+resource matrix remain incomplete. The release decision therefore remains
+`BLOCKED`, and the observed installer remains unsigned.
