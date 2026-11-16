@@ -35,6 +35,16 @@ try{
   plan:'business',maxProfiles:200};
  gate.require('automation');gate.require('api');gate.assertCapacity(199);
  entitlement={...entitlement,active:false,status:'expired'};
+ const previousBypass=process.env.LHM_BYPASS_LICENSE;
+ try{
+  process.env.LHM_BYPASS_LICENSE='1';
+  const attemptedBypass=new LicensePolicy(root,manager,{clock:()=>now,bypass:true});
+  assert.strictEqual(attemptedBypass.status().allowed,false,
+   'options and environment must not bypass an expired license');
+ }finally{
+  if(previousBypass===undefined)delete process.env.LHM_BYPASS_LICENSE;
+  else process.env.LHM_BYPASS_LICENSE=previousBypass;
+ }
  // A short paid license expiring during the evaluation window cannot
  // re-enable an otherwise disabled or revoked paid subscription.
  now=start+10*86400000;
