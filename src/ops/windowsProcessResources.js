@@ -7,14 +7,20 @@ function positivePid(value){
 function nonNegative(value){
  const number=Number(value);return Number.isFinite(number)&&number>=0?number:0;
 }
+function cpuCounter(value){
+ if(value==null||(typeof value==='string'&&!value.trim()))return null;
+ const number=Number(value);return Number.isFinite(number)&&number>=0?number:null;
+}
 function buildProcessTreeResources(input,rootPids){
- const rows=(Array.isArray(input)?input:[]).map(row=>({
+ const rows=(Array.isArray(input)?input:[]).map(row=>{
+ const kernel=cpuCounter(row?.KernelModeTime),user=cpuCounter(row?.UserModeTime);
+ return ({
   pid:positivePid(row?.ProcessId),parentPid:positivePid(row?.ParentProcessId),
   workingSetBytes:nonNegative(row?.WorkingSetSize),
-  cpuTime100ns:nonNegative(row?.KernelModeTime)+nonNegative(row?.UserModeTime),
+  cpuTime100ns:kernel===null||user===null?null:kernel+user,
   creationTime:typeof row?.CreationDate==='string'?row.CreationDate:null,
   name:typeof row?.Name==='string'?row.Name:''
- })).filter(row=>row.pid);
+ })}).filter(row=>row.pid);
  const byParent=new Map();
  for(const row of rows){
   const children=byParent.get(row.parentPid)||[];children.push(row);byParent.set(row.parentPid,children);
@@ -36,7 +42,8 @@ function buildProcessTreeResources(input,rootPids){
   members.sort((a,b)=>a.pid-b.pid);
   trees.push({rootPid,pids:members.map(row=>row.pid),processCount:members.length,
    workingSetBytes:members.reduce((sum,row)=>sum+row.workingSetBytes,0),
-   cpuTime100ns:members.reduce((sum,row)=>sum+row.cpuTime100ns,0),
+   cpuTime100ns:members.some(row=>row.cpuTime100ns===null)?null:
+    members.reduce((sum,row)=>sum+row.cpuTime100ns,0),
    processes:members.map(row=>({pid:row.pid,parentPid:row.parentPid,name:row.name,
     workingSetBytes:row.workingSetBytes,cpuTime100ns:row.cpuTime100ns,
     creationTime:row.creationTime}))});

@@ -46,6 +46,9 @@ assert.equal(report.metrics.workingSetBytes.p95,509_000_000);
 assert.equal(report.metrics.peakCpuPercent,29);
 assert.equal(report.crashCount,1);
 assert.equal(report.cleanup.status,'PASS');
+assert.throws(()=>shapeReport({commit:'a'.repeat(40),appSha256:'b'.repeat(64),
+ engineSha256:'c'.repeat(64),totalRamBytes:100,engine:'chromium',workload:'light',
+ concurrency:1,samples:samples.map(sample=>({...sample,peakCpuPercent:null}))}),/Invalid CPU/);
 assertPrivacySafeReport(report);
 assert.throws(()=>assertPrivacySafeReport({...report,profileName:'secret'}),
  /Forbidden report field/);

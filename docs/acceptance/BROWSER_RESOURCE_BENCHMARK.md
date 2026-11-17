@@ -49,6 +49,11 @@ Chạy từng engine với `light`, `medium`, `heavy` và concurrency `1`, `3`, 
 Runner dừng, đóng toàn bộ process do nó tạo và xóa profile tạm sau mỗi sample.
 Nếu RAM khả dụng xuống dưới 20%, runner dừng và không tạo evidence hợp lệ.
 
+CPU là giá trị lớn nhất trong các khoảng lấy mẫu hợp lệ, chuẩn hóa theo tổng số
+CPU logic; không phải mức đỉnh liên tục. Nếu bộ đếm thiếu, tiến trình thay đổi
+giữa hai mẫu hoặc khoảng đo không hợp lệ, runner dừng thay vì báo kết quả CPU.
+Các số CPU từ báo cáo tạo trước khi kiểm tra này được bổ sung cần đo lại.
+
 ## Hợp đồng artifact
 
 Mỗi JSON phải có:

@@ -121,6 +121,7 @@ function percentile(values,rate){
  return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(rate*sorted.length)-1))];
 }
 function finiteNonNegative(value,label){
+ if(value==null||(typeof value==='string'&&!value.trim()))throw Error('Invalid '+label);
  const number=Number(value);
  if(!Number.isFinite(number)||number<0)throw Error('Invalid '+label);
  return Math.round(number*1000)/1000;

@@ -20,6 +20,11 @@ assert.equal(result.trees[0].cpuTime100ns,47);
 assert.equal(result.trees[0].processes[0].creationTime,'2026-01-01T00:00:00Z');
 assert.deepEqual(result.trees[1].pids,[30,31]);
 assert.equal(result.totalWorkingSetBytes,1500);
+for(const invalid of [null,undefined,-1,'invalid','']){
+ const bad=buildProcessTreeResources([{...rows[0],KernelModeTime:invalid}],[10]);
+ assert.equal(bad.trees[0].processes[0].cpuTime100ns,null);
+ assert.equal(bad.trees[0].cpuTime100ns,null);
+}
 
 (async()=>{
  const unsupported=await collectProcessTreeResources([10],{platform:'linux'});
