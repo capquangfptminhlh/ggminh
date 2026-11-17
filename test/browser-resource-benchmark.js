@@ -4,12 +4,22 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {
  parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
- assertMemoryHeadroom
+ assertMemoryHeadroom,calculateCpuInterval
 }=require('../tools/browser-resource-benchmark');
 assert.doesNotThrow(()=>assertMemoryHeadroom(20,100));
 assert.throws(()=>assertMemoryHeadroom(19,100),/RESOURCE_LIMIT/);
 for(const values of [[NaN,100],[20,0],[-1,100],[101,100]])
  assert.throws(()=>assertMemoryHeadroom(...values),/RESOURCE_LIMIT/);
+const cpuSnapshot=(at,processes)=>({at,trees:[{processes}]});
+const proc=(pid,creation,cpu)=>({pid,creationTime:creation,cpuTime100ns:cpu});
+const cpuBefore=cpuSnapshot(1000,[proc(10,'2026-01-01T00:00:00Z',10000000)]);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2),50);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000),proc(11,'2026-01-01T00:00:01Z',999999999)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-02T00:00:00Z',20000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',5000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',999999999)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(1000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,null,20000000)]),2),null);
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX
 }=require('../src/engine/camoufoxReleasePreflight');

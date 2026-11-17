@@ -12,6 +12,7 @@ function buildProcessTreeResources(input,rootPids){
   pid:positivePid(row?.ProcessId),parentPid:positivePid(row?.ParentProcessId),
   workingSetBytes:nonNegative(row?.WorkingSetSize),
   cpuTime100ns:nonNegative(row?.KernelModeTime)+nonNegative(row?.UserModeTime),
+  creationTime:typeof row?.CreationDate==='string'?row.CreationDate:null,
   name:typeof row?.Name==='string'?row.Name:''
  })).filter(row=>row.pid);
  const byParent=new Map();
@@ -37,7 +38,8 @@ function buildProcessTreeResources(input,rootPids){
    workingSetBytes:members.reduce((sum,row)=>sum+row.workingSetBytes,0),
    cpuTime100ns:members.reduce((sum,row)=>sum+row.cpuTime100ns,0),
    processes:members.map(row=>({pid:row.pid,parentPid:row.parentPid,name:row.name,
-    workingSetBytes:row.workingSetBytes,cpuTime100ns:row.cpuTime100ns}))});
+    workingSetBytes:row.workingSetBytes,cpuTime100ns:row.cpuTime100ns,
+    creationTime:row.creationTime}))});
  }
  return {trees,totalWorkingSetBytes:trees.reduce((sum,tree)=>sum+tree.workingSetBytes,0),
   totalProcessCount:trees.reduce((sum,tree)=>sum+tree.processCount,0)};
@@ -47,7 +49,7 @@ function collectProcessTreeResources(rootPids,{platform=process.platform,exec=ex
  const roots=(Array.isArray(rootPids)?rootPids:[]).map(positivePid).filter(Boolean);
  if(!roots.length)return Promise.resolve({status:'MEASURED',trees:[],
   totalWorkingSetBytes:0,totalProcessCount:0});
- const command='Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,WorkingSetSize,KernelModeTime,UserModeTime,Name | ConvertTo-Json -Compress';
+ const command='Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,WorkingSetSize,KernelModeTime,UserModeTime,Name,CreationDate | ConvertTo-Json -Compress';
  return new Promise(resolve=>exec('powershell.exe',
   ['-NoProfile','-NonInteractive','-Command',command],
   {timeout:8000,windowsHide:true,maxBuffer:16*1024*1024,encoding:'utf8'},

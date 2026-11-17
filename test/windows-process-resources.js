@@ -5,7 +5,7 @@ const {
 }=require('../src/ops/windowsProcessResources');
 
 const rows=[
- {ProcessId:10,ParentProcessId:1,WorkingSetSize:100,KernelModeTime:10,UserModeTime:20,Name:'camoufox.exe'},
+ {ProcessId:10,ParentProcessId:1,WorkingSetSize:100,KernelModeTime:10,UserModeTime:20,Name:'camoufox.exe',CreationDate:'2026-01-01T00:00:00Z'},
  {ProcessId:11,ParentProcessId:10,WorkingSetSize:200,KernelModeTime:5,UserModeTime:7,Name:'camoufox.exe'},
  {ProcessId:12,ParentProcessId:11,WorkingSetSize:300,KernelModeTime:2,UserModeTime:3,Name:'camoufox.exe'},
  {ProcessId:20,ParentProcessId:1,WorkingSetSize:999,KernelModeTime:9,UserModeTime:9,Name:'other.exe'},
@@ -17,6 +17,7 @@ assert.equal(result.trees.length,2);
 assert.deepEqual(result.trees[0].pids,[10,11,12]);
 assert.equal(result.trees[0].workingSetBytes,600);
 assert.equal(result.trees[0].cpuTime100ns,47);
+assert.equal(result.trees[0].processes[0].creationTime,'2026-01-01T00:00:00Z');
 assert.deepEqual(result.trees[1].pids,[30,31]);
 assert.equal(result.totalWorkingSetBytes,1500);
 

@@ -31,6 +31,37 @@ function assertMemoryHeadroom(available=os.freemem(),total=os.totalmem()){
   throw Error('RESOURCE_LIMIT: available RAM is below the 20% reserve or cannot be verified');
 }
 
+// A changed process set, reused PID or invalid counter cannot produce a
+// trustworthy whole-tree CPU delta. Do not turn such intervals into zero.
+function calculateCpuInterval(previous,current,logicalCpus){
+ if(!previous||!current||!Number.isFinite(previous.at)||!Number.isFinite(current.at)||
+    current.at<=previous.at||!Number.isInteger(logicalCpus)||logicalCpus<1)return null;
+ function members(snapshot){
+  if(!Array.isArray(snapshot.trees)||snapshot.trees.length===0)return null;
+  const result=new Map();
+  for(const tree of snapshot.trees){
+   if(!Array.isArray(tree.processes)||tree.processes.length===0)return null;
+   for(const p of tree.processes){
+    if(!Number.isSafeInteger(p.pid)||p.pid<=0||typeof p.creationTime!=='string'||
+       !Number.isFinite(Date.parse(p.creationTime))||!Number.isFinite(p.cpuTime100ns)||
+       p.cpuTime100ns<0||result.has(p.pid))return null;
+    result.set(p.pid,p);
+   }
+  }
+  return result;
+ }
+ const before=members(previous),after=members(current);
+ if(!before||!after||before.size!==after.size)return null;
+ let delta=0;
+ for(const [pid,p] of before){
+  const q=after.get(pid);
+  if(!q||q.creationTime!==p.creationTime||q.cpuTime100ns<p.cpuTime100ns)return null;
+  delta+=q.cpuTime100ns-p.cpuTime100ns;
+ }
+ const percent=delta/((current.at-previous.at)/1000*1e7*logicalCpus)*100;
+ return Number.isFinite(percent)&&percent>=0&&percent<=100?percent:null;
+}
+
 function valueAfter(argv,index,label){
  const value=argv[index+1];
  if(!value||value.startsWith('--'))throw Error('Missing '+label);
@@ -295,23 +326,25 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
   }
   const startupMs=await waitForReady(ready,runIds,children);
   const roots=children.map(child=>child.pid);
-  let peakWorkingSetBytes=0,peakCpuPercent=0,previous=null;
+  let peakWorkingSetBytes=0,peakCpuPercent=null,previous=null;
   const until=Date.now()+options.durationMs;
   while(Date.now()<until){
-   const observedAt=performance.now();
+   const startedAt=performance.now();
    const resources=await collectProcessTreeResources(roots);
+   const observedAt=(startedAt+performance.now())/2;
    if(resources.status!=='MEASURED')throw Error('Process resources unavailable: '+resources.reason);
    peakWorkingSetBytes=Math.max(peakWorkingSetBytes,resources.totalWorkingSetBytes);
-   const cpu=resources.trees.reduce((sum,tree)=>sum+tree.cpuTime100ns,0);
+   const snapshot={at:observedAt,trees:resources.trees};
    if(previous){
-    const elapsed=(observedAt-previous.at)/1000;
-    if(elapsed>0)peakCpuPercent=Math.max(peakCpuPercent,
-     (cpu-previous.cpu)/(elapsed*1e7*Math.max(1,os.cpus().length))*100);
+    const percent=calculateCpuInterval(previous,snapshot,os.cpus().length);
+    if(percent===null)throw Error('CPU measurement unavailable: unstable or invalid process interval');
+    peakCpuPercent=Math.max(peakCpuPercent??0,percent);
    }
-   previous={at:observedAt,cpu};
+   previous=snapshot;
    assertMemoryHeadroom();
    await delay(250);
   }
+  if(peakCpuPercent===null)throw Error('CPU measurement unavailable: no valid stable process interval');
   intentionalClose=true;
   remainingPids=await closeChildren(children,options.engine);
   return {startupMs,peakWorkingSetBytes,peakCpuPercent,crashed,
@@ -359,5 +392,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,assertMemoryHeadroom,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,assertMemoryHeadroom,calculateCpuInterval,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};
