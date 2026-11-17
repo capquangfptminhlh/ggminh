@@ -4,12 +4,10 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {
  parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
- assertMemoryHeadroom,calculateCpuInterval
+ calculateCpuInterval
 }=require('../tools/browser-resource-benchmark');
-assert.doesNotThrow(()=>assertMemoryHeadroom(20,100));
-assert.throws(()=>assertMemoryHeadroom(19,100),/RESOURCE_LIMIT/);
-for(const values of [[NaN,100],[20,0],[-1,100],[101,100]])
- assert.throws(()=>assertMemoryHeadroom(...values),/RESOURCE_LIMIT/);
+const runnerSource=fs.readFileSync(path.join(__dirname,'../tools/browser-resource-benchmark.js'),'utf8');
+assert(!runnerSource.includes('assertMemoryHeadroom('),'Benchmark must not block on RAM threshold');
 const cpuSnapshot=(at,processes)=>({at,trees:[{processes}]});
 const proc=(pid,creation,cpu)=>({pid,creationTime:creation,cpuTime100ns:cpu});
 const cpuBefore=cpuSnapshot(1000,[proc(10,'2026-01-01T00:00:00Z',10000000)]);
@@ -46,6 +44,7 @@ assert.equal(report.metrics.workingSetBytes.p95,509_000_000);
 assert.equal(report.metrics.peakCpuPercent,29);
 assert.equal(report.crashCount,1);
 assert.equal(report.cleanup.status,'PASS');
+assert.equal(report.headroomPolicy,undefined,'Report must not claim an unenforced RAM reserve');
 assert.throws(()=>shapeReport({commit:'a'.repeat(40),appSha256:'b'.repeat(64),
  engineSha256:'c'.repeat(64),totalRamBytes:100,engine:'chromium',workload:'light',
  concurrency:1,samples:samples.map(sample=>({...sample,peakCpuPercent:null}))}),/Invalid CPU/);
@@ -112,7 +111,7 @@ assert(guide.includes('không ghi đè'));
    samples:samples.map(sample=>({...sample,crashed:false})),cleanup:{status:'PASS',remainingPids:0}
   })
  }));
- assert.equal(evaluateResourceCapacity(entries,{candidate,now:new Date(generatedAt)}).status,'PASS');
+ assert.equal(evaluateResourceCapacity(entries,{candidate,now:new Date(generatedAt)}).status,'BLOCKED');
 
  const server=createWorkloadServer();
  const port=await server.listen();

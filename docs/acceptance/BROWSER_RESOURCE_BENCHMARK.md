@@ -47,7 +47,10 @@ node tools/browser-resource-benchmark.js `
 Chạy từng engine với `light`, `medium`, `heavy` và concurrency `1`, `3`, `5`,
 `10`. Mỗi lệnh có một warmup bị loại khỏi report và tối thiểu 10 sample thật.
 Runner dừng, đóng toàn bộ process do nó tạo và xóa profile tạm sau mỗi sample.
-Nếu RAM khả dụng xuống dưới 20%, runner dừng và không tạo evidence hợp lệ.
+Runner không áp dụng ngưỡng RAM trống bắt buộc. Khi máy thiếu RAM, kết quả có
+thể chịu ảnh hưởng bởi tải hệ thống; chạy thất bại không được tính là kết quả đạt.
+Báo cáo không xác nhận mức dự phòng RAM và do đó không đáp ứng điều kiện dự phòng
+20% hiện có của bộ kiểm tra phát hành Camoufox.
 
 CPU là giá trị lớn nhất trong các khoảng lấy mẫu hợp lệ, chuẩn hóa theo tổng số
 CPU logic; không phải mức đỉnh liên tục. Nếu bộ đếm thiếu, tiến trình thay đổi

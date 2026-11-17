@@ -25,12 +25,6 @@ const ENGINES=new Set(['chromium','firefox','camoufox']);
 const CONCURRENCY=new Set([1,3,5,10]);
 const FORBIDDEN_KEYS=/name|url|cookie|proxy|identity|token|password|secret|account|camou_config/i;
 
-function assertMemoryHeadroom(available=os.freemem(),total=os.totalmem()){
- if(!Number.isFinite(available)||!Number.isFinite(total)||total<=0||
-    available<0||available>total||available<total*0.20)
-  throw Error('RESOURCE_LIMIT: available RAM is below the 20% reserve or cannot be verified');
-}
-
 // A changed process set, reused PID or invalid counter cannot produce a
 // trustworthy whole-tree CPU delta. Do not turn such intervals into zero.
 function calculateCpuInterval(previous,current,logicalCpus){
@@ -166,9 +160,7 @@ function shapeReport(input){
     p95:percentile(samples.map(x=>x.peakWorkingSetBytes),.95)},
    peakCpuPercent:Math.max(...samples.map(x=>x.peakCpuPercent))
   },
-  crashCount:samples.filter(x=>x.crashed).length,cleanup,
-  headroomPolicy:{minimumAvailableRatio:0.20,
-   claim:'Measured on this exact machine/build only; no interpolation to unmeasured systems.'}
+  crashCount:samples.filter(x=>x.crashed).length,cleanup
  };
  assertPrivacySafeReport(report);
  return report;
@@ -309,7 +301,6 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
  let intentionalClose=false,crashed=false,remainingPids=0;
  try{
   for(let index=0;index<options.concurrency;index++){
-   assertMemoryHeadroom();
    const runId='s'+sampleNumber+'-p'+index+'-'+crypto.randomBytes(4).toString('hex');
    runIds.push(runId);
    const profileDir=path.join(sampleRoot,'p'+index);
@@ -342,7 +333,6 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
     peakCpuPercent=Math.max(peakCpuPercent??0,percent);
    }
    previous=snapshot;
-   assertMemoryHeadroom();
    await delay(250);
   }
   if(peakCpuPercent===null)throw Error('CPU measurement unavailable: no valid stable process interval');
@@ -361,7 +351,6 @@ async function run(argv=process.argv.slice(2)){
  const options=parseArgs(argv);
  for(const file of [options.appArtifact,options.binary,options.identityFile].filter(Boolean))
   if(!fs.existsSync(file))throw Error('Required benchmark input missing: '+file);
- assertMemoryHeadroom();
  const resolved=resolveExecutable(options);
  const server=createWorkloadServer();
  const port=await server.listen();
@@ -393,5 +382,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,assertMemoryHeadroom,calculateCpuInterval,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};
