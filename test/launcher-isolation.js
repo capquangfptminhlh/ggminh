@@ -51,6 +51,20 @@ const { createApiServer } = require('../src/api/server');
     }
     const launcher=new BrowserLauncher(store,{spawnProcess:fakeSpawn});
     launcher.findBrowserBinary=()=>process.execPath;
+    const unreachable=store.saveProfile({name:'Unreachable proxy',engine:'chromium',
+      proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
+    const noProxyLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,
+      proxyProbe:async()=>false});
+    noProxyLauncher.findBrowserBinary=()=>process.execPath;
+    await assert.rejects(noProxyLauncher.start(unreachable.id),/PROXY_UNAVAILABLE/);
+    assert.strictEqual(spawnCount,0,'Unreachable proxy must block before browser spawn');
+    const changedLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async()=>{
+      store.saveProfile({...unreachable,proxy:{type:'http',host:'127.0.0.1',port:65533}});
+      return true;
+    }});
+    changedLauncher.findBrowserBinary=()=>process.execPath;
+    await assert.rejects(changedLauncher.start(unreachable.id),/PROXY_UNAVAILABLE/);
+    assert.strictEqual(spawnCount,0,'Changed proxy must block before browser spawn');
     store.data.profiles.push({...store.data.profiles.find(p=>p.id===first.id),
       id:first.id.toUpperCase(),name:'Legacy collision'});
     await assert.rejects(launcher.start(first.id),/profile ID.*collid/i);

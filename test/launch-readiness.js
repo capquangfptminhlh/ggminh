@@ -69,7 +69,7 @@ function has(report, code) { return report.issues.some(issue => issue.code === c
     getSettings: () => ({}),
     getProfile: () => authenticated
   };
-  const launcher = new BrowserLauncher(launcherStore, { spawnProcess: () => {
+  const launcher = new BrowserLauncher(launcherStore, { proxyProbe:async()=>true, spawnProcess: () => {
     throw Error('Must not spawn before local preflight');
   } });
   let adapterCalls = 0;
@@ -79,7 +79,7 @@ function has(report, code) { return report.issues.some(issue => issue.code === c
   };
   await assert.rejects(() => launcher.start(authenticated.id), /Launch readiness blocked/);
   assert.strictEqual(adapterCalls, 0, 'All launch routes must fail closed on missing vault');
-  launcher.proxyVault = { available: () => true, has: () => true };
+  launcher.proxyVault = { available: () => true, has: () => true, get:()=>({user:'test',pass:'test'}) };
   const opened = await launcher.start(authenticated.id);
   assert.strictEqual(opened.success, true);
   assert.strictEqual(adapterCalls, 1, 'Valid local profile may start after warnings are understood');

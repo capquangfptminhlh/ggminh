@@ -15,11 +15,12 @@ const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 const { cdpAllowed } = require('../security/cdpPolicy');
+const {probeProxy}=require('./proxyLaunchPreflight');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null,
     stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory,
-    resourceGuard = null } = {}) {
+    resourceGuard = null, proxyProbe = probeProxy } = {}) {
     this.store = store;
     this.proxyVault = proxyVault;
     this.extensionManager = extensionManager;
@@ -37,6 +38,7 @@ class BrowserLauncher {
     // Downloads/LHM Ads Browser; the default keeps files under app data.
     this.customDownloadsRoot = downloadsRoot;
     this.resourceGuard = resourceGuard;
+    this.proxyProbe = proxyProbe;
     this.lastResourceAssessment = null;
     this.engineFactory=new EngineFactory(this);
   }
@@ -174,6 +176,25 @@ class BrowserLauncher {
     }
     // Resolve provider using the saved per-profile selection. Never fallback
     // from a missing Camoufox release into a different browser engine.
+    const proxy=profile.proxy||{type:'direct'};
+    if(resolveEngineType(profile,this.store.getSettings())!=='camoufox'&&
+       proxy.type&&proxy.type!=='direct'&&proxy.type!=='none'){
+      const proxySnapshot=JSON.stringify(proxy);
+      let credentials=null;
+      if(proxy.authProxyId){
+        const saved=this.store.data?.proxies?.find(item=>item.id===proxy.authProxyId);
+        if(!saved||saved.type!==proxy.type||saved.host!==proxy.host||Number(saved.port)!==Number(proxy.port))
+          throw Error('PROXY_UNAVAILABLE: Proxy đã thay đổi, hãy gán lại.');
+        credentials=this.proxyVault?.get?.(proxy.authProxyId);
+        if(!credentials)throw Error('PROXY_UNAVAILABLE: Thiếu thông tin xác thực proxy.');
+      }
+      let available=false;
+      try{available=await this.proxyProbe(proxy,{credentials})}catch(_){}
+      if(available!==true)throw Error('PROXY_UNAVAILABLE: Proxy không phản hồi hoặc từ chối kết nối.');
+      const current=this.store.getProfile(profileId);
+      if(!current||JSON.stringify(current.proxy||{})!==proxySnapshot)
+        throw Error('PROXY_UNAVAILABLE: Cấu hình proxy thay đổi trong lúc kiểm tra.');
+    }
     return this.engineFactory.launchProfile(profile,{customUrl});
   }
 
