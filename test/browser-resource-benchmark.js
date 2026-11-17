@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {
  parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
- calculateCpuInterval
+ calculateCpuInterval,recordCpuInterval
 }=require('../tools/browser-resource-benchmark');
 const runnerSource=fs.readFileSync(path.join(__dirname,'../tools/browser-resource-benchmark.js'),'utf8');
 assert(!runnerSource.includes('assertMemoryHeadroom('),'Benchmark must not block on RAM threshold');
@@ -21,13 +21,17 @@ assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-0
 assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',999999999)]),2),null);
 assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(1000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2),null);
 assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,null,20000000)]),2),null);
+const intervals={peak:null,measured:0,discarded:0};
+recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2);
+recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-02T00:00:00Z',20000000)]),2);
+assert.deepEqual(intervals,{peak:50,measured:1,discarded:1});
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX
 }=require('../src/engine/camoufoxReleasePreflight');
 
 const samples=Array.from({length:10},(_,index)=>({
  startupMs:100+index,peakWorkingSetBytes:500_000_000+index*1_000_000,
- peakCpuPercent:20+index,crashed:index===9,cleanupOk:true,
+ peakCpuPercent:20+index,cpuIntervalsMeasured:2,cpuIntervalsDiscarded:1,crashed:index===9,cleanupOk:true,
  forbiddenProfileName:'Customer Secret',url:'https://secret.example/account',
  proxy:{password:'DO_NOT_LEAK'},token:'DO_NOT_LEAK',cookies:['DO_NOT_LEAK'],
  identity:{env:{CAMOU_CONFIG_1:'DO_NOT_LEAK'}}
@@ -41,6 +45,7 @@ const report=shapeReport({
 });
 assert.equal(report.schema,'lhm.browser-resource.evidence.v1');
 assert.equal(report.samples.length,10);
+assert.equal(report.samples[0].cpuIntervalsDiscarded,1);
 assert.equal(report.metrics.startupMs.p50,104);
 assert.equal(report.metrics.startupMs.p95,109);
 assert.equal(report.metrics.workingSetBytes.p95,509_000_000);

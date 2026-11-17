@@ -60,6 +60,11 @@ function calculateCpuInterval(previous,current,logicalCpus){
  const percent=delta/((current.at-previous.at)/1000*1e7*logicalCpus)*100;
  return Number.isFinite(percent)&&percent>=0&&percent<=100?percent:null;
 }
+function recordCpuInterval(state,previous,current,logicalCpus){
+ const percent=calculateCpuInterval(previous,current,logicalCpus);
+ if(percent===null){state.discarded++;return}
+ state.measured++;state.peak=Math.max(state.peak??0,percent);
+}
 
 function valueAfter(argv,index,label){
  const value=argv[index+1];
@@ -130,6 +135,13 @@ function validHex(value,length,label){
   throw Error('Invalid '+label);
  return value.toLowerCase();
 }
+function intervalCounts(sample){
+ if(sample.cpuIntervalsMeasured===undefined&&sample.cpuIntervalsDiscarded===undefined)return {};
+ if(!Number.isSafeInteger(sample.cpuIntervalsMeasured)||sample.cpuIntervalsMeasured<1||
+    !Number.isSafeInteger(sample.cpuIntervalsDiscarded)||sample.cpuIntervalsDiscarded<0)
+  throw Error('Invalid CPU interval counts');
+ return {cpuIntervalsMeasured:sample.cpuIntervalsMeasured,cpuIntervalsDiscarded:sample.cpuIntervalsDiscarded};
+}
 function shapeReport(input){
  if(!ENGINES.has(input?.engine))throw Error('Invalid engine');
  if(!WORKLOADS.has(input?.workload))throw Error('Invalid workload');
@@ -141,6 +153,7 @@ function shapeReport(input){
   startupMs:finiteNonNegative(sample?.startupMs,'startup time'),
   peakWorkingSetBytes:finiteNonNegative(sample?.peakWorkingSetBytes,'working set'),
   peakCpuPercent:finiteNonNegative(sample?.peakCpuPercent,'CPU'),
+  ...intervalCounts(sample),
   crashed:sample?.crashed===true,cleanupOk:sample?.cleanupOk===true
  }));
  const cleanup={status:input?.cleanup?.status==='PASS'?'PASS':'FAIL',
@@ -323,7 +336,8 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
   }
   const startupMs=await waitForReady(ready,runIds,children);
   const roots=children.map(child=>child.pid);
-  let peakWorkingSetBytes=0,peakCpuPercent=null,previous=null;
+  let peakWorkingSetBytes=0,previous=null;
+  const cpu={peak:null,measured:0,discarded:0};
   const until=Date.now()+options.durationMs;
   while(Date.now()<until){
    const startedAt=performance.now();
@@ -333,17 +347,16 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
    peakWorkingSetBytes=Math.max(peakWorkingSetBytes,resources.totalWorkingSetBytes);
    const snapshot={at:observedAt,trees:resources.trees};
    if(previous){
-    const percent=calculateCpuInterval(previous,snapshot,os.cpus().length);
-    if(percent===null)throw Error('CPU measurement unavailable: unstable or invalid process interval');
-    peakCpuPercent=Math.max(peakCpuPercent??0,percent);
+    recordCpuInterval(cpu,previous,snapshot,os.cpus().length);
    }
    previous=snapshot;
    await delay(250);
   }
-  if(peakCpuPercent===null)throw Error('CPU measurement unavailable: no valid stable process interval');
+  if(cpu.peak===null)throw Error('CPU measurement unavailable: no valid stable process interval');
   intentionalClose=true;
   remainingPids=await closeChildren(children,options.engine);
-  return {startupMs,peakWorkingSetBytes,peakCpuPercent,crashed,
+  return {startupMs,peakWorkingSetBytes,peakCpuPercent:cpu.peak,
+   cpuIntervalsMeasured:cpu.measured,cpuIntervalsDiscarded:cpu.discarded,crashed,
    cleanupOk:remainingPids===0,remainingPids};
  }finally{
   intentionalClose=true;
@@ -387,5 +400,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,recordCpuInterval,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};

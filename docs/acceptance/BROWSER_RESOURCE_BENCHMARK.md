@@ -53,8 +53,9 @@ Báo cáo không xác nhận mức dự phòng RAM và do đó không đáp ứn
 20% hiện có của bộ kiểm tra phát hành Camoufox.
 
 CPU là giá trị lớn nhất trong các khoảng lấy mẫu hợp lệ, chuẩn hóa theo tổng số
-CPU logic; không phải mức đỉnh liên tục. Nếu bộ đếm thiếu, tiến trình thay đổi
-giữa hai mẫu hoặc khoảng đo không hợp lệ, runner dừng thay vì báo kết quả CPU.
+CPU logic; không phải mức đỉnh liên tục. Các khoảng thiếu bộ đếm, tiến trình thay
+đổi hoặc không hợp lệ bị bỏ qua; báo cáo ghi số khoảng đo và số khoảng bỏ qua.
+CPU thực tế có thể cao hơn tại khoảng bỏ qua. Không có khoảng hợp lệ thì runner dừng.
 Các số CPU từ báo cáo tạo trước khi kiểm tra này được bổ sung cần đo lại.
 
 ## Hợp đồng artifact
