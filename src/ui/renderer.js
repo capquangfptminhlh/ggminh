@@ -584,6 +584,12 @@ function setupEventListeners() {
         ? currentGeneratedFP : selectedFingerprintConfig()
     };
 
+    const original = allProfiles.find(item => item.id === profile.id);
+    if (original?.requiresProxySetup && profile.proxy.type === 'direct') {
+      if (!confirm('Hồ sơ này cần kiểm tra kết nối sau khi khôi phục. Dùng kết nối trực tiếp sẽ gửi lưu lượng qua mạng hiện tại, không qua proxy. Bạn có muốn dùng kết nối trực tiếp không?')) return;
+      profile.requiresProxySetup = false;
+    }
+
     if (profile.proxy && profile.proxy.type !== 'direct' && profile.proxy.host) {
       const dup = allProfiles.find(p => p.id !== profile.id && p.proxy &&
         p.proxy.host === profile.proxy.host && Number(p.proxy.port) === Number(profile.proxy.port));

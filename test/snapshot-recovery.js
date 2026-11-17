@@ -28,6 +28,14 @@ try{
  assert.strictEqual(done.files,1);
  assert.strictEqual(fresh.getProfile(orig.id).engine,'chromium');
  assert.strictEqual(fresh.getProfile(orig.id).proxy.type,'direct');
+ assert.strictEqual(fresh.getProfile(orig.id).requiresProxySetup,true,
+  'A session snapshot does not establish whether direct networking was intended');
+ const {launchReadiness}=require('../src/health/launchReadiness');
+ assert.strictEqual(launchReadiness(fresh.getProfile(orig.id)).canLaunch,false,
+  'Recovered session must not open before network configuration is explicitly reviewed');
+ const confirmed=fresh.saveProfile({...fresh.getProfile(orig.id),requiresProxySetup:false});
+ assert.strictEqual(confirmed.requiresProxySetup,false,'An explicit direct connection choice must be saved');
+ assert.strictEqual(new Store(fresh.baseDir).getProfile(orig.id).requiresProxySetup,false);
  assert.strictEqual(fs.readFileSync(path.join(fresh.baseDir,'profiles',orig.id,'Default','Cookies'),'utf8'),
   'ENCRYPTED SESSION IN BROWSER PROFILE');
  assert.strictEqual(recovery.list(orig.id).length,1);
