@@ -27,6 +27,11 @@ const FORBIDDEN_KEYS=/name|url|cookie|proxy|identity|token|password|secret|accou
 
 // A changed process set, reused PID or invalid counter cannot produce a
 // trustworthy whole-tree CPU delta. Do not turn such intervals into zero.
+function validCreationTime(value){
+ if(typeof value!=='string')return false;
+ const cim=/^\/Date\((-?\d+)\)\/$/.exec(value);
+ return Number.isFinite(cim?new Date(Number(cim[1])).getTime():Date.parse(value));
+}
 function calculateCpuInterval(previous,current,logicalCpus){
  if(!previous||!current||!Number.isFinite(previous.at)||!Number.isFinite(current.at)||
     current.at<=previous.at||!Number.isInteger(logicalCpus)||logicalCpus<1)return null;
@@ -36,8 +41,8 @@ function calculateCpuInterval(previous,current,logicalCpus){
   for(const tree of snapshot.trees){
    if(!Array.isArray(tree.processes)||tree.processes.length===0)return null;
    for(const p of tree.processes){
-    if(!Number.isSafeInteger(p.pid)||p.pid<=0||typeof p.creationTime!=='string'||
-       !Number.isFinite(Date.parse(p.creationTime))||!Number.isFinite(p.cpuTime100ns)||
+    if(!Number.isSafeInteger(p.pid)||p.pid<=0||!validCreationTime(p.creationTime)||
+       !Number.isFinite(p.cpuTime100ns)||
        p.cpuTime100ns<0||result.has(p.pid))return null;
     result.set(p.pid,p);
    }
