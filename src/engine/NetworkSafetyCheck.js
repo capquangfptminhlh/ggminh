@@ -7,8 +7,7 @@ const {normalizedProxy}=require('./camoufoxProxyPlan');
 const net=require('net');
 const ERROR_CODE='NETWORK_BLOCKED';
 function blocked(reason){return {safeToLaunch:false,code:ERROR_CODE,reason};}
-function evaluate(profile,{approvedProxyTypes=null,labApproved=false,
- proxyVault=null,store=null}={}){
+function evaluate(profile,{labApproved=false,proxyVault=null,store=null}={}){
  let proxy;
  try{proxy=normalizedProxy(profile?.proxy);}
  catch(error){return blocked(error.message);}
@@ -17,18 +16,14 @@ function evaluate(profile,{approvedProxyTypes=null,labApproved=false,
  if(proxy.type==='direct')return {
   safeToLaunch:true,code:'PREFLIGHT_ONLY',reason:'Direct profile passes configuration checks; network-leak safety not certified'
  };
- const approved=Array.isArray(approvedProxyTypes)?approvedProxyTypes:
-  labApproved===true?['http','socks5']:[];
- if(!approved.includes(proxy.type))return blocked(
-  'Camoufox '+proxy.type+' proxy is not approved for this signed engine version');
+ if(!labApproved)return blocked('Authenticated Camoufox proxy requires approved Windows network lab');
  if(!store||!proxyVault)return blocked('Proxy Center vault and approved upstream required');
  const record=store.data?.proxies?.find(x=>x.id===proxy.authProxyId);
  if(!record||record.host!==proxy.host||record.type!==proxy.type||
     Number(record.port)!==proxy.port)return blocked('Proxy reference mismatch');
  const secret=proxyVault.get?.(proxy.authProxyId);
  if(!secret?.user||!secret?.pass)return blocked('Missing proxy credentials');
- return {safeToLaunch:true,code:'APPROVED_PREFLIGHT_ONLY',
-  reason:'Authorized proxy configuration for an approved signed engine version'};
+ return {safeToLaunch:true,code:'LAB_PREFLIGHT_ONLY',reason:'Authorized proxy configuration; DNS/WebRTC outcome still untested'};
 }
 function publicIPv4(address){
  if(net.isIP(address)!==4)return false;

@@ -10,15 +10,13 @@ const {spawn,execFile}=require('child_process');
 const {assertProfileId,ensureIsolatedDirectory}=require('../privacy/isolation');
 const {safeWebUrl}=require('./launchArgs');
 const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
-const {identityEnvForProfile,assertIdentityMatchesProfile,hasIdentityCollision}=require('./camoufoxIdentity');
+const {identityEnvForProfile,assertIdentityMatchesProfile}=require('./camoufoxIdentity');
 const {applyGeckoDownloadDir}=require('./downloadDirectory');
 const {createPeerGuard}=require('../security/loopbackPeerGuard');
 
 const MIN_STARTUP_MS=1000;
 const MAX_STARTUP_MS=45000;
-function validateCamoufoxProfile(profile,baseDir,{
- requirePinnedIdentity=false,existingProfiles=null
-}={}){
+function validateCamoufoxProfile(profile,baseDir){
  assertProfileId(profile?.id);
  if(typeof baseDir!=='string'||!path.isAbsolute(baseDir))
   throw Error('Profile storage root must be absolute');
@@ -34,17 +32,7 @@ function validateCamoufoxProfile(profile,baseDir,{
  // A pinned identity, when present, must be valid and consistent with the
  // profile before any process is created.
  const identity=identityEnvForProfile(profile);
- if(!identity&&(requirePinnedIdentity===true||
-    profile.fingerprint?.requirePinnedIdentity===true||
-    profile.fingerprint?.identityProvisioning==='unavailable'||
-    profile.fingerprint?.identityProvisioning==='invalid'))
-  throw Error('CAMOUFOX_IDENTITY_REQUIRED: Camoufox profile requires a verified pinned identity before launch to prevent hardware fingerprint leak');
- if(identity){
-  assertIdentityMatchesProfile(profile,identity.expectations);
-  if(Array.isArray(existingProfiles)&&
-     hasIdentityCollision(profile.fingerprint.identity,existingProfiles,profile.id))
-   throw Error('CAMOUFOX_IDENTITY_COLLISION: Profile identity collides with another profile');
- }
+ if(identity)assertIdentityMatchesProfile(profile,identity.expectations);
  return {profileDir:path.join(baseDir,'camoufox-profiles',profile.id),identity};
 }
 function nativeArgs(profileDir,url){
@@ -109,11 +97,7 @@ class CamoufoxAdapter{
   bundleVerifier=null,spawnProcess=spawn,windowProbe=windowsWindowProbe,
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
-  prepareProxy=prepareCamoufoxProxy,
-  capabilityResolver=()=>({manual:false,proxyTypes:[],evidence:null,
-   reason:'No approved capability policy'}),
-  labProxyOverride=false,downloadsRoot=null,peerGuardFactory,
-  requirePinnedIdentity=false
+  prepareProxy=prepareCamoufoxProxy,allowProxyLab=false,downloadsRoot=null,peerGuardFactory
  }={}){
   if(typeof spawnProcess!=='function'||typeof windowProbe!=='function'||
      typeof closeWindow!=='function')throw Error('Camoufox process helpers must be functions');
@@ -127,44 +111,22 @@ class CamoufoxAdapter{
   if(typeof prepareProxy!=='function')throw Error('Invalid Camoufox proxy configurator');
   this.closeWindow=closeWindow;this.platform=platform;
   this.store=store;this.proxyVault=proxyVault;this.prepareProxy=prepareProxy;
-  if(typeof capabilityResolver!=='function')throw Error('Invalid Camoufox capability resolver');
-  this.capabilityResolver=capabilityResolver;
-  this.labProxyOverride=labProxyOverride===true;
-  this.requirePinnedIdentity=requirePinnedIdentity===true;
+  this.allowProxyLab=allowProxyLab===true;
   // Per-profile download folder; never the shared OS Downloads folder.
   this.downloadsRoot=downloadsRoot||(path.isAbsolute(String(baseDir||''))?path.join(baseDir,'downloads'):null);
   this.startupTimeoutMs=startupTimeoutMs;
   this.sessions=new Map();this.pending=new Map();
  }
- _releaseState(){
+ status(){
   const signed=this.bundleVerifier?.status?.()||
    {valid:false,reason:'No signed Camoufox executable'};
-  if(signed.valid!==true)return {signed,capabilities:{manual:false,
-   proxyTypes:[],evidence:null,reason:signed.reason||'Signed Camoufox release unavailable'}};
-  if(this.labProxyOverride)return {signed,capabilities:{manual:true,
-   proxyTypes:['http','socks5'],evidence:'development-lab-override',reason:null}};
-  let capabilities;
-  try{capabilities=this.capabilityResolver({engineVersion:signed.version,
-   engineSha256:signed.sha256||null});}
-  catch(error){capabilities={manual:false,proxyTypes:[],evidence:null,
-   reason:String(error.message||error).slice(0,180)}}
-  if(!capabilities||capabilities.manual!==true||!Array.isArray(capabilities.proxyTypes))
-   capabilities={manual:false,proxyTypes:[],evidence:null,
-    reason:capabilities?.reason||'Signed Camoufox version is not approved'};
-  return {signed,capabilities};
- }
- approvedProxyTypes(){return [...this._releaseState().capabilities.proxyTypes]}
- status(){
-  const {signed,capabilities}=this._releaseState();
   return {installed:signed.valid===true,binaryVerified:signed.valid===true,
    version:signed.version||null,active:this.sessions.size,
    runtimeCompatible:this.platform==='win32',manualOnly:true,
    automationAvailable:false,
-   ready:signed.valid===true&&this.platform==='win32'&&capabilities.manual===true,
-   approvedProxyTypes:[...capabilities.proxyTypes],evidence:capabilities.evidence||null,
-   note:signed.valid&&capabilities.manual?
-    'Signed native EXE and version-bound manual capability available.':
-    signed.valid?(capabilities.reason||'Signed Camoufox version is not approved for manual release.'):
+   ready:signed.valid===true&&this.platform==='win32',
+   note:signed.valid?
+    'Signed native EXE available; manual UI only. Proxy auth is opt-in lab-only until DNS/WebRTC checks pass.':
     'Independent publisher-signed Camoufox EXE is not installed or verified.'};
  }
  isBusy(id){return this.sessions.has(id)||this.pending.has(id);}
@@ -172,19 +134,9 @@ class CamoufoxAdapter{
  async start(profile,{url,onClosed}={}){
   const id=assertProfileId(profile?.id);
   if(this.isBusy(id))throw Error('Camoufox profile is already running or starting');
-  const {profileDir,identity}=validateCamoufoxProfile(profile,this.baseDir,{
-   requirePinnedIdentity:this.requirePinnedIdentity,
-   existingProfiles:this.store?.data?.profiles||null
-  });
-  const release=this._releaseState();
-  if(release.signed.valid!==true)
-   throw Error('Camoufox requires a trusted, release-signed browser distribution');
-  if(release.capabilities.manual!==true)
-   throw Error('Signed Camoufox version is not approved for manual release');
-  const proxyType=normalizedProxy(profile.proxy).type;
-  if(proxyType!=='direct'&&!release.capabilities.proxyTypes.includes(proxyType))
-   throw Error('NETWORK_BLOCKED: Camoufox '+proxyType+
-    ' proxy is not approved for this signed engine version; no direct fallback');
+  const {profileDir,identity}=validateCamoufoxProfile(profile,this.baseDir);
+  if(normalizedProxy(profile.proxy).type!=='direct'&&!this.allowProxyLab)
+   throw Error('Camoufox authenticated proxy is experimental and requires an approved proxy/DNS/WebRTC lab; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
   const task=this._startVerified({profile,id,profileDir,target,onClosed,identity});
   this.pending.set(id,task);

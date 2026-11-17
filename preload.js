@@ -21,7 +21,6 @@ const api = {
   androidAgentNext: sessionId => ipcRenderer.invoke('android-agent-next',sessionId),
   androidAgentCancel: sessionId => ipcRenderer.invoke('android-agent-cancel',sessionId),
   dashboardOverview: () => ipcRenderer.invoke('dashboard-overview'),
-  resourceGuardStatus: id => ipcRenderer.invoke('resource-guard-status',id),
   runPerformanceLab: () => ipcRenderer.invoke('performance-lab-run'),
   exportPerformanceLab: () => ipcRenderer.invoke('performance-lab-export'),
   onlineUpdateStatus: () => ipcRenderer.invoke('app-online-update-status'),
@@ -146,9 +145,7 @@ const api = {
   restoreTrashedProfile: id => ipcRenderer.invoke('restore-trashed-profile',id),
   purgeTrashedProfile: id => ipcRenderer.invoke('purge-trashed-profile',id),
   purgeExpiredTrash: () => ipcRenderer.invoke('purge-expired-trash'),
-  startBrowser: (id,options={}) => ipcRenderer.invoke('start-browser', id,{
-    allowResourceReview:options?.allowResourceReview===true
-  }),
+  startBrowser: (id) => ipcRenderer.invoke('start-browser', id),
   stopBrowser: (id) => ipcRenderer.invoke('stop-browser', id),
   getActiveBrowsers: () => ipcRenderer.invoke('get-active-browsers'),
   previewProfileCache: ids => ipcRenderer.invoke('cache-manager-preview',ids),
@@ -157,7 +154,6 @@ const api = {
   openUrlForStoppedProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-url',ids,url),
   openUrlInRunningProfiles: (ids,url) => ipcRenderer.invoke('window-manager-open-live-url',ids,url),
   checkProxy: (proxy) => ipcRenderer.invoke('check-proxy', proxy),
-  checkIpCollision: (payload) => ipcRenderer.invoke('check-ip-collision', payload),
   generateFingerprint: (options) => ipcRenderer.invoke('generate-fingerprint', options),
   bundledEngineStatus: () => ipcRenderer.invoke('bundled-engine-status'),
   camoufoxInstallStatus: () => ipcRenderer.invoke('camoufox-install-status'),
