@@ -7,10 +7,12 @@
 // writes a cookie, localStorage, IndexedDB and a Cache Storage entry; profile B
 // must see none of them, A must still see its own after a restart, and after
 // B writes its own values A must still see only A's.
-// Usage: node stage0-measure/run-concurrent-storage-isolation.js <out-dir> [browser-exe] [chromium|gecko]
+// Usage: node tools/concurrent-storage-isolation.js <out-dir> [browser-exe] [chromium|gecko]
 const fs = require('fs'), path = require('path'), http = require('http');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
+const {ConfigBackup}=require('../src/backup/configBackup');
+const {WorkflowStore}=require('../src/automation/studio');
 const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
@@ -79,18 +81,18 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
   const A = store.saveProfile({ name: 'iso-A', engine, proxy: { type: 'direct' }, startUrl: base + '/' });
   const B = store.saveProfile({ name: 'iso-B', engine, proxy: { type: 'direct' }, startUrl: base + '/' });
   const steps = [];
-  async function visit(profile, url, label) {
+  async function visit(profile, url, label, instance=launcher) {
     const before = results.length, hitsBefore = assetHits;
-    await launcher.start(profile.id, url);
+    await instance.start(profile.id, url);
     for (let i = 0; i < 60 && results.length === before; i++) await sleep(500);
     const r = results.length > before ? results[results.length - 1] : { err: 'no result' };
-    const proc = launcher.activeProcesses.get(profile.id)?.process;
+    const proc = instance.activeProcesses.get(profile.id)?.process;
     const exited = new Promise(res => { if (!proc || proc.exitCode !== null) res(null); else proc.once('exit', (code, signal) => res({ code, signal })); });
     const stopAt = Date.now();
-    await Promise.resolve().then(() => launcher.stop(profile.id)).catch(() => {});
+    await Promise.resolve().then(() => instance.stop(profile.id)).catch(() => {});
     const exit = await Promise.race([exited, sleep(20000).then(() => 'still running after 20 s')]);
     const stopToExitMs = Date.now() - stopAt;
-    for (let i = 0; i < 40 && launcher.activeProcesses.has(profile.id); i++) await sleep(250);
+    for (let i = 0; i < 40 && instance.activeProcesses.has(profile.id); i++) await sleep(250);
     await sleep(2000);
     steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit });
     return r;
@@ -132,6 +134,20 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     await visit(A,base+'/read?p=A','A after concurrent stop');
     await visit(B,base+'/read?p=B','B after concurrent stop');
   }
+  const backupPassword='synthetic-isolation-test-only';
+  const backup=new ConfigBackup(store,new WorkflowStore(path.join(outDir,'app'))).export(backupPassword);
+  const restoredStore=new Store(path.join(outDir,'restored'));
+  const restoreResult=new ConfigBackup(restoredStore,new WorkflowStore(path.join(outDir,'restored')))
+    .import(backup,backupPassword);
+  if(bin)restoredStore.updateSettings(engine==='gecko'?{geckoPath:bin}:{chromePath:bin});
+  const restoredLauncher=new BrowserLauncher(restoredStore,{downloadsRoot:path.join(outDir,'restored-downloads')});
+  const restored=restoredStore.getProfiles();
+  const restoredA=restored.find(profile=>profile.name.startsWith('iso-A'));
+  const restoredB=restored.find(profile=>profile.name.startsWith('iso-B'));
+  if(restoredA&&restoredB){
+    await visit(restoredA,base+'/read?p=restoredA','restored A starts without session',restoredLauncher);
+    await visit(restoredB,base+'/read?p=restoredB','restored B starts without session',restoredLauncher);
+  }
   server.close();
 
   const empty = r => !r.err && !r.cookie && !r.cookieHeader && r.localStorage === null && r.indexedDB === null && r.cacheStorage === null;
@@ -151,6 +167,8 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     concurrentProcessesStopped: !launcher.isBusy(A.id)&&!launcher.isBusy(B.id),
     concurrentProcessesExitedCleanly: concurrentExitCodes.A===0&&concurrentExitCodes.B===0,
     concurrentDataPersistsAfterRestart: !!steps[5]&&onlyA(steps[5])&&onlyB(steps[6]),
+    restoredProfilesHaveNoSession: restoreResult.excludesSessions===true&&
+      !!steps[7]&&!!steps[8]&&empty(steps[7])&&empty(steps[8]),
     // HTTP disk cache: A cached the asset, so B must fetch it itself, and A
     // must still serve it from its own cache after a restart.
     httpCacheNotSharedWithB: steps[0].httpCacheNetworkFetches === 1 && steps[1].httpCacheNetworkFetches === 1,
