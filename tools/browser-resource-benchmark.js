@@ -65,6 +65,14 @@ function recordCpuInterval(state,previous,current,logicalCpus){
  if(percent===null){state.discarded++;return}
  state.measured++;state.peak=Math.max(state.peak??0,percent);
 }
+function assertCompleteProcessTrees(resources,roots){
+ if(resources?.status!=='MEASURED'||!Array.isArray(resources.trees)||
+    !Number.isFinite(resources.totalWorkingSetBytes)||resources.totalWorkingSetBytes<0||
+    resources.trees.length!==roots.length||new Set(roots).size!==roots.length||
+    roots.some(pid=>resources.trees.filter(tree=>tree.rootPid===pid&&
+     Array.isArray(tree.processes)&&tree.processes.some(process=>process.pid===pid)).length!==1))
+  throw Error('Process resources unavailable: incomplete browser process tree');
+}
 
 function valueAfter(argv,index,label){
  const value=argv[index+1];
@@ -343,7 +351,7 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
    const startedAt=performance.now();
    const resources=await collectProcessTreeResources(roots);
    const observedAt=(startedAt+performance.now())/2;
-   if(resources.status!=='MEASURED')throw Error('Process resources unavailable: '+resources.reason);
+   assertCompleteProcessTrees(resources,roots);
    peakWorkingSetBytes=Math.max(peakWorkingSetBytes,resources.totalWorkingSetBytes);
    const snapshot={at:observedAt,trees:resources.trees};
    if(previous){
@@ -400,5 +408,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,recordCpuInterval,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};

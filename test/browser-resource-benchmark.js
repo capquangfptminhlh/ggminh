@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {
  parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
- calculateCpuInterval,recordCpuInterval
+ calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees
 }=require('../tools/browser-resource-benchmark');
 const runnerSource=fs.readFileSync(path.join(__dirname,'../tools/browser-resource-benchmark.js'),'utf8');
 assert(!runnerSource.includes('assertMemoryHeadroom('),'Benchmark must not block on RAM threshold');
@@ -25,6 +25,9 @@ const intervals={peak:null,measured:0,discarded:0};
 recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2);
 recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-02T00:00:00Z',20000000)]),2);
 assert.deepEqual(intervals,{peak:50,measured:1,discarded:1});
+assert.doesNotThrow(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[proc(10,'2026-01-01T00:00:00Z',1)]}],totalWorkingSetBytes:1},[10]));
+assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10]),/Process resources unavailable/);
+assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[]}],totalWorkingSetBytes:1},[10]),/Process resources unavailable/);
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX
 }=require('../src/engine/camoufoxReleasePreflight');
