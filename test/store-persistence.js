@@ -24,6 +24,24 @@ try{
     fs.rmSync(orphan,{recursive:true,force:true});
   }
   const p=store.saveProfile({name:'Original',proxy:{type:'direct'}});
+  const foreign=path.join(dir,'synthetic-foreign-file');
+  fs.writeFileSync(foreign,'preserve foreign data');
+  fs.linkSync(foreign,store.dbFile+'.tmp');
+  store.saveProfile({...p,name:'Safe temporary write'});
+  assert.equal(fs.readFileSync(foreign,'utf8'),'preserve foreign data',
+    'A pre-existing temporary hardlink must never be overwritten');
+  fs.unlinkSync(store.dbFile+'.tmp');
+  const crypto=require('node:crypto'),random=crypto.randomBytes;
+  const collision=store.dbFile+'.'+Buffer.alloc(16,0x45).toString('hex')+'.tmp';
+  fs.writeFileSync(collision,'existing temporary data');
+  const beforeCollision=fs.readFileSync(store.dbFile,'utf8');
+  try{
+    crypto.randomBytes=size=>size===16?Buffer.alloc(16,0x45):random(size);
+    assert.throws(()=>store.saveProfile({...p,name:'Collision'}),/EEXIST/);
+  }finally{crypto.randomBytes=random}
+  assert.equal(fs.readFileSync(collision,'utf8'),'existing temporary data');
+  assert.equal(fs.readFileSync(store.dbFile,'utf8'),beforeCollision);
+  fs.unlinkSync(collision);
   const baseline=fs.readFileSync(store.dbFile,'utf8');
   const previousSettings=store.data.settings;
   const previousProfile=store.getProfile(p.id);
@@ -39,6 +57,29 @@ try{
   assert.strictEqual(store.data.settings,previousSettings);
   assert.strictEqual(fs.readFileSync(store.dbFile,'utf8'),baseline);
   store.saveData=realSave;
+  if(process.platform==='win32'){
+    const rename=fs.renameSync;let attempts=0;
+    try{
+      fs.renameSync=(from,to)=>{
+        if(to===store.dbFile&&attempts++<2){const error=Error('synthetic transient lock');error.code='EPERM';throw error}
+        return rename(from,to);
+      };
+      const retried=store.saveProfile({...p,name:'Saved after transient lock'});
+      assert.equal(retried.name,'Saved after transient lock');
+      assert.equal(attempts,3);
+    }finally{fs.renameSync=rename}
+    const stable=fs.readFileSync(store.dbFile,'utf8');attempts=0;
+    try{
+      fs.renameSync=(from,to)=>{
+        if(to===store.dbFile){attempts++;const error=Error('synthetic persistent lock');error.code='EPERM';throw error}
+        return rename(from,to);
+      };
+      assert.throws(()=>store.saveProfile({...p,name:'Must roll back'}),/synthetic persistent lock/);
+      assert.equal(attempts,3);
+      assert.equal(fs.readFileSync(store.dbFile,'utf8'),stable);
+      assert.equal(store.getProfile(p.id).name,'Saved after transient lock');
+    }finally{fs.renameSync=rename}
+  }
   const result=store.saveProfile({...p,name:'Persisted edit'});
   assert.strictEqual(result.name,'Persisted edit');
   assert.strictEqual(new Store(dir).getProfile(p.id).name,'Persisted edit');

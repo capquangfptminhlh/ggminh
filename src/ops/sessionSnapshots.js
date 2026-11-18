@@ -99,6 +99,7 @@ class SessionSnapshots{
  }
  source(profileId){
   assertProfileId(profileId);
+  this.store.assertCurrent?.();
   const profile=this.store.getProfile(profileId);
   if(!profile)throw Error('Profile not found');
   if(this.launcher?.isBusy(profileId)||this.inUse(profileId))
@@ -130,6 +131,8 @@ class SessionSnapshots{
    }).filter(Boolean).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,20);
  }
  create(profileId,password){
+  if(!this.store.mutationLocks?.has(String(profileId).toLowerCase()))
+   return this.store.withProfileMutation(profileId,()=>this.create(profileId,password));
   const info=this.source(profileId);
   validatePassword(password);
   const folder=this.folder(profileId);
@@ -143,12 +146,16 @@ class SessionSnapshots{
   fs.mkdirSync(folder,{recursive:true});
   const target=path.join(folder,id+'.lhmsnap');
   const temp=target+'.tmp';
+  let fd,created=false,committed=false;
   try{
-   fs.writeFileSync(temp,JSON.stringify(envelope),{mode:0o600,flag:'wx'});
-   fs.renameSync(temp,target);
-  }catch(error){
-   try{fs.rmSync(temp,{force:true});}catch(_){}
-   throw error;
+   fd=fs.openSync(temp,'wx',0o600);created=true;
+   fs.writeFileSync(fd,JSON.stringify(envelope),'utf8');fs.fsyncSync(fd);fs.closeSync(fd);fd=undefined;
+   // Hard-link creation is atomic and refuses to replace an existing snapshot.
+   fs.linkSync(temp,target);committed=true;
+   try{fs.unlinkSync(temp)}catch(error){console.warn('[Snapshot] Temporary cleanup deferred:',error.message)}
+  }finally{
+   if(fd!==undefined){try{fs.closeSync(fd)}catch(_){}}
+   if(created&&!committed){try{fs.unlinkSync(temp)}catch(_){}}
   }
   return {id,createdAt:envelope.createdAt,fileCount:content.files.length,
    bytes:content.bytes,encryptedBytes:fs.statSync(target).size};
@@ -185,6 +192,8 @@ class SessionSnapshots{
    warning:'Restoring replaces current browser session files; back up current session first.'};
  }
  restore(profileId,id,password,confirmation){
+  if(!this.store.mutationLocks?.has(String(profileId).toLowerCase()))
+   return this.store.withProfileMutation(profileId,()=>this.restore(profileId,id,password,confirmation));
   if(confirmation!=='KHOI PHUC')throw Error('Type KHOI PHUC to confirm');
   const info=this.source(profileId),parsed=this.read(info,id,password);
   const parent=path.dirname(info.directory);

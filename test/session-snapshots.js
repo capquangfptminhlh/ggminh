@@ -19,6 +19,21 @@ try{
  const busy=new Set(),snapshots=new SessionSnapshots(store,{isBusy:id=>busy.has(id)});
  const pass='a-very-long-secret-passphrase-2026';
  assert.throws(()=>snapshots.create(a.id,'short'),/12/);
+ const crypto=require('node:crypto'),random=crypto.randomBytes,fixed=Buffer.alloc(12,0x54);
+ const folder=snapshots.folder(a.id);fs.mkdirSync(folder,{recursive:true});
+ const fixedId='snap_'+fixed.toString('hex'),fixedTarget=path.join(folder,fixedId+'.lhmsnap'),fixedTemp=fixedTarget+'.tmp';
+ fs.writeFileSync(fixedTemp,'preserve existing temporary file');
+ try{
+  crypto.randomBytes=size=>size===12?fixed:random(size);
+  assert.throws(()=>snapshots.create(a.id,pass),/EEXIST/);
+  assert.equal(fs.readFileSync(fixedTemp,'utf8'),'preserve existing temporary file');
+  fs.unlinkSync(fixedTemp);
+  snapshots.create(a.id,pass);
+  const firstSnapshot=fs.readFileSync(fixedTarget,'utf8');
+  assert.throws(()=>snapshots.create(a.id,pass),/EEXIST/);
+  assert.equal(fs.readFileSync(fixedTarget,'utf8'),firstSnapshot,'Existing snapshot must not be overwritten');
+ }finally{crypto.randomBytes=random}
+ snapshots.remove(a.id,fixedId,'XOA SNAPSHOT');
  const entry=snapshots.create(a.id,pass);
  assert.strictEqual(entry.fileCount,2);
  assert.strictEqual(snapshots.list(a.id).length,1);

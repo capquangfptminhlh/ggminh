@@ -6,6 +6,7 @@ const { safeWebUrls } = require('../engine/launchArgs');
 const {resolveEngineType,SUPPORTED}=require('../engine/EngineFactory');
 const {hasIdentityCollision}=require('../engine/camoufoxIdentity');
 const {rejectSymlinks}=require('../privacy/isolation');
+const {withProfileMutationLock,acquireProfileMutationLock}=require('../engine/profileProcessLock');
 function cleanTags(input) {
   if (!Array.isArray(input) || input.length > 8) throw Error('Maximum 8 profile tags');
   const seen = new Set(), tags = [];
@@ -39,7 +40,39 @@ function assertId(id) {
   if (typeof id !== 'string' || !VALID_ID.test(id)) throw new Error('Invalid profile ID');
   return id;
 }
+function changedProfileIds(before,after){
+  function collect(data){
+    const result=new Map();
+    const add=(id,value)=>{
+      assertId(id);const key=id.toLowerCase(),items=result.get(key)||[];
+      items.push(value);result.set(key,items);
+    };
+    for(const profile of data?.profiles||[])add(profile.id,['profile',profile]);
+    for(const entry of data?.trash||[])add(entry?.profile?.id,['trash',entry]);
+    for(const id of data?.cleanupQueue||[])add(id,['cleanup',id]);
+    return result;
+  }
+  const previous=collect(before),next=collect(after);
+  return [...new Set([...previous.keys(),...next.keys()])].filter(id=>
+    JSON.stringify(previous.get(id)||[])!==JSON.stringify(next.get(id)||[])).sort();
+}
 class Store {
+  withStoreMutation(action){
+    if(this.storeMutationActive)return action();
+    return withProfileMutationLock(this.baseDir,'__lhm_store_database__',()=>{
+      this.storeMutationActive=true;
+      try{this.assertCurrent();return action()}finally{this.storeMutationActive=false}
+    },{storeLock:true});
+  }
+  withProfileMutation(id,action){
+    this.mutationLocks ||= new Set();
+    const key=id.toLowerCase();
+    if(this.mutationLocks.has(key))return action();
+    return withProfileMutationLock(this.baseDir,id,()=>{
+      this.mutationLocks.add(key);
+      try{return action()}finally{this.mutationLocks.delete(key)}
+    });
+  }
   constructor(baseDir) {
     this.baseDir = baseDir || path.resolve(__dirname, '../../data');
     this.dbFile = path.join(this.baseDir, 'db.json');
@@ -52,13 +85,16 @@ class Store {
     // throw inside cleanupTrashedFolders defers the id for retry,
     // exactly like a failed folder removal.
     this.onProfilePurged = null;
+    this.dbDigest=null;
     this.data = this.load();
   }
   load() {
     if (fs.existsSync(this.dbFile)) {
       // Never silently overwrite damaged customer profiles.
-      const parsed = JSON.parse(fs.readFileSync(this.dbFile, 'utf8'));
+      const content=fs.readFileSync(this.dbFile, 'utf8');
+      const parsed = JSON.parse(content);
       if (!Array.isArray(parsed.profiles)) throw new Error('Invalid profile database');
+      this.dbDigest=crypto.createHash('sha256').update(content).digest('hex');
       return parsed;
     }
     const initial = {
@@ -71,15 +107,57 @@ class Store {
     return initial;
   }
   saveData(data = this.data) {
-    const tempFile = this.dbFile + '.tmp';
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), { encoding: 'utf8', mode: 0o600 });
-    // writeFileSync's mode only applies when the file is CREATED: a
-    // pre-existing .tmp (crash leftover, restored copy) keeps its old
-    // permissions and rename would carry them onto db.json. Enforce
-    // 0o600 on the temp file before the rename (R13 audit; same
-    // pattern as src/monitor/warningHistory.js).
-    try { fs.chmodSync(tempFile, 0o600); } catch (_) { /* best effort */ }
-    fs.renameSync(tempFile, this.dbFile);
+    return this.withStoreMutation(()=>{
+    const previous=fs.existsSync(this.dbFile)?JSON.parse(fs.readFileSync(this.dbFile,'utf8')):null;
+    const changed=changedProfileIds(previous,data);
+    const write=()=>{
+    const tempFile = this.dbFile + '.' + crypto.randomBytes(16).toString('hex') + '.tmp';
+    const content=JSON.stringify(data, null, 2);
+    let fd,created=false,committed=false;
+    try{
+      // Never open a pre-existing temp path: it may be a hardlink or leftover.
+      fd=fs.openSync(tempFile,'wx',0o600);created=true;
+      fs.writeFileSync(fd,content,'utf8');
+      try{fs.fchmodSync(fd,0o600)}catch(_){/* best effort */}
+      fs.fsyncSync(fd);fs.closeSync(fd);fd=undefined;
+      for(let attempt=0;;attempt++){
+        try{fs.renameSync(tempFile,this.dbFile);break}
+        catch(error){
+          if(process.platform!=='win32'||attempt>=2||!['EPERM','EACCES','EBUSY'].includes(error.code))throw error;
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,50);
+        }
+      }
+      committed=true;
+      this.dbDigest=crypto.createHash('sha256').update(content).digest('hex');
+    }finally{
+      if(fd!==undefined){try{fs.closeSync(fd)}catch(_){}}
+      if(created&&!committed){try{fs.unlinkSync(tempFile)}catch(_){}}
+    }
+    };
+    this.mutationLocks ||= new Set();
+    const acquired=[];
+    try{
+      for(const id of changed){
+        if(this.mutationLocks.has(id))continue;
+        const lock=acquireProfileMutationLock(this.baseDir,id);
+        acquired.push({id,lock});this.mutationLocks.add(id);
+      }
+      return write();
+    }finally{
+      for(const {id,lock} of acquired.reverse()){
+        this.mutationLocks.delete(id);lock.release();
+      }
+    }
+    });
+  }
+  assertCurrent(){
+    let current=null;
+    try{current=crypto.createHash('sha256').update(fs.readFileSync(this.dbFile)).digest('hex')}
+    catch(error){if(error.code!=='ENOENT')throw error}
+    if(current!==this.dbDigest){
+      const error=Error('STORE_CONFLICT: Dữ liệu đã thay đổi từ tiến trình khác; hãy khởi động lại ứng dụng.');
+      error.code='STORE_CONFLICT';throw error;
+    }
   }
   publicProfile(profile) {
     const result = { ...profile, proxy: { ...(profile.proxy || {}) } };
@@ -97,6 +175,8 @@ class Store {
   saveProfile(input,options={}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid profile');
     const id = input.id ? assertId(input.id) : 'pb_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+    if(!this.mutationLocks?.has(id.toLowerCase()))
+      return this.withProfileMutation(id,()=>this.saveProfile({...input,id},options));
     const name = String(input.name || '').trim();
     if (!name || name.length > 160) throw new Error('Profile name must be 1–160 characters');
     const existingIndex = this.data.profiles.findIndex(p => p.id === id);
@@ -314,6 +394,7 @@ class Store {
   }
   trashProfile(id, now = Date.now()) {
     assertId(id);
+    if(!this.mutationLocks?.has(id.toLowerCase()))return this.withProfileMutation(id,()=>this.trashProfile(id,now));
     if (!Number.isFinite(now)) throw Error('Invalid deletion time');
     const existing = this.data.profiles.find(p => p.id === id);
     if (!existing) return false;
@@ -330,6 +411,7 @@ class Store {
   }
   restoreTrashedProfile(id, now = Date.now()) {
     assertId(id);
+    if(!this.mutationLocks?.has(id.toLowerCase()))return this.withProfileMutation(id,()=>this.restoreTrashedProfile(id,now));
     const item = (this.data.trash || []).find(x => x.profile?.id === id);
     if (!item) throw Error('Profile was not found in trash');
     if (Number.isNaN(Date.parse(item.deletedAt)) ||
@@ -354,16 +436,20 @@ class Store {
   // deletion path so none of them can drift apart again.
   removeProfileArtifacts(id) {
     assertId(id);
-    for (const part of [...PROFILE_DATA_ROOTS, ...PROFILE_PURGE_ONLY_ROOTS]) {
-      const target=path.join(this.baseDir,part,id);
-      if (fs.existsSync(target))
-        fs.rmSync(target,{recursive:true,force:true});
+    if(!this.mutationLocks?.has(id.toLowerCase()))return this.withProfileMutation(id,()=>this.removeProfileArtifacts(id));
+    const targets=[...PROFILE_DATA_ROOTS,...PROFILE_PURGE_ONLY_ROOTS].map(part=>path.join(this.baseDir,part,id));
+    // Check all roots before deleting any, including dangling links.
+    for(const target of targets)rejectSymlinks(this.baseDir,target);
+    for(const target of targets){
+      rejectSymlinks(this.baseDir,target);
+      fs.rmSync(target,{recursive:true,force:true});
     }
     if (typeof this.onProfilePurged === 'function') this.onProfilePurged(id);
   }
   // Keep a cleanup queue in the database until profile files are deleted,
   // so a failed filesystem cleanup can be retried on the next startup.
   cleanupTrashedFolders() {
+    if(!this.storeMutationActive)return this.withStoreMutation(()=>this.cleanupTrashedFolders());
     const queue=this.data.cleanupQueue || [];
     const failed=[];
     for (const id of queue) {
@@ -387,6 +473,7 @@ class Store {
   }
   purgeTrashedProfile(id) {
     assertId(id);
+    if(!this.mutationLocks?.has(id.toLowerCase()))return this.withProfileMutation(id,()=>this.purgeTrashedProfile(id));
     if (!(this.data.trash || []).some(x=>x.profile?.id===id)) return false;
     const old=this.data;
     this.data={
@@ -419,13 +506,15 @@ class Store {
   }
   deleteProfile(id) {
     assertId(id);
-    const prev = this.data.profiles.length;
-    const original = this.data.profiles;
-    this.data.profiles = original.filter(p => p.id !== id);
-    if (prev === this.data.profiles.length) return false;
+    if(!this.mutationLocks?.has(id.toLowerCase()))return this.withProfileMutation(id,()=>this.deleteProfile(id));
+    const old=this.data;
+    const profiles=old.profiles.filter(p=>p.id!==id);
+    if(profiles.length===old.profiles.length)return false;
+    this.data={...old,profiles,cleanupQueue:[...new Set([...(old.cleanupQueue||[]),id])]};
     try{this.saveData();}
-    catch(error){this.data.profiles=original;throw error;}
-    this.removeProfileArtifacts(id);
+    catch(error){this.data=old;throw error;}
+    try{this.cleanupTrashedFolders()}
+    catch(error){console.warn('[ProfileTrash] cleanup deferred for',id,error.message)}
     return true;
   }
   getSettings() { return { ...(this.data.settings || {}) }; }

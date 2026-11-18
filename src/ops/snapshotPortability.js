@@ -72,6 +72,8 @@ function exportEncrypted(manager,profileId,id,destination,password){
  return {exported:true,filePath:output,encryptedBytes:data.bytes,files:details.files.length};
 }
 function importEncrypted(manager,profileId,source,password){
+ if(!manager.store.mutationLocks?.has(String(profileId).toLowerCase()))
+  return manager.store.withProfileMutation(profileId,()=>importEncrypted(manager,profileId,source,password));
  const info=manager.source(profileId);
  const input=regularFile(source);
  const data=fs.readFileSync(input.filename,'utf8');

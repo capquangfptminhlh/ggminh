@@ -1,6 +1,7 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const { clean } = require('../automation/studio');
+const {withProfileMutationLock}=require('../engine/profileProcessLock');
 
 // Credential references belong to one local OS vault. Never export or
 // resurrect them on a different machine, where they may point to another user.
@@ -132,27 +133,67 @@ class ConfigBackup {
     const hadWorkflowFile=fs.existsSync(this.workflows.file);
     const oldWorkflowBytes=hadWorkflowFile?fs.readFileSync(this.workflows.file):null;
     const oldDbBytes=fs.readFileSync(this.store.dbFile);
+    const expectedWorkflowBytes=Buffer.from(JSON.stringify(previewWorkflows.items,null,2));
     this.store.data=previewStore.data;
     this.workflows.items=previewWorkflows.items;
-    let dbWritten=false;
+    let dbWritten=false,workflowWriteStarted=false;
     try{
       this.store.saveData();
       dbWritten=true;
+      workflowWriteStarted=true;
       this.workflows.persist();
     }catch(error){
       this.store.data=originalProfiles;
       this.workflows.items=originalWorkflows;
       const rollbackErrors=[];
       const restoreFile=(filename,buffer)=>{
-        const tmp=filename+'.rollback-'+process.pid;
-        try{fs.writeFileSync(tmp,buffer,{mode:0o600});fs.renameSync(tmp,filename);}
-        catch(e){rollbackErrors.push(e.message);try{fs.rmSync(tmp,{force:true});}catch(_){}}
+        const tmp=filename+'.rollback-'+crypto.randomBytes(16).toString('hex');
+        let fd,created=false,committed=false;
+        try{
+          fd=fs.openSync(tmp,'wx',0o600);created=true;
+          fs.writeFileSync(fd,buffer);fs.fsyncSync(fd);fs.closeSync(fd);fd=undefined;
+          for(let attempt=0;;attempt++){
+            try{fs.renameSync(tmp,filename);break}
+            catch(error){
+              if(process.platform!=='win32'||attempt>=2||!['EPERM','EACCES','EBUSY'].includes(error.code))throw error;
+              Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,50);
+            }
+          }
+          committed=true;
+        }catch(e){rollbackErrors.push(e.message)}
+        finally{
+          if(fd!==undefined){try{fs.closeSync(fd)}catch(_){}}
+          if(created&&!committed){try{fs.unlinkSync(tmp)}catch(_){}}
+        }
       };
-      if(dbWritten)restoreFile(this.store.dbFile,oldDbBytes);
-      if(hadWorkflowFile)restoreFile(this.workflows.file,oldWorkflowBytes);
-      else {
-        try{fs.rmSync(this.workflows.file,{force:true});}
-        catch(e){rollbackErrors.push(e.message);}
+      if(dbWritten){
+        try{
+          withProfileMutationLock(this.store.baseDir,'__lhm_store_database__',()=>{
+            const actual=crypto.createHash('sha256').update(fs.readFileSync(this.store.dbFile)).digest('hex');
+            if(actual!==this.store.dbDigest)throw Error('STORE_CONFLICT: dữ liệu đã thay đổi trong lúc hoàn tác');
+            const previousErrors=rollbackErrors.length;
+            restoreFile(this.store.dbFile,oldDbBytes);
+            if(rollbackErrors.length===previousErrors)
+              this.store.dbDigest=crypto.createHash('sha256').update(oldDbBytes).digest('hex');
+          },{storeLock:true});
+        }catch(e){rollbackErrors.push(e.message)}
+      }
+      if(workflowWriteStarted){
+        try{
+          withProfileMutationLock(this.store.baseDir,'__lhm_workflows__',()=>{
+            const current=fs.existsSync(this.workflows.file)?fs.readFileSync(this.workflows.file):null;
+            const equals=(a,b)=>a===null?b===null:b!==null&&a.equals(b);
+            if(equals(current,oldWorkflowBytes))return;
+            if(!equals(current,expectedWorkflowBytes))throw Error('STORE_CONFLICT: quy trình đã thay đổi trong lúc hoàn tác');
+            if(hadWorkflowFile){
+              const previousErrors=rollbackErrors.length;
+              restoreFile(this.workflows.file,oldWorkflowBytes);
+              if(rollbackErrors.length===previousErrors)this.workflows.fileDigest=crypto.createHash('sha256').update(oldWorkflowBytes).digest('hex');
+            }else{
+              fs.rmSync(this.workflows.file,{force:true});this.workflows.fileDigest=null;
+            }
+          },{storeLock:true});
+        }catch(e){rollbackErrors.push(e.message)}
       }
       if(rollbackErrors.length)throw Error(
         'Không thể nhập; hoàn tác dữ liệu trên đĩa chưa đầy đủ: '+rollbackErrors.join('; '));

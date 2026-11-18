@@ -5,6 +5,7 @@ const os = require('os');
 const EventEmitter = require('events');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 const { createLaunchArgs } = require('../src/engine/launchArgs');
 const { createApiServer } = require('../src/api/server');
 
@@ -49,7 +50,7 @@ const { createApiServer } = require('../src/api/server');
       process.nextTick(()=>proc.emit('spawn'));
       return proc;
     }
-    const launcher=new BrowserLauncher(store,{spawnProcess:fakeSpawn});
+    const launcher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,profileLockOptions,completionVerifier:()=>true});
     launcher.findBrowserBinary=()=>process.execPath;
     const unreachable=store.saveProfile({name:'Unreachable proxy',engine:'chromium',
       proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
@@ -75,6 +76,11 @@ const { createApiServer } = require('../src/api/server');
     assert.strictEqual(spawnCount,1);
     assert.strictEqual(one.pid,alsoOne.pid);
     assert.strictEqual(launcher.isBusy(first.id),true);
+    const contender=new BrowserLauncher(store,{spawnProcess:fakeSpawn,profileLockOptions,completionVerifier:()=>true});
+    contender.findBrowserBinary=()=>process.execPath;
+    assert.strictEqual(contender.isBusy(first.id),true,'A second launcher must block edits and deletion while the profile is locked');
+    await assert.rejects(contender.start(first.id),/PROFILE_LOCKED/);
+    assert.strictEqual(spawnCount,1,'Another launcher must not spawn the same profile');
     const two=await launcher.start(second.id);
     assert.notStrictEqual(two.pid,one.pid);
     assert.strictEqual(spawnCount,2);
@@ -94,7 +100,9 @@ const { createApiServer } = require('../src/api/server');
     assert.strictEqual(result.success,true);
     assert.strictEqual(launcher.isBusy(first.id),true);
     await assert.rejects(launcher.start(first.id),/đang đóng/);
+    await assert.rejects(contender.start(first.id),/PROFILE_LOCKED/);
     processes[0].emit('exit',0);
+    await waitForUnlock(launcher,first.id);
     assert.strictEqual(launcher.isBusy(first.id),false);
     assert.strictEqual(launcher.isBusy(second.id),true);
     // The local API must refuse deletion of a still-running profile.
@@ -112,7 +120,25 @@ const { createApiServer } = require('../src/api/server');
     } finally{await new Promise(resolve=>server.close(resolve));}
     assert.strictEqual(launcher.stop(second.id).success,true);
     processes[1].emit('exit',0);
+    await waitForUnlock(launcher,second.id);
     assert.strictEqual(launcher.isBusy(second.id),false);
+    await contender.start(first.id);
+    assert.strictEqual(spawnCount,3,'The next launcher may start after exit releases the lock');
+    assert.strictEqual(contender.stop(first.id).success,true);
+    processes[2].emit('exit',0);
+    await waitForUnlock(contender,first.id);
+    let browserStillOpen=true;
+    const crashOptions={spawnProcess:fakeSpawn,
+      profileLockOptions:{localStorage:async()=>true,browserInstancesExist:async()=>browserStillOpen}};
+    const crashing=new BrowserLauncher(store,crashOptions);
+    const afterCrash=new BrowserLauncher(store,crashOptions);
+    crashing.findBrowserBinary=()=>process.execPath;afterCrash.findBrowserBinary=()=>process.execPath;
+    await crashing.start(first.id);
+    processes[3].emit('exit',1);
+    assert.strictEqual(crashing.isBusy(first.id),true,'Crash must keep local mutation guards active');
+    await assert.rejects(afterCrash.start(first.id),/PROFILE_LOCKED/);
+    browserStillOpen=false;
+    await assert.rejects(afterCrash.start(first.id),/PROFILE_LOCKED/);
     console.log('Concurrent profile startup, process lifecycle, URL safety and deletion-guard tests passed');
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

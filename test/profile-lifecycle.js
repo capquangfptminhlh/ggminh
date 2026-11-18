@@ -11,6 +11,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {EventEmitter}=require('node:events');
 const Store=require('../src/db/store');
 const BrowserLauncher=require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 const {EngineFactory}=require('../src/engine/EngineFactory');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
 const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
@@ -40,7 +41,7 @@ function spawnFactory(procs){
    const p=store.saveProfile({name:'Cycle',engine:'chromium',
     proxy:{type:'direct'},fingerprint:{mode:'native'}});
    const procs=[];
-   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs)});
+   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs),profileLockOptions,completionVerifier:()=>true});
    launcher.findBrowserBinary=()=>process.execPath;
    const first=await launcher.start(p.id);
    assert.equal(launcher.isBusy(p.id),true);
@@ -51,6 +52,7 @@ function spawnFactory(procs){
    assert.equal(launcher.isBusy(p.id),true,'Locked until real exit event');
    await assert.rejects(()=>launcher.start(p.id),/đang đóng/);
    procs[0].emit('exit',0);
+   await waitForUnlock(launcher,p.id);
    assert.equal(launcher.isBusy(p.id),false);
    assert.equal(launcher.getActive(p.id),undefined);
    const second=await launcher.start(p.id);
@@ -59,7 +61,7 @@ function spawnFactory(procs){
    assert(procs[1].args.some(x=>x==='--user-data-dir='+path.join(dir,'profiles',p.id)),
     'Reopen must reuse the same per-profile directory');
    assert.equal(store.getProfile(p.id).engine,'chromium');
-   launcher.stop(p.id);procs[1].emit('exit',0);
+   launcher.stop(p.id);procs[1].emit('exit',0);await waitForUnlock(launcher,p.id);
    console.log('§1 Chromium open/stop/reopen cycle: PASS');
   }
   // ---- §2 Chromium: mid-session crash -> consistent state -> reopen;
@@ -70,11 +72,11 @@ function spawnFactory(procs){
    const a=store.saveProfile({name:'Crash A',engine:'chromium',proxy:{type:'direct'}});
    const b=store.saveProfile({name:'Steady B',engine:'chromium',proxy:{type:'direct'}});
    const procs=[];
-   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs)});
+   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs),completionVerifier:()=>true,profileLockOptions:{localStorage:async()=>true,browserInstancesExist:async()=>false}});
    launcher.findBrowserBinary=()=>process.execPath;
    await launcher.start(a.id);await launcher.start(b.id);
    procs[0].emit('exit',1); // engine process dies mid-session, no stop() call
-   assert.equal(launcher.isBusy(a.id),false,'Crash must release the profile lock');
+   assert.equal(launcher.isBusy(a.id),true,'Crash must block changes until browser processes are checked');
    assert.equal(launcher.getActive(a.id),undefined);
    assert.equal(launcher.isBusy(b.id),true,'Other profile must be unaffected');
    assert.deepEqual(launcher.listActive().map(x=>x.profileId),[b.id]);
@@ -85,6 +87,7 @@ function spawnFactory(procs){
    assert.equal(reopened.pid,procs[2].pid,'Crashed profile must reopen');
    launcher.stop(a.id);procs[2].emit('exit',0);
    launcher.stop(b.id);procs[1].emit('exit',0);
+   await waitForUnlock(launcher,a.id);await waitForUnlock(launcher,b.id);
    console.log('§2 Chromium mid-session crash recovery + isolation of failure: PASS');
   }
   // ---- §3 Concurrent mixed engines: chromium x2 + firefox in parallel
@@ -96,7 +99,7 @@ function spawnFactory(procs){
    const fx=store.saveProfile({name:'FX',engine:'gecko',engine_type:'firefox',
     proxy:{type:'direct'},fingerprint:{mode:'native'}});
    const procs=[];
-   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs)});
+   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs),profileLockOptions,completionVerifier:()=>true});
    launcher.findBrowserBinary=()=>process.execPath;
    const [r1,r2,r3]=await Promise.all([
     launcher.start(c1.id),launcher.start(c2.id),launcher.start(fx.id)]);
@@ -107,11 +110,12 @@ function spawnFactory(procs){
     'Gecko profile dir must live under gecko-profiles/, never profiles/');
    assert.equal(r3.engineType,'firefox');
    procs[0].emit('exit',1);
-   assert.equal(launcher.isBusy(c1.id),false);
+   assert.equal(launcher.isBusy(c1.id),true);
    assert.equal(launcher.isBusy(c2.id),true);
    assert.equal(launcher.isBusy(fx.id),true);
    launcher.stop(c2.id);procs[1].emit('exit',0);
    launcher.stop(fx.id);procs[2].emit('exit',0);
+   await waitForUnlock(launcher,c1.id);await waitForUnlock(launcher,c2.id);await waitForUnlock(launcher,fx.id);
    console.log('§3 Concurrent mixed-engine launch (chromium x2 + firefox): PASS');
   }
   // ---- §4 Camoufox Playwright controller via the full launcher stack:
@@ -177,7 +181,7 @@ function spawnFactory(procs){
    const store=new Store(dir);
    const p=store.saveProfile({name:'Guarded',engine:'chromium',proxy:{type:'direct'}});
    const procs=[];
-   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs)});
+   const launcher=new BrowserLauncher(store,{spawnProcess:spawnFactory(procs),profileLockOptions,completionVerifier:()=>true});
    launcher.findBrowserBinary=()=>process.execPath;
    const api=createApiServer(store,launcher,{apiKey:'lifecycle-key'});
    const server=await new Promise(resolve=>{
@@ -196,6 +200,7 @@ function spawnFactory(procs){
     assert.equal(res.status,409,'Delete must be refused while profile is stopping');
     assert(store.getProfile(p.id),'Profile must survive refused edit/delete');
     procs[0].emit('exit',0);
+    await waitForUnlock(launcher,p.id);
     res=await req('DELETE','/api/profiles/'+p.id);
     assert.equal(res.status,200,'Delete must succeed after real exit');
     assert.equal(store.getProfile(p.id),undefined);

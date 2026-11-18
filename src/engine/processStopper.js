@@ -19,6 +19,7 @@
  * this app, never for arbitrary PIDs.
  */
 const { execFile, ChildProcess } = require('child_process');
+const {isJobSupervisor}=require('./jobSupervisor');
 
 const DEFAULT_GRACE_MS = 10000;
 
@@ -46,11 +47,13 @@ function listChildPids(pid, run, done) {
 // A forced kill lost localStorage written just before Stop.
 function stopBrowserProcess(proc, {
   platform = process.platform, run = execFile, graceMs = DEFAULT_GRACE_MS,
-  isChild = value => value instanceof ChildProcess, closeBrowserChild = false
+  isChild = value => value instanceof ChildProcess || isJobSupervisor(value), closeBrowserChild = false
 } = {}) {
   if (!proc || typeof proc.kill !== 'function') return false;
   if (hasExited(proc)) return false;
   const pid = proc.pid;
+  if(platform==='win32'&&isJobSupervisor(proc))
+    return proc.requestJobStop();
   const useTaskkill = platform === 'win32' && isChild(proc) &&
     Number.isSafeInteger(pid) && pid > 0;
   let done = false, timer = null;

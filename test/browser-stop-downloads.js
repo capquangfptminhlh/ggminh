@@ -12,6 +12,7 @@ const os = require('os');
 const EventEmitter = require('events');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 const { stopBrowserProcess } = require('../src/engine/processStopper');
 const {
   profileDownloadDir, applyChromiumDownloadDir, applyGeckoDownloadDir, GECKO_BEGIN
@@ -197,7 +198,7 @@ async function launcherTests(root) {
   };
   const downloadsRoot = path.join(root, 'customer-downloads');
   const launcher = new BrowserLauncher(store, {
-    spawnProcess, downloadsRoot, stopProcess: proc => { stopped.push(proc); return true; }
+    spawnProcess, downloadsRoot, profileLockOptions, completionVerifier:()=>true, stopProcess: proc => { stopped.push(proc); return true; }
   });
   // Host-absolute paths (QA-006): the launcher reads the file name with the
   // host path module, so a Windows literal has no basename on POSIX.
@@ -225,8 +226,9 @@ async function launcherTests(root) {
   assert.deepStrictEqual(spawned[0].proc.signals, [], 'no immediate TerminateProcess');
   assert.strictEqual(launcher.isBusy(a.id), true);
   spawned[0].proc.exit(0);
+  await waitForUnlock(launcher,a.id);
   assert.strictEqual(launcher.isBusy(a.id), false);
-  const refusing = new BrowserLauncher(store, { spawnProcess, downloadsRoot, stopProcess: () => false });
+  const refusing = new BrowserLauncher(store, { spawnProcess, downloadsRoot, profileLockOptions, completionVerifier:()=>true, stopProcess: () => false });
   refusing.findBrowserBinary = () => binary;
   await refusing.start(a.id);
   assert.strictEqual(refusing.stop(a.id).success, false);

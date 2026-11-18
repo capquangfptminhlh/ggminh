@@ -3,6 +3,7 @@ const assert=require('assert'),fs=require('fs'),os=require('os'),path=require('p
 const {EventEmitter}=require('events');
 const Store=require('../src/db/store');
 const BrowserLauncher=require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 (async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-early-quit-'));
  try{
@@ -10,7 +11,7 @@ const BrowserLauncher=require('../src/engine/browserLauncher');
    const profile=store.saveProfile({name:'Early-exit test',engine:'chromium',
      startUrl:'https://example.org',fingerprint:{mode:'native'}});
    for(const kind of ['exit-before-spawn','exit-after-spawn']){
-     const launcher=new BrowserLauncher(store,{spawnProcess:()=>{
+     const launcher=new BrowserLauncher(store,{profileLockOptions,completionVerifier:()=>true,spawnProcess:()=>{
        const proc=new EventEmitter();
        proc.pid=3000;
        proc.kill=()=>true;
@@ -23,11 +24,12 @@ const BrowserLauncher=require('../src/engine/browserLauncher');
      launcher.findBrowserBinary=()=>process.execPath;
      await assert.rejects(()=>launcher.start(profile.id),/Trình duyệt/);
      assert.strictEqual(launcher.activeProcesses.size,0);
+     await waitForUnlock(launcher,profile.id);
      assert.strictEqual(launcher.isBusy(profile.id),false);
    }
    // A healthy startup still records a running process and unlocks at exit.
    let spawned;
-   const launcher=new BrowserLauncher(store,{spawnProcess:()=>{
+   const launcher=new BrowserLauncher(store,{completionVerifier:()=>true,profileLockOptions:{localStorage:async()=>true,browserInstancesExist:async()=>false},spawnProcess:()=>{
      spawned=new EventEmitter();spawned.pid=4444;spawned.kill=()=>true;
      process.nextTick(()=>spawned.emit('spawn'));
      return spawned;
@@ -37,6 +39,7 @@ const BrowserLauncher=require('../src/engine/browserLauncher');
    assert.strictEqual(actual.pid,4444);
    assert.strictEqual(launcher.isBusy(profile.id),true);
    spawned.emit('exit',0);
+   await waitForUnlock(launcher,profile.id);
    assert.strictEqual(launcher.isBusy(profile.id),false);
    console.log('Browser pre-spawn and immediate post-spawn exit handling tests passed');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}

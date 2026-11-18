@@ -13,6 +13,9 @@ function recoverProfile(manager,source,password,name,confirmation){
  try{envelope=JSON.parse(fs.readFileSync(input.filename,'utf8'));}
  catch(_){throw Error('File backup bị hỏng hoặc không phải JSON');}
  const id=assertProfileId(envelope?.profileId);
+ if(!manager.store.mutationLocks?.has(id.toLowerCase()))
+  return manager.store.withProfileMutation(id,()=>recoverProfile(manager,source,password,name,confirmation));
+ manager.store.assertCurrent?.();
  const engine=envelope?.engine;
  if(!['chromium','gecko'].includes(engine))throw Error('Engine của snapshot không hợp lệ');
  if(manager.store.getProfile(id))throw Error('Hồ sơ gốc còn tồn tại; hãy sử dụng Nhập file trong profile đó');
@@ -60,7 +63,7 @@ function recoverProfile(manager,source,password,name,confirmation){
   }
   try{
    rejectSymlinks(manager.store.baseDir,directory);
-   if(fs.existsSync(directory))fs.rmSync(directory,{recursive:true,force:true});
+   if(created&&fs.existsSync(directory))fs.rmSync(directory,{recursive:true,force:true});
   }catch(revert){problems.push('profile folder rollback: '+revert.message);}
   if(problems.length)throw Error('Khôi phục thất bại và hoàn tác chưa đầy đủ: '+problems.join('; '));
   throw error;

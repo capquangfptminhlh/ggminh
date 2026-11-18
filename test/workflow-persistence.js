@@ -27,6 +27,16 @@ try {
   assert.strictEqual(fs.readFileSync(workflows.file,'utf8'), disk, 'file must not change');
 
   workflows.persist = realPersist;
+  const crypto=require('node:crypto'),random=crypto.randomBytes;
+  const collision=workflows.file+'.'+process.pid+'.'+Buffer.alloc(6,0x45).toString('hex')+'.tmp';
+  fs.writeFileSync(collision,'preserve unrelated temporary file');
+  try{
+    crypto.randomBytes=size=>size===6?Buffer.alloc(6,0x45):random(size);
+    assert.throws(()=>workflows.save(flow('Collision',{id:original.id})),/EEXIST/);
+  }finally{crypto.randomBytes=random}
+  assert.equal(fs.readFileSync(collision,'utf8'),'preserve unrelated temporary file');
+  assert.equal(fs.readFileSync(workflows.file,'utf8'),disk);
+  fs.unlinkSync(collision);
   const updated = workflows.save(flow('Updated', {id:original.id}));
   assert.strictEqual(updated.name, 'Updated');
   assert.strictEqual(new WorkflowStore(root).get(original.id).name, 'Updated');
