@@ -112,7 +112,7 @@ jobs:
           $version=node -p "require('./package.json').version"
           if($LASTEXITCODE -ne 0){throw 'Cannot read candidate version'}
           & .\tools\run-windows-clean-install-acceptance.ps1 -BaselineInstaller $env:LHM_PR_BI -CandidateInstaller $env:LHM_PR_CI -BaselineEvidence $env:LHM_PR_BE -CandidateEvidence $env:LHM_PR_CE -OutputDirectory $output -ExpectedCandidateVersion $version
-          if($LASTEXITCODE -ne 0){throw 'Synthetic install acceptance failed'}
+          # The PowerShell runner throws on failure; LASTEXITCODE can belong to a native child.
           $final=Join-Path $env:RUNNER_TEMP 'lhm-pr-install-evidence.json'
           node tools/windows-clean-install-evidence.js build --measurement (Join-Path $output 'measurement.json') --baseline-evidence $env:LHM_PR_BE --candidate-evidence $env:LHM_PR_CE --out $final
           if($LASTEXITCODE -ne 0){throw 'Evidence validation failed'}
@@ -142,3 +142,5 @@ jobs:
             if(-not $target.StartsWith($runnerRoot+'\',[StringComparison]::OrdinalIgnoreCase)) {throw 'Cleanup path escapes runner temp'}
             if(Test-Path -LiteralPath $target){Remove-Item -LiteralPath $target -Recurse -Force}
           }
+          # Cleanup helper throws on failure; discard native child exit codes only after success.
+          $global:LASTEXITCODE=0

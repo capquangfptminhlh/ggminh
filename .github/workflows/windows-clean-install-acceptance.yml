@@ -142,8 +142,9 @@ jobs:
             -CandidateEvidence $env:CANDIDATE_EVIDENCE `
             -OutputDirectory $output `
             -ExpectedCandidateVersion $env:EXPECTED_CANDIDATE_VERSION
-          if($LASTEXITCODE -ne 0){throw 'Installed Windows acceptance runner failed'}
+          # The PowerShell runner throws on failure; LASTEXITCODE can belong to a native child.
           Add-Content -LiteralPath $env:GITHUB_ENV -Value "ACCEPTANCE_OUTPUT=$output"
+          $global:LASTEXITCODE=0
       - name: Build and validate privacy-minimal evidence
         shell: pwsh
         run: |
@@ -193,3 +194,5 @@ jobs:
               Remove-Item -LiteralPath $target -Recurse -Force
             }
           }
+          # Cleanup helper throws on failure; discard native child exit codes only after success.
+          $global:LASTEXITCODE=0
