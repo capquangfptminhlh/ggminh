@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const net = require('net');
 const { generateExtension } = require('./extensionGenerator');
-const { createLaunchArgs } = require('./launchArgs');
+const { createLaunchArgs, safeWebUrls } = require('./launchArgs');
 const { isolatedPaths, ensureIsolatedDirectory } = require('../privacy/isolation');
 const { updateGeckoProxy, applyGeckoIdentityPrefs } = require('./geckoProxy');
 const { stopBrowserProcess } = require('./processStopper');
@@ -15,9 +15,14 @@ const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 const { cdpAllowed } = require('../security/cdpPolicy');
-const {probeProxy}=require('./proxyLaunchPreflight');
+const {probeProxy,proxyTarget}=require('./proxyLaunchPreflight');
 const {acquireProfileLock,hasProfileLock}=require('./profileProcessLock');
 const {spawnJobSupervisor,isJobSupervisor}=require('./jobSupervisor');
+
+function startupUrls(profile,customUrl){
+ return safeWebUrls(customUrl?[customUrl]:
+  (Array.isArray(profile.startUrls)&&profile.startUrls.length?profile.startUrls:[profile.startUrl||'https://ads.google.com/']));
+}
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null,
@@ -196,11 +201,19 @@ class BrowserLauncher {
         if(!credentials)throw Error('PROXY_UNAVAILABLE: Thiếu thông tin xác thực proxy.');
       }
       let available=false;
-      try{available=await this.proxyProbe(proxy,{credentials})}catch(_){}
-      if(available!==true)throw Error('PROXY_UNAVAILABLE: Proxy không phản hồi hoặc từ chối kết nối.');
+      const destination=startupUrls(profile,customUrl)[0];
+      const target=proxyTarget(destination);
+      try{available=await this.proxyProbe(proxy,{credentials,destination})}catch(_){}
+      if(available!==true)throw Error('PROXY_UNAVAILABLE: Proxy không phản hồi hoặc từ chối kết nối tới '+target.authority+
+        (target.fallbackReason==='http'?' (đích kiểm tra thay thế cho trang HTTP; chưa kiểm tra trang khởi động).':'.'));
       const current=this.store.getProfile(profileId);
       if(!current||JSON.stringify(current.proxy||{})!==proxySnapshot)
         throw Error('PROXY_UNAVAILABLE: Cấu hình proxy thay đổi trong lúc kiểm tra.');
+      if(!customUrl){
+        let currentDestination;
+        try{currentDestination=startupUrls(current,customUrl)[0]}catch(_){throw Error('PROXY_UNAVAILABLE: Trang khởi động thay đổi trong lúc kiểm tra.')}
+        if(currentDestination!==destination)throw Error('PROXY_UNAVAILABLE: Trang khởi động thay đổi trong lúc kiểm tra.');
+      }
     }
     return this.engineFactory.launchProfile(profile,{customUrl});
   }
@@ -267,9 +280,7 @@ class BrowserLauncher {
       extDir = ensureIsolatedDirectory(this.baseDataDir, paths.extensionDir);
       generateExtension(profile, extDir);
     }
-    const startUrls = customUrl ? [customUrl] :
-      (Array.isArray(profile.startUrls) && profile.startUrls.length
-        ? profile.startUrls : [profile.startUrl || 'https://ads.google.com/']);
+    const startUrls = startupUrls(profile,customUrl);
     if (engine === 'gecko') {
       updateGeckoProxy(profileDir, effectiveProxy);
       applyGeckoIdentityPrefs(profileDir, profile);

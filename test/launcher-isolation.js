@@ -59,6 +59,37 @@ const { createApiServer } = require('../src/api/server');
     noProxyLauncher.findBrowserBinary=()=>process.execPath;
     await assert.rejects(noProxyLauncher.start(unreachable.id),/PROXY_UNAVAILABLE/);
     assert.strictEqual(spawnCount,0,'Unreachable proxy must block before browser spawn');
+    const targetProfile=store.saveProfile({name:'Target preflight',engine:'chromium',
+      startUrl:'https://ads.example.net:8443/private?token=secret',
+      proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
+    let observedDestination;
+    const targetLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async(_proxy,options)=>{
+      observedDestination=options.destination;return false;
+    }});
+    await assert.rejects(targetLauncher.start(targetProfile.id),error=>{
+      assert.match(error.message,/ads\.example\.net:8443/);
+      assert(!error.message.includes('secret'));assert(!error.message.includes('/private'));
+      return /PROXY_UNAVAILABLE/.test(error.message);
+    });
+    assert.equal(observedDestination,'https://ads.example.net:8443/private?token=secret');
+    await assert.rejects(targetLauncher.start(targetProfile.id,'http://other.example:8080/'),error=>
+      /example\.com:443/.test(error.message)&&/HTTP/.test(error.message));
+    assert.equal(observedDestination,'http://other.example:8080/');
+    observedDestination='not called';
+    await assert.rejects(targetLauncher.start(targetProfile.id,'https://bad.test\r\nX-Pass: secret'),error=>
+      /Invalid start URL/.test(error.message)&&!error.message.includes('secret'));
+    assert.equal(observedDestination,'not called');
+    const emptyTarget=store.saveProfile({name:'Empty target',engine:'chromium',
+      proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
+    const emptyStored=store.data.profiles.find(item=>item.id===emptyTarget.id);
+    emptyStored.startUrl='';emptyStored.startUrls=[];
+    await assert.rejects(targetLauncher.start(emptyTarget.id),error=>/ads\.google\.com:443/.test(error.message));
+    assert.equal(observedDestination,'https://ads.google.com/');
+    const changedTargetLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async()=>{
+      store.saveProfile({...targetProfile,startUrls:['https://changed.example/']});return true;
+    }});
+    await assert.rejects(changedTargetLauncher.start(targetProfile.id),/Trang khởi động thay đổi/);
+    assert.strictEqual(spawnCount,0,'Target probe failure must block browser spawn');
     const changedLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async()=>{
       store.saveProfile({...unreachable,proxy:{type:'http',host:'127.0.0.1',port:65533}});
       return true;
@@ -96,6 +127,9 @@ const { createApiServer } = require('../src/api/server');
     assert.throws(()=>createLaunchArgs({
       engine:'chromium', profileDir:folderA,url:'https://user:password@example.com/'
     }),/credentials/);
+    assert.throws(()=>createLaunchArgs({
+      engine:'chromium', profileDir:folderA,url:'https://bad.test\r\nInjected: secret'
+    }),/Invalid start URL/);
     const result=launcher.stop(first.id);
     assert.strictEqual(result.success,true);
     assert.strictEqual(launcher.isBusy(first.id),true);

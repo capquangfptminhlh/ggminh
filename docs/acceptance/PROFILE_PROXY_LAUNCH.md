@@ -2,8 +2,12 @@
 
 Chromium và Firefox kiểm tra proxy HTTP hoặc SOCKS5 được cấu hình trước khi
 tạo tiến trình trình duyệt. Với proxy có mật khẩu, phép thử dùng thông tin trong
-kho cục bộ. Phép thử yêu cầu proxy kết nối tới `example.com:443`; proxy nhìn
-thấy yêu cầu này. Proxy có chính sách chặn đích đó cũng sẽ khiến hồ sơ bị chặn.
+kho cục bộ. Với URL khởi động HTTPS hợp lệ, phép thử yêu cầu proxy mở kết nối
+tới host và cổng của URL đầu tiên, không gửi đường dẫn hoặc query. Với URL HTTP,
+phép thử dùng đích thay thế `example.com:443`, **không kiểm tra được trang HTTP**;
+proxy nhìn thấy đích kiểm tra và nếu chặn đích đó thì hồ sơ bị chặn. Đây chỉ là
+kiểm tra khả năng mở kết nối tại thời điểm chạy, chưa chứng minh trang tải được
+hoặc mọi đường mạng được bảo vệ.
 
 Proxy từ chối, hết thời gian chờ, sai xác thực hoặc cấu hình thay đổi trong lúc
 kiểm tra sẽ chặn mở với `PROXY_UNAVAILABLE`. Không tự đổi hồ sơ sang direct.
