@@ -1,9 +1,15 @@
 name: IP leak measurement - Firefox and Camoufox (Windows)
 on:
   workflow_dispatch:
+    inputs:
+      include_camoufox:
+        description: 'Run upstream Camoufox lab measurement (requires separate approval)'
+        type: boolean
+        default: false
   pull_request:
     paths:
       - '.github/workflows/ip-leak-gecko.yml'
+      - 'test/gecko-ci-runtime.js'
       - 'stage0-measure/run-ip-leak-gecko.js'
       - 'stage0-measure/run-storage-isolation.js'
       - 'src/engine/browserLauncher.js'
@@ -26,10 +32,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node.js 20 (Electron-compatible Playwright runtime)
+      - name: Set up Node.js 22 (SQLite-compatible lab runtime)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+      - name: Verify SQLite runtime and Camoufox opt-in
+        run: node test/gecko-ci-runtime.js
       - name: Install app dependencies and pinned Playwright (test only)
         shell: pwsh
         run: |
@@ -38,6 +46,7 @@ jobs:
           npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.62.0
           if ($LASTEXITCODE -ne 0) { throw 'playwright-core install failed' }
       - name: Download official pinned Camoufox and verify it (never redistributed)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.include_camoufox }}
         shell: pwsh
         run: ./tools/stage-camoufox-upstream-smoke.ps1
       - name: Locate the runner's installed Firefox
@@ -50,7 +59,10 @@ jobs:
       - name: Measure WebRTC and DNS leaks for proxied Firefox and Camoufox profiles
         shell: pwsh
         timeout-minutes: 15
+        env:
+          LHM_ENABLE_CAMOUFOX_LAB: ${{ github.event_name == 'workflow_dispatch' && inputs.include_camoufox }}
         run: |
+          if ($env:LHM_ENABLE_CAMOUFOX_LAB -ne 'true') { Remove-Item Env:LHM_CAMOUFOX_EXECUTABLE -ErrorAction SilentlyContinue }
           node stage0-measure/run-ip-leak-gecko.js "$env:RUNNER_TEMP\ip-leak-gecko"
           if ($LASTEXITCODE -ne 0) { throw 'IP leak measurement did not complete' }
           $report = Get-Content "$env:RUNNER_TEMP\ip-leak-gecko\ip-leak-gecko-report.json" -Raw | ConvertFrom-Json
