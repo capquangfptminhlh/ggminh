@@ -15,6 +15,7 @@ const {ConfigBackup}=require('../src/backup/configBackup');
 const {WorkflowStore}=require('../src/automation/studio');
 const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
+const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
 const outDir = path.resolve(outDirArg || 'storage-isolation');
 const engine = engineArg || 'chromium';
@@ -24,21 +25,24 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body>${mode}<script>
 (async () => {
   const q = new URLSearchParams(location.search), who = q.get('p');
-  const idb = () => new Promise((res, rej) => { const r = indexedDB.open('lhm_probe', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const openIsolationDb = ${openIsolationDb.toString()};
+  const readIsolationValue = ${readIsolationValue.toString()};
+  const writeIsolationValue = ${writeIsolationValue.toString()};
+  const deadline = (name, promise) => Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error(name+' timeout')),10000))]);
+  const idb = () => deadline('IndexedDB open',openIsolationDb(indexedDB));
   const out = { mode: '${mode}', who, err: null };
   try {
     if ('${mode}' === 'set') {
       document.cookie = 'lhm_js=' + who + '; max-age=86400; path=/';
       localStorage.setItem('lhm_probe', who);
-      const db = await idb(); await new Promise(r => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(who, 'k'); t.oncomplete = r; });
+      const db = await idb(); await deadline('IndexedDB write',writeIsolationValue(db,who));
       const c = await caches.open('lhm_probe'); await c.put('/cached', new Response(who));
     }
     await fetch('/asset.bin').then(r => r.text());
     out.cookie = document.cookie;
     out.localStorage = localStorage.getItem('lhm_probe');
-    const db = await idb(); out.indexedDB = await new Promise(r => { const g = db.transaction('kv').objectStore('kv').get('k'); g.onsuccess = () => r(g.result ?? null); });
-    const c = await caches.open('lhm_probe'); const hit = await c.match('/cached'); out.cacheStorage = hit ? await hit.text() : null;
+    const db = await idb(); out.indexedDB = await deadline('IndexedDB read',readIsolationValue(db));
+    const c = await deadline('CacheStorage open',caches.open('lhm_probe')); const hit = await deadline('CacheStorage match',c.match('/cached')); out.cacheStorage = hit ? await hit.text() : null;
   } catch (e) { out.err = String(e); }
   await fetch('/result', { method: 'POST', body: JSON.stringify(out) });
   document.body.textContent = 'done';
