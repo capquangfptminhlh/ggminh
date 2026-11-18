@@ -28,10 +28,15 @@ async function withIsolationCleanup({ server, launchers, timeoutMs = 20000, onCl
     await Promise.race([Promise.all(stops), new Promise(resolve => { timeout = setTimeout(resolve, Math.max(0, deadline - Date.now())); })]);
     clearTimeout(timeout);
     if (pendingStops) errors.push('stop requests timed out');
-    while (launchers.some(launcher => launcher.activeProcesses.size > 0) && Date.now() < deadline) {
+    const outstanding = () => [...new Set(launchers.flatMap(launcher => [
+      ...launcher.activeProcesses.keys(),
+      ...(launcher.pendingStarts?.keys() || []),
+      ...(launcher.uncertainProfiles || [])
+    ]))];
+    while (outstanding().length && Date.now() < deadline) {
       await new Promise(resolve => setTimeout(resolve, Math.min(100, Math.max(1, deadline - Date.now()))));
     }
-    const remaining = launchers.flatMap(launcher => [...launcher.activeProcesses.keys()]);
+    const remaining = outstanding();
     let serverClosed = false;
     try {
       await Promise.race([
