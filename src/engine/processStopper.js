@@ -38,13 +38,15 @@ function listChildPids(pid, run, done) {
   });
 }
 
-// closeBrowserChild (Firefox on Windows): the spawned firefox.exe is a
-// windowless launcher kept alive by --wait-for-browser; the browser window
-// belongs to its child process. Measured on Windows CI:
+// closeBrowserChild (Firefox on Windows): --wait-for-browser may create a
+// windowless launcher and put the browser window on a child process. Measured
+// on Windows CI:
 //   taskkill /PID <launcher>      -> fails (no window), app fell to /T /F
 //   taskkill /PID <launcher> /T   -> browser does NOT close, killed at grace end
 //   taskkill /PID <browser child> -> browser closes in 0.6 s, exit code 0
 // A forced kill lost localStorage written just before Stop.
+// In concurrent launches the spawned process can itself own the window, so
+// the graceful request must include both the root and its direct children.
 function stopBrowserProcess(proc, {
   platform = process.platform, run = execFile, graceMs = DEFAULT_GRACE_MS,
   isChild = value => value instanceof ChildProcess || isJobSupervisor(value), closeBrowserChild = false
@@ -80,9 +82,10 @@ function stopBrowserProcess(proc, {
     armForce();
     listChildPids(pid, run, children => {
       if (done || hasExited(proc)) return;
-      // Close the browser's own window gracefully; if no child is visible yet
-      // (still starting), the grace timer force-closes the tree.
-      if (children.length) run('taskkill', children.flatMap(c => ['/PID', String(c)]), { windowsHide: true }, () => {});
+      // Depending on Firefox's startup path, the window can belong to the
+      // spawned process itself or to its browser child. Ask both to close;
+      // neither /T nor /F is used during this graceful step.
+      run('taskkill', [pid,...children].flatMap(c => ['/PID', String(c)]), { windowsHide: true }, () => {});
     });
     return true;
   }
