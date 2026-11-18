@@ -143,16 +143,19 @@ async function launcherAndCamoufoxTests() {
       proc.kill = () => { setImmediate(() => proc.emit('exit', 0)); return true; };
       procs.push(proc); setImmediate(() => proc.emit('spawn')); return proc;
     };
-    const launcher = new BrowserLauncher(store, { spawnProcess, proxyVault: vault, peerGuardFactory: () => guard });
+    const launcher = new BrowserLauncher(store, { spawnProcess, proxyVault: vault, proxyProbe:async()=>true, completionVerifier:()=>true, profileLockOptions:{localStorage:async()=>true,browserInstancesExist:async()=>false}, peerGuardFactory: () => guard });
     launcher.findBrowserBinary = () => process.execPath;
     await launcher.start(profile.id);
     assert.deepStrictEqual(order, ['ready', 'spawn', 'root:4321']);
     const port = Number(/--proxy-server=http:\/\/127\.0\.0\.1:(\d+)/.exec(procs[0].args.join(' '))[1]);
     assert.strictEqual(await connectThrough(port), 'CLOSED', 'launcher gateway uses the guard');
+    const exited=new Promise(resolve=>procs[0].once('exit',resolve));
     launcher.stop(profile.id);
+    await exited;
+    for(let i=0;i<100&&launcher.isBusy(profile.id);i++)await new Promise(resolve=>setTimeout(resolve,10));
 
     // Guard unavailable on Windows: launch refused, nothing spawned.
-    const refused = new BrowserLauncher(store, { spawnProcess, proxyVault: vault,
+    const refused = new BrowserLauncher(store, { spawnProcess, proxyVault: vault, proxyProbe:async()=>true,
       peerGuardFactory: () => ({ ready: async () => { throw Error('Không xác minh được tiến trình dùng proxy'); } }) });
     refused.findBrowserBinary = () => process.execPath;
     const spawnsBefore = procs.length;

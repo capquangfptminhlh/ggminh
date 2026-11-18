@@ -46,8 +46,10 @@ window.addEventListener('DOMContentLoaded',()=>{
           '" cùng toàn bộ dữ liệu trình duyệt cục bộ, các bản chụp phiên (snapshot) đã lưu'+
           ' và các quy trình tự động gắn với hồ sơ này. Không thể hoàn tác.');
         if(input!=='XOA')return;
-        await window.api.purgeTrashedProfile(profile.id);
+        const result=await window.api.purgeTrashedProfile(profile.id);
         await refresh();
+        if(result?.cleanupPending)
+          alert('Hồ sơ đã bị xóa khỏi danh sách, nhưng một phần dữ liệu chưa được xóa và đang chờ dọn lại.');
       }));
       row.append(summary,actions);list.append(row);
     }

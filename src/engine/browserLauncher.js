@@ -15,15 +15,19 @@ const {checkProfileSignalChain}=require('../health/signalChain');
 const {launchReadiness}=require('../health/launchReadiness');
 const {EngineFactory,resolveEngineType}=require('./EngineFactory');
 const { cdpAllowed } = require('../security/cdpPolicy');
+const {probeProxy}=require('./proxyLaunchPreflight');
+const {acquireProfileLock,hasProfileLock}=require('./profileProcessLock');
+const {spawnJobSupervisor,isJobSupervisor}=require('./jobSupervisor');
 
 class BrowserLauncher {
   constructor(store, { spawnProcess = spawn, proxyVault = null, extensionManager = null,
     stopProcess = stopBrowserProcess, downloadsRoot = null, peerGuardFactory,
-    resourceGuard = null } = {}) {
+    resourceGuard = null, proxyProbe = probeProxy, profileLockOptions = {},
+    completionVerifier = proc => isJobSupervisor(proc) && proc.jobComplete === true } = {}) {
     this.store = store;
     this.proxyVault = proxyVault;
     this.extensionManager = extensionManager;
-    this.spawnProcess = spawnProcess;
+    this.spawnProcess = spawnProcess===spawn && process.platform==='win32' ? spawnJobSupervisor : spawnProcess;
     this.stopProcess = stopProcess;
     // Only processes we really spawned have PIDs we can vouch for; a custom
     // spawner (tests, embedding) must pass its own guard factory.
@@ -31,12 +35,16 @@ class BrowserLauncher {
       : (spawnProcess === spawn ? createPeerGuard : null);
     this.pendingStarts = new Map();
     this.activeProcesses = new Map(); // profileId -> { process, port, wsEndpoint, startedAt }
+    this.uncertainProfiles = new Set();
     this.baseDataDir = store.baseDir;
     // Each profile downloads into <downloadsRoot>/<profileId>, never the
     // shared OS Downloads folder. main.js points this at the user's
     // Downloads/LHM Ads Browser; the default keeps files under app data.
     this.customDownloadsRoot = downloadsRoot;
     this.resourceGuard = resourceGuard;
+    this.proxyProbe = proxyProbe;
+    this.profileLockOptions = profileLockOptions;
+    this.completionVerifier = completionVerifier;
     this.lastResourceAssessment = null;
     this.engineFactory=new EngineFactory(this);
   }
@@ -102,7 +110,8 @@ class BrowserLauncher {
   }
 
   isBusy(profileId) {
-    return this.pendingStarts.has(profileId) || this.activeProcesses.has(profileId);
+    return this.pendingStarts.has(profileId) || this.activeProcesses.has(profileId) || this.uncertainProfiles.has(profileId) ||
+      (!this.store.mutationLocks?.has(String(profileId).toLowerCase())&&hasProfileLock(this.baseDataDir,profileId));
   }
 
   async start(profileId, customUrl = null, options = {}) {
@@ -127,6 +136,10 @@ class BrowserLauncher {
 
     this.licensePolicy?.require('profiles');
     const profile = this.store.getProfile(profileId);
+    if(profile && Array.isArray(this.store.data?.profiles) &&
+       this.store.data.profiles.some(p=>p && p.id!==profile.id &&
+         typeof p.id==='string' && p.id.toLowerCase()===profile.id.toLowerCase()))
+      throw Error('Profile ID collides with another profile directory');
     if (!profile) {
       throw new Error(`Profile not found: ${profileId}`);
     }
@@ -170,6 +183,25 @@ class BrowserLauncher {
     }
     // Resolve provider using the saved per-profile selection. Never fallback
     // from a missing Camoufox release into a different browser engine.
+    const proxy=profile.proxy||{type:'direct'};
+    if(resolveEngineType(profile,this.store.getSettings())!=='camoufox'&&
+       proxy.type&&proxy.type!=='direct'&&proxy.type!=='none'){
+      const proxySnapshot=JSON.stringify(proxy);
+      let credentials=null;
+      if(proxy.authProxyId){
+        const saved=this.store.data?.proxies?.find(item=>item.id===proxy.authProxyId);
+        if(!saved||saved.type!==proxy.type||saved.host!==proxy.host||Number(saved.port)!==Number(proxy.port))
+          throw Error('PROXY_UNAVAILABLE: Proxy đã thay đổi, hãy gán lại.');
+        credentials=this.proxyVault?.get?.(proxy.authProxyId);
+        if(!credentials)throw Error('PROXY_UNAVAILABLE: Thiếu thông tin xác thực proxy.');
+      }
+      let available=false;
+      try{available=await this.proxyProbe(proxy,{credentials})}catch(_){}
+      if(available!==true)throw Error('PROXY_UNAVAILABLE: Proxy không phản hồi hoặc từ chối kết nối.');
+      const current=this.store.getProfile(profileId);
+      if(!current||JSON.stringify(current.proxy||{})!==proxySnapshot)
+        throw Error('PROXY_UNAVAILABLE: Cấu hình proxy thay đổi trong lúc kiểm tra.');
+    }
     return this.engineFactory.launchProfile(profile,{customUrl});
   }
 
@@ -177,6 +209,20 @@ class BrowserLauncher {
     if(!['chromium','gecko'].includes(engine))
       throw Error('Installed runtime cannot handle this engine');
     const browserBin = this.findBrowserBinary(engine);
+    const profileLock=await acquireProfileLock(this.baseDataDir,profile.id,{...this.profileLockOptions,browserPath:browserBin});
+    this.uncertainProfiles.delete(profile.id);
+    let proc=null;
+    const releaseLock=()=>profileLock.release().catch(error=>{
+      console.warn('[BrowserLauncher] Profile lock release failed:',String(error.message).slice(0,160));
+    });
+    try {
+    // The per-profile lock prevents concurrent profile edits while this
+    // read verifies the launch configuration against the persisted store.
+    this.store.assertCurrent?.();
+    if(JSON.stringify(this.store.getProfile(profile.id))!==JSON.stringify(profile)){
+      const error=Error('STORE_CONFLICT: Hồ sơ đã thay đổi trong lúc mở.');
+      error.code='STORE_CONFLICT';throw error;
+    }
     // The CDP port is unauthenticated (any local process/user can read the
     // profile's cookies), so it opens only on the explicit automation opt-in.
     const port = engine === 'chromium' && cdpAllowed(this.store.getSettings()) ?
@@ -252,13 +298,12 @@ class BrowserLauncher {
     if (typeof rawTz === 'string' && rawTz.length > 0 && rawTz.length <= 80) {
       try { new Intl.DateTimeFormat('en-US', { timeZone: rawTz }); validTz = rawTz; } catch (_) {}
     }
-    const proc = this.spawnProcess(browserBin, args, {
+    proc = this.spawnProcess(browserBin, args, {
       detached: false,
       stdio: 'ignore',
+      jobEvidence:{jobName:profileLock.jobName,token:profileLock.token,path:profileLock.evidencePath},
       ...(validTz ? { env: { ...process.env, TZ: validTz } } : {})
     });
-    peerGuard?.setRoot(proc.pid);
-
     // Attach lifecycle handlers before awaiting spawn. A process can exit
     // between its spawn event and the continuation of an async function.
     let exited=false, spawned=false, settleStart=null;
@@ -268,18 +313,51 @@ class BrowserLauncher {
       console.log('[BrowserLauncher] Profile exited (code '+code+')');
       const current=this.activeProcesses.get(profile.id);
       if(current?.process===proc)this.activeProcesses.delete(profile.id);
+      if((spawned||proc.startAborted===true)&&this.completionVerifier(proc)===true){
+        this.uncertainProfiles.add(profile.id);
+        releaseLock().then(()=>this.uncertainProfiles.delete(profile.id));
+      }
+      else if(!spawned&&!isJobSupervisor(proc))releaseLock();
+      else {
+        this.uncertainProfiles.add(profile.id);
+        (async()=>{
+          await profileLock.markExited();
+          if(isJobSupervisor(proc))return;
+          // Reacquisition performs the conservative process inventory while
+          // holding the recovery guard. Never unlock on the root exit alone.
+          const checked=await acquireProfileLock(this.baseDataDir,profile.id,
+            {...this.profileLockOptions,browserPath:browserBin});
+          await checked.release();
+          this.uncertainProfiles.delete(profile.id);
+        })().catch(error=>{
+          if(error.code!=='PROFILE_LOCKED')
+            console.warn('[BrowserLauncher] Profile lock update failed:',String(error.message).slice(0,160));
+        });
+      }
       if(gateway)gateway.close().catch(()=>{});
       if(!spawned&&settleStart)settleStart(Error('Trình duyệt thoát trước khi khởi động hoàn tất'));
     };
     proc.once('exit',onExited);
+    proc.on('stop-cancelled',()=>{
+      const current=this.activeProcesses.get(profile.id);
+      if(current?.process===proc)current.stopping=false;
+    });
     proc.on('error',error=>{
-      if(!exited)onExited(null);
+      // After spawn an error does not prove the browser has exited.
+      if(!spawned&&!exited)onExited(null);
       if(!spawned&&settleStart)settleStart(error);
     });
-    await new Promise((resolve,reject)=>{
+    const startResult=new Promise((resolve,reject)=>{
       settleStart=error=>error?reject(error):resolve();
       proc.once('spawn',()=>{spawned=true;resolve();});
     });
+    // An initialization failure can happen before awaiting spawn. Keep the
+    // lifecycle observer installed and avoid an unhandled rejection.
+    startResult.catch(()=>{});
+    await startResult;
+    if(exited)throw Error('Trình duyệt đã thoát ngay sau khi khởi động. Kiểm tra engine hoặc cấu hình hồ sơ.');
+    peerGuard?.setRoot(proc.pid);
+    if(isJobSupervisor(proc))await proc.resume();
     if(exited)throw Error('Trình duyệt đã thoát ngay sau khi khởi động. Kiểm tra engine hoặc cấu hình hồ sơ.');
 
     const instanceInfo = {
@@ -299,6 +377,16 @@ class BrowserLauncher {
     return instanceInfo;
     } catch(error) {
       if(gateway)await gateway.close().catch(()=>{});
+      throw error;
+    }
+    } catch(error) {
+      if(!proc)await profileLock.release();
+      else {
+        // Once a child exists, only its exit event may release the lock.
+        // An initialization error must not leave an untracked browser open.
+        if(isJobSupervisor(proc))proc.abortStart();
+        try{this.stopProcess(proc,{closeBrowserChild:engine==='gecko'})}catch(_){}
+      }
       throw error;
     }
   }
@@ -362,6 +450,7 @@ class BrowserLauncher {
         pid: info.pid,
         startedAt: info.startedAt,
         stopping: !!info.stopping,
+        waitingForDialog: !!info.process?.dialogBlocked,
         wsEndpoint: info.wsEndpoint
       });
     }

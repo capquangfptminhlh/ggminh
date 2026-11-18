@@ -37,7 +37,7 @@ async function waitUntil(fn){
    setImmediate(()=>proc.emit('spawn'));
    return proc;
   };
-  const launcher=new BrowserLauncher(store,{spawnProcess,proxyVault:vault});
+  const launcher=new BrowserLauncher(store,{spawnProcess,proxyVault:vault,proxyProbe:async()=>true,completionVerifier:()=>true});
   for(const profile of [one,two]){
    const result=await launcher.start(profile.id);
    assert.strictEqual(result.profileId,profile.id);

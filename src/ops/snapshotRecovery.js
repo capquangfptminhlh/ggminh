@@ -13,6 +13,9 @@ function recoverProfile(manager,source,password,name,confirmation){
  try{envelope=JSON.parse(fs.readFileSync(input.filename,'utf8'));}
  catch(_){throw Error('File backup bị hỏng hoặc không phải JSON');}
  const id=assertProfileId(envelope?.profileId);
+ if(!manager.store.mutationLocks?.has(id.toLowerCase()))
+  return manager.store.withProfileMutation(id,()=>recoverProfile(manager,source,password,name,confirmation));
+ manager.store.assertCurrent?.();
  const engine=envelope?.engine;
  if(!['chromium','gecko'].includes(engine))throw Error('Engine của snapshot không hợp lệ');
  if(manager.store.getProfile(id))throw Error('Hồ sơ gốc còn tồn tại; hãy sử dụng Nhập file trong profile đó');
@@ -31,7 +34,7 @@ function recoverProfile(manager,source,password,name,confirmation){
  try{
   manager.store.saveProfile({
    id,name:name.trim(),engine,group:'Recovered',startUrls:['https://example.com/'],
-   proxy:{type:'direct'},fingerprint:{mode:'native'},
+   proxy:{type:'direct'},requiresProxySetup:true,fingerprint:{mode:'native'},
    notes:'Recovered from encrypted session snapshot; review proxy, settings and login state.'
   },{recovery:true});
   created=true;
@@ -41,7 +44,7 @@ function recoverProfile(manager,source,password,name,confirmation){
   return {
    recovered:true,profileId:id,name:name.trim(),engine,
    snapshotId:result.id,files:restored.files,bytes:restored.bytes,
-   warning:'Cookie, browser password and login tokens may remain OS/device-bound. Check sign-in state.'
+   warning:'Review the proxy or explicitly confirm a direct connection before opening. Cookie, browser password and login tokens may remain OS/device-bound. Check sign-in state.'
   };
  }catch(error){
   const problems=[];
@@ -60,7 +63,7 @@ function recoverProfile(manager,source,password,name,confirmation){
   }
   try{
    rejectSymlinks(manager.store.baseDir,directory);
-   if(fs.existsSync(directory))fs.rmSync(directory,{recursive:true,force:true});
+   if(created&&fs.existsSync(directory))fs.rmSync(directory,{recursive:true,force:true});
   }catch(revert){problems.push('profile folder rollback: '+revert.message);}
   if(problems.length)throw Error('Khôi phục thất bại và hoàn tác chưa đầy đủ: '+problems.join('; '));
   throw error;

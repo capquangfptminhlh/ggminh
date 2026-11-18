@@ -120,8 +120,21 @@ function writeManagedUserJsBlock(profileDir, begin, end, body, label = 'proxy') 
   // Existing user preferences are preserved. LHM-managed prefs at the end take precedence.
   const output = kept.trimEnd() + (kept.trim() ? '\n\n' : '') + managed + '\n';
   const temp = file + '.' + process.pid + '.tmp';
+  let tempFd;
   try {
-    fs.writeFileSync(temp, output, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    // Exclusive creation establishes ownership before any cleanup is allowed.
+    tempFd = fs.openSync(temp, 'wx', 0o600);
+    fs.writeFileSync(tempFd, output, 'utf8');
+    fs.closeSync(tempFd);
+    tempFd = undefined;
+  } catch (error) {
+    if (tempFd !== undefined) {
+      try { fs.closeSync(tempFd); } catch (_) {}
+      try { fs.rmSync(temp, { force: true }); } catch (_) {}
+    }
+    throw error;
+  }
+  try {
     fs.renameSync(temp, file);
   } catch (error) {
     try { fs.rmSync(temp, { force: true }); } catch (_) {}

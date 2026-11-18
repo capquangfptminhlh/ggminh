@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { compileFlow } = require('./controlFlow');
+const {withProfileMutationLock}=require('../engine/profileProcessLock');
 
 const TYPES = new Set(['navigate','wait','wait_for','click','fill','assert_text','approval','if_exists','else','end_if','repeat','end_repeat']);
 const DENIED = new Set(['ads.google.com','accounts.google.com','payments.google.com','myaccount.google.com','admin.google.com']);
@@ -64,9 +65,11 @@ function clean(data, existing) {
 class WorkflowStore {
   constructor(root) {
     this.file = path.join(root,'automation-workflows.json');
-    const value = fs.existsSync(this.file) ? JSON.parse(fs.readFileSync(this.file,'utf8')) : [];
+    const content=fs.existsSync(this.file)?fs.readFileSync(this.file,'utf8'):null;
+    const value = content!==null ? JSON.parse(content) : [];
     if (!Array.isArray(value)) throw Error('Tệp quy trình bị lỗi');
     this.items = value;
+    this.fileDigest=content===null?null:crypto.createHash('sha256').update(content).digest('hex');
   }
   list() { return structuredClone(this.items); }
   get(id) { const value=this.items.find(w=>w.id===id);return value && structuredClone(value); }
@@ -129,14 +132,31 @@ class WorkflowStore {
       w => ({ id: w.id, name: w.name, profileId: w.profileId }));
   }
   persist() {
+    return withProfileMutationLock(path.dirname(this.file),'__lhm_workflows__',()=>{
+    let current=null;
+    try{current=crypto.createHash('sha256').update(fs.readFileSync(this.file)).digest('hex')}
+    catch(error){if(error.code!=='ENOENT')throw error}
+    if(current!==this.fileDigest)throw Error('WORKFLOW_CONFLICT: Quy trình đã thay đổi từ tiến trình khác; hãy khởi động lại ứng dụng.');
     const tmp = this.file + '.' + process.pid + '.' + crypto.randomBytes(6).toString('hex') + '.tmp';
+    let fd,created=false,committed=false;
     try {
-      fs.writeFileSync(tmp, JSON.stringify(this.items,null,2), {mode:0o600,flag:'wx'});
-      fs.renameSync(tmp,this.file);
-    } catch (error) {
-      try { fs.rmSync(tmp,{force:true}); } catch (_) {}
-      throw error;
+      const content=JSON.stringify(this.items,null,2);
+      fd=fs.openSync(tmp,'wx',0o600);created=true;
+      fs.writeFileSync(fd,content,'utf8');fs.fsyncSync(fd);fs.closeSync(fd);fd=undefined;
+      for(let attempt=0;;attempt++){
+        try{fs.renameSync(tmp,this.file);break}
+        catch(error){
+          if(process.platform!=='win32'||attempt>=2||!['EPERM','EACCES','EBUSY'].includes(error.code))throw error;
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,50);
+        }
+      }
+      committed=true;
+      this.fileDigest=crypto.createHash('sha256').update(content).digest('hex');
+    } finally {
+      if(fd!==undefined){try{fs.closeSync(fd)}catch(_){}}
+      if(created&&!committed){try{fs.unlinkSync(tmp)}catch(_){}}
     }
+    },{storeLock:true});
   }
 }
 

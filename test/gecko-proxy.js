@@ -32,6 +32,28 @@ try {
     proxy:{type:'http',host:'proxy.example',port:8080}});
   assert(firefoxArgs.includes('--profile'));
   assert(!firefoxArgs.some(x=>x.includes('proxy.example')));
+  // A stale or foreign temporary file is never ours to remove or overwrite.
+  const beforeCollision=fs.readFileSync(file,'utf8');
+  const collision=file+'.'+process.pid+'.tmp';
+  fs.writeFileSync(collision,'preserve existing temporary data');
+  assert.throws(()=>updateGeckoProxy(dir,{type:'direct'}),/EEXIST/);
+  assert.strictEqual(fs.readFileSync(file,'utf8'),beforeCollision);
+  assert.strictEqual(fs.readFileSync(collision,'utf8'),'preserve existing temporary data');
+  fs.unlinkSync(collision);
+  const writeFile=fs.writeFileSync;
+  try {
+    fs.writeFileSync=(target,...args)=>{if(typeof target==='number')throw Error('simulated preference write failure');return writeFile(target,...args)};
+    assert.throws(()=>updateGeckoProxy(dir,{type:'direct'}),/simulated preference write failure/);
+  } finally { fs.writeFileSync=writeFile; }
+  assert.strictEqual(fs.readFileSync(file,'utf8'),beforeCollision);
+  assert.strictEqual(fs.existsSync(collision),false);
+  const rename=fs.renameSync;
+  try {
+    fs.renameSync=()=>{throw Error('simulated preference rename failure')};
+    assert.throws(()=>updateGeckoProxy(dir,{type:'direct'}),/simulated preference rename failure/);
+  } finally { fs.renameSync=rename; }
+  assert.strictEqual(fs.readFileSync(file,'utf8'),beforeCollision);
+  assert.strictEqual(fs.existsSync(collision),false);
   fs.writeFileSync(file,BEGIN+'\nmissing end');
   assert.throws(()=>updateGeckoProxy(dir,{type:'direct'}),/Malformed/);
   console.log('Firefox per-profile proxy preference tests passed');

@@ -28,6 +28,14 @@ try{
  assert.strictEqual(done.files,1);
  assert.strictEqual(fresh.getProfile(orig.id).engine,'chromium');
  assert.strictEqual(fresh.getProfile(orig.id).proxy.type,'direct');
+ assert.strictEqual(fresh.getProfile(orig.id).requiresProxySetup,true,
+  'A session snapshot does not establish whether direct networking was intended');
+ const {launchReadiness}=require('../src/health/launchReadiness');
+ assert.strictEqual(launchReadiness(fresh.getProfile(orig.id)).canLaunch,false,
+  'Recovered session must not open before network configuration is explicitly reviewed');
+ const confirmed=fresh.saveProfile({...fresh.getProfile(orig.id),requiresProxySetup:false});
+ assert.strictEqual(confirmed.requiresProxySetup,false,'An explicit direct connection choice must be saved');
+ assert.strictEqual(new Store(fresh.baseDir).getProfile(orig.id).requiresProxySetup,false);
  assert.strictEqual(fs.readFileSync(path.join(fresh.baseDir,'profiles',orig.id,'Default','Cookies'),'utf8'),
   'ENCRYPTED SESSION IN BROWSER PROFILE');
  assert.strictEqual(recovery.list(orig.id).length,1);
@@ -35,12 +43,27 @@ try{
  const other=new Store(path.join(root,'failed'));
  const failing=new SessionSnapshots(other,{isBusy:()=>false});
  const restore=failing.restore;
- failing.restore=()=>{throw Error('SIMULATED_RESTORE_FAILURE')};
+ failing.restore=()=>{
+  const contender=new Store(other.baseDir);
+  assert.throws(()=>contender.saveProfile({...contender.getProfile(orig.id),name:'Competing edit'}),/PROFILE_LOCKED/);
+  throw Error('SIMULATED_RESTORE_FAILURE');
+ };
  assert.throws(()=>recoverProfile(failing,external,password,'Failed','TAO HO SO'),/SIMULATED/);
  failing.restore=restore;
  assert.strictEqual(other.getProfiles().length,0);
  assert.strictEqual(new Store(other.baseDir).getProfiles().length,0);
  assert(!fs.existsSync(path.join(other.baseDir,'profiles',orig.id)));
+ const failedCreate=new Store(path.join(root,'failed-create'));
+ const failedSnapshots=new SessionSnapshots(failedCreate,{isBusy:()=>false});
+ const originalSave=failedCreate.saveProfile.bind(failedCreate);
+ failedCreate.saveProfile=()=>{
+  const unrelated=path.join(failedCreate.baseDir,'profiles',orig.id);
+  fs.mkdirSync(unrelated,{recursive:true});fs.writeFileSync(path.join(unrelated,'marker'),'preserve');
+  throw Error('SYNTHETIC_CREATION_FAILURE');
+ };
+ assert.throws(()=>recoverProfile(failedSnapshots,external,password,'Failed','TAO HO SO'),/SYNTHETIC_CREATION_FAILURE/);
+ failedCreate.saveProfile=originalSave;
+ assert.equal(fs.readFileSync(path.join(failedCreate.baseDir,'profiles',orig.id,'marker'),'utf8'),'preserve');
  assert.strictEqual(recovery.list(orig.id).length,1,'Existing profile retained');
  console.log('v4.9 recover original profile ID from external encrypted backup, no-overwrite and rollback passed');
 }finally{fs.rmSync(root,{recursive:true,force:true});}

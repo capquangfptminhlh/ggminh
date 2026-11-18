@@ -23,9 +23,14 @@
   }
 
   function differs(activeList, currentIds) {
-    const current = new Set(currentIds);
-    return activeList.length !== current.size ||
-      activeList.some(item => !current.has(item.profileId));
+    const current = new Map(currentIds.map(item =>
+      typeof item === 'string' ? [item, null] : [item.profileId, item]));
+    return activeList.length !== current.size || activeList.some(item => {
+      if (!current.has(item.profileId)) return true;
+      const old = current.get(item.profileId);
+      return old !== null && (!!old.waitingForDialog !== !!item.waitingForDialog ||
+        !!old.stopping !== !!item.stopping);
+    });
   }
 
   function create({ readActive, getCurrentIds, onUpdate, onStatus,
