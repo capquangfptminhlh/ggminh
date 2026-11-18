@@ -40,5 +40,9 @@ for(const invalid of [null,undefined,-1,'invalid','']){
  });
  assert.equal(failed.status,'ERROR');
  assert.match(failed.reason,/CIM unavailable/);
+ const timeout=await collectProcessTreeResources([10],{
+  platform:'win32',exec:(_file,_args,_options,callback)=>callback(Object.assign(Error('timeout'),{killed:true,signal:'SIGTERM'}),'','')
+ });
+ assert.equal(timeout.failureKind,'TIMEOUT');
  console.log('Windows process resource collector scopes totals to validated process trees');
 })().catch(error=>{console.error(error);process.exitCode=1});

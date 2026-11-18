@@ -29,6 +29,7 @@ assert.doesNotThrow(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{ro
 assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10]),/Process resources unavailable/);
 assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:1,signalCode:null}]),/missing roots=1.*exited roots=1/);
 assert.throws(()=>assertCompleteProcessTrees({status:'ERROR',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:null,signalCode:null}]),/status=ERROR.*missing roots=1.*exited roots=0/);
+assert.throws(()=>assertCompleteProcessTrees({status:'ERROR',failureKind:'TIMEOUT',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:null,signalCode:null}]),/failure=TIMEOUT/);
 assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[]}],totalWorkingSetBytes:1},[10]),/Process resources unavailable/);
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX

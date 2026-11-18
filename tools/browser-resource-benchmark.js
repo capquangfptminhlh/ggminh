@@ -77,8 +77,9 @@ function assertCompleteProcessTrees(resources,roots,children=[]){
     Array.isArray(tree.processes)&&tree.processes.some(process=>process.pid===pid))).length;
    const exited=children.filter(child=>child.exitCode!=null||child.signalCode!=null).length;
    const status=['MEASURED','ERROR','NOT_SUPPORTED'].includes(resources?.status)?resources.status:'UNKNOWN';
+   const failure=['TIMEOUT','OUTPUT_LIMIT','EXIT_NONZERO','EXEC_ERROR'].includes(resources?.failureKind)?resources.failureKind:'NONE';
    throw Error('Process resources unavailable: incomplete browser process tree; status='+status+
-    '; missing roots='+missing+'; exited roots='+exited);
+    '; missing roots='+missing+'; exited roots='+exited+'; failure='+failure);
   }
 }
 

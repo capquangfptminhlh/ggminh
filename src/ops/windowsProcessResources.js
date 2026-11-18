@@ -61,7 +61,9 @@ function collectProcessTreeResources(rootPids,{platform=process.platform,exec=ex
   ['-NoProfile','-NonInteractive','-Command',command],
   {timeout:8000,windowsHide:true,maxBuffer:16*1024*1024,encoding:'utf8'},
   (error,stdout)=>{
-   if(error)return resolve({status:'ERROR',reason:String(error.message||error).slice(0,220)});
+   if(error)return resolve({status:'ERROR',failureKind:error.code==='ERR_CHILD_PROCESS_STDIO_MAXBUFFER'?'OUTPUT_LIMIT':
+    (error.killed===true?'TIMEOUT':(typeof error.code==='number'?'EXIT_NONZERO':'EXEC_ERROR')),
+    reason:String(error.message||error).slice(0,220)});
    try{
     const parsed=JSON.parse(String(stdout||'[]'));
     resolve({status:'MEASURED',...buildProcessTreeResources(
