@@ -17,7 +17,7 @@ const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
 const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
 const {withIsolationCleanup}=require('./storage-isolation-cleanup');
-const {evaluateIsolationChecks,processDiagnostics}=require('./storage-isolation-checks');
+const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled}=require('./storage-isolation-checks');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
 const outDir = path.resolve(outDirArg || 'storage-isolation');
 const engine = engineArg || 'chromium';
@@ -109,15 +109,19 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     const exited = new Promise(res => { if (!proc || proc.exitCode !== null) res(null); else proc.once('exit', (code, signal) => res({ code, signal })); });
     const stopAt = Date.now();
     const diagnostics={beforeStop:processDiagnostics(instance,profile.id)};
-    await Promise.resolve().then(() => instance.stop(profile.id)).catch(() => {});
-    diagnostics.afterStop=processDiagnostics(instance,profile.id);
-    const exit = await Promise.race([exited, sleep(20000).then(() => 'still running after 20 s')]);
-    const stopToExitMs = Date.now() - stopAt;
-    for (let i = 0; i < 40 && instance.activeProcesses.has(profile.id); i++) await sleep(250);
-    await sleep(2000);
-    diagnostics.afterWait=processDiagnostics(instance,profile.id);
-    steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit, diagnostics });
-    return r;
+    const observer=observeStopCancelled(proc);
+    try {
+      await Promise.resolve().then(() => instance.stop(profile.id)).catch(() => {});
+      diagnostics.afterStop=processDiagnostics(instance,profile.id);
+      const exit = await Promise.race([exited, sleep(20000).then(() => 'still running after 20 s')]);
+      const stopToExitMs = Date.now() - stopAt;
+      for (let i = 0; i < 40 && instance.activeProcesses.has(profile.id); i++) await sleep(250);
+      await sleep(2000);
+      diagnostics.afterWait=processDiagnostics(instance,profile.id);
+      diagnostics.stopCancelledCount=observer.count();
+      steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit, diagnostics });
+      return r;
+    } finally {observer.dispose()}
   }
   await visit(A, base + '/set?p=A', 'A writes');
   await visit(B, base + '/read', 'B reads (must be empty)');
@@ -151,10 +155,15 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     }
   } finally {
     concurrentDiagnostics.beforeStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
-    launcher.stop(A.id);launcher.stop(B.id);
-    concurrentDiagnostics.afterStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
-    for(let i=0;i<80&&(launcher.isBusy(A.id)||launcher.isBusy(B.id));i++)await sleep(250);
-    concurrentDiagnostics.afterWait={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
+    const observers={A:observeStopCancelled(launcher.activeProcesses.get(A.id)?.process),
+      B:observeStopCancelled(launcher.activeProcesses.get(B.id)?.process)};
+    try {
+      launcher.stop(A.id);launcher.stop(B.id);
+      concurrentDiagnostics.afterStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
+      for(let i=0;i<80&&(launcher.isBusy(A.id)||launcher.isBusy(B.id));i++)await sleep(250);
+      concurrentDiagnostics.afterWait={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
+      concurrentDiagnostics.stopCancelledCount={A:observers.A.count(),B:observers.B.count()};
+    } finally {observers.A.dispose();observers.B.dispose()}
   }
   if(!launcher.isBusy(A.id)&&!launcher.isBusy(B.id)){
     await visit(A,base+'/read?p=A','A after concurrent stop');

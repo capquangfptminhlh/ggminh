@@ -1,6 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {evaluateIsolationChecks,processDiagnostics}=require('../tools/storage-isolation-checks');
+const {EventEmitter}=require('node:events');
+const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled}=require('../tools/storage-isolation-checks');
 const blank={err:null,cookie:'',cookieHeader:'',localStorage:null,indexedDB:null,cacheStorage:null};
 const a={err:null,cookie:'lhm_js=A',cookieHeader:'lhm_http=A',localStorage:'A',indexedDB:'A',cacheStorage:'A'};
 const b={err:null,cookie:'lhm_js=B',cookieHeader:'lhm_http=B',localStorage:'B',indexedDB:'B',cacheStorage:'B'};
@@ -34,4 +35,14 @@ const fakeLauncher={activeProcesses:new Map([['profile',{process:running}]]),isB
 assert.deepEqual(processDiagnostics(fakeLauncher,'profile'),{tracked:true,busy:true,dialogBlocked:true,jobComplete:false,exitCode:null,signaled:false});
 fakeLauncher.activeProcesses.clear();fakeLauncher.isBusy=()=>false;
 assert.deepEqual(processDiagnostics(fakeLauncher,'profile'),{tracked:false,busy:false,dialogBlocked:null,jobComplete:null,exitCode:null,signaled:false});
+const proc=new EventEmitter();
+const observer=observeStopCancelled(proc);
+assert.equal(proc.listenerCount('stop-cancelled'),1);
+proc.emit('stop-cancelled');proc.emit('stop-cancelled');
+assert.equal(observer.count(),2);
+observer.dispose();observer.dispose();
+assert.equal(proc.listenerCount('stop-cancelled'),0);
+proc.emit('stop-cancelled');assert.equal(observer.count(),2);
+const absent=observeStopCancelled(null);
+assert.equal(absent.count(),null);absent.dispose();
 console.log('Concurrent isolation verdict preserves failed and skipped evidence: PASS');

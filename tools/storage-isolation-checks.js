@@ -41,4 +41,11 @@ function processDiagnostics(launcher,id){
   jobComplete:typeof proc?.jobComplete==='boolean'?proc.jobComplete:null,
   exitCode:Number.isInteger(proc?.exitCode)?proc.exitCode:null,signaled:!!proc?.signalCode};
 }
-module.exports={evaluateIsolationChecks,processDiagnostics};
+function observeStopCancelled(proc){
+ if(!proc||typeof proc.on!=='function'||typeof proc.removeListener!=='function')
+  return {count:()=>null,dispose:()=>{}};
+ let events=0;const onCancelled=()=>{events++};
+ proc.on('stop-cancelled',onCancelled);
+ return {count:()=>events,dispose:()=>proc.removeListener('stop-cancelled',onCancelled)};
+}
+module.exports={evaluateIsolationChecks,processDiagnostics,observeStopCancelled};
