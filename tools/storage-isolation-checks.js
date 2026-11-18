@@ -48,4 +48,10 @@ function observeStopCancelled(proc){
  proc.on('stop-cancelled',onCancelled);
  return {count:()=>events,dispose:()=>proc.removeListener('stop-cancelled',onCancelled)};
 }
-module.exports={evaluateIsolationChecks,processDiagnostics,observeStopCancelled};
+function windowStateSummary(proc){
+ const states=['unknown','dialog','clear'];
+ if(!proc||!['unobserved',...states].includes(proc.windowState)||
+    !proc.windowStateCounts||states.some(key=>!Number.isSafeInteger(proc.windowStateCounts[key])||proc.windowStateCounts[key]<0))return null;
+ return {state:proc.windowState,counts:Object.fromEntries(states.map(key=>[key,proc.windowStateCounts[key]]))};
+}
+module.exports={evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary};

@@ -37,9 +37,13 @@ $main.Add_Shown({
   await sleep(2000);
   assert.equal(proc.jobComplete,false,'Job must remain alive while a modal dialog awaits user input');
   assert.equal(proc.dialogBlocked,true,'Application must be able to tell the user a dialog needs attention');
+  assert.equal(proc.windowState,'dialog','Synthetic modal should report dialog, not unknown');
+  assert(proc.windowStateCounts.dialog>0,'Dialog transition must be counted');
   const clearedUntil=Date.now()+8000;
   while(proc.dialogBlocked&&Date.now()<clearedUntil)await sleep(50);
   assert.equal(proc.dialogBlocked,false,'Dialog state should clear when dismissed');
+  assert.equal(proc.windowState,'clear','Dismissed synthetic modal should report clear');
+  assert(proc.windowStateCounts.clear>0,'Clear transition must be counted');
   await sleep(2000);
   assert.equal(proc.jobComplete,false,'Dismissing a dialog must not automatically retry a close the user may have canceled');
   assert.equal(proc.requestJobStop(),true,'A later user stop can be requested');

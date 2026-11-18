@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {EventEmitter}=require('node:events');
-const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled}=require('../tools/storage-isolation-checks');
+const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary}=require('../tools/storage-isolation-checks');
 const blank={err:null,cookie:'',cookieHeader:'',localStorage:null,indexedDB:null,cacheStorage:null};
 const a={err:null,cookie:'lhm_js=A',cookieHeader:'lhm_http=A',localStorage:'A',indexedDB:'A',cacheStorage:'A'};
 const b={err:null,cookie:'lhm_js=B',cookieHeader:'lhm_http=B',localStorage:'B',indexedDB:'B',cacheStorage:'B'};
@@ -45,4 +45,8 @@ assert.equal(proc.listenerCount('stop-cancelled'),0);
 proc.emit('stop-cancelled');assert.equal(observer.count(),2);
 const absent=observeStopCancelled(null);
 assert.equal(absent.count(),null);absent.dispose();
+assert.deepEqual(windowStateSummary({windowState:'unknown',windowStateCounts:{unknown:2,dialog:1,clear:0}}),
+ {state:'unknown',counts:{unknown:2,dialog:1,clear:0}});
+assert.equal(windowStateSummary({windowState:'secret window text',windowStateCounts:{unknown:2}}),null);
+assert.equal(windowStateSummary(null),null);
 console.log('Concurrent isolation verdict preserves failed and skipped evidence: PASS');

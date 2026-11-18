@@ -12,6 +12,7 @@ function spawnJobSupervisor(executable,args,options={}){
   throw Error('Invalid supervisor startup timeout');
  const proc=new EventEmitter();managed.add(proc);
  proc.pid=undefined;proc.exitCode=null;proc.signalCode=null;proc.jobComplete=false;proc.dialogBlocked=false;
+ proc.windowState='unobserved';proc.windowStateCounts={unknown:0,dialog:0,clear:0};
  // Used only as a job-scoped fallback when the normal window close fails.
  proc.kill=signal=>proc.requestJobStop(signal==='SIGKILL');
  proc.resume=()=>{
@@ -68,6 +69,10 @@ function spawnJobSupervisor(executable,args,options={}){
    }
    if(state==='running'&&msg.event==='root-exited'&&Number.isInteger(msg.code)&&msg.code>=0){
     rootCode=msg.code;proc.pid=undefined;state='draining';return;
+   }
+   if((state==='running'||state==='draining')&&msg.event==='window-state'&&
+      ['unknown','dialog','clear'].includes(msg.state)){
+    proc.windowState=msg.state;proc.windowStateCounts[msg.state]++;return;
    }
    if((state==='running'||state==='draining')&&(msg.event==='dialog-blocked'||msg.event==='dialog-cleared')){
     proc.dialogBlocked=msg.event==='dialog-blocked';

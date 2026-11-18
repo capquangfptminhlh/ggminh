@@ -17,7 +17,7 @@ const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
 const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
 const {withIsolationCleanup}=require('./storage-isolation-cleanup');
-const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled}=require('./storage-isolation-checks');
+const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary}=require('./storage-isolation-checks');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
 const outDir = path.resolve(outDirArg || 'storage-isolation');
 const engine = engineArg || 'chromium';
@@ -119,6 +119,7 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
       await sleep(2000);
       diagnostics.afterWait=processDiagnostics(instance,profile.id);
       diagnostics.stopCancelledCount=observer.count();
+      diagnostics.windowState=windowStateSummary(proc);
       steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit, diagnostics });
       return r;
     } finally {observer.dispose()}
@@ -155,14 +156,15 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     }
   } finally {
     concurrentDiagnostics.beforeStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
-    const observers={A:observeStopCancelled(launcher.activeProcesses.get(A.id)?.process),
-      B:observeStopCancelled(launcher.activeProcesses.get(B.id)?.process)};
+    const processes={A:launcher.activeProcesses.get(A.id)?.process,B:launcher.activeProcesses.get(B.id)?.process};
+    const observers={A:observeStopCancelled(processes.A),B:observeStopCancelled(processes.B)};
     try {
       launcher.stop(A.id);launcher.stop(B.id);
       concurrentDiagnostics.afterStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
       for(let i=0;i<80&&(launcher.isBusy(A.id)||launcher.isBusy(B.id));i++)await sleep(250);
       concurrentDiagnostics.afterWait={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
       concurrentDiagnostics.stopCancelledCount={A:observers.A.count(),B:observers.B.count()};
+      concurrentDiagnostics.windowState={A:windowStateSummary(processes.A),B:windowStateSummary(processes.B)};
     } finally {observers.A.dispose();observers.B.dispose()}
   }
   if(!launcher.isBusy(A.id)&&!launcher.isBusy(B.id)){

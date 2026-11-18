@@ -36,27 +36,39 @@ public static class LhmJobProbe {
    long[] ids=new long[count];for(int i=0;i<count;i++)ids[i]=Marshal.ReadIntPtr(buffer,8+i*IntPtr.Size).ToInt64();return ids;
   }finally{Marshal.FreeHGlobal(buffer);}
  }
- public static bool HasBlockingDialog(IntPtr job){
+ // 0=clear, 1=dialog, 2=unknown. Unknown remains blocking.
+ public static int BlockingWindowState(IntPtr job){
   foreach(long id in ProcessIds(job)){
    System.Diagnostics.Process p=null;
    try{
     p=System.Diagnostics.Process.GetProcessById((int)id);
     bool member=false;
-    if(!IsProcessInJob(p.Handle,job,out member))return true;
+    if(!IsProcessInJob(p.Handle,job,out member))return 2;
     if(!member)continue;
     IntPtr window=p.MainWindowHandle;
     if(window==IntPtr.Zero||!IsWindowVisible(window)||IsWindowEnabled(window))continue;
     IntPtr popup=GetWindow(window,6); // GW_ENABLEDPOPUP
-    if(popup!=IntPtr.Zero&&popup!=window&&IsWindowVisible(popup)&&IsWindowEnabled(popup))return true;
+    if(popup!=IntPtr.Zero&&popup!=window&&IsWindowVisible(popup)&&IsWindowEnabled(popup))return 1;
    }catch(ArgumentException){ /* Process exited during enumeration. */ }
-   catch{ return true; } // Unknown window state must not force a shutdown.
+   catch{ return 2; } // Unknown window state must not force a shutdown.
    finally{if(p!=null)p.Dispose();}
   }
-  return false;
+  return 0;
  }
 }
 '@
  function SendSupervisorEvent([string]$value){try{[Console]::Out.WriteLine($value);[Console]::Out.Flush()}catch{}}
+ $script:lastWindowState=-1
+ function GetWindowState([IntPtr]$jobHandle){
+  $value=[LhmJobProbe]::BlockingWindowState($jobHandle)
+  if($value -ne $script:lastWindowState){
+   if($value -eq 0){SendSupervisorEvent '{"event":"window-state","state":"clear"}'}
+   elseif($value -eq 1){SendSupervisorEvent '{"event":"window-state","state":"dialog"}'}
+   else{SendSupervisorEvent '{"event":"window-state","state":"unknown"}'}
+   $script:lastWindowState=$value
+  }
+  return $value
+ }
  [Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
  $line=[Console]::In.ReadLine()
  if(-not $line -or $line.Length -gt 65536){throw 'Invalid supervisor request'}
@@ -116,7 +128,7 @@ public static class LhmJobProbe {
     if($null -eq $instruction){$inputTask=$null}else{$inputTask=[LhmJobProbe]::ReadCommand()}
    }
    if($stopDeadline -and [DateTime]::UtcNow -ge $nextClose){
-    if([LhmJobProbe]::HasBlockingDialog($job)){
+    if((GetWindowState $job) -ne 0){
      # Let the person answer the browser dialog before attempting to close.
      if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
      $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
@@ -134,7 +146,7 @@ public static class LhmJobProbe {
     if($stopDeadline){$nextClose=[DateTime]::UtcNow.AddMilliseconds(500)}
    }
    if($stopDeadline -and [DateTime]::UtcNow -ge $stopDeadline -and [LhmJobProbe]::Active($job) -gt 0){
-    if([LhmJobProbe]::HasBlockingDialog($job)){
+    if((GetWindowState $job) -ne 0){
      if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
      $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
     }else{

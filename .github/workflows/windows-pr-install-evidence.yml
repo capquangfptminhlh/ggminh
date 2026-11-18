@@ -1,0 +1,144 @@
+name: Windows PR install evidence (synthetic, no release)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lhm-pr-install-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  installed-pr:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.ref == 'main'
+    runs-on: windows-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Test provenance validator
+        run: node test/pr-install-provenance.js
+      - name: Identify exact PR and baseline builds
+        shell: pwsh
+        timeout-minutes: 35
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          Set-StrictMode -Version Latest
+          $event=Get-Content -Raw -LiteralPath $env:GITHUB_EVENT_PATH | ConvertFrom-Json
+          $pr=$event.pull_request
+          $head=[string]$pr.head.sha
+          $base=[string]$pr.base.sha
+          $merge=[string]$env:GITHUB_SHA
+          $baselineSha='0ac746245f7de38ee79e41b05b7b96f85f4c457f'
+          $baselineRun='43921502417'
+          $parents=@(git show -s --format=%P $merge)
+          if($LASTEXITCODE -ne 0 -or $parents.Count -ne 1){throw 'Cannot read merge parents'}
+          $parents=@($parents[0].Trim().Split(' ',[StringSplitOptions]::RemoveEmptyEntries))
+          git merge-base --is-ancestor $baselineSha $base
+          $ancestor=($LASTEXITCODE -eq 0)
+          $baseline=gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$baselineRun" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0){throw 'Baseline run unavailable'}
+          $deadline=[DateTime]::UtcNow.AddMinutes(30)
+          $candidate=$null
+          while([DateTime]::UtcNow -lt $deadline -and $null -eq $candidate) {
+            $response=gh api "repos/$env:GITHUB_REPOSITORY/actions/workflows/windows-exe.yml/runs?event=pull_request&head_sha=$head&per_page=100" | ConvertFrom-Json
+            if($LASTEXITCODE -ne 0){throw 'Cannot inspect candidate build runs'}
+            $candidate=@($response.workflow_runs | Where-Object {
+              $_.status -eq 'completed' -and $_.conclusion -eq 'success' -and
+              @($_.pull_requests | Where-Object { $_.number -eq $pr.number -and $_.base.sha -eq $base -and $_.head.sha -eq $head }).Count -gt 0
+            } | Select-Object -First 1)
+            if($candidate.Count -eq 0){$candidate=$null; Start-Sleep -Seconds 20}
+            else {$candidate=$candidate[0]}
+          }
+          if($null -eq $candidate){throw 'Matching successful candidate build unavailable'}
+          $provenance=[ordered]@{repository=$env:GITHUB_REPOSITORY;headRepository=[string]$pr.head.repo.full_name;
+            number=[int]$pr.number;merge=$merge;base=$base;head=$head;parents=$parents;
+            baselineSha=$baselineSha;baselineAncestor=$ancestor;candidate=$candidate;baseline=$baseline}
+          $inputFile=Join-Path $env:RUNNER_TEMP 'lhm-pr-provenance.json'
+          $provenance | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 -LiteralPath $inputFile
+          node tools/pr-install-provenance.js $inputFile
+          if($LASTEXITCODE -ne 0){throw 'PR provenance invalid'}
+          "LHM_PR_CANDIDATE_RUN=$($candidate.id)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "LHM_PR_BASELINE_RUN=$baselineRun" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "LHM_PR_BASELINE_SHA=$baselineSha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Download and verify exact installer artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'lhm-pr-install-inputs'
+          foreach($name in @('candidate-installer','candidate-evidence','baseline-installer','baseline-evidence')) {
+            New-Item -ItemType Directory -Path (Join-Path $root $name) -Force | Out-Null
+          }
+          foreach($entry in @(
+            @($env:LHM_PR_CANDIDATE_RUN,'LHM-Ads-Browser-Windows-x64','candidate-installer'),
+            @($env:LHM_PR_CANDIDATE_RUN,'LHM-Release-Evidence-Windows','candidate-evidence'),
+            @($env:LHM_PR_BASELINE_RUN,'LHM-Ads-Browser-Windows-x64','baseline-installer'),
+            @($env:LHM_PR_BASELINE_RUN,'LHM-Release-Evidence-Windows','baseline-evidence')
+          )) {
+            gh run download $entry[0] --repo $env:GITHUB_REPOSITORY --name $entry[1] --dir (Join-Path $root $entry[2])
+            if($LASTEXITCODE -ne 0){throw 'Required build artifact missing or expired'}
+          }
+          function OneFile([string]$Directory,[string]$Pattern) {
+            $files=@(Get-ChildItem -LiteralPath (Join-Path $root $Directory) -File -Recurse -Filter $Pattern)
+            if($files.Count -ne 1){throw 'Expected exactly one artifact file'}
+            return $files[0].FullName
+          }
+          $ci=OneFile 'candidate-installer' '*.exe'
+          $ce=OneFile 'candidate-evidence' 'release-evidence.json'
+          $bi=OneFile 'baseline-installer' '*.exe'
+          $be=OneFile 'baseline-evidence' 'release-evidence.json'
+          node tools/windows-clean-install-evidence.js verify-build --installer $ci --evidence $ce --commit $env:GITHUB_SHA --run-id $env:LHM_PR_CANDIDATE_RUN
+          if($LASTEXITCODE -ne 0){throw 'Candidate artifact identity mismatch'}
+          node tools/windows-clean-install-evidence.js verify-build --installer $bi --evidence $be --commit $env:LHM_PR_BASELINE_SHA --run-id $env:LHM_PR_BASELINE_RUN
+          if($LASTEXITCODE -ne 0){throw 'Baseline artifact identity mismatch'}
+          "LHM_PR_CI=$ci" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "LHM_PR_CE=$ce" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "LHM_PR_BI=$bi" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "LHM_PR_BE=$be" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Exercise installed builds with synthetic isolated data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $output=Join-Path $env:RUNNER_TEMP 'lhm-pr-install-execution'
+          $version=node -p "require('./package.json').version"
+          if($LASTEXITCODE -ne 0){throw 'Cannot read candidate version'}
+          & .\tools\run-windows-clean-install-acceptance.ps1 -BaselineInstaller $env:LHM_PR_BI -CandidateInstaller $env:LHM_PR_CI -BaselineEvidence $env:LHM_PR_BE -CandidateEvidence $env:LHM_PR_CE -OutputDirectory $output -ExpectedCandidateVersion $version
+          if($LASTEXITCODE -ne 0){throw 'Synthetic install acceptance failed'}
+          $final=Join-Path $env:RUNNER_TEMP 'lhm-pr-install-evidence.json'
+          node tools/windows-clean-install-evidence.js build --measurement (Join-Path $output 'measurement.json') --baseline-evidence $env:LHM_PR_BE --candidate-evidence $env:LHM_PR_CE --out $final
+          if($LASTEXITCODE -ne 0){throw 'Evidence validation failed'}
+          $report=Get-Content -Raw -LiteralPath $final | ConvertFrom-Json
+          if($report.outcome -ne 'AUTOMATED_HOSTED_RUNNER_EVIDENCE_ONLY' -or
+             $report.limitations.notOwnerReceipt -ne $true -or
+             $report.limitations.notCleanMachineManualGate -ne $true -or
+             $report.limitations.notCamoufoxEngineAcceptance -ne $true -or
+             $report.limitations.notCommercialApproval -ne $true){throw 'Unsafe evidence limitations'}
+      - name: Upload evidence only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LHM-Windows-PR-Install-Evidence
+          path: ${{ runner.temp }}/lhm-pr-install-evidence.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop synthetic processes and remove temporary data
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $installRoot=Join-Path $env:RUNNER_TEMP 'lhm-pr-install-execution\installed'
+          & .\tools\stop-windows-install-processes.ps1 -InstallRoot $installRoot
+          foreach($name in @('lhm-pr-install-inputs','lhm-pr-install-execution')) {
+            $runnerRoot=[IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\')
+            $target=[IO.Path]::GetFullPath((Join-Path $runnerRoot $name))
+            if(-not $target.StartsWith($runnerRoot+'\',[StringComparison]::OrdinalIgnoreCase)) {throw 'Cleanup path escapes runner temp'}
+            if(Test-Path -LiteralPath $target){Remove-Item -LiteralPath $target -Recurse -Force}
+          }
