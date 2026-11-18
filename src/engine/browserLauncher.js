@@ -338,6 +338,10 @@ class BrowserLauncher {
       if(!spawned&&settleStart)settleStart(Error('Trình duyệt thoát trước khi khởi động hoàn tất'));
     };
     proc.once('exit',onExited);
+    proc.on('stop-cancelled',()=>{
+      const current=this.activeProcesses.get(profile.id);
+      if(current?.process===proc)current.stopping=false;
+    });
     proc.on('error',error=>{
       // After spawn an error does not prove the browser has exited.
       if(!spawned&&!exited)onExited(null);
@@ -446,6 +450,7 @@ class BrowserLauncher {
         pid: info.pid,
         startedAt: info.startedAt,
         stopping: !!info.stopping,
+        waitingForDialog: !!info.process?.dialogBlocked,
         wsEndpoint: info.wsEndpoint
       });
     }

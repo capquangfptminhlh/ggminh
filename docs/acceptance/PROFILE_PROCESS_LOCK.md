@@ -4,6 +4,7 @@
 
 Các phép thử dùng hồ sơ tạm và trang loopback trên máy Windows này:
 
+- Firefox từng mở hộp xác nhận ngôn ngữ làm cửa sổ chính không nhận lệnh đóng. Cơ chế dừng giữ tiến trình và khóa khi phát hiện hộp thoại đang chờ; danh sách hồ sơ báo cần xử lý hộp thoại. Khi hộp thoại biến mất, yêu cầu dừng được hủy để tôn trọng trường hợp người dùng bấm Hủy; người dùng có thể bấm Dừng lại. Kiểm thử cửa sổ giả lập xác nhận không dừng cưỡng bức trong thời gian chờ. Lỗi tải trang/IndexedDB không đều quan sát trước đó chưa được xác định nguyên nhân.
 - Chromium và Firefox thật: chặn hai tiến trình mở cùng một hồ sơ; đóng và mở lại; dừng cưỡng bức ứng dụng khi trình duyệt còn chạy, giữ khóa và phục hồi sau khi trình duyệt đóng.
 - Cách ly dữ liệu A/B, chạy đồng thời, khởi động lại và sao lưu/khôi phục cấu hình: đã có lần chạy đạt trên cả hai engine. Chromium gặp lỗi CacheStorage ở hai lượt với đường dẫn dài; đường dẫn ngắn đã đạt. Chưa xác định nguyên nhân duy nhất.
 - Proxy HTTP có xác thực trên loopback: hai trình duyệt đi qua gateway thử nghiệm. Đây không phải phép đo rò rỉ mạng ngoài.

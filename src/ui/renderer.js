@@ -955,7 +955,7 @@ function renderProfiles() {
       <td><div class="profile-name-box"><span class="p-name">${escapeHtml(profile.name)}</span> ${adBadge}<span class="p-group">${escapeHtml(profile.group || 'Default')}</span><span class="lhm-profile-tags">${(profile.tags || []).map(tag => '<span class="lhm-profile-tag">' + escapeHtml(tag) + '</span>').join('')}</span></div></td>
       <td data-table-col="proxy"><div class="proxy-badge"><span class="proxy-primary">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Trực tiếp' : escapeHtml(String(profile.proxy.type || '').toUpperCase())}</span><span class="proxy-address">${profile.proxy?.type === 'direct' || !profile.proxy?.host ? 'Không sử dụng proxy' : escapeHtml(String(profile.proxy.host || '')) + ':' + escapeHtml(String(profile.proxy.port || ''))}</span></div></td>
       <td data-table-col="engine"><div class="browser-info"><span class="browser-engine">${profile.engine_type==='camoufox'?'Camoufox / Gecko':profile.engine==='gecko'?'Firefox / Gecko':'Chromium'}</span><span class="browser-meta">${escapeHtml(identityMetaText(profile))}</span><span class="lhm-profile-ok-badge" title="Vân tay đã được cách ly &amp; tối ưu cho Ads">🛡️ Hồ sơ đã cách ly</span></div></td>
-      <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${isRunning ? 'Đang chạy' : 'Đã dừng'}</span><div class="lhm-status-subtext">🛡️ Đã cách ly an toàn</div></td>
+      <td data-table-col="status"><span class="status-pill ${isRunning ? 'running' : 'stopped'}">${activeInfo?.waitingForDialog ? 'Chờ hộp thoại' : isRunning ? 'Đang chạy' : 'Đã dừng'}</span><div class="lhm-status-subtext">${activeInfo?.waitingForDialog ? 'Hãy trả lời hộp thoại trong trình duyệt' : '🛡️ Đã cách ly an toàn'}</div></td>
       <td><div class="actions-cell">
         <button type="button" class="btn btn-sm ${isRunning ? 'btn-secondary' : 'btn-primary'} btn-toggle-run" data-id="${escapeHtml(profile.id)}"><span data-lhm-icon="${isRunning ? 'square' : 'play'}"></span>${isRunning ? 'Dừng' : 'Mở'}</button>
         <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="${escapeHtml(profile.id)}" title="Sửa hồ sơ"><span data-lhm-icon="edit"></span>Sửa</button>
@@ -1073,7 +1073,7 @@ function startStatusPoller() {
   if (profileStatusPoller) return;
   profileStatusPoller = window.LHMProfileStatusPoller.create({
     readActive: () => window.api.getActiveBrowsers(),
-    getCurrentIds: () => [...activeBrowserMap.keys()],
+    getCurrentIds: () => [...activeBrowserMap.values()],
     onUpdate: (activeList) => {
       activeBrowserMap.clear();
       activeList.forEach(item => activeBrowserMap.set(item.profileId, item));

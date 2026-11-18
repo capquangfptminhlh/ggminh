@@ -19,6 +19,8 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert.throws(()=>parseActiveList(rows('x','x')),/duplicate/);
   assert.equal(differs(rows('x','y'),['y','x']),false);
   assert.equal(differs(rows('x','y'),['x','z']),true);
+  assert.equal(differs([{profileId:'x',waitingForDialog:true}],[{profileId:'x',waitingForDialog:false}]),true);
+  assert.equal(differs([{profileId:'x',waitingForDialog:true}],[{profileId:'x',waitingForDialog:true}]),false);
 
   let active=['a'],updates=0,reads=0;
   let current=deferred();

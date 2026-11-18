@@ -22,6 +22,9 @@ public static class LhmJobProbe {
  [DllImport("kernel32.dll",SetLastError=true)] public static extern bool TerminateProcess(IntPtr process,uint code);
  [DllImport("kernel32.dll",SetLastError=true)] public static extern bool TerminateJobObject(IntPtr job,uint code);
  [DllImport("kernel32.dll",SetLastError=true)] public static extern bool CloseHandle(IntPtr handle);
+ [DllImport("user32.dll")] public static extern bool IsWindowEnabled(IntPtr window);
+ [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
+ [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr window,uint command);
  [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] public static extern bool CreateProcess(string app,StringBuilder command,IntPtr processAttributes,IntPtr threadAttributes,bool inherit,uint flags,IntPtr env,string cwd,ref STARTUPINFO startup,out PROCESS_INFORMATION process);
  public static void Check(bool ok,string operation){if(!ok)throw new Win32Exception(Marshal.GetLastWin32Error(),operation);}
  public static System.Threading.Tasks.Task<string> ReadCommand(){return System.Threading.Tasks.Task.Run(()=>Console.In.ReadLine());}
@@ -32,6 +35,24 @@ public static class LhmJobProbe {
    int count=Marshal.ReadInt32(buffer,4);if(count<0||count>(size-8)/IntPtr.Size)throw new InvalidOperationException("Invalid job process count");
    long[] ids=new long[count];for(int i=0;i<count;i++)ids[i]=Marshal.ReadIntPtr(buffer,8+i*IntPtr.Size).ToInt64();return ids;
   }finally{Marshal.FreeHGlobal(buffer);}
+ }
+ public static bool HasBlockingDialog(IntPtr job){
+  foreach(long id in ProcessIds(job)){
+   System.Diagnostics.Process p=null;
+   try{
+    p=System.Diagnostics.Process.GetProcessById((int)id);
+    bool member=false;
+    if(!IsProcessInJob(p.Handle,job,out member))return true;
+    if(!member)continue;
+    IntPtr window=p.MainWindowHandle;
+    if(window==IntPtr.Zero||!IsWindowVisible(window)||IsWindowEnabled(window))continue;
+    IntPtr popup=GetWindow(window,6); // GW_ENABLEDPOPUP
+    if(popup!=IntPtr.Zero&&popup!=window&&IsWindowVisible(popup)&&IsWindowEnabled(popup))return true;
+   }catch(ArgumentException){ /* Process exited during enumeration. */ }
+   catch{ return true; } // Unknown window state must not force a shutdown.
+   finally{if(p!=null)p.Dispose();}
+  }
+  return false;
  }
 }
 '@
@@ -81,7 +102,7 @@ public static class LhmJobProbe {
   $resumeAuthorized=$true
   [LhmJobProbe]::Check(([LhmJobProbe]::ResumeThread($pi.hThread) -ne [uint32]::MaxValue),'Resume process');$resumed=$true
   SendSupervisorEvent '{"event":"resumed"}'
-  $reported=$false;$stopDeadline=$null;$nextClose=$null;$inputTask=[LhmJobProbe]::ReadCommand()
+  $reported=$false;$dialogReported=$false;$stopDeadline=$null;$nextClose=$null;$inputTask=[LhmJobProbe]::ReadCommand()
   while($true){
    if($inputTask -and $inputTask.IsCompleted){
     $instruction=$inputTask.GetAwaiter().GetResult()
@@ -95,18 +116,31 @@ public static class LhmJobProbe {
     if($null -eq $instruction){$inputTask=$null}else{$inputTask=[LhmJobProbe]::ReadCommand()}
    }
    if($stopDeadline -and [DateTime]::UtcNow -ge $nextClose){
-    foreach($memberId in @([LhmJobProbe]::ProcessIds($job))){
+    if([LhmJobProbe]::HasBlockingDialog($job)){
+     # Let the person answer the browser dialog before attempting to close.
+     if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
+     $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
+    }elseif($dialogReported){
+     # The person may have canceled a close confirmation. Do not retry it.
+     SendSupervisorEvent '{"event":"dialog-cleared"}';$dialogReported=$false
+     $stopDeadline=$null;$nextClose=$null
+    }else{foreach($memberId in @([LhmJobProbe]::ProcessIds($job))){
      $member=$null
      try{
       $member=[Diagnostics.Process]::GetProcessById([int]$memberId);$inJob=$false
       if([LhmJobProbe]::IsProcessInJob($member.Handle,$job,[ref]$inJob) -and $inJob){[void]$member.CloseMainWindow()}
      }catch{}finally{if($member){$member.Dispose()}}
-    }
-    $nextClose=[DateTime]::UtcNow.AddMilliseconds(500)
+    }}
+    if($stopDeadline){$nextClose=[DateTime]::UtcNow.AddMilliseconds(500)}
    }
    if($stopDeadline -and [DateTime]::UtcNow -ge $stopDeadline -and [LhmJobProbe]::Active($job) -gt 0){
-    [LhmJobProbe]::Check([LhmJobProbe]::TerminateJobObject($job,1),'Stop remaining job processes')
-    $stopDeadline=$null
+    if([LhmJobProbe]::HasBlockingDialog($job)){
+     if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
+     $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
+    }else{
+     [LhmJobProbe]::Check([LhmJobProbe]::TerminateJobObject($job,1),'Stop remaining job processes')
+     $stopDeadline=$null
+    }
    }
    if(-not $reported -and [LhmJobProbe]::WaitForSingleObject($pi.hProcess,0) -eq 0){
     [uint32]$code=0;[LhmJobProbe]::Check([LhmJobProbe]::GetExitCodeProcess($pi.hProcess,[ref]$code),'Get exit code')
