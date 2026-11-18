@@ -26,6 +26,8 @@ function fixture(){
  send({event:'window-state',state:'clear'});send({event:'dialog-cleared'});await tick();
  assert.equal(proc.windowState,'clear');assert.equal(proc.dialogBlocked,false);assert.equal(cancelled,1);
  assert.deepEqual(proc.windowStateCounts,{unknown:1,dialog:1,clear:1});
+ send({event:'close-summary',attempts:3,sent:1,notSent:2,errors:0,forced:true});await tick();
+ assert.deepEqual(proc.closeSummary,{attempts:3,sent:1,notSent:2,errors:0,forced:true});
  send({event:'root-exited',code:0});send({event:'empty'});await tick();assert.equal(proc.jobComplete,true);
  const legacy=fixture();let legacyFailure='';legacy.proc.on('error',e=>legacyFailure=e.message);
  legacy.send({event:'started',pid:1234});await tick();const legacyResumed=legacy.proc.resume();
@@ -39,5 +41,9 @@ function fixture(){
  invalid.send({event:'window-state',state:'sensitive-window-title'});await tick();
  assert.equal(failure,'Browser job supervisor returned invalid state');
  assert(!JSON.stringify(invalid.proc.windowStateCounts).includes('sensitive'));
+ const malformed=fixture();let malformedFailure='';malformed.proc.on('error',e=>malformedFailure=e.message);
+ malformed.send({event:'started',pid:1234});await tick();const r=malformed.proc.resume();malformed.send({event:'resumed'});await r;
+ malformed.send({event:'close-summary',attempts:1,sent:2,notSent:0,errors:0,forced:true});await tick();
+ assert.equal(malformedFailure,'Browser job supervisor returned invalid state');
  console.log('Window state protocol validates enums without changing dialog stop handling: PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -17,7 +17,7 @@ const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
 const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
 const {withIsolationCleanup}=require('./storage-isolation-cleanup');
-const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary}=require('./storage-isolation-checks');
+const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary,closeSummary}=require('./storage-isolation-checks');
 const {prepareSyntheticFirefoxProfile,prepareFixtureRoot,writeFixtureReport}=require('./synthetic-firefox-fixture');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
 const outDir = path.resolve(outDirArg || 'storage-isolation');
@@ -124,6 +124,7 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
       diagnostics.afterWait=processDiagnostics(instance,profile.id);
       diagnostics.stopCancelledCount=observer.count();
       diagnostics.windowState=windowStateSummary(proc);
+      diagnostics.closeSummary=closeSummary(proc);
       steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit, diagnostics });
       return r;
     } finally {observer.dispose()}
@@ -169,6 +170,7 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
       concurrentDiagnostics.afterWait={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
       concurrentDiagnostics.stopCancelledCount={A:observers.A.count(),B:observers.B.count()};
       concurrentDiagnostics.windowState={A:windowStateSummary(processes.A),B:windowStateSummary(processes.B)};
+      concurrentDiagnostics.closeSummary={A:closeSummary(processes.A),B:closeSummary(processes.B)};
     } finally {observers.A.dispose();observers.B.dispose()}
   }
   if(!launcher.isBusy(A.id)&&!launcher.isBusy(B.id)){

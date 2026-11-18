@@ -54,4 +54,10 @@ function windowStateSummary(proc){
     !proc.windowStateCounts||states.some(key=>!Number.isSafeInteger(proc.windowStateCounts[key])||proc.windowStateCounts[key]<0))return null;
  return {state:proc.windowState,counts:Object.fromEntries(states.map(key=>[key,proc.windowStateCounts[key]]))};
 }
-module.exports={evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary};
+function closeSummary(proc){
+ const s=proc?.closeSummary;
+ if(!s||!['attempts','sent','notSent','errors'].every(key=>Number.isSafeInteger(s[key])&&s[key]>=0&&s[key]<=1000000)||
+    s.attempts!==s.sent+s.notSent+s.errors||typeof s.forced!=='boolean')return null;
+ return {attempts:s.attempts,sent:s.sent,notSent:s.notSent,errors:s.errors,forced:s.forced};
+}
+module.exports={evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary,closeSummary};

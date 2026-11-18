@@ -13,6 +13,7 @@ function spawnJobSupervisor(executable,args,options={}){
  const proc=new EventEmitter();managed.add(proc);
  proc.pid=undefined;proc.exitCode=null;proc.signalCode=null;proc.jobComplete=false;proc.dialogBlocked=false;
  proc.windowState='unobserved';proc.windowStateCounts={unknown:0,dialog:0,clear:0};
+ proc.closeSummary=null;
  // Used only as a job-scoped fallback when the normal window close fails.
  proc.kill=signal=>proc.requestJobStop(signal==='SIGKILL');
  proc.resume=()=>{
@@ -73,6 +74,11 @@ function spawnJobSupervisor(executable,args,options={}){
    if((state==='running'||state==='draining')&&msg.event==='window-state'&&
       ['unknown','dialog','clear'].includes(msg.state)){
     proc.windowState=msg.state;proc.windowStateCounts[msg.state]++;return;
+   }
+   if((state==='running'||state==='draining')&&msg.event==='close-summary'&&
+      ['attempts','sent','notSent','errors'].every(key=>Number.isSafeInteger(msg[key])&&msg[key]>=0&&msg[key]<=1000000)&&
+      msg.attempts===msg.sent+msg.notSent+msg.errors&&typeof msg.forced==='boolean'){
+    proc.closeSummary={attempts:msg.attempts,sent:msg.sent,notSent:msg.notSent,errors:msg.errors,forced:msg.forced};return;
    }
    if((state==='running'||state==='draining')&&(msg.event==='dialog-blocked'||msg.event==='dialog-cleared')){
     proc.dialogBlocked=msg.event==='dialog-blocked';

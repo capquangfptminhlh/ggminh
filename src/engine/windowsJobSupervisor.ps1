@@ -115,10 +115,15 @@ public static class LhmJobProbe {
   [LhmJobProbe]::Check(([LhmJobProbe]::ResumeThread($pi.hThread) -ne [uint32]::MaxValue),'Resume process');$resumed=$true
   SendSupervisorEvent '{"event":"resumed"}'
   $reported=$false;$dialogReported=$false;$stopDeadline=$null;$nextClose=$null;$inputTask=[LhmJobProbe]::ReadCommand()
+  $closeAttempts=0;$closeSent=0;$closeNotSent=0;$closeErrors=0;$closeForced=$false
+  function SendCloseSummary {
+   SendSupervisorEvent (([pscustomobject]@{event='close-summary';attempts=$closeAttempts;sent=$closeSent;notSent=$closeNotSent;errors=$closeErrors;forced=$closeForced}|ConvertTo-Json -Compress))
+  }
   while($true){
    if($inputTask -and $inputTask.IsCompleted){
     $instruction=$inputTask.GetAwaiter().GetResult()
     if($instruction -eq 'FORCE'){
+     $closeForced=$true
      [LhmJobProbe]::Check([LhmJobProbe]::TerminateJobObject($job,1),'Force stop job processes')
     }
     if($instruction -eq 'STOP' -and -not $stopDeadline){
@@ -138,10 +143,11 @@ public static class LhmJobProbe {
      $stopDeadline=$null;$nextClose=$null
     }else{foreach($memberId in @([LhmJobProbe]::ProcessIds($job))){
      $member=$null
+     $closeAttempts++
      try{
       $member=[Diagnostics.Process]::GetProcessById([int]$memberId);$inJob=$false
-      if([LhmJobProbe]::IsProcessInJob($member.Handle,$job,[ref]$inJob) -and $inJob){[void]$member.CloseMainWindow()}
-     }catch{}finally{if($member){$member.Dispose()}}
+      if([LhmJobProbe]::IsProcessInJob($member.Handle,$job,[ref]$inJob) -and $inJob -and $member.CloseMainWindow()){$closeSent++}else{$closeNotSent++}
+     }catch{$closeErrors++}finally{if($member){$member.Dispose()}}
     }}
     if($stopDeadline){$nextClose=[DateTime]::UtcNow.AddMilliseconds(500)}
    }
@@ -150,6 +156,7 @@ public static class LhmJobProbe {
      if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
      $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
     }else{
+     $closeForced=$true
      [LhmJobProbe]::Check([LhmJobProbe]::TerminateJobObject($job,1),'Stop remaining job processes')
      $stopDeadline=$null
     }
@@ -159,6 +166,7 @@ public static class LhmJobProbe {
     SendSupervisorEvent (([pscustomobject]@{event='root-exited';code=$code}|ConvertTo-Json -Compress));$reported=$true
    }
    if($reported -and [LhmJobProbe]::Active($job) -eq 0){
+    SendCloseSummary
     if($proofPath){
      $value=[pscustomobject]@{jobName=$request.job;token=$request.evidence.token;active=0}|ConvertTo-Json -Compress
      $bytes=[Text.UTF8Encoding]::new($false).GetBytes($value)
