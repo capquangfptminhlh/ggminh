@@ -76,8 +76,14 @@ assert.deepEqual(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrom
  '--samples','12','--output','C:\\evidence\\report.json'],{platform:'win32'}),{
  engine:'chromium',binary:'C:\\Browser\\chrome.exe',appArtifact:'C:\\LHM\\app.asar',
  workload:'heavy',concurrency:5,samples:12,output:'C:\\evidence\\report.json',
- signedReleaseDir:null,publisherKeyDir:null,identityFile:null,durationMs:3000
+ signedReleaseDir:null,publisherKeyDir:null,identityFile:null,durationMs:3000,readyTimeoutMs:30000
 });
+assert.equal(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--ready-timeout-ms','90000'],{platform:'win32'}).readyTimeoutMs,90000);
+assert.throws(()=>parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--ready-timeout-ms','999999'],{platform:'win32'}),/readiness timeout/i);
 assert.throws(()=>parseArgs(['--engine','camoufox','--binary','C:\\bad.exe',
  '--app-artifact','C:\\app.asar','--output','C:\\out.json'],{platform:'win32'}),
  /signed-release-dir/);

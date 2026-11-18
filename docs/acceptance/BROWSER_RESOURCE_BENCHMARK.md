@@ -49,6 +49,9 @@ Chạy từng engine với `light`, `medium`, `heavy` và concurrency `1`, `3`, 
 Runner dừng, đóng toàn bộ process do nó tạo và xóa profile tạm sau mỗi sample.
 Runner không áp dụng ngưỡng RAM trống bắt buộc. Khi máy thiếu RAM, kết quả có
 thể chịu ảnh hưởng bởi tải hệ thống; chạy thất bại không được tính là kết quả đạt.
+Thời hạn chờ mặc định mỗi lượt là 30 giây; có thể dùng `--ready-timeout-ms`
+trong khoảng 1000–120000 để đo tải khởi động chậm, và cần ghi lại tham số này
+cùng kết quả. Báo cáo thời gian mở vẫn bao gồm toàn bộ thời gian chờ thực tế.
 Báo cáo không xác nhận mức dự phòng RAM và do đó không đáp ứng điều kiện dự phòng
 20% hiện có của bộ kiểm tra phát hành Camoufox.
 

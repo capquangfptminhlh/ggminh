@@ -86,7 +86,7 @@ function parseArgs(argv,{platform=process.platform}={}){
  if(platform!=='win32')throw Error('Real browser resource benchmark is Windows-only');
  const out={engine:null,binary:null,appArtifact:null,workload:'light',concurrency:1,
   samples:10,output:null,signedReleaseDir:null,publisherKeyDir:null,
-  identityFile:null,durationMs:3000};
+  identityFile:null,durationMs:3000,readyTimeoutMs:30000};
  for(let i=0;i<argv.length;i++){
   const arg=argv[i];
   if(arg==='--engine')out.engine=valueAfter(argv,i,'engine'),i++;
@@ -100,6 +100,7 @@ function parseArgs(argv,{platform=process.platform}={}){
   else if(arg==='--publisher-key-dir')out.publisherKeyDir=valueAfter(argv,i,'publisher-key-dir'),i++;
   else if(arg==='--identity-file')out.identityFile=valueAfter(argv,i,'identity-file'),i++;
   else if(arg==='--duration-ms')out.durationMs=Number(valueAfter(argv,i,'duration-ms')),i++;
+  else if(arg==='--ready-timeout-ms')out.readyTimeoutMs=Number(valueAfter(argv,i,'ready-timeout-ms')),i++;
   else throw Error('Unsupported argument: '+arg);
  }
  if(!ENGINES.has(out.engine))throw Error('Engine must be chromium, firefox or camoufox');
@@ -109,6 +110,8 @@ function parseArgs(argv,{platform=process.platform}={}){
   throw Error('Samples must be 10–30');
  if(!Number.isInteger(out.durationMs)||out.durationMs<1000||out.durationMs>10000)
   throw Error('Duration must be 1000–10000 ms');
+ if(!Number.isInteger(out.readyTimeoutMs)||out.readyTimeoutMs<1000||out.readyTimeoutMs>120000)
+  throw Error('Readiness timeout must be 1000–120000 ms');
  if(!out.appArtifact||!absoluteFor(out.appArtifact,platform))
   throw Error('An absolute --app-artifact path is required');
  if(!out.output||!absoluteFor(out.output,platform)||!out.output.toLowerCase().endsWith('.json'))
@@ -343,7 +346,7 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
    });
    children.push(child);
   }
-  const startupMs=await waitForReady(ready,runIds,children);
+  const startupMs=await waitForReady(ready,runIds,children,options.readyTimeoutMs);
   const roots=children.map(child=>child.pid);
   let peakWorkingSetBytes=0,previous=null;
   const cpu={peak:null,measured:0,discarded:0};
