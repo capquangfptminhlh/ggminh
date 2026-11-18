@@ -3,15 +3,41 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {
- parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion
+ parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
+ calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees,waitForReady
 }=require('../tools/browser-resource-benchmark');
+const runnerSource=fs.readFileSync(path.join(__dirname,'../tools/browser-resource-benchmark.js'),'utf8');
+assert(!runnerSource.includes('assertMemoryHeadroom('),'Benchmark must not block on RAM threshold');
+const cpuSnapshot=(at,processes)=>({at,trees:[{processes}]});
+const proc=(pid,creation,cpu)=>({pid,creationTime:creation,cpuTime100ns:cpu});
+const cpuBefore=cpuSnapshot(1000,[proc(10,'2026-01-01T00:00:00Z',10000000)]);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2),50);
+const cimBefore=cpuSnapshot(1000,[proc(10,'/Date(1794879624034)/',10000000)]);
+assert.equal(calculateCpuInterval(cimBefore,cpuSnapshot(2000,[proc(10,'/Date(1794879624034)/',20000000)]),2),50);
+assert.equal(calculateCpuInterval(cimBefore,cpuSnapshot(2000,[proc(10,'/Date(invalid)/',20000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000),proc(11,'2026-01-01T00:00:01Z',999999999)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-02T00:00:00Z',20000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',5000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',999999999)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(1000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2),null);
+assert.equal(calculateCpuInterval(cpuBefore,cpuSnapshot(2000,[proc(10,null,20000000)]),2),null);
+const intervals={peak:null,measured:0,discarded:0};
+recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-01T00:00:00Z',20000000)]),2);
+recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-02T00:00:00Z',20000000)]),2);
+assert.deepEqual(intervals,{peak:50,measured:1,discarded:1});
+assert.doesNotThrow(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[proc(10,'2026-01-01T00:00:00Z',1)]}],totalWorkingSetBytes:1},[10]));
+assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10]),/Process resources unavailable/);
+assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:1,signalCode:null}]),/missing roots=1.*exited roots=1/);
+assert.throws(()=>assertCompleteProcessTrees({status:'ERROR',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:null,signalCode:null}]),/status=ERROR.*missing roots=1.*exited roots=0/);
+assert.throws(()=>assertCompleteProcessTrees({status:'ERROR',failureKind:'TIMEOUT',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:null,signalCode:null}]),/failure=TIMEOUT/);
+assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[]}],totalWorkingSetBytes:1},[10]),/Process resources unavailable/);
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX
 }=require('../src/engine/camoufoxReleasePreflight');
 
 const samples=Array.from({length:10},(_,index)=>({
  startupMs:100+index,peakWorkingSetBytes:500_000_000+index*1_000_000,
- peakCpuPercent:20+index,crashed:index===9,cleanupOk:true,
+ peakCpuPercent:20+index,cpuIntervalsMeasured:2,cpuIntervalsDiscarded:1,crashed:index===9,cleanupOk:true,
  forbiddenProfileName:'Customer Secret',url:'https://secret.example/account',
  proxy:{password:'DO_NOT_LEAK'},token:'DO_NOT_LEAK',cookies:['DO_NOT_LEAK'],
  identity:{env:{CAMOU_CONFIG_1:'DO_NOT_LEAK'}}
@@ -20,17 +46,25 @@ const report=shapeReport({
  commit:'a'.repeat(40),appSha256:'b'.repeat(64),engineSha256:'c'.repeat(64),
  appVersion:'5.8.0',engineVersion:'156.0.1',windowsBuild:'10.0.26100',
  totalRamBytes:16*1024**3,engine:'camoufox',workload:'medium',concurrency:3,
+ durationMs:30000,readyTimeoutMs:90000,
  generatedAt:'2026-11-10T01:02:03.000Z',samples,
  cleanup:{status:'PASS',remainingPids:0}
 });
 assert.equal(report.schema,'lhm.browser-resource.evidence.v1');
 assert.equal(report.samples.length,10);
+assert.equal(report.workload.observationMs,30000);
+assert.equal(report.workload.readyTimeoutMs,90000);
+assert.equal(report.samples[0].cpuIntervalsDiscarded,1);
 assert.equal(report.metrics.startupMs.p50,104);
 assert.equal(report.metrics.startupMs.p95,109);
 assert.equal(report.metrics.workingSetBytes.p95,509_000_000);
 assert.equal(report.metrics.peakCpuPercent,29);
 assert.equal(report.crashCount,1);
 assert.equal(report.cleanup.status,'PASS');
+assert.equal(report.headroomPolicy,undefined,'Report must not claim an unenforced RAM reserve');
+assert.throws(()=>shapeReport({commit:'a'.repeat(40),appSha256:'b'.repeat(64),
+ engineSha256:'c'.repeat(64),totalRamBytes:100,engine:'chromium',workload:'light',
+ concurrency:1,samples:samples.map(sample=>({...sample,peakCpuPercent:null}))}),/Invalid CPU/);
 assertPrivacySafeReport(report);
 assert.throws(()=>assertPrivacySafeReport({...report,profileName:'secret'}),
  /Forbidden report field/);
@@ -48,8 +82,20 @@ assert.deepEqual(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrom
  '--samples','12','--output','C:\\evidence\\report.json'],{platform:'win32'}),{
  engine:'chromium',binary:'C:\\Browser\\chrome.exe',appArtifact:'C:\\LHM\\app.asar',
  workload:'heavy',concurrency:5,samples:12,output:'C:\\evidence\\report.json',
- signedReleaseDir:null,publisherKeyDir:null,identityFile:null,durationMs:3000
+ signedReleaseDir:null,publisherKeyDir:null,identityFile:null,durationMs:3000,readyTimeoutMs:30000
 });
+assert.equal(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--ready-timeout-ms','90000'],{platform:'win32'}).readyTimeoutMs,90000);
+assert.equal(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--duration-ms','30000'],{platform:'win32'}).durationMs,30000);
+assert.throws(()=>parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--duration-ms','30001'],{platform:'win32'}),/duration/i);
+assert.throws(()=>parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--ready-timeout-ms','999999'],{platform:'win32'}),/readiness timeout/i);
 assert.throws(()=>parseArgs(['--engine','camoufox','--binary','C:\\bad.exe',
  '--app-artifact','C:\\app.asar','--output','C:\\out.json'],{platform:'win32'}),
  /signed-release-dir/);
@@ -69,6 +115,9 @@ assert(guide.includes('8 GB | UNMEASURED'));
 assert(guide.includes('--signed-release-dir'));
 assert(guide.includes('không ghi đè'));
 (async()=>{
+ await assert.rejects(waitForReady(new Set(['a']),['a','b'],[{exitCode:2}],50),/exited.*1\/2.*code 2/i);
+ await assert.rejects(waitForReady(new Set(['a']),['a','b'],[{exitCode:null}],1),/timeout.*1\/2/i);
+ assert.equal(typeof await waitForReady(new Set(['a']),['a'],[{exitCode:null}],50),'number');
  const signedVersion=await resolveEngineVersion({binary:'camoufox.exe',engineVersion:'156.0.1'},()=>{
   assert.fail('Camoufox version must come from the verified signed manifest');
  });
@@ -94,7 +143,7 @@ assert(guide.includes('không ghi đè'));
    samples:samples.map(sample=>({...sample,crashed:false})),cleanup:{status:'PASS',remainingPids:0}
   })
  }));
- assert.equal(evaluateResourceCapacity(entries,{candidate,now:new Date(generatedAt)}).status,'PASS');
+ assert.equal(evaluateResourceCapacity(entries,{candidate,now:new Date(generatedAt)}).status,'BLOCKED');
 
  const server=createWorkloadServer();
  const port=await server.listen();
