@@ -2,9 +2,9 @@
 const assert=require('node:assert/strict');
 const {EventEmitter}=require('node:events');
 const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary,closeSummary}=require('../tools/storage-isolation-checks');
-const blank={err:null,cookie:'',cookieHeader:'',localStorage:null,indexedDB:null,cacheStorage:null};
-const a={err:null,cookie:'lhm_js=A',cookieHeader:'lhm_http=A',localStorage:'A',indexedDB:'A',cacheStorage:'A'};
-const b={err:null,cookie:'lhm_js=B',cookieHeader:'lhm_http=B',localStorage:'B',indexedDB:'B',cacheStorage:'B'};
+const blank={err:null,cookie:'',cookieHeader:'',localStorage:null,indexedDB:null,cacheStorage:null,serviceWorker:{supported:true,registration:null}};
+const a={err:null,cookie:'lhm_js=A',cookieHeader:'lhm_http=A',localStorage:'A',indexedDB:'A',cacheStorage:'A',serviceWorker:{supported:true,registration:'A'}};
+const b={err:null,cookie:'lhm_js=B',cookieHeader:'lhm_http=B',localStorage:'B',indexedDB:'B',cacheStorage:'B',serviceWorker:{supported:true,registration:'B'}};
 const step=(name,data,hits=0)=>({step:name,...data,httpCacheNetworkFetches:hits,exit:{code:0},stopToExitMs:1});
 const original=[step('A writes',a,1),step('B reads (must be empty)',blank,1),
  step('A reads after restart (must be A)',a),step('B writes',b),
@@ -15,6 +15,12 @@ const evaluate=(steps,overrides={})=>evaluateIsolationChecks({steps,simultaneous
  concurrentExitCodes:{A:0,B:0},concurrentStopped:true,restoreExcludesSessions:true,...overrides});
 const checks=evaluate([...original,...restarts,...restored]);
 assert(Object.values(checks).every(Boolean));
+assert.equal(checks.serviceWorkerIsolation,true);
+assert.equal(evaluate([...original,...restarts,...restored],{concurrentB:{...b,serviceWorker:{supported:true,registration:'A'}}}).serviceWorkerIsolation,false);
+assert.equal(evaluate([...original,...restarts,restored[0],step('restored B starts without session',{...blank,serviceWorker:{supported:true,registration:'A'}})]).serviceWorkerIsolation,false);
+assert.equal(evaluate([...original,...restarts,...restored],{concurrentA:{...a,serviceWorker:{supported:false,registration:null}}}).serviceWorkerIsolation,false);
+assert.equal(evaluate([...original,...restarts,...restored],{concurrentA:{...a,serviceWorker:undefined}}).serviceWorkerIsolation,false);
+assert.equal(evaluate([...original,...restored],{concurrentStopped:false}).serviceWorkerIsolation,false);
 const skipped=evaluate([...original,...restored],{concurrentStopped:false});
 assert.equal(skipped.restoredProfilesHaveNoSession,true,'Restore evidence must be found even when restart is skipped');
 assert.equal(skipped.concurrentProcessesStopped,false);

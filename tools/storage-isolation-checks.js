@@ -16,6 +16,7 @@ function evaluateIsolationChecks({steps,simultaneous,concurrentA,concurrentB,
   'restored A starts without session','restored B starts without session'];
  const completeSteps=steps.length===requiredLabels.length&&
   requiredLabels.every(label=>steps.filter(step=>step.step===label).length===1);
+ const sw=(r,expected)=>!!r&&!r.err&&r.serviceWorker?.supported===true&&r.serviceWorker.registration===expected;
  return {
   profileBSeesNothingOfA:empty(bRead),
   profileAPersistsAcrossRestart:onlyA(aRestart),
@@ -29,6 +30,10 @@ function evaluateIsolationChecks({steps,simultaneous,concurrentA,concurrentB,
   concurrentDataPersistsAfterRestart:onlyA(byLabel('A after concurrent stop'))&&onlyB(byLabel('B after concurrent stop')),
   restoredProfilesHaveNoSession:restoreExcludesSessions===true&&empty(byLabel('restored A starts without session'))&&
    empty(byLabel('restored B starts without session')),
+  serviceWorkerIsolation:completeSteps&&sw(aWrite,'A')&&sw(bRead,null)&&sw(aRestart,'A')&&sw(bWrite,'B')&&
+   sw(aAfterB,'A')&&sw(concurrentA,'A')&&sw(concurrentB,'B')&&
+   sw(byLabel('A after concurrent stop'),'A')&&sw(byLabel('B after concurrent stop'),'B')&&
+   sw(byLabel('restored A starts without session'),null)&&sw(byLabel('restored B starts without session'),null),
   httpCacheNotSharedWithB:!!aWrite&&!!bRead&&aWrite.httpCacheNetworkFetches===1&&bRead.httpCacheNetworkFetches===1,
   httpCachePersistsForA:!!aRestart&&aRestart.httpCacheNetworkFetches===0,
   stopIsGraceful:completeSteps&&steps.every(s=>s.exit&&s.exit.code===0&&s.stopToExitMs<8000)

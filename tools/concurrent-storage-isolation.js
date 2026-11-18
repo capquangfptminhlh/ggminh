@@ -16,6 +16,7 @@ const {WorkflowStore}=require('../src/automation/studio');
 const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
 const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
+const {inspectServiceWorker}=require('./storage-isolation-service-worker');
 const {withIsolationCleanup}=require('./storage-isolation-cleanup');
 const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary,closeSummary}=require('./storage-isolation-checks');
 const {prepareSyntheticFirefoxProfile,prepareFixtureRoot,writeFixtureReport}=require('./synthetic-firefox-fixture');
@@ -33,6 +34,7 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
   const openIsolationDb = ${openIsolationDb.toString()};
   const readIsolationValue = ${readIsolationValue.toString()};
   const writeIsolationValue = ${writeIsolationValue.toString()};
+  const inspectServiceWorker = ${inspectServiceWorker.toString()};
   const deadline = (name, promise) => Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error(name+' timeout')),10000))]);
   const idb = () => deadline('IndexedDB open',openIsolationDb(indexedDB));
   const out = { mode: '${mode}', who, err: null };
@@ -48,6 +50,7 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     out.localStorage = localStorage.getItem('lhm_probe');
     const db = await idb(); out.indexedDB = await deadline('IndexedDB read',readIsolationValue(db));
     const c = await deadline('CacheStorage open',caches.open('lhm_probe')); const hit = await deadline('CacheStorage match',c.match('/cached')); out.cacheStorage = hit ? await hit.text() : null;
+    out.serviceWorker = await deadline('Service Worker',inspectServiceWorker(navigator,location,'${mode}',who));
   } catch (e) { out.err = String(e); }
   await fetch('/result', { method: 'POST', body: JSON.stringify(out) });
   document.body.textContent = 'done';
@@ -68,6 +71,10 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
       assetHits++;
       res.writeHead(200, { 'content-type': 'application/octet-stream', 'cache-control': 'public, max-age=86400' });
       res.end('lhm-cacheable'); return;
+    }
+    if(u.pathname==='/lhm-worker.js'){
+      res.writeHead(200,{'content-type':'application/javascript','cache-control':'no-store','service-worker-allowed':'/'});
+      res.end("self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));");return;
     }
     const mode = u.pathname === '/set' ? 'set' : 'read';
     const headers = { 'content-type': 'text/html', 'cache-control': 'no-store' };
@@ -198,11 +205,11 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     concurrentStopped:!launcher.isBusy(A.id)&&!launcher.isBusy(B.id),
     restoreExcludesSessions:restoreResult.excludesSessions});
   report = { schema: 'lhm.storage-isolation.v1', at: new Date().toISOString(), engine, browser: bin || 'auto',
-    sameOrigin: true, fixturePreferences:engine==='gecko'?{'privacy.spoof_english':1}:{}, storesChecked: ['cookie (JS)', 'cookie (HttpOnly)', 'localStorage', 'IndexedDB', 'Cache Storage', 'HTTP disk cache'],
+    sameOrigin: true, fixturePreferences:engine==='gecko'?{'privacy.spoof_english':1}:{}, storesChecked: ['cookie (JS)', 'cookie (HttpOnly)', 'localStorage', 'IndexedDB', 'Cache Storage', 'HTTP disk cache', 'Service Worker registrations'],
     steps, concurrentResults: { A: concurrentA || null, B: concurrentB || null, exitCodes:concurrentExitCodes, diagnostics:concurrentDiagnostics },
     checks, verdict: Object.values(checks).every(Boolean) ? 'PASS' : 'FAIL' };
   console.log(JSON.stringify({ verdict: report.verdict, checks, steps: steps.map(s => ({ step: s.step, cookie: s.cookie, httpCookie: s.cookieHeader,
-    localStorage: s.localStorage, indexedDB: s.indexedDB, cacheStorage: s.cacheStorage, httpCacheNetworkFetches: s.httpCacheNetworkFetches, err: s.err })) }, null, 2));
+    localStorage: s.localStorage, indexedDB: s.indexedDB, cacheStorage: s.cacheStorage, serviceWorker:s.serviceWorker, httpCacheNetworkFetches: s.httpCacheNetworkFetches, err: s.err })) }, null, 2));
   process.exitCode = report.verdict === 'PASS' ? 0 : 1;
   });
 })().catch(e => { console.error(e); process.exitCode = 1; });
