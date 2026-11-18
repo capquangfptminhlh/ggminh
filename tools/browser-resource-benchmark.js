@@ -244,10 +244,11 @@ async function waitForReady(ready,ids,children,timeoutMs=30000){
  const started=performance.now();
  while(performance.now()-started<timeoutMs){
   if(ids.every(id=>ready.has(id)))return performance.now()-started;
-  if(children.some(child=>child.exitCode!==null))break;
+  const exited=children.find(child=>child.exitCode!==null);
+  if(exited)throw Error('Browser exited before loopback readiness: '+ids.filter(id=>ready.has(id)).length+'/'+ids.length+' ready; code '+exited.exitCode);
   await delay(100);
  }
- throw Error('Browser workload did not reach loopback readiness');
+ throw Error('Browser workload readiness timeout: '+ids.filter(id=>ready.has(id)).length+'/'+ids.length+' ready');
 }
 function spawnArgs(engine,profileDir,url){
  if(engine==='chromium')return [
@@ -408,5 +409,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees,waitForReady,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};

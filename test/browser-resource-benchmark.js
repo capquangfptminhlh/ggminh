@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {
  parseArgs,shapeReport,assertPrivacySafeReport,workloadHtml,createWorkloadServer,resolveEngineVersion,
- calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees
+ calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees,waitForReady
 }=require('../tools/browser-resource-benchmark');
 const runnerSource=fs.readFileSync(path.join(__dirname,'../tools/browser-resource-benchmark.js'),'utf8');
 assert(!runnerSource.includes('assertMemoryHeadroom('),'Benchmark must not block on RAM threshold');
@@ -97,6 +97,9 @@ assert(guide.includes('8 GB | UNMEASURED'));
 assert(guide.includes('--signed-release-dir'));
 assert(guide.includes('không ghi đè'));
 (async()=>{
+ await assert.rejects(waitForReady(new Set(['a']),['a','b'],[{exitCode:2}],50),/exited.*1\/2.*code 2/i);
+ await assert.rejects(waitForReady(new Set(['a']),['a','b'],[{exitCode:null}],1),/timeout.*1\/2/i);
+ assert.equal(typeof await waitForReady(new Set(['a']),['a'],[{exitCode:null}],50),'number');
  const signedVersion=await resolveEngineVersion({binary:'camoufox.exe',engineVersion:'156.0.1'},()=>{
   assert.fail('Camoufox version must come from the verified signed manifest');
  });
