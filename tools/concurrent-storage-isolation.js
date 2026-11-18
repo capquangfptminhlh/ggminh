@@ -17,6 +17,7 @@ const {stopBrowserProcess}=require('../src/engine/processStopper');
 const {execFile}=require('node:child_process');
 const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
 const {withIsolationCleanup}=require('./storage-isolation-cleanup');
+const {evaluateIsolationChecks,processDiagnostics}=require('./storage-isolation-checks');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
 const outDir = path.resolve(outDirArg || 'storage-isolation');
 const engine = engineArg || 'chromium';
@@ -107,12 +108,15 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     const proc = instance.activeProcesses.get(profile.id)?.process;
     const exited = new Promise(res => { if (!proc || proc.exitCode !== null) res(null); else proc.once('exit', (code, signal) => res({ code, signal })); });
     const stopAt = Date.now();
+    const diagnostics={beforeStop:processDiagnostics(instance,profile.id)};
     await Promise.resolve().then(() => instance.stop(profile.id)).catch(() => {});
+    diagnostics.afterStop=processDiagnostics(instance,profile.id);
     const exit = await Promise.race([exited, sleep(20000).then(() => 'still running after 20 s')]);
     const stopToExitMs = Date.now() - stopAt;
     for (let i = 0; i < 40 && instance.activeProcesses.has(profile.id); i++) await sleep(250);
     await sleep(2000);
-    steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit });
+    diagnostics.afterWait=processDiagnostics(instance,profile.id);
+    steps.push({ step: label, ...r, httpCacheNetworkFetches: assetHits - hitsBefore, stopToExitMs, exit, diagnostics });
     return r;
   }
   await visit(A, base + '/set?p=A', 'A writes');
@@ -125,6 +129,7 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
   const beforeConcurrent=results.length;
   let concurrentA,concurrentB,simultaneous=false;
   const concurrentExitCodes={A:null,B:null};
+  const concurrentDiagnostics={};
   try {
     const launches=await Promise.allSettled([launcher.start(A.id,base+'/read?p=A'),
       launcher.start(B.id,base+'/read?p=B')]);
@@ -145,8 +150,11 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
       await sleep(500);
     }
   } finally {
+    concurrentDiagnostics.beforeStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
     launcher.stop(A.id);launcher.stop(B.id);
+    concurrentDiagnostics.afterStop={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
     for(let i=0;i<80&&(launcher.isBusy(A.id)||launcher.isBusy(B.id));i++)await sleep(250);
+    concurrentDiagnostics.afterWait={A:processDiagnostics(launcher,A.id),B:processDiagnostics(launcher,B.id)};
   }
   if(!launcher.isBusy(A.id)&&!launcher.isBusy(B.id)){
     await visit(A,base+'/read?p=A','A after concurrent stop');
@@ -167,35 +175,12 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     await visit(restoredA,base+'/read?p=restoredA','restored A starts without session',restoredLauncher);
     await visit(restoredB,base+'/read?p=restoredB','restored B starts without session',restoredLauncher);
   }
-  const empty = r => !r.err && !r.cookie && !r.cookieHeader && r.localStorage === null && r.indexedDB === null && r.cacheStorage === null;
-  const onlyA = r => !r.err && /lhm_js=A/.test(r.cookie) && !/=B/.test(r.cookie) && /lhm_http=A/.test(r.cookieHeader) &&
-    !/=B/.test(r.cookieHeader) && r.localStorage === 'A' && r.indexedDB === 'A' && r.cacheStorage === 'A';
-  const onlyB = r => !!r && !r.err && /lhm_js=B/.test(r.cookie) && !/=A/.test(r.cookie) &&
-    /lhm_http=B/.test(r.cookieHeader) && !/=A/.test(r.cookieHeader) &&
-    r.localStorage==='B' && r.indexedDB==='B' && r.cacheStorage==='B';
-  const checks = {
-    profileBSeesNothingOfA: empty(steps[1]),
-    profileAPersistsAcrossRestart: onlyA(steps[2]),
-    profileANotPollutedByB: onlyA(steps[4]),
-    profileBWroteOwnValues: steps[3].localStorage === 'B',
-    concurrentProcessesActive: simultaneous,
-    concurrentASeesOnlyA: !!concurrentA && onlyA(concurrentA),
-    concurrentBSeesOnlyB: onlyB(concurrentB),
-    concurrentProcessesStopped: !launcher.isBusy(A.id)&&!launcher.isBusy(B.id),
-    concurrentProcessesExitedCleanly: concurrentExitCodes.A===0&&concurrentExitCodes.B===0,
-    concurrentDataPersistsAfterRestart: !!steps[5]&&onlyA(steps[5])&&onlyB(steps[6]),
-    restoredProfilesHaveNoSession: restoreResult.excludesSessions===true&&
-      !!steps[7]&&!!steps[8]&&empty(steps[7])&&empty(steps[8]),
-    // HTTP disk cache: A cached the asset, so B must fetch it itself, and A
-    // must still serve it from its own cache after a restart.
-    httpCacheNotSharedWithB: steps[0].httpCacheNetworkFetches === 1 && steps[1].httpCacheNetworkFetches === 1,
-    httpCachePersistsForA: steps[2].httpCacheNetworkFetches === 0,
-    // Stop must be a graceful shutdown (data flushed), not a kill at grace end.
-    stopIsGraceful: steps.every(s => s.exit && s.exit.code === 0 && s.stopToExitMs < 8000)
-  };
+  const checks=evaluateIsolationChecks({steps,simultaneous,concurrentA,concurrentB,concurrentExitCodes,
+    concurrentStopped:!launcher.isBusy(A.id)&&!launcher.isBusy(B.id),
+    restoreExcludesSessions:restoreResult.excludesSessions});
   const report = { schema: 'lhm.storage-isolation.v1', at: new Date().toISOString(), engine, browser: bin || 'auto',
     sameOrigin: true, storesChecked: ['cookie (JS)', 'cookie (HttpOnly)', 'localStorage', 'IndexedDB', 'Cache Storage', 'HTTP disk cache'],
-    steps, concurrentResults: { A: concurrentA || null, B: concurrentB || null, exitCodes:concurrentExitCodes },
+    steps, concurrentResults: { A: concurrentA || null, B: concurrentB || null, exitCodes:concurrentExitCodes, diagnostics:concurrentDiagnostics },
     checks, verdict: Object.values(checks).every(Boolean) ? 'PASS' : 'FAIL' };
   fs.writeFileSync(path.join(outDir, 'storage-isolation-report.json'), JSON.stringify(report, null, 2));
   reportWritten = true;

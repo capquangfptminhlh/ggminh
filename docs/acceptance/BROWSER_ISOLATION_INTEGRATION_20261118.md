@@ -1,0 +1,9 @@
+# Browser isolation: integration checks, 18 November 2026
+
+Scope: Windows local machine, source launcher, synthetic profiles and loopback origin. These runs do not exercise an installed application or Camoufox, and do not establish that all data is isolated under every circumstance.
+
+- `c1d487b`: Chromium 157.0.8103.79 and Firefox 160.0.1 each passed all 14 isolation checks and reported cleanup complete in separate runs. Evidence: `D:/CodexData/lhm-integrated-isolation-c1d487b.json` on the test machine.
+- `1a88e06`: Chromium passed when the two engine test suites were started in parallel. Firefox failed: one B shutdown reached the supervisor deadline and a later concurrent B run returned no result and did not close within the test window. Its sequential data checks passed; the run did not establish a data leak. Cleanup did not complete; after a normal window-close request failed, only the two verified synthetic Firefox processes were forcibly stopped. Evidence: `D:/CodexData/lhm-final-firefox-1a88e06/storage-isolation-report.json` and `storage-isolation-cleanup.json`.
+- `1a88e06`: a separate Firefox diagnostic run, without the Chromium suite running alongside, passed all 14 checks and cleanup. Evidence: `D:/CodexData/lhm-firefox-diagnostic-1a88e06/storage-isolation-report.json` and `storage-isolation-cleanup.json`. This does not explain or fix the failed run; the cause remains unverified and must be investigated before release.
+
+The failed report incorrectly flags restored-session isolation because the harness assumed fixed positions after restart steps were skipped; the restored A and B observations themselves were empty. The harness fix identifies steps by label; the concurrent failures remain failures.

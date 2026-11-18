@@ -1,0 +1,37 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {evaluateIsolationChecks,processDiagnostics}=require('../tools/storage-isolation-checks');
+const blank={err:null,cookie:'',cookieHeader:'',localStorage:null,indexedDB:null,cacheStorage:null};
+const a={err:null,cookie:'lhm_js=A',cookieHeader:'lhm_http=A',localStorage:'A',indexedDB:'A',cacheStorage:'A'};
+const b={err:null,cookie:'lhm_js=B',cookieHeader:'lhm_http=B',localStorage:'B',indexedDB:'B',cacheStorage:'B'};
+const step=(name,data,hits=0)=>({step:name,...data,httpCacheNetworkFetches:hits,exit:{code:0},stopToExitMs:1});
+const original=[step('A writes',a,1),step('B reads (must be empty)',blank,1),
+ step('A reads after restart (must be A)',a),step('B writes',b),
+ step('A reads after B wrote (must be A only)',a)];
+const restarts=[step('A after concurrent stop',a),step('B after concurrent stop',b)];
+const restored=[step('restored A starts without session',blank),step('restored B starts without session',blank)];
+const evaluate=(steps,overrides={})=>evaluateIsolationChecks({steps,simultaneous:true,concurrentA:a,concurrentB:b,
+ concurrentExitCodes:{A:0,B:0},concurrentStopped:true,restoreExcludesSessions:true,...overrides});
+const checks=evaluate([...original,...restarts,...restored]);
+assert(Object.values(checks).every(Boolean));
+const skipped=evaluate([...original,...restored],{concurrentStopped:false});
+assert.equal(skipped.restoredProfilesHaveNoSession,true,'Restore evidence must be found even when restart is skipped');
+assert.equal(skipped.concurrentProcessesStopped,false);
+assert.equal(skipped.concurrentDataPersistsAfterRestart,false);
+assert.equal(skipped.stopIsGraceful,false,'Skipped browser shutdowns must not pass as graceful');
+assert(!Object.values(skipped).every(Boolean),'Missing restart remains a failed overall verdict');
+assert.equal(evaluate([...original,...restarts,restored[0]]).restoredProfilesHaveNoSession,false);
+assert.equal(evaluate([...original,...restarts,restored[0]]).stopIsGraceful,false);
+assert.equal(evaluate([]).stopIsGraceful,false);
+assert.equal(evaluate([...original,...restarts,...restored,restored[1]]).stopIsGraceful,false,'Duplicate steps cannot substitute evidence');
+assert.equal(evaluate([...original,...restarts,restored[0],restored[0]]).stopIsGraceful,false,'Duplicating one restored profile cannot stand in for the other');
+assert.equal(evaluate([...original,...restarts,restored[0],step('restored B starts without session',b)]).restoredProfilesHaveNoSession,false);
+assert.equal(evaluate([...original,...restarts,...restored],{restoreExcludesSessions:false}).restoredProfilesHaveNoSession,false);
+assert.equal(evaluate([...original,...restarts,...restored],{concurrentA:{...a,err:'IndexedDB timeout'}}).concurrentASeesOnlyA,false);
+assert.equal(evaluate([...original,...restarts,...restored],{concurrentExitCodes:{A:null,B:0}}).concurrentProcessesExitedCleanly,false);
+const running={dialogBlocked:true,jobComplete:false,exitCode:null,signalCode:null};
+const fakeLauncher={activeProcesses:new Map([['profile',{process:running}]]),isBusy:()=>true};
+assert.deepEqual(processDiagnostics(fakeLauncher,'profile'),{tracked:true,busy:true,dialogBlocked:true,jobComplete:false,exitCode:null,signaled:false});
+fakeLauncher.activeProcesses.clear();fakeLauncher.isBusy=()=>false;
+assert.deepEqual(processDiagnostics(fakeLauncher,'profile'),{tracked:false,busy:false,dialogBlocked:null,jobComplete:null,exitCode:null,signaled:false});
+console.log('Concurrent isolation verdict preserves failed and skipped evidence: PASS');
