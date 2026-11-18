@@ -27,6 +27,8 @@ recordCpuInterval(intervals,cpuBefore,cpuSnapshot(2000,[proc(10,'2026-01-02T00:0
 assert.deepEqual(intervals,{peak:50,measured:1,discarded:1});
 assert.doesNotThrow(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[proc(10,'2026-01-01T00:00:00Z',1)]}],totalWorkingSetBytes:1},[10]));
 assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10]),/Process resources unavailable/);
+assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:1,signalCode:null}]),/missing roots=1.*exited roots=1/);
+assert.throws(()=>assertCompleteProcessTrees({status:'ERROR',trees:[],totalWorkingSetBytes:0},[10],[{exitCode:null,signalCode:null}]),/status=ERROR.*missing roots=1.*exited roots=0/);
 assert.throws(()=>assertCompleteProcessTrees({status:'MEASURED',trees:[{rootPid:10,processes:[]}],totalWorkingSetBytes:1},[10]),/Process resources unavailable/);
 const {
  evaluateResourceCapacity,REQUIRED_RESOURCE_MATRIX

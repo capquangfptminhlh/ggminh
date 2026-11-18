@@ -65,13 +65,21 @@ function recordCpuInterval(state,previous,current,logicalCpus){
  if(percent===null){state.discarded++;return}
  state.measured++;state.peak=Math.max(state.peak??0,percent);
 }
-function assertCompleteProcessTrees(resources,roots){
+function assertCompleteProcessTrees(resources,roots,children=[]){
  if(resources?.status!=='MEASURED'||!Array.isArray(resources.trees)||
     !Number.isFinite(resources.totalWorkingSetBytes)||resources.totalWorkingSetBytes<0||
     resources.trees.length!==roots.length||new Set(roots).size!==roots.length||
     roots.some(pid=>resources.trees.filter(tree=>tree.rootPid===pid&&
      Array.isArray(tree.processes)&&tree.processes.some(process=>process.pid===pid)).length!==1))
-  throw Error('Process resources unavailable: incomplete browser process tree');
+  {
+   const trees=Array.isArray(resources?.trees)?resources.trees:[];
+   const missing=roots.filter(pid=>!trees.some(tree=>tree.rootPid===pid&&
+    Array.isArray(tree.processes)&&tree.processes.some(process=>process.pid===pid))).length;
+   const exited=children.filter(child=>child.exitCode!=null||child.signalCode!=null).length;
+   const status=['MEASURED','ERROR','NOT_SUPPORTED'].includes(resources?.status)?resources.status:'UNKNOWN';
+   throw Error('Process resources unavailable: incomplete browser process tree; status='+status+
+    '; missing roots='+missing+'; exited roots='+exited);
+  }
 }
 
 function valueAfter(argv,index,label){
@@ -357,7 +365,7 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
    const startedAt=performance.now();
    const resources=await collectProcessTreeResources(roots);
    const observedAt=(startedAt+performance.now())/2;
-   assertCompleteProcessTrees(resources,roots);
+   assertCompleteProcessTrees(resources,roots,children);
    peakWorkingSetBytes=Math.max(peakWorkingSetBytes,resources.totalWorkingSetBytes);
    const snapshot={at:observedAt,trees:resources.trees};
    if(previous){
