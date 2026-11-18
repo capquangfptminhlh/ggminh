@@ -108,8 +108,8 @@ function parseArgs(argv,{platform=process.platform}={}){
  if(!CONCURRENCY.has(out.concurrency))throw Error('Concurrency must be 1, 3, 5 or 10');
  if(!Number.isInteger(out.samples)||out.samples<10||out.samples>30)
   throw Error('Samples must be 10–30');
- if(!Number.isInteger(out.durationMs)||out.durationMs<1000||out.durationMs>10000)
-  throw Error('Duration must be 1000–10000 ms');
+ if(!Number.isInteger(out.durationMs)||out.durationMs<1000||out.durationMs>30000)
+  throw Error('Duration must be 1000–30000 ms');
  if(!Number.isInteger(out.readyTimeoutMs)||out.readyTimeoutMs<1000||out.readyTimeoutMs>120000)
   throw Error('Readiness timeout must be 1000–120000 ms');
  if(!out.appArtifact||!absoluteFor(out.appArtifact,platform))
@@ -180,7 +180,9 @@ function shapeReport(input){
    sha256:validHex(input.engineSha256,64,'engine SHA-256')},
   system:{windowsBuild:String(input.windowsBuild||'').slice(0,80),
    totalRamBytes:finiteNonNegative(input.totalRamBytes,'total RAM')},
-  workload:{id:input.workload,concurrency:input.concurrency},
+  workload:{id:input.workload,concurrency:input.concurrency,
+   ...(input.durationMs===undefined?{}:{observationMs:finiteNonNegative(input.durationMs,'observation duration')}),
+   ...(input.readyTimeoutMs===undefined?{}:{readyTimeoutMs:finiteNonNegative(input.readyTimeoutMs,'readiness timeout')})},
   sampleCount:samples.length,samples,
   metrics:{
    startupMs:{p50:percentile(samples.map(x=>x.startupMs),.5),
@@ -402,6 +404,7 @@ async function run(argv=process.argv.slice(2)){
  const report=shapeReport({commit,appSha256,engineSha256,appVersion:pkg.version,
   engineVersion,windowsBuild:os.release(),totalRamBytes:os.totalmem(),
   engine:options.engine,workload:options.workload,concurrency:options.concurrency,
+  durationMs:options.durationMs,readyTimeoutMs:options.readyTimeoutMs,
   samples,cleanup:{status:remainingPids===0?'PASS':'FAIL',remainingPids}});
  const text=JSON.stringify(report,null,2)+'\n';
  fs.mkdirSync(path.dirname(options.output),{recursive:true});

@@ -43,11 +43,14 @@ const report=shapeReport({
  commit:'a'.repeat(40),appSha256:'b'.repeat(64),engineSha256:'c'.repeat(64),
  appVersion:'5.8.0',engineVersion:'156.0.1',windowsBuild:'10.0.26100',
  totalRamBytes:16*1024**3,engine:'camoufox',workload:'medium',concurrency:3,
+ durationMs:30000,readyTimeoutMs:90000,
  generatedAt:'2026-11-10T01:02:03.000Z',samples,
  cleanup:{status:'PASS',remainingPids:0}
 });
 assert.equal(report.schema,'lhm.browser-resource.evidence.v1');
 assert.equal(report.samples.length,10);
+assert.equal(report.workload.observationMs,30000);
+assert.equal(report.workload.readyTimeoutMs,90000);
 assert.equal(report.samples[0].cpuIntervalsDiscarded,1);
 assert.equal(report.metrics.startupMs.p50,104);
 assert.equal(report.metrics.startupMs.p95,109);
@@ -81,6 +84,12 @@ assert.deepEqual(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrom
 assert.equal(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
  '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
  '--ready-timeout-ms','90000'],{platform:'win32'}).readyTimeoutMs,90000);
+assert.equal(parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--duration-ms','30000'],{platform:'win32'}).durationMs,30000);
+assert.throws(()=>parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
+ '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
+ '--duration-ms','30001'],{platform:'win32'}),/duration/i);
 assert.throws(()=>parseArgs(['--engine','chromium','--binary','C:\\Browser\\chrome.exe',
  '--app-artifact','C:\\LHM\\app.asar','--output','C:\\evidence\\report.json',
  '--ready-timeout-ms','999999'],{platform:'win32'}),/readiness timeout/i);

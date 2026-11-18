@@ -52,6 +52,8 @@ thể chịu ảnh hưởng bởi tải hệ thống; chạy thất bại không
 Thời hạn chờ mặc định mỗi lượt là 30 giây; có thể dùng `--ready-timeout-ms`
 trong khoảng 1000–120000 để đo tải khởi động chậm, và cần ghi lại tham số này
 cùng kết quả. Báo cáo thời gian mở vẫn bao gồm toàn bộ thời gian chờ thực tế.
+Cửa sổ quan sát tài nguyên `--duration-ms` có thể đặt từ 1000 đến 30000 ms;
+cần ghi giá trị sử dụng cùng kết quả khi so sánh các lượt đo.
 Báo cáo không xác nhận mức dự phòng RAM và do đó không đáp ứng điều kiện dự phòng
 20% hiện có của bộ kiểm tra phát hành Camoufox.
 
