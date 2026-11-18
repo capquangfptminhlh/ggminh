@@ -29,8 +29,18 @@
       if (!current.has(item.profileId)) return true;
       const old = current.get(item.profileId);
       return old !== null && (!!old.waitingForDialog !== !!item.waitingForDialog ||
-        !!old.stopping !== !!item.stopping);
+        !!old.stopping !== !!item.stopping || old.windowState !== item.windowState);
     });
+  }
+
+  function profileStatus(info, isRunning) {
+    if (info?.waitingForDialog) {
+      if (info.windowState === 'dialog') return {label:'Chờ hộp thoại',
+        detail:'Trả lời hộp thoại trong trình duyệt, sau đó bấm Dừng lại nếu vẫn muốn đóng.'};
+      return {label:'Chưa xác minh cửa sổ',
+        detail:'Kiểm tra cửa sổ trình duyệt, sau đó bấm Dừng lại nếu vẫn muốn đóng.'};
+    }
+    return {label:isRunning?'Đang chạy':'Đã dừng',detail:'Hồ sơ trình duyệt'};
   }
 
   function create({ readActive, getCurrentIds, onUpdate, onStatus,
@@ -103,5 +113,5 @@
       getStatus: () => lastStatus });
   }
 
-  return Object.freeze({ parseActiveList, differs, create });
+  return Object.freeze({ parseActiveList, differs, profileStatus, create });
 });

@@ -2,7 +2,8 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const {create,parseActiveList,differs}=require('../src/ui/profileStatusPoller');
+const {create,parseActiveList,differs,profileStatus}=require('../src/ui/profileStatusPoller');
+const BrowserLauncher=require('../src/engine/browserLauncher');
 
 function deferred() {
   let resolve,reject;
@@ -21,6 +22,29 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert.equal(differs(rows('x','y'),['x','z']),true);
   assert.equal(differs([{profileId:'x',waitingForDialog:true}],[{profileId:'x',waitingForDialog:false}]),true);
   assert.equal(differs([{profileId:'x',waitingForDialog:true}],[{profileId:'x',waitingForDialog:true}]),false);
+  assert.equal(differs([{profileId:'x',waitingForDialog:true,windowState:'unknown'}],[{profileId:'x',waitingForDialog:true,windowState:'dialog'}]),true);
+  assert.equal(profileStatus({waitingForDialog:true,windowState:'dialog'},true).label,'Chờ hộp thoại');
+  assert.match(profileStatus({waitingForDialog:true,windowState:'dialog'},true).detail,/Dừng lại/);
+  assert.equal(profileStatus({waitingForDialog:true,windowState:'unknown'},true).label,'Chưa xác minh cửa sổ');
+  assert.match(profileStatus({waitingForDialog:true,windowState:'unknown'},true).detail,/Dừng lại/);
+  assert.equal(profileStatus(null,false).label,'Đã dừng');
+  assert.equal(profileStatus(null,false).detail,'Hồ sơ trình duyệt');
+  assert.equal(profileStatus({waitingForDialog:false,windowState:'clear'},true).label,'Đang chạy');
+  const list=BrowserLauncher.prototype.listActive.call({activeProcesses:new Map([
+    ['x',{profileId:'x',engineType:'firefox',process:{dialogBlocked:true,windowState:'unknown'}}],
+    ['y',{profileId:'y',engineType:'firefox',process:{dialogBlocked:true,windowState:'untrusted'}}]
+  ])});
+  assert.equal(list[0].windowState,'unknown');assert.equal(list[1].windowState,null);
+  let changing=[{profileId:'x',waitingForDialog:true,windowState:'unknown'}], renders=0;
+  let next=changing;
+  const transitionPoller=create({readActive:async()=>next,getCurrentIds:()=>changing,
+    onUpdate:rows=>{changing=rows;renders++;},onStatus:()=>{}});
+  next=[{profileId:'x',waitingForDialog:true,windowState:'dialog'}];
+  await transitionPoller.poll();assert.equal(renders,1);
+  next=[{profileId:'x',waitingForDialog:false,windowState:'clear'}];
+  await transitionPoller.poll();assert.equal(renders,2);
+  await transitionPoller.poll();assert.equal(renders,2);
+  transitionPoller.stop();
 
   let active=['a'],updates=0,reads=0;
   let current=deferred();
@@ -123,6 +147,9 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert(renderer.includes('profileStatusPoller.markSnapshotLoaded()'));
   assert(renderer.includes('profileStatusPoller.markSnapshotFailed()'));
   assert(renderer.includes('intervalMs: 2000'));
+  assert(renderer.includes('LHMProfileStatusPoller.profileStatus(activeInfo,isRunning)'));
+  assert(!renderer.includes('Vân tay đã được cách ly &amp; tối ưu cho Ads'));
+  assert(!renderer.includes('Hồ sơ đã cách ly'));
   assert(!renderer.includes('setInterval(async () => {\n    const activeList'),
     'Old overlapping async interval must be removed');
   assert(css.includes('.lhm-profile-sync-status[data-state="error"]'));

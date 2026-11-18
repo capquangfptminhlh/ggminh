@@ -8,7 +8,7 @@
 // must see none of them, A must still see its own after a restart, and after
 // B writes its own values A must still see only A's.
 // Usage: node tools/concurrent-storage-isolation.js <out-dir> [browser-exe] [chromium|gecko]
-const fs = require('fs'), path = require('path'), http = require('http');
+const fs = require('fs'), path = require('path'), http = require('http'), crypto = require('crypto');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
 const {ConfigBackup}=require('../src/backup/configBackup');
@@ -18,10 +18,13 @@ const {execFile}=require('node:child_process');
 const {openIsolationDb,readIsolationValue,writeIsolationValue}=require('./storage-isolation-idb');
 const {withIsolationCleanup}=require('./storage-isolation-cleanup');
 const {evaluateIsolationChecks,processDiagnostics,observeStopCancelled,windowStateSummary}=require('./storage-isolation-checks');
+const {prepareSyntheticFirefoxProfile,prepareFixtureRoot,writeFixtureReport}=require('./synthetic-firefox-fixture');
 const [outDirArg, bin, engineArg] = process.argv.slice(2);
 const outDir = path.resolve(outDirArg || 'storage-isolation');
 const engine = engineArg || 'chromium';
-fs.mkdirSync(outDir, { recursive: true });
+prepareFixtureRoot(outDir);
+const fixtureToken=crypto.randomBytes(32).toString('hex'),fixtureMarker=path.join(outDir,'fixture.marker');
+fs.writeFileSync(fixtureMarker,fixtureToken,{flag:'wx'});
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body>${mode}<script>
@@ -72,15 +75,14 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
     res.writeHead(200, headers); res.end(page(mode));
   });
   const launchers = [];
-  let reportWritten = false;
+  let report = null;
   await withIsolationCleanup({ server, launchers, onCleanup: cleanup => {
-    fs.writeFileSync(path.join(outDir, 'storage-isolation-cleanup.json'), JSON.stringify(cleanup, null, 2));
-    const reportPath = path.join(outDir, 'storage-isolation-report.json');
-    if (reportWritten) {
-      const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+    writeFixtureReport(path.join(outDir, 'storage-isolation-cleanup.json'),cleanup);
+    if (report) {
       report.checks.cleanupComplete = cleanup.complete;
       if (!cleanup.complete) report.verdict = 'FAIL';
-      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      writeFixtureReport(path.join(outDir, 'storage-isolation-report.json'),report);
+      if(report.verdict!=='PASS')process.exitCode=1;
     }
   } }, async () => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
@@ -99,6 +101,8 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
   launchers.push(launcher);
   const A = store.saveProfile({ name: 'iso-A', engine, proxy: { type: 'direct' }, startUrl: base + '/' });
   const B = store.saveProfile({ name: 'iso-B', engine, proxy: { type: 'direct' }, startUrl: base + '/' });
+  if(engine==='gecko')for(const profile of [A,B])prepareSyntheticFirefoxProfile({fixtureRoot:outDir,
+    appRoot:store.baseDir,profileId:profile.id,markerToken:fixtureToken});
   const steps = [];
   async function visit(profile, url, label, instance=launcher) {
     const before = results.length, hitsBefore = assetHits;
@@ -183,18 +187,18 @@ const page = mode => `<!doctype html><meta charset=utf-8><title>iso</title><body
   const restoredA=restored.find(profile=>profile.name.startsWith('iso-A'));
   const restoredB=restored.find(profile=>profile.name.startsWith('iso-B'));
   if(restoredA&&restoredB){
+    if(engine==='gecko')for(const profile of [restoredA,restoredB])prepareSyntheticFirefoxProfile({fixtureRoot:outDir,
+      appRoot:restoredStore.baseDir,profileId:profile.id,markerToken:fixtureToken});
     await visit(restoredA,base+'/read?p=restoredA','restored A starts without session',restoredLauncher);
     await visit(restoredB,base+'/read?p=restoredB','restored B starts without session',restoredLauncher);
   }
   const checks=evaluateIsolationChecks({steps,simultaneous,concurrentA,concurrentB,concurrentExitCodes,
     concurrentStopped:!launcher.isBusy(A.id)&&!launcher.isBusy(B.id),
     restoreExcludesSessions:restoreResult.excludesSessions});
-  const report = { schema: 'lhm.storage-isolation.v1', at: new Date().toISOString(), engine, browser: bin || 'auto',
-    sameOrigin: true, storesChecked: ['cookie (JS)', 'cookie (HttpOnly)', 'localStorage', 'IndexedDB', 'Cache Storage', 'HTTP disk cache'],
+  report = { schema: 'lhm.storage-isolation.v1', at: new Date().toISOString(), engine, browser: bin || 'auto',
+    sameOrigin: true, fixturePreferences:engine==='gecko'?{'privacy.spoof_english':1}:{}, storesChecked: ['cookie (JS)', 'cookie (HttpOnly)', 'localStorage', 'IndexedDB', 'Cache Storage', 'HTTP disk cache'],
     steps, concurrentResults: { A: concurrentA || null, B: concurrentB || null, exitCodes:concurrentExitCodes, diagnostics:concurrentDiagnostics },
     checks, verdict: Object.values(checks).every(Boolean) ? 'PASS' : 'FAIL' };
-  fs.writeFileSync(path.join(outDir, 'storage-isolation-report.json'), JSON.stringify(report, null, 2));
-  reportWritten = true;
   console.log(JSON.stringify({ verdict: report.verdict, checks, steps: steps.map(s => ({ step: s.step, cookie: s.cookie, httpCookie: s.cookieHeader,
     localStorage: s.localStorage, indexedDB: s.indexedDB, cacheStorage: s.cacheStorage, httpCacheNetworkFetches: s.httpCacheNetworkFetches, err: s.err })) }, null, 2));
   process.exitCode = report.verdict === 'PASS' ? 0 : 1;
