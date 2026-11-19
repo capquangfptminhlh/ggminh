@@ -462,6 +462,7 @@ class BrowserLauncher {
         startedAt: info.startedAt,
         stopping: !!info.stopping,
         waitingForDialog: !!info.process?.dialogBlocked,
+        slowClosing: !!info.process?.slowClosing,
         windowState: ['dialog','unknown','clear'].includes(info.process?.windowState) ? info.process.windowState : null,
         wsEndpoint: info.wsEndpoint
       });

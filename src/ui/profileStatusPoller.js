@@ -29,7 +29,7 @@
       if (!current.has(item.profileId)) return true;
       const old = current.get(item.profileId);
       return old !== null && (!!old.waitingForDialog !== !!item.waitingForDialog ||
-        !!old.stopping !== !!item.stopping || old.windowState !== item.windowState);
+        !!old.stopping !== !!item.stopping || !!old.slowClosing !== !!item.slowClosing || old.windowState !== item.windowState);
     });
   }
 
@@ -40,6 +40,8 @@
       return {label:'Chưa xác minh cửa sổ',
         detail:'Kiểm tra cửa sổ trình duyệt, sau đó bấm Dừng lại nếu vẫn muốn đóng.'};
     }
+    if (info?.stopping && info?.slowClosing) return {label:'Đang đóng chậm',
+      detail:'Ứng dụng đang chờ trình duyệt đóng để bảo vệ dữ liệu hồ sơ.'};
     return {label:isRunning?'Đang chạy':'Đã dừng',detail:'Hồ sơ trình duyệt'};
   }
 

@@ -11,3 +11,6 @@ Các phép thử dùng hồ sơ tạm và trang loopback trên máy Windows này
 - Bản Electron đóng gói trước đó đã qua kiểm tra khởi chạy và phục hồi crash; mỗi bản mới cần được kiểm tra lại. Chưa nghiệm thu cài đặt trên máy khách, mất điện, mọi hệ thống tập tin hay các tiến trình nằm ngoài job.
 
 Khóa chỉ điều phối các thao tác trong ứng dụng sử dụng cơ chế này; chương trình ngoài không bắt buộc tuân theo. Các guard cũ không rõ chủ sở hữu tiếp tục được giữ lại để tránh mở khóa nhầm. Không coi các phép thử trên là bảo đảm cách ly tuyệt đối hoặc chứng nhận trình duyệt không bị nhận diện.
+# Giới hạn nhận diện cửa sổ Windows
+
+Đường dừng thử nghiệm kiểm tra HWND, PID, thời gian tạo tiến trình và tư cách thành viên job trước khi gửi yêu cầu đóng; không tự buộc dừng chỉ vì hết thời gian chờ. Kiểm tra này không nguyên tử với `PostMessage`: cửa sổ có thể thay đổi hoặc handle bị tái sử dụng giữa kiểm tra và gửi. Một handle tái sử dụng trong cùng vòng đời tiến trình cũng không được nhận diện chắc chắn. Kết quả kiểm thử không chứng minh các race này không thể xảy ra; không coi cơ chế là bảo đảm tuyệt đối cho mọi cửa sổ.

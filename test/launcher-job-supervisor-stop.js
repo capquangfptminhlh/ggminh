@@ -18,6 +18,8 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   assert.equal(launcher.isBusy(profile.id),true);
   const done=new Promise(resolve=>proc.once('exit',resolve));
   assert.equal(launcher.stop(profile.id).success,true,'Stop must reach the remaining job');
+  await sleep(1000);assert.equal(proc.slowClosing,true);assert.equal(launcher.isBusy(profile.id),true);
+  assert.equal(proc.requestJobStop(true),true,'Explicitly clean up only this synthetic job');
   await Promise.race([done,sleep(6000).then(()=>{throw Error('Remaining job did not stop')})]);
   const deadline=Date.now()+5000;while(launcher.isBusy(profile.id)&&Date.now()<deadline)await sleep(50);
   assert.equal(launcher.isBusy(profile.id),false);

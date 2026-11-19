@@ -9,6 +9,9 @@ if(process.platform!=='win32'){console.log('SKIP Windows only');process.exit(0)}
  const ended=new Promise(resolve=>proc.once('exit',resolve)),calls=[];
  const run=(_cmd,args,_opts,cb)=>{calls.push(args);setImmediate(()=>cb(null))};
  assert.equal(stopBrowserProcess(proc,{platform:'win32',run,graceMs:1500}),true);
+ await new Promise(resolve=>setTimeout(resolve,2300));
+ assert.equal(proc.slowClosing,true);assert.equal(proc.jobComplete,false);
+ assert.equal(proc.requestJobStop(true),true,'Explicit force cleans up the synthetic job');
  await Promise.race([ended,new Promise((_,reject)=>setTimeout(()=>reject(Error('Stop timed out')),5000))]);
  assert.equal(calls.length,0,'Supervised jobs must not target a potentially reused PID');
  assert(proc.jobComplete);console.log('Stop fallback targets the job after its root exits PASS');

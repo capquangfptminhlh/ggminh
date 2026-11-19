@@ -30,11 +30,14 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert.equal(profileStatus(null,false).label,'Đã dừng');
   assert.equal(profileStatus(null,false).detail,'Hồ sơ trình duyệt');
   assert.equal(profileStatus({waitingForDialog:false,windowState:'clear'},true).label,'Đang chạy');
+  assert.equal(profileStatus({stopping:true,slowClosing:true},true).label,'Đang đóng chậm');
+  assert.match(profileStatus({stopping:true,slowClosing:true},true).detail,/đang chờ trình duyệt/i);
+  assert.equal(differs([{profileId:'x',stopping:true,slowClosing:true}],[{profileId:'x',stopping:true,slowClosing:false}]),true);
   const list=BrowserLauncher.prototype.listActive.call({activeProcesses:new Map([
-    ['x',{profileId:'x',engineType:'firefox',process:{dialogBlocked:true,windowState:'unknown'}}],
+    ['x',{profileId:'x',engineType:'firefox',process:{dialogBlocked:true,windowState:'unknown',slowClosing:true}}],
     ['y',{profileId:'y',engineType:'firefox',process:{dialogBlocked:true,windowState:'untrusted'}}]
   ])});
-  assert.equal(list[0].windowState,'unknown');assert.equal(list[1].windowState,null);
+  assert.equal(list[0].windowState,'unknown');assert.equal(list[0].slowClosing,true);assert.equal(list[1].windowState,null);
   let changing=[{profileId:'x',waitingForDialog:true,windowState:'unknown'}], renders=0;
   let next=changing;
   const transitionPoller=create({readActive:async()=>next,getCurrentIds:()=>changing,

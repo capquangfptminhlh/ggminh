@@ -25,6 +25,11 @@ public static class LhmJobProbe {
  [DllImport("user32.dll")] public static extern bool IsWindowEnabled(IntPtr window);
  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
  [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr window,uint command);
+ [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr window);
+ [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window,out uint pid);
+ [DllImport("user32.dll",SetLastError=true)] public static extern bool PostMessage(IntPtr window,uint message,IntPtr wParam,IntPtr lParam);
+ public delegate bool WindowCallback(IntPtr window,IntPtr state);
+ [DllImport("user32.dll",SetLastError=true)] public static extern bool EnumWindows(WindowCallback callback,IntPtr state);
  [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] public static extern bool CreateProcess(string app,StringBuilder command,IntPtr processAttributes,IntPtr threadAttributes,bool inherit,uint flags,IntPtr env,string cwd,ref STARTUPINFO startup,out PROCESS_INFORMATION process);
  public static void Check(bool ok,string operation){if(!ok)throw new Win32Exception(Marshal.GetLastWin32Error(),operation);}
  public static System.Threading.Tasks.Task<string> ReadCommand(){return System.Threading.Tasks.Task.Run(()=>Console.In.ReadLine());}
@@ -36,24 +41,44 @@ public static class LhmJobProbe {
    long[] ids=new long[count];for(int i=0;i<count;i++)ids[i]=Marshal.ReadIntPtr(buffer,8+i*IntPtr.Size).ToInt64();return ids;
   }finally{Marshal.FreeHGlobal(buffer);}
  }
+ public sealed class WindowIdentity { public IntPtr Handle; public uint Pid; public long Created; public string Key {get{return Handle.ToInt64()+":"+Pid+":"+Created;}} }
+ public sealed class ScanResult { public int State; public System.Collections.Generic.List<WindowIdentity> Windows=new System.Collections.Generic.List<WindowIdentity>(); }
+ // Inspect every visible top-level job window, including secondary windows.
  // 0=clear, 1=dialog, 2=unknown. Unknown remains blocking.
- public static int BlockingWindowState(IntPtr job){
-  foreach(long id in ProcessIds(job)){
-   System.Diagnostics.Process p=null;
+ public static ScanResult ScanWindows(IntPtr job){
+  var result=new ScanResult();var ids=new System.Collections.Generic.HashSet<long>(ProcessIds(job));
+  bool ok=EnumWindows((window,state)=>{
+   uint pid;GetWindowThreadProcessId(window,out pid);
+   if(!ids.Contains(pid)||!IsWindowVisible(window))return true;
    try{
-    p=System.Diagnostics.Process.GetProcessById((int)id);
-    bool member=false;
-    if(!IsProcessInJob(p.Handle,job,out member))return 2;
-    if(!member)continue;
-    IntPtr window=p.MainWindowHandle;
-    if(window==IntPtr.Zero||!IsWindowVisible(window)||IsWindowEnabled(window))continue;
-    IntPtr popup=GetWindow(window,6); // GW_ENABLEDPOPUP
-    if(popup!=IntPtr.Zero&&popup!=window&&IsWindowVisible(popup)&&IsWindowEnabled(popup))return 1;
-   }catch(ArgumentException){ /* Process exited during enumeration. */ }
-   catch{ return 2; } // Unknown window state must not force a shutdown.
-   finally{if(p!=null)p.Dispose();}
-  }
-  return 0;
+    using(var process=System.Diagnostics.Process.GetProcessById((int)pid)){
+     bool member=false;if(!IsProcessInJob(process.Handle,job,out member)){result.State=2;return false;}
+     if(!member)return true;
+     if(!IsWindowEnabled(window)){
+      IntPtr popup=GetWindow(window,6);
+      if(popup!=IntPtr.Zero&&popup!=window&&IsWindowVisible(popup)&&IsWindowEnabled(popup))result.State=1;
+      else if(result.State!=1)result.State=2;
+     }
+     if(GetWindow(window,4)==IntPtr.Zero)result.Windows.Add(new WindowIdentity{Handle=window,Pid=pid,Created=process.StartTime.ToUniversalTime().Ticks}); // GW_OWNER
+    }
+   }catch(ArgumentException){}catch{result.State=2;return false;}
+   return result.State!=2;
+  },IntPtr.Zero);
+  if(!ok&&result.State!=2)result.State=2;
+  return result;
+ }
+ public static int BlockingWindowState(IntPtr job){return ScanWindows(job).State;}
+ public static int IdentityState(IntPtr job,WindowIdentity identity,bool requireEnabled){
+  IntPtr window=identity.Handle;if(!IsWindow(window))return 0;uint pid;GetWindowThreadProcessId(window,out pid);
+  if(pid==0)return 2;if(pid!=identity.Pid)return 0;
+  try{using(var process=System.Diagnostics.Process.GetProcessById((int)pid)){
+   if(process.StartTime.ToUniversalTime().Ticks!=identity.Created)return 0;
+   bool member=false;if(!IsProcessInJob(process.Handle,job,out member))return 2;if(!member)return 0;
+   uint recheck;GetWindowThreadProcessId(window,out recheck);
+   if(!IsWindow(window)||pid!=recheck)return 0;
+   if(requireEnabled&&(!IsWindowVisible(window)||!IsWindowEnabled(window)||GetWindow(window,4)!=IntPtr.Zero))return 2;
+   return 1;
+  }}catch(ArgumentException){return 0;}catch{return 2;}
  }
 }
 '@
@@ -116,6 +141,27 @@ public static class LhmJobProbe {
   SendSupervisorEvent '{"event":"resumed"}'
   $reported=$false;$dialogReported=$false;$stopDeadline=$null;$nextClose=$null;$inputTask=[LhmJobProbe]::ReadCommand()
   $closeAttempts=0;$closeSent=0;$closeNotSent=0;$closeErrors=0;$closeForced=$false
+  $stopCloseSent=0;$slowWait=$false;$outstandingWindow=$null
+  $attemptedWindows=[Collections.Generic.HashSet[string]]::new()
+  function CloseNextWindow {
+   if($null -ne $outstandingWindow){
+    if([LhmJobProbe]::IdentityState($job,$outstandingWindow,$false) -ne 0){return}
+    $script:outstandingWindow=$null
+   }
+   $scan=[LhmJobProbe]::ScanWindows($job)
+   if($scan.State -ne 0){return}
+   foreach($window in $scan.Windows){
+    if($attemptedWindows.Contains($window.Key)){continue}
+    if((GetWindowState $job) -ne 0){return}
+    if([LhmJobProbe]::IdentityState($job,$window,$true) -ne 1){return}
+    [void]$attemptedWindows.Add($window.Key)
+    $script:closeAttempts++
+    if([LhmJobProbe]::PostMessage($window.Handle,0x0010,[IntPtr]::Zero,[IntPtr]::Zero)){
+     $script:closeSent++;$script:stopCloseSent++;$script:outstandingWindow=$window
+    }else{$script:closeNotSent++}
+    return
+   }
+  }
   function SendCloseSummary {
    SendSupervisorEvent (([pscustomobject]@{event='close-summary';attempts=$closeAttempts;sent=$closeSent;notSent=$closeNotSent;errors=$closeErrors;forced=$closeForced}|ConvertTo-Json -Compress))
   }
@@ -127,10 +173,22 @@ public static class LhmJobProbe {
      [LhmJobProbe]::Check([LhmJobProbe]::TerminateJobObject($job,1),'Force stop job processes')
     }
     if($instruction -eq 'STOP' -and -not $stopDeadline){
+     $slowWait=$false
+     $stopCloseSent=0
+     $outstandingWindow=$null;$attemptedWindows.Clear()
      $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
      $nextClose=[DateTime]::UtcNow
     }
     if($null -eq $instruction){$inputTask=$null}else{$inputTask=[LhmJobProbe]::ReadCommand()}
+   }
+   if($slowWait -and [DateTime]::UtcNow -ge $nextClose){
+    if((GetWindowState $job) -ne 0){
+     if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
+    }elseif($dialogReported){
+     SendSupervisorEvent '{"event":"dialog-cleared"}';$dialogReported=$false
+     $slowWait=$false;$nextClose=$null
+    }else{CloseNextWindow}
+    if($slowWait){$nextClose=[DateTime]::UtcNow.AddMilliseconds(500)}
    }
    if($stopDeadline -and [DateTime]::UtcNow -ge $nextClose){
     if((GetWindowState $job) -ne 0){
@@ -141,14 +199,7 @@ public static class LhmJobProbe {
      # The person may have canceled a close confirmation. Do not retry it.
      SendSupervisorEvent '{"event":"dialog-cleared"}';$dialogReported=$false
      $stopDeadline=$null;$nextClose=$null
-    }else{foreach($memberId in @([LhmJobProbe]::ProcessIds($job))){
-     $member=$null
-     $closeAttempts++
-     try{
-      $member=[Diagnostics.Process]::GetProcessById([int]$memberId);$inJob=$false
-      if([LhmJobProbe]::IsProcessInJob($member.Handle,$job,[ref]$inJob) -and $inJob -and $member.CloseMainWindow()){$closeSent++}else{$closeNotSent++}
-     }catch{$closeErrors++}finally{if($member){$member.Dispose()}}
-    }}
+    }else{CloseNextWindow}
     if($stopDeadline){$nextClose=[DateTime]::UtcNow.AddMilliseconds(500)}
    }
    if($stopDeadline -and [DateTime]::UtcNow -ge $stopDeadline -and [LhmJobProbe]::Active($job) -gt 0){
@@ -156,9 +207,9 @@ public static class LhmJobProbe {
      if(-not $dialogReported){SendSupervisorEvent '{"event":"dialog-blocked"}';$dialogReported=$true}
      $stopDeadline=[DateTime]::UtcNow.AddMilliseconds($stopGrace)
     }else{
-     $closeForced=$true
-     [LhmJobProbe]::Check([LhmJobProbe]::TerminateJobObject($job,1),'Stop remaining job processes')
-     $stopDeadline=$null
+     # No timeout proves a process is no longer flushing data.
+     SendSupervisorEvent '{"event":"close-slow"}'
+     $stopDeadline=$null;$slowWait=$true;$nextClose=[DateTime]::UtcNow.AddMilliseconds(500)
     }
    }
    if(-not $reported -and [LhmJobProbe]::WaitForSingleObject($pi.hProcess,0) -eq 0){
