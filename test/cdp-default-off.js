@@ -9,6 +9,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
 const { EventEmitter } = require('events');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 const { createApiServer } = require('../src/api/server');
 const { prepare } = require('../src/ops/liveNavigation');
 const { cdpAllowed, CDP_DISABLED_MESSAGE } = require('../src/security/cdpPolicy');
@@ -34,7 +35,7 @@ const { cdpAllowed, CDP_DISABLED_MESSAGE } = require('../src/security/cdpPolicy'
       proc.kill = () => { setImmediate(() => proc.emit('exit', 0)); return true; };
       spawned.push(proc); setImmediate(() => proc.emit('spawn')); return proc;
     };
-    const launcher = new BrowserLauncher(store, { spawnProcess });
+    const launcher = new BrowserLauncher(store, { spawnProcess,profileLockOptions,completionVerifier:()=>true });
     launcher.findBrowserBinary = () => process.execPath;
     launcher.fetchWebSocketDebuggerUrl = async () => null;
     const hasDebugPort = proc => proc.args.some(arg => arg.startsWith('--remote-debugging'));
@@ -43,6 +44,7 @@ const { cdpAllowed, CDP_DISABLED_MESSAGE } = require('../src/security/cdpPolicy'
       const proc = spawned[spawned.length - 1];
       const exited = new Promise(resolve => proc.once('exit', resolve));
       launcher.stop(profile.id); await exited;
+      await waitForUnlock(launcher,profile.id);
       return { info, proc };
     };
 

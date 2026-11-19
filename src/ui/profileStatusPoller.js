@@ -23,9 +23,26 @@
   }
 
   function differs(activeList, currentIds) {
-    const current = new Set(currentIds);
-    return activeList.length !== current.size ||
-      activeList.some(item => !current.has(item.profileId));
+    const current = new Map(currentIds.map(item =>
+      typeof item === 'string' ? [item, null] : [item.profileId, item]));
+    return activeList.length !== current.size || activeList.some(item => {
+      if (!current.has(item.profileId)) return true;
+      const old = current.get(item.profileId);
+      return old !== null && (!!old.waitingForDialog !== !!item.waitingForDialog ||
+        !!old.stopping !== !!item.stopping || !!old.slowClosing !== !!item.slowClosing || old.windowState !== item.windowState);
+    });
+  }
+
+  function profileStatus(info, isRunning) {
+    if (info?.waitingForDialog) {
+      if (info.windowState === 'dialog') return {label:'Chờ hộp thoại',
+        detail:'Trả lời hộp thoại trong trình duyệt, sau đó bấm Dừng lại nếu vẫn muốn đóng.'};
+      return {label:'Chưa xác minh cửa sổ',
+        detail:'Kiểm tra cửa sổ trình duyệt, sau đó bấm Dừng lại nếu vẫn muốn đóng.'};
+    }
+    if (info?.stopping && info?.slowClosing) return {label:'Đang đóng chậm',
+      detail:'Ứng dụng đang chờ trình duyệt đóng để bảo vệ dữ liệu hồ sơ.'};
+    return {label:isRunning?'Đang chạy':'Đã dừng',detail:'Hồ sơ trình duyệt'};
   }
 
   function create({ readActive, getCurrentIds, onUpdate, onStatus,
@@ -98,5 +115,5 @@
       getStatus: () => lastStatus });
   }
 
-  return Object.freeze({ parseActiveList, differs, create });
+  return Object.freeze({ parseActiveList, differs, profileStatus, create });
 });

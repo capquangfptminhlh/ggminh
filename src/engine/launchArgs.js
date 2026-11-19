@@ -1,7 +1,7 @@
 const path = require('path');
 
 function safeWebUrl(value) {
-  if (typeof value !== 'string' || value.length > 2048) throw new Error('Invalid start URL');
+  if (typeof value !== 'string' || value.length > 2048 || /[\x00-\x1f\x7f]/.test(value)) throw new Error('Invalid start URL');
   const url = new URL(value);
   if (url.username || url.password) throw new Error('Start URL must not contain credentials');
   if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('Start URL must be http(s)');

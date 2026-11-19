@@ -26,7 +26,10 @@ function rejectSymlinks(baseDir, profileDir) {
   }
   // Avoid a filesystem junction/symlink pointing profiles at another profile.
   for (let current = target; current !== root; current = path.dirname(current)) {
-    if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink()) {
+    let stat;
+    try { stat=fs.lstatSync(current); }
+    catch(error) { if(error.code==='ENOENT') continue; throw error; }
+    if (stat.isSymbolicLink()) {
       throw new Error('Storage link detected: profile directories must be independent');
     }
   }

@@ -5,6 +5,7 @@ const os = require('os');
 const EventEmitter = require('events');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 const { createLaunchArgs } = require('../src/engine/launchArgs');
 const { createApiServer } = require('../src/api/server');
 
@@ -49,13 +50,68 @@ const { createApiServer } = require('../src/api/server');
       process.nextTick(()=>proc.emit('spawn'));
       return proc;
     }
-    const launcher=new BrowserLauncher(store,{spawnProcess:fakeSpawn});
+    const launcher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,profileLockOptions,completionVerifier:()=>true});
     launcher.findBrowserBinary=()=>process.execPath;
+    const unreachable=store.saveProfile({name:'Unreachable proxy',engine:'chromium',
+      proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
+    const noProxyLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,
+      proxyProbe:async()=>false});
+    noProxyLauncher.findBrowserBinary=()=>process.execPath;
+    await assert.rejects(noProxyLauncher.start(unreachable.id),/PROXY_UNAVAILABLE/);
+    assert.strictEqual(spawnCount,0,'Unreachable proxy must block before browser spawn');
+    const targetProfile=store.saveProfile({name:'Target preflight',engine:'chromium',
+      startUrl:'https://ads.example.net:8443/private?token=secret',
+      proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
+    let observedDestination;
+    const targetLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async(_proxy,options)=>{
+      observedDestination=options.destination;return false;
+    }});
+    await assert.rejects(targetLauncher.start(targetProfile.id),error=>{
+      assert.match(error.message,/ads\.example\.net:8443/);
+      assert(!error.message.includes('secret'));assert(!error.message.includes('/private'));
+      return /PROXY_UNAVAILABLE/.test(error.message);
+    });
+    assert.equal(observedDestination,'https://ads.example.net:8443/private?token=secret');
+    await assert.rejects(targetLauncher.start(targetProfile.id,'http://other.example:8080/'),error=>
+      /example\.com:443/.test(error.message)&&/HTTP/.test(error.message));
+    assert.equal(observedDestination,'http://other.example:8080/');
+    observedDestination='not called';
+    await assert.rejects(targetLauncher.start(targetProfile.id,'https://bad.test\r\nX-Pass: secret'),error=>
+      /Invalid start URL/.test(error.message)&&!error.message.includes('secret'));
+    assert.equal(observedDestination,'not called');
+    const emptyTarget=store.saveProfile({name:'Empty target',engine:'chromium',
+      proxy:{type:'http',host:'127.0.0.1',port:65534},fingerprint:{mode:'native'}});
+    const emptyStored=store.data.profiles.find(item=>item.id===emptyTarget.id);
+    emptyStored.startUrl='';emptyStored.startUrls=[];
+    await assert.rejects(targetLauncher.start(emptyTarget.id),error=>/ads\.google\.com:443/.test(error.message));
+    assert.equal(observedDestination,'https://ads.google.com/');
+    const changedTargetLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async()=>{
+      store.saveProfile({...targetProfile,startUrls:['https://changed.example/']});return true;
+    }});
+    await assert.rejects(changedTargetLauncher.start(targetProfile.id),/Trang khởi động thay đổi/);
+    assert.strictEqual(spawnCount,0,'Target probe failure must block browser spawn');
+    const changedLauncher=new BrowserLauncher(store,{spawnProcess:fakeSpawn,proxyProbe:async()=>{
+      store.saveProfile({...unreachable,proxy:{type:'http',host:'127.0.0.1',port:65533}});
+      return true;
+    }});
+    changedLauncher.findBrowserBinary=()=>process.execPath;
+    await assert.rejects(changedLauncher.start(unreachable.id),/PROXY_UNAVAILABLE/);
+    assert.strictEqual(spawnCount,0,'Changed proxy must block before browser spawn');
+    store.data.profiles.push({...store.data.profiles.find(p=>p.id===first.id),
+      id:first.id.toUpperCase(),name:'Legacy collision'});
+    await assert.rejects(launcher.start(first.id),/profile ID.*collid/i);
+    assert.strictEqual(spawnCount,0,'legacy path collisions must be blocked before spawn');
+    store.data.profiles.pop();
     // Both callers get the exact same launched process (no competing profile lock).
     const [one,alsoOne]=await Promise.all([launcher.start(first.id),launcher.start(first.id)]);
     assert.strictEqual(spawnCount,1);
     assert.strictEqual(one.pid,alsoOne.pid);
     assert.strictEqual(launcher.isBusy(first.id),true);
+    const contender=new BrowserLauncher(store,{spawnProcess:fakeSpawn,profileLockOptions,completionVerifier:()=>true});
+    contender.findBrowserBinary=()=>process.execPath;
+    assert.strictEqual(contender.isBusy(first.id),true,'A second launcher must block edits and deletion while the profile is locked');
+    await assert.rejects(contender.start(first.id),/PROFILE_LOCKED/);
+    assert.strictEqual(spawnCount,1,'Another launcher must not spawn the same profile');
     const two=await launcher.start(second.id);
     assert.notStrictEqual(two.pid,one.pid);
     assert.strictEqual(spawnCount,2);
@@ -71,11 +127,16 @@ const { createApiServer } = require('../src/api/server');
     assert.throws(()=>createLaunchArgs({
       engine:'chromium', profileDir:folderA,url:'https://user:password@example.com/'
     }),/credentials/);
+    assert.throws(()=>createLaunchArgs({
+      engine:'chromium', profileDir:folderA,url:'https://bad.test\r\nInjected: secret'
+    }),/Invalid start URL/);
     const result=launcher.stop(first.id);
     assert.strictEqual(result.success,true);
     assert.strictEqual(launcher.isBusy(first.id),true);
     await assert.rejects(launcher.start(first.id),/đang đóng/);
+    await assert.rejects(contender.start(first.id),/PROFILE_LOCKED/);
     processes[0].emit('exit',0);
+    await waitForUnlock(launcher,first.id);
     assert.strictEqual(launcher.isBusy(first.id),false);
     assert.strictEqual(launcher.isBusy(second.id),true);
     // The local API must refuse deletion of a still-running profile.
@@ -93,7 +154,25 @@ const { createApiServer } = require('../src/api/server');
     } finally{await new Promise(resolve=>server.close(resolve));}
     assert.strictEqual(launcher.stop(second.id).success,true);
     processes[1].emit('exit',0);
+    await waitForUnlock(launcher,second.id);
     assert.strictEqual(launcher.isBusy(second.id),false);
+    await contender.start(first.id);
+    assert.strictEqual(spawnCount,3,'The next launcher may start after exit releases the lock');
+    assert.strictEqual(contender.stop(first.id).success,true);
+    processes[2].emit('exit',0);
+    await waitForUnlock(contender,first.id);
+    let browserStillOpen=true;
+    const crashOptions={spawnProcess:fakeSpawn,
+      profileLockOptions:{localStorage:async()=>true,browserInstancesExist:async()=>browserStillOpen}};
+    const crashing=new BrowserLauncher(store,crashOptions);
+    const afterCrash=new BrowserLauncher(store,crashOptions);
+    crashing.findBrowserBinary=()=>process.execPath;afterCrash.findBrowserBinary=()=>process.execPath;
+    await crashing.start(first.id);
+    processes[3].emit('exit',1);
+    assert.strictEqual(crashing.isBusy(first.id),true,'Crash must keep local mutation guards active');
+    await assert.rejects(afterCrash.start(first.id),/PROFILE_LOCKED/);
+    browserStillOpen=false;
+    await assert.rejects(afterCrash.start(first.id),/PROFILE_LOCKED/);
     console.log('Concurrent profile startup, process lifecycle, URL safety and deletion-guard tests passed');
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

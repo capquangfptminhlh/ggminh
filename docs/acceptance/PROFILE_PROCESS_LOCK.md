@@ -1,0 +1,16 @@
+# Khóa và cách ly hồ sơ Chromium, Firefox trên Windows
+
+**ĐANG NGHIỆM THU — CHƯA PHÁT HÀNH.** Launcher tạo trình duyệt ở trạng thái tạm dừng, gắn vào Windows Job Object rồi mới cho chạy. Một bộ giám sát độc lập giữ job khi ứng dụng dừng bất thường; khóa hồ sơ chỉ được phục hồi sau khi có bằng chứng đúng token rằng job đã trống. Nếu không kiểm chứng được, khóa được giữ lại. Giao dịch SQLite bảo vệ các thao tác ghi và được hệ điều hành giải phóng khi tiến trình giữ giao dịch bị dừng.
+
+Các phép thử dùng hồ sơ tạm và trang loopback trên máy Windows này:
+
+- Firefox từng mở hộp xác nhận ngôn ngữ làm cửa sổ chính không nhận lệnh đóng. Cơ chế dừng giữ tiến trình và khóa khi phát hiện hộp thoại đang chờ; danh sách hồ sơ báo cần xử lý hộp thoại. Khi hộp thoại biến mất, yêu cầu dừng được hủy để tôn trọng trường hợp người dùng bấm Hủy; người dùng có thể bấm Dừng lại. Kiểm thử cửa sổ giả lập xác nhận không dừng cưỡng bức trong thời gian chờ. Lỗi tải trang/IndexedDB không đều quan sát trước đó chưa được xác định nguyên nhân.
+- Chromium và Firefox thật: chặn hai tiến trình mở cùng một hồ sơ; đóng và mở lại; dừng cưỡng bức ứng dụng khi trình duyệt còn chạy, giữ khóa và phục hồi sau khi trình duyệt đóng.
+- Cách ly dữ liệu A/B, chạy đồng thời, khởi động lại và sao lưu/khôi phục cấu hình: đã có lần chạy đạt trên cả hai engine. Chromium gặp lỗi CacheStorage ở hai lượt với đường dẫn dài; đường dẫn ngắn đã đạt. Chưa xác định nguyên nhân duy nhất.
+- Proxy HTTP có xác thực trên loopback: hai trình duyệt đi qua gateway thử nghiệm. Đây không phải phép đo rò rỉ mạng ngoài.
+- Bản Electron đóng gói trước đó đã qua kiểm tra khởi chạy và phục hồi crash; mỗi bản mới cần được kiểm tra lại. Chưa nghiệm thu cài đặt trên máy khách, mất điện, mọi hệ thống tập tin hay các tiến trình nằm ngoài job.
+
+Khóa chỉ điều phối các thao tác trong ứng dụng sử dụng cơ chế này; chương trình ngoài không bắt buộc tuân theo. Các guard cũ không rõ chủ sở hữu tiếp tục được giữ lại để tránh mở khóa nhầm. Không coi các phép thử trên là bảo đảm cách ly tuyệt đối hoặc chứng nhận trình duyệt không bị nhận diện.
+# Giới hạn nhận diện cửa sổ Windows
+
+Đường dừng thử nghiệm kiểm tra HWND, PID, thời gian tạo tiến trình và tư cách thành viên job trước khi gửi yêu cầu đóng; không tự buộc dừng chỉ vì hết thời gian chờ. Kiểm tra này không nguyên tử với `PostMessage`: cửa sổ có thể thay đổi hoặc handle bị tái sử dụng giữa kiểm tra và gửi. Một handle tái sử dụng trong cùng vòng đời tiến trình cũng không được nhận diện chắc chắn. Kết quả kiểm thử không chứng minh các race này không thể xảy ra; không coi cơ chế là bảo đảm tuyệt đối cho mọi cửa sổ.

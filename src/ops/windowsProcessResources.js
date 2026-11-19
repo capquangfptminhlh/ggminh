@@ -7,13 +7,20 @@ function positivePid(value){
 function nonNegative(value){
  const number=Number(value);return Number.isFinite(number)&&number>=0?number:0;
 }
+function cpuCounter(value){
+ if(value==null||(typeof value==='string'&&!value.trim()))return null;
+ const number=Number(value);return Number.isFinite(number)&&number>=0?number:null;
+}
 function buildProcessTreeResources(input,rootPids){
- const rows=(Array.isArray(input)?input:[]).map(row=>({
+ const rows=(Array.isArray(input)?input:[]).map(row=>{
+ const kernel=cpuCounter(row?.KernelModeTime),user=cpuCounter(row?.UserModeTime);
+ return ({
   pid:positivePid(row?.ProcessId),parentPid:positivePid(row?.ParentProcessId),
   workingSetBytes:nonNegative(row?.WorkingSetSize),
-  cpuTime100ns:nonNegative(row?.KernelModeTime)+nonNegative(row?.UserModeTime),
+  cpuTime100ns:kernel===null||user===null?null:kernel+user,
+  creationTime:typeof row?.CreationDate==='string'?row.CreationDate:null,
   name:typeof row?.Name==='string'?row.Name:''
- })).filter(row=>row.pid);
+ })}).filter(row=>row.pid);
  const byParent=new Map();
  for(const row of rows){
   const children=byParent.get(row.parentPid)||[];children.push(row);byParent.set(row.parentPid,children);
@@ -35,9 +42,11 @@ function buildProcessTreeResources(input,rootPids){
   members.sort((a,b)=>a.pid-b.pid);
   trees.push({rootPid,pids:members.map(row=>row.pid),processCount:members.length,
    workingSetBytes:members.reduce((sum,row)=>sum+row.workingSetBytes,0),
-   cpuTime100ns:members.reduce((sum,row)=>sum+row.cpuTime100ns,0),
+   cpuTime100ns:members.some(row=>row.cpuTime100ns===null)?null:
+    members.reduce((sum,row)=>sum+row.cpuTime100ns,0),
    processes:members.map(row=>({pid:row.pid,parentPid:row.parentPid,name:row.name,
-    workingSetBytes:row.workingSetBytes,cpuTime100ns:row.cpuTime100ns}))});
+    workingSetBytes:row.workingSetBytes,cpuTime100ns:row.cpuTime100ns,
+    creationTime:row.creationTime}))});
  }
  return {trees,totalWorkingSetBytes:trees.reduce((sum,tree)=>sum+tree.workingSetBytes,0),
   totalProcessCount:trees.reduce((sum,tree)=>sum+tree.processCount,0)};
@@ -47,12 +56,14 @@ function collectProcessTreeResources(rootPids,{platform=process.platform,exec=ex
  const roots=(Array.isArray(rootPids)?rootPids:[]).map(positivePid).filter(Boolean);
  if(!roots.length)return Promise.resolve({status:'MEASURED',trees:[],
   totalWorkingSetBytes:0,totalProcessCount:0});
- const command='Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,WorkingSetSize,KernelModeTime,UserModeTime,Name | ConvertTo-Json -Compress';
+ const command='Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,WorkingSetSize,KernelModeTime,UserModeTime,Name,CreationDate | ConvertTo-Json -Compress';
  return new Promise(resolve=>exec('powershell.exe',
   ['-NoProfile','-NonInteractive','-Command',command],
   {timeout:8000,windowsHide:true,maxBuffer:16*1024*1024,encoding:'utf8'},
   (error,stdout)=>{
-   if(error)return resolve({status:'ERROR',reason:String(error.message||error).slice(0,220)});
+   if(error)return resolve({status:'ERROR',failureKind:error.code==='ERR_CHILD_PROCESS_STDIO_MAXBUFFER'?'OUTPUT_LIMIT':
+    (error.killed===true?'TIMEOUT':(typeof error.code==='number'?'EXIT_NONZERO':'EXEC_ERROR')),
+    reason:String(error.message||error).slice(0,220)});
    try{
     const parsed=JSON.parse(String(stdout||'[]'));
     resolve({status:'MEASURED',...buildProcessTreeResources(

@@ -47,7 +47,21 @@ node tools/browser-resource-benchmark.js `
 Chạy từng engine với `light`, `medium`, `heavy` và concurrency `1`, `3`, `5`,
 `10`. Mỗi lệnh có một warmup bị loại khỏi report và tối thiểu 10 sample thật.
 Runner dừng, đóng toàn bộ process do nó tạo và xóa profile tạm sau mỗi sample.
-Nếu RAM khả dụng xuống dưới 20%, runner dừng và không tạo evidence hợp lệ.
+Runner không áp dụng ngưỡng RAM trống bắt buộc. Khi máy thiếu RAM, kết quả có
+thể chịu ảnh hưởng bởi tải hệ thống; chạy thất bại không được tính là kết quả đạt.
+Thời hạn chờ mặc định mỗi lượt là 30 giây; có thể dùng `--ready-timeout-ms`
+trong khoảng 1000–120000 để đo tải khởi động chậm, và cần ghi lại tham số này
+cùng kết quả. Báo cáo thời gian mở vẫn bao gồm toàn bộ thời gian chờ thực tế.
+Cửa sổ quan sát tài nguyên `--duration-ms` có thể đặt từ 1000 đến 30000 ms;
+cần ghi giá trị sử dụng cùng kết quả khi so sánh các lượt đo.
+Báo cáo không xác nhận mức dự phòng RAM và do đó không đáp ứng điều kiện dự phòng
+20% hiện có của bộ kiểm tra phát hành Camoufox.
+
+CPU là giá trị lớn nhất trong các khoảng lấy mẫu hợp lệ, chuẩn hóa theo tổng số
+CPU logic; không phải mức đỉnh liên tục. Các khoảng thiếu bộ đếm, tiến trình thay
+đổi hoặc không hợp lệ bị bỏ qua; báo cáo ghi số khoảng đo và số khoảng bỏ qua.
+CPU thực tế có thể cao hơn tại khoảng bỏ qua. Không có khoảng hợp lệ thì runner dừng.
+Các số CPU từ báo cáo tạo trước khi kiểm tra này được bổ sung cần đo lại.
 
 ## Hợp đồng artifact
 

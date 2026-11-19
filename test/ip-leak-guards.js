@@ -59,7 +59,7 @@ const prefsOf = dir => JSON.parse(fs.readFileSync(path.join(dir, 'Default', 'Pre
       return proc;
     };
     const launcher = new BrowserLauncher(store, { spawnProcess, downloadsRoot: path.join(root, 'dl'),
-      stopProcess: () => true, peerGuardFactory: null });
+      stopProcess: () => true, peerGuardFactory: null, proxyProbe:async()=>true });
     launcher.findBrowserBinary = () => process.platform === 'win32' ? 'C:\\LHMTest\\chrome.exe' : '/LHMTest/chrome.exe';
     await launcher.start(proxied.id);
     await launcher.start(direct.id);

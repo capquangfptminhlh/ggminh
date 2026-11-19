@@ -12,6 +12,7 @@ const os = require('os');
 const EventEmitter = require('events');
 const Store = require('../src/db/store');
 const BrowserLauncher = require('../src/engine/browserLauncher');
+const {profileLockOptions,waitForUnlock}=require('./profile-lock-helpers');
 const { stopBrowserProcess } = require('../src/engine/processStopper');
 const {
   profileDownloadDir, applyChromiumDownloadDir, applyGeckoDownloadDir, GECKO_BEGIN
@@ -55,8 +56,7 @@ async function stopperTests() {
     await sleep(80);
     assert.deepStrictEqual(r.calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
   }
-  // Windows Firefox: the spawned launcher has no window, so the graceful close
-  // goes straight to the browser child process (no /T, no /F).
+  // Windows Firefox: ask both root and child to close (no /T, no /F).
   {
     const proc = fakeProc(), calls = [];
     const run = (cmd, args, _o, cb) => {
@@ -67,20 +67,20 @@ async function stopperTests() {
     await sleep(20);
     assert.strictEqual(calls[0][0], 'powershell');
     assert(calls[0].join(' ').includes('ParentProcessId=4242'));
-    assert.deepStrictEqual(calls[1], ['taskkill', '/PID', '5150']);
+    assert.deepStrictEqual(calls[1], ['taskkill', '/PID', '4242', '/PID', '5150']);
     proc.exit(0);
     await sleep(80);
     assert.strictEqual(calls.length, 2, 'no force after a clean exit');
   }
-  // Windows Firefox: no browser child visible (still starting) -> grace timer forces the tree.
+  // Windows Firefox: the root can itself own the browser window.
   {
     const proc = fakeProc(), calls = [];
     const run = (cmd, args, _o, cb) => { calls.push([cmd, ...args]); setImmediate(() => cb(null, '')); };
     stopBrowserProcess(proc, { platform: 'win32', run, graceMs: 40, isChild, closeBrowserChild: true });
     await sleep(20);
-    assert.strictEqual(calls.length, 1, 'nothing to close gracefully yet');
+    assert.deepStrictEqual(calls[1], ['taskkill', '/PID', '4242']);
     await sleep(60);
-    assert.deepStrictEqual(calls[1], ['taskkill', '/PID', '4242', '/T', '/F']);
+    assert.deepStrictEqual(calls[2], ['taskkill', '/PID', '4242', '/T', '/F']);
   }
   // Windows: no closable window (headless/starting) -> force at once.
   {
@@ -197,7 +197,7 @@ async function launcherTests(root) {
   };
   const downloadsRoot = path.join(root, 'customer-downloads');
   const launcher = new BrowserLauncher(store, {
-    spawnProcess, downloadsRoot, stopProcess: proc => { stopped.push(proc); return true; }
+    spawnProcess, downloadsRoot, profileLockOptions, completionVerifier:()=>true, stopProcess: proc => { stopped.push(proc); return true; }
   });
   // Host-absolute paths (QA-006): the launcher reads the file name with the
   // host path module, so a Windows literal has no basename on POSIX.
@@ -225,8 +225,9 @@ async function launcherTests(root) {
   assert.deepStrictEqual(spawned[0].proc.signals, [], 'no immediate TerminateProcess');
   assert.strictEqual(launcher.isBusy(a.id), true);
   spawned[0].proc.exit(0);
+  await waitForUnlock(launcher,a.id);
   assert.strictEqual(launcher.isBusy(a.id), false);
-  const refusing = new BrowserLauncher(store, { spawnProcess, downloadsRoot, stopProcess: () => false });
+  const refusing = new BrowserLauncher(store, { spawnProcess, downloadsRoot, profileLockOptions, completionVerifier:()=>true, stopProcess: () => false });
   refusing.findBrowserBinary = () => binary;
   await refusing.start(a.id);
   assert.strictEqual(refusing.stop(a.id).success, false);

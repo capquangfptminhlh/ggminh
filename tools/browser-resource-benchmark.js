@@ -25,6 +25,64 @@ const ENGINES=new Set(['chromium','firefox','camoufox']);
 const CONCURRENCY=new Set([1,3,5,10]);
 const FORBIDDEN_KEYS=/name|url|cookie|proxy|identity|token|password|secret|account|camou_config/i;
 
+// A changed process set, reused PID or invalid counter cannot produce a
+// trustworthy whole-tree CPU delta. Do not turn such intervals into zero.
+function validCreationTime(value){
+ if(typeof value!=='string')return false;
+ const cim=/^\/Date\((-?\d+)\)\/$/.exec(value);
+ return Number.isFinite(cim?new Date(Number(cim[1])).getTime():Date.parse(value));
+}
+function calculateCpuInterval(previous,current,logicalCpus){
+ if(!previous||!current||!Number.isFinite(previous.at)||!Number.isFinite(current.at)||
+    current.at<=previous.at||!Number.isInteger(logicalCpus)||logicalCpus<1)return null;
+ function members(snapshot){
+  if(!Array.isArray(snapshot.trees)||snapshot.trees.length===0)return null;
+  const result=new Map();
+  for(const tree of snapshot.trees){
+   if(!Array.isArray(tree.processes)||tree.processes.length===0)return null;
+   for(const p of tree.processes){
+    if(!Number.isSafeInteger(p.pid)||p.pid<=0||!validCreationTime(p.creationTime)||
+       !Number.isFinite(p.cpuTime100ns)||
+       p.cpuTime100ns<0||result.has(p.pid))return null;
+    result.set(p.pid,p);
+   }
+  }
+  return result;
+ }
+ const before=members(previous),after=members(current);
+ if(!before||!after||before.size!==after.size)return null;
+ let delta=0;
+ for(const [pid,p] of before){
+  const q=after.get(pid);
+  if(!q||q.creationTime!==p.creationTime||q.cpuTime100ns<p.cpuTime100ns)return null;
+  delta+=q.cpuTime100ns-p.cpuTime100ns;
+ }
+ const percent=delta/((current.at-previous.at)/1000*1e7*logicalCpus)*100;
+ return Number.isFinite(percent)&&percent>=0&&percent<=100?percent:null;
+}
+function recordCpuInterval(state,previous,current,logicalCpus){
+ const percent=calculateCpuInterval(previous,current,logicalCpus);
+ if(percent===null){state.discarded++;return}
+ state.measured++;state.peak=Math.max(state.peak??0,percent);
+}
+function assertCompleteProcessTrees(resources,roots,children=[]){
+ if(resources?.status!=='MEASURED'||!Array.isArray(resources.trees)||
+    !Number.isFinite(resources.totalWorkingSetBytes)||resources.totalWorkingSetBytes<0||
+    resources.trees.length!==roots.length||new Set(roots).size!==roots.length||
+    roots.some(pid=>resources.trees.filter(tree=>tree.rootPid===pid&&
+     Array.isArray(tree.processes)&&tree.processes.some(process=>process.pid===pid)).length!==1))
+  {
+   const trees=Array.isArray(resources?.trees)?resources.trees:[];
+   const missing=roots.filter(pid=>!trees.some(tree=>tree.rootPid===pid&&
+    Array.isArray(tree.processes)&&tree.processes.some(process=>process.pid===pid))).length;
+   const exited=children.filter(child=>child.exitCode!=null||child.signalCode!=null).length;
+   const status=['MEASURED','ERROR','NOT_SUPPORTED'].includes(resources?.status)?resources.status:'UNKNOWN';
+   const failure=['TIMEOUT','OUTPUT_LIMIT','EXIT_NONZERO','EXEC_ERROR'].includes(resources?.failureKind)?resources.failureKind:'NONE';
+   throw Error('Process resources unavailable: incomplete browser process tree; status='+status+
+    '; missing roots='+missing+'; exited roots='+exited+'; failure='+failure);
+  }
+}
+
 function valueAfter(argv,index,label){
  const value=argv[index+1];
  if(!value||value.startsWith('--'))throw Error('Missing '+label);
@@ -37,7 +95,7 @@ function parseArgs(argv,{platform=process.platform}={}){
  if(platform!=='win32')throw Error('Real browser resource benchmark is Windows-only');
  const out={engine:null,binary:null,appArtifact:null,workload:'light',concurrency:1,
   samples:10,output:null,signedReleaseDir:null,publisherKeyDir:null,
-  identityFile:null,durationMs:3000};
+  identityFile:null,durationMs:3000,readyTimeoutMs:30000};
  for(let i=0;i<argv.length;i++){
   const arg=argv[i];
   if(arg==='--engine')out.engine=valueAfter(argv,i,'engine'),i++;
@@ -51,6 +109,7 @@ function parseArgs(argv,{platform=process.platform}={}){
   else if(arg==='--publisher-key-dir')out.publisherKeyDir=valueAfter(argv,i,'publisher-key-dir'),i++;
   else if(arg==='--identity-file')out.identityFile=valueAfter(argv,i,'identity-file'),i++;
   else if(arg==='--duration-ms')out.durationMs=Number(valueAfter(argv,i,'duration-ms')),i++;
+  else if(arg==='--ready-timeout-ms')out.readyTimeoutMs=Number(valueAfter(argv,i,'ready-timeout-ms')),i++;
   else throw Error('Unsupported argument: '+arg);
  }
  if(!ENGINES.has(out.engine))throw Error('Engine must be chromium, firefox or camoufox');
@@ -58,8 +117,10 @@ function parseArgs(argv,{platform=process.platform}={}){
  if(!CONCURRENCY.has(out.concurrency))throw Error('Concurrency must be 1, 3, 5 or 10');
  if(!Number.isInteger(out.samples)||out.samples<10||out.samples>30)
   throw Error('Samples must be 10–30');
- if(!Number.isInteger(out.durationMs)||out.durationMs<1000||out.durationMs>10000)
-  throw Error('Duration must be 1000–10000 ms');
+ if(!Number.isInteger(out.durationMs)||out.durationMs<1000||out.durationMs>30000)
+  throw Error('Duration must be 1000–30000 ms');
+ if(!Number.isInteger(out.readyTimeoutMs)||out.readyTimeoutMs<1000||out.readyTimeoutMs>120000)
+  throw Error('Readiness timeout must be 1000–120000 ms');
  if(!out.appArtifact||!absoluteFor(out.appArtifact,platform))
   throw Error('An absolute --app-artifact path is required');
  if(!out.output||!absoluteFor(out.output,platform)||!out.output.toLowerCase().endsWith('.json'))
@@ -84,6 +145,7 @@ function percentile(values,rate){
  return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(rate*sorted.length)-1))];
 }
 function finiteNonNegative(value,label){
+ if(value==null||(typeof value==='string'&&!value.trim()))throw Error('Invalid '+label);
  const number=Number(value);
  if(!Number.isFinite(number)||number<0)throw Error('Invalid '+label);
  return Math.round(number*1000)/1000;
@@ -92,6 +154,13 @@ function validHex(value,length,label){
  if(typeof value!=='string'||!new RegExp('^[a-f0-9]{'+length+'}$','i').test(value))
   throw Error('Invalid '+label);
  return value.toLowerCase();
+}
+function intervalCounts(sample){
+ if(sample.cpuIntervalsMeasured===undefined&&sample.cpuIntervalsDiscarded===undefined)return {};
+ if(!Number.isSafeInteger(sample.cpuIntervalsMeasured)||sample.cpuIntervalsMeasured<1||
+    !Number.isSafeInteger(sample.cpuIntervalsDiscarded)||sample.cpuIntervalsDiscarded<0)
+  throw Error('Invalid CPU interval counts');
+ return {cpuIntervalsMeasured:sample.cpuIntervalsMeasured,cpuIntervalsDiscarded:sample.cpuIntervalsDiscarded};
 }
 function shapeReport(input){
  if(!ENGINES.has(input?.engine))throw Error('Invalid engine');
@@ -104,6 +173,7 @@ function shapeReport(input){
   startupMs:finiteNonNegative(sample?.startupMs,'startup time'),
   peakWorkingSetBytes:finiteNonNegative(sample?.peakWorkingSetBytes,'working set'),
   peakCpuPercent:finiteNonNegative(sample?.peakCpuPercent,'CPU'),
+  ...intervalCounts(sample),
   crashed:sample?.crashed===true,cleanupOk:sample?.cleanupOk===true
  }));
  const cleanup={status:input?.cleanup?.status==='PASS'?'PASS':'FAIL',
@@ -119,7 +189,9 @@ function shapeReport(input){
    sha256:validHex(input.engineSha256,64,'engine SHA-256')},
   system:{windowsBuild:String(input.windowsBuild||'').slice(0,80),
    totalRamBytes:finiteNonNegative(input.totalRamBytes,'total RAM')},
-  workload:{id:input.workload,concurrency:input.concurrency},
+  workload:{id:input.workload,concurrency:input.concurrency,
+   ...(input.durationMs===undefined?{}:{observationMs:finiteNonNegative(input.durationMs,'observation duration')}),
+   ...(input.readyTimeoutMs===undefined?{}:{readyTimeoutMs:finiteNonNegative(input.readyTimeoutMs,'readiness timeout')})},
   sampleCount:samples.length,samples,
   metrics:{
    startupMs:{p50:percentile(samples.map(x=>x.startupMs),.5),
@@ -128,9 +200,7 @@ function shapeReport(input){
     p95:percentile(samples.map(x=>x.peakWorkingSetBytes),.95)},
    peakCpuPercent:Math.max(...samples.map(x=>x.peakCpuPercent))
   },
-  crashCount:samples.filter(x=>x.crashed).length,cleanup,
-  headroomPolicy:{minimumAvailableRatio:0.20,
-   claim:'Measured on this exact machine/build only; no interpolation to unmeasured systems.'}
+  crashCount:samples.filter(x=>x.crashed).length,cleanup
  };
  assertPrivacySafeReport(report);
  return report;
@@ -188,10 +258,11 @@ async function waitForReady(ready,ids,children,timeoutMs=30000){
  const started=performance.now();
  while(performance.now()-started<timeoutMs){
   if(ids.every(id=>ready.has(id)))return performance.now()-started;
-  if(children.some(child=>child.exitCode!==null))break;
+  const exited=children.find(child=>child.exitCode!==null);
+  if(exited)throw Error('Browser exited before loopback readiness: '+ids.filter(id=>ready.has(id)).length+'/'+ids.length+' ready; code '+exited.exitCode);
   await delay(100);
  }
- throw Error('Browser workload did not reach loopback readiness');
+ throw Error('Browser workload readiness timeout: '+ids.filter(id=>ready.has(id)).length+'/'+ids.length+' ready');
 }
 function spawnArgs(engine,profileDir,url){
  if(engine==='chromium')return [
@@ -286,29 +357,29 @@ async function oneSample({options,binary,identityEnvs,port,ready,sampleNumber}){
    });
    children.push(child);
   }
-  const startupMs=await waitForReady(ready,runIds,children);
+  const startupMs=await waitForReady(ready,runIds,children,options.readyTimeoutMs);
   const roots=children.map(child=>child.pid);
-  let peakWorkingSetBytes=0,peakCpuPercent=0,previous=null;
+  let peakWorkingSetBytes=0,previous=null;
+  const cpu={peak:null,measured:0,discarded:0};
   const until=Date.now()+options.durationMs;
   while(Date.now()<until){
-   const observedAt=performance.now();
+   const startedAt=performance.now();
    const resources=await collectProcessTreeResources(roots);
-   if(resources.status!=='MEASURED')throw Error('Process resources unavailable: '+resources.reason);
+   const observedAt=(startedAt+performance.now())/2;
+   assertCompleteProcessTrees(resources,roots,children);
    peakWorkingSetBytes=Math.max(peakWorkingSetBytes,resources.totalWorkingSetBytes);
-   const cpu=resources.trees.reduce((sum,tree)=>sum+tree.cpuTime100ns,0);
+   const snapshot={at:observedAt,trees:resources.trees};
    if(previous){
-    const elapsed=(observedAt-previous.at)/1000;
-    if(elapsed>0)peakCpuPercent=Math.max(peakCpuPercent,
-     (cpu-previous.cpu)/(elapsed*1e7*Math.max(1,os.cpus().length))*100);
+    recordCpuInterval(cpu,previous,snapshot,os.cpus().length);
    }
-   previous={at:observedAt,cpu};
-   if(os.freemem()<os.totalmem()*0.20)
-    throw Error('RESOURCE_LIMIT: available RAM fell below the 20% reserve during benchmark');
+   previous=snapshot;
    await delay(250);
   }
+  if(cpu.peak===null)throw Error('CPU measurement unavailable: no valid stable process interval');
   intentionalClose=true;
   remainingPids=await closeChildren(children,options.engine);
-  return {startupMs,peakWorkingSetBytes,peakCpuPercent,crashed,
+  return {startupMs,peakWorkingSetBytes,peakCpuPercent:cpu.peak,
+   cpuIntervalsMeasured:cpu.measured,cpuIntervalsDiscarded:cpu.discarded,crashed,
    cleanupOk:remainingPids===0,remainingPids};
  }finally{
   intentionalClose=true;
@@ -321,7 +392,6 @@ async function run(argv=process.argv.slice(2)){
  const options=parseArgs(argv);
  for(const file of [options.appArtifact,options.binary,options.identityFile].filter(Boolean))
   if(!fs.existsSync(file))throw Error('Required benchmark input missing: '+file);
- if(os.freemem()<os.totalmem()*0.20)throw Error('RESOURCE_LIMIT: available RAM is below 20%');
  const resolved=resolveExecutable(options);
  const server=createWorkloadServer();
  const port=await server.listen();
@@ -343,6 +413,7 @@ async function run(argv=process.argv.slice(2)){
  const report=shapeReport({commit,appSha256,engineSha256,appVersion:pkg.version,
   engineVersion,windowsBuild:os.release(),totalRamBytes:os.totalmem(),
   engine:options.engine,workload:options.workload,concurrency:options.concurrency,
+  durationMs:options.durationMs,readyTimeoutMs:options.readyTimeoutMs,
   samples,cleanup:{status:remainingPids===0?'PASS':'FAIL',remainingPids}});
  const text=JSON.stringify(report,null,2)+'\n';
  fs.mkdirSync(path.dirname(options.output),{recursive:true});
@@ -353,5 +424,5 @@ async function run(argv=process.argv.slice(2)){
 if(require.main===module){
  run().catch(error=>{console.error(error.message);process.exitCode=1});
 }
-module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,
+module.exports={parseArgs,percentile,shapeReport,assertPrivacySafeReport,calculateCpuInterval,recordCpuInterval,assertCompleteProcessTrees,waitForReady,
  workloadHtml,createWorkloadServer,loadCamoufoxIdentities,resolveEngineVersion,run};

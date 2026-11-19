@@ -34,6 +34,15 @@ try {
   const duplicate=auditIsolation(root,[profiles[0],{...profiles[0],name:'Duplicate'}]);
   assert.strictEqual(duplicate.storageSeparate,false);
   assert(duplicate.warnings>0);
+  const dangling=path.join(root,'profiles','pb_dangling');
+  try {
+    fs.symlinkSync(path.join(root,'missing-target'),dangling,process.platform==='win32'?'junction':'dir');
+    assert.throws(()=>rejectSymlinks(root,dangling),/Storage link/,
+      'a dangling link must not be treated as an absent path');
+  } catch(error) {
+    if(error.code!=='EPERM' && error.code!=='EACCES' && error.code!=='ENOSYS') throw error;
+    console.log('Dangling-link fixture unavailable:',error.code);
+  }
   const outside=path.join(root,'profiles','pb_symlink');
   try {
     fs.symlinkSync(b.profileDir,outside,'dir');

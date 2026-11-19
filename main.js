@@ -1273,7 +1273,10 @@ function initIPC() {
     behaviorMonitor.record('profile_save',id,'manual');
     return restored;
   });
-  ipcMain.handle('purge-trashed-profile', (_, id) => store.purgeTrashedProfile(id));
+  ipcMain.handle('purge-trashed-profile', (_, id) => {
+    const removed=store.purgeTrashedProfile(id);
+    return {removed,cleanupPending:(store.data.cleanupQueue||[]).includes(id)};
+  });
   ipcMain.handle('purge-expired-trash', () => store.purgeExpiredTrashedProfiles());
   ipcMain.handle('delete-profile', (_, id) => {
     if (launcher.isBusy(id)) throw new Error('Hãy đóng hồ sơ và đợi tiến trình thoát trước khi xóa dữ liệu');
