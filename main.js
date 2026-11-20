@@ -58,6 +58,7 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
+const {internalCamoufoxPreview,internalPreviewUserData}=require('./src/engine/camoufoxInternalPreview');
 const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
 const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
@@ -649,7 +650,8 @@ function initIPC() {
     version:app.getVersion(),
     platform:process.platform,
     arch:process.arch,
-    packaged:app.isPackaged
+    packaged:app.isPackaged,
+    internalPreview:!!previewUserData
   }));
   ipcMain.handle('license-center-status', () => licensePolicy.status());
   ipcMain.handle('license-center-service-status', () =>
@@ -769,7 +771,7 @@ function initIPC() {
     return {
       available:!!camoufoxApprovedRelease&&!!camoufoxInstall&&runtime.canInstall,
       version:camoufoxApprovedRelease?.manifest?.version||null,
-      alreadyInstalled:camoufoxInstall?.status().valid===true,
+      alreadyInstalled:adapterStatus.binaryVerified===true,
       installInProgress:camoufoxInstall?.running===true,
       runtime,
       notice:!runtime.ready?runtime.reason:
@@ -1262,8 +1264,6 @@ function initIPC() {
       profile.fingerprint.identityProvisioningReason=provisioning.reason;
     const saved = store.saveProfile(profile,{allowEngineChange,
       allowIdentity: !!provisioning && provisioning.status==='provisioned'});
-    if(provisioning&&provisioning.status==='provisioned')
-      behaviorMonitor.record('identity_provisioned', saved.id, 'manual');
     behaviorMonitor.record('profile_save', saved.id, 'manual');
     return saved;
   });
@@ -1445,6 +1445,13 @@ app.on('second-instance', () => {
 // Installed-build acceptance owns an explicit runner-temp data folder. This
 // path is accepted only inside GitHub Actions and before Electron becomes
 // ready; invalid input fails closed instead of touching the normal userData.
+const previewUserData=internalPreviewUserData({packaged:app.isPackaged,
+  enabled:process.env.LHM_CAMOUFOX_INTERNAL,platform:process.platform,appData:app.getPath('appData')});
+if(previewUserData){
+  if(process.env.LHM_CI_INSTALL_ACCEPTANCE==='1'||process.env.LHM_CI_UI_CAPTURE==='1')
+    throw Error('Internal Camoufox preview cannot share CI data modes');
+  app.setPath('userData',previewUserData);
+}
 if(process.env.LHM_CI_INSTALL_ACCEPTANCE==='1'){
   if(process.env.LHM_CI_UI_CAPTURE==='1')
     throw Error('CI install acceptance and UI capture modes are mutually exclusive');
@@ -1479,7 +1486,7 @@ app.whenReady().then(async () => {
   }
   const storageDir = path.join(app.getPath('userData'), 'storage');
   const legacyDir = path.join(__dirname, 'data');
-  if (!fs.existsSync(path.join(storageDir, 'db.json')) &&
+  if (!previewUserData && !fs.existsSync(path.join(storageDir, 'db.json')) &&
       fs.existsSync(path.join(legacyDir, 'db.json'))) {
     fs.mkdirSync(path.dirname(storageDir), { recursive: true });
     fs.cpSync(legacyDir, storageDir, { recursive: true, errorOnExist: false });
@@ -1568,6 +1575,13 @@ app.whenReady().then(async () => {
     new BundledEngineManager(releaseAssets,{
       engine:'camoufox',publicKey:publisherKey
     }):null;
+  // Local source-only preview uses an independently verified staging tree.
+  // Packaged builds cannot take this path and the preview has no proxy rights.
+  const internalDir=!app.isPackaged&&process.env.LHM_CAMOUFOX_INTERNAL==='1'
+    ?process.env.LHM_CAMOUFOX_INTERNAL_DIR:null;
+  const internalBundle=publisherKey&&internalDir&&path.isAbsolute(internalDir)
+    ?new BundledEngineManager(internalDir,{engine:'camoufox',publicKey:publisherKey})
+    :null;
   let cachedCamoufoxExe=null;
   const verifiedProviders={
     status(){
@@ -1575,7 +1589,14 @@ app.whenReady().then(async () => {
         return {valid:false,available:false,
           reason:'Independent Camoufox publisher trust anchor missing'};
       const bundled=camoufoxBundle.status();
-      return bundled.valid?bundled:camoufoxInstall.status();
+      if(bundled.valid)return bundled;
+      if(internalBundle){
+        const internal=internalBundle.status();
+        if(internal.valid&&internalCamoufoxPreview({packaged:app.isPackaged,
+          enabled:process.env.LHM_CAMOUFOX_INTERNAL,directory:internalDir,
+          platform:process.platform,version:internal.version,sha256:internal.sha256}))return internal;
+      }
+      return camoufoxInstall.status();
     },
     resolve(engine){
       if(engine!=='camoufox'||!publisherKey)
@@ -1585,15 +1606,25 @@ app.whenReady().then(async () => {
         cachedCamoufoxExe=camoufoxBundle.resolve(engine);
         return cachedCamoufoxExe;
       }
+      if(internalBundle){
+        const internal=internalBundle.status();
+        if(internal.valid&&internalCamoufoxPreview({packaged:app.isPackaged,
+          enabled:process.env.LHM_CAMOUFOX_INTERNAL,directory:internalDir,
+          platform:process.platform,version:internal.version,sha256:internal.sha256})){
+          cachedCamoufoxExe=internalBundle.resolve(engine);
+          return cachedCamoufoxExe;
+        }
+      }
       cachedCamoufoxExe=camoufoxInstall.verifier().resolve(engine);
       return cachedCamoufoxExe;
     }
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
-    capabilityResolver:({engineVersion})=>evaluateCapabilities({
-      engineVersion,policy:camoufoxCapabilityPolicy
-    }),
+    capabilityResolver:({engineVersion,engineSha256})=>internalCamoufoxPreview({
+      packaged:app.isPackaged,enabled:process.env.LHM_CAMOUFOX_INTERNAL,
+      directory:internalDir,platform:process.platform,version:engineVersion,sha256:engineSha256
+    })||evaluateCapabilities({engineVersion,policy:camoufoxCapabilityPolicy}),
     // Development lab may exercise a candidate before its exact version is
     // admitted to the packaged capability policy. Packaged builds cannot.
     labProxyOverride:!app.isPackaged&&process.env.LHM_CAMOUFOX_PROXY_LAB==='1',

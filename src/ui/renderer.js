@@ -129,13 +129,13 @@ function provisioningSaveNotice(saved) {
     'chính thức của Camoufox. Hồ sơ sẽ dùng đúng bộ danh tính này ở các lần mở sau.';
   if (status === 'unavailable') return 'Đã tạo hồ sơ Camoufox "' + saved.name + '" nhưng chưa cấp được ' +
     'danh tính đã ghim: ' + provisioningReasonText(saved.fingerprint?.identityProvisioningReason) + '. ' +
-    'Hồ sơ vẫn chạy bằng thông số gốc của engine, chưa có bộ danh tính riêng được ghim.\n' +
+    'Hồ sơ chưa thể mở cho đến khi cấp được danh tính đã ghim.\n' +
     'Việc bạn có thể làm: mở hộp thoại "Engine" trên thanh công cụ để cài và kiểm chứng Camoufox, ' +
     'sau đó bấm "Cấp danh tính" ngay tại hàng của hồ sơ này trong bảng hồ sơ. Nếu đã cài engine mà vẫn ' +
     'chưa cấp được, hãy liên hệ bên bán để kiểm tra tình trạng engine.';
   if (status === 'invalid') return 'Đã tạo hồ sơ Camoufox "' + saved.name + '" nhưng bộ danh tính vừa sinh ' +
     'không qua được kiểm chứng (' + provisioningReasonText(saved.fingerprint?.identityProvisioningReason) + ') ' +
-    'nên ứng dụng không gắn vào hồ sơ; hồ sơ chạy bằng thông số gốc.\n' +
+    'nên ứng dụng không gắn vào hồ sơ; hồ sơ chưa thể mở.\n' +
     'Việc bạn có thể làm: bấm "Cấp danh tính" tại hàng của hồ sơ để thử lại. Nếu tình trạng lặp lại, ' +
     'hãy liên hệ bên bán kèm theo thông báo này.';
   return null;
@@ -184,7 +184,9 @@ async function updateCamoufoxFormHint() {
       ? 'Engine Camoufox đã cài và xác minh trên máy này: khi lưu hồ sơ, ứng dụng sẽ thử cấp một danh tính đã ghim cho hồ sơ.'
       : availability.available
         ? 'Máy này chưa cài Camoufox nhưng đã có bản được LHM ký để cài. Bạn vẫn tạo hồ sơ được ngay (chưa có danh tính đã ghim), hoặc mở hộp thoại "Engine" để cài trước rồi tạo hồ sơ sau.'
-        : 'Máy này chưa có engine Camoufox đã kiểm chứng: hồ sơ vẫn được tạo và chạy bằng thông số gốc, nhưng chưa cấp được danh tính đã ghim. Mở hộp thoại "Engine" để kiểm tra khả năng cài đặt, hoặc liên hệ bên bán nếu chưa có bản phát hành đã ký.';
+        : availability.runtime?.manualReady
+          ? 'Engine Camoufox đã được xác minh; ứng dụng sẽ thử cấp danh tính khi lưu hồ sơ.'
+          : 'Máy này chưa có engine Camoufox đã kiểm chứng: hồ sơ có thể tạo nhưng chưa thể mở khi chưa cấp được danh tính. Mở hộp thoại "Engine" để kiểm tra.';
   } catch (_) {
     camoufoxHintEl.textContent = 'Không kiểm tra được tình trạng engine Camoufox. Hồ sơ vẫn tạo được; kết quả cấp danh tính sẽ được thông báo sau khi lưu.';
   }
@@ -578,10 +580,10 @@ function setupEventListeners() {
       },
       // Keep a verified, pinned Camoufox identity on ordinary metadata edits.
       // Never copy that identity when changing engines or creating a profile.
-      fingerprint: fieldBrowserEngine.value === 'camoufox' &&
-        profileCoverageOriginalEngine === 'camoufox' &&
-        currentGeneratedFP?.mode === 'native'
-        ? currentGeneratedFP : selectedFingerprintConfig()
+      fingerprint: fieldBrowserEngine.value === 'camoufox' && fieldFpMode.value === 'native'
+        ? (profileCoverageOriginalEngine === 'camoufox' && currentGeneratedFP?.mode === 'native'
+          ? currentGeneratedFP : {mode:'native'})
+        : selectedFingerprintConfig()
     };
 
     const original = allProfiles.find(item => item.id === profile.id);

@@ -15,6 +15,9 @@ const start = html.indexOf('<div class="modal-overlay" id="modal-profile">');
 const dialog = html.slice(start, html.indexOf('<!-- Modal: RPA Automation Code Guide -->', start));
 const section = id => dialog.slice(dialog.indexOf('id="' + id + '"'), dialog.indexOf('<!-- Tab', dialog.indexOf('id="' + id + '"') + 1));
 const general = section('tab-general'), proxy = section('tab-proxy');
+assert(!general.includes('tự động cấp phần cứng WebGL/CPU riêng'), 'Do not claim Firefox generates hardware properties');
+assert(!general.includes('chống rò rỉ WebRTC/DNS ở tầng C++'), 'Do not claim unmeasured network protection');
+assert(!dialog.includes('Ẩn IP thực, định tuyến qua Proxy'), 'Do not promise that a checkbox hides the IP');
 
 // The name comes first: it was below the engine picker and a long paragraph.
 const firstField = general.match(/<(?:input|select|textarea)(?![^>]*type="hidden")[^>]*id="([^"]+)"/);

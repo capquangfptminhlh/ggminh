@@ -20,6 +20,10 @@ window.addEventListener('DOMContentLoaded',()=>{
    el('lhm-about-build').textContent=info.packaged?
      'Ứng dụng đã đóng gói':'Bản chạy từ mã nguồn (Developer)';
    document.title='LHM Ads Browser '+display+' — Workspace';
+   if(!info.packaged&&info.internalPreview===true){
+    document.title+=' — Bản thử nội bộ';
+    el('app-mode-message').textContent='Bản thử nội bộ · Camoufox chỉ kết nối trực tiếp · Dữ liệu riêng';
+   }
    document.body.dataset.versionReady='true';
   }catch(error){
    document.body.dataset.versionReady='false';
