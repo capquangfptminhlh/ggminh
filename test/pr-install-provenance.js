@@ -1,6 +1,12 @@
 'use strict';
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const { validate } = require('../tools/pr-install-provenance');
+const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/windows-pr-install-evidence.yml'), 'utf8');
+assert.match(workflow, /head\.repo\.full_name == github\.repository/);
+assert.match(workflow, /base\.ref == 'main'/);
+assert.match(workflow, /base\.ref == 'integration\/profile-acceptance'/);
 const sha = n => String(n).repeat(40);
 const repo = 'owner/repo';
 const run = (id, event, head, branch) => ({id, event, head_sha: head,
