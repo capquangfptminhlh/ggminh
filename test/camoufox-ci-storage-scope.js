@@ -25,4 +25,37 @@ assert.throws(()=>verifyStorageReport({report:{...report,conditions:{...conditio
 assert.throws(()=>verifyStorageReport({report:{...report,network:{...report.network,dns:'PASS'}},commitSha:sha,exeSha256:digest}),/network/i);
 assert.throws(()=>verifyStorageReport({report:{...report,browserExposedValues:{}},commitSha:sha,exeSha256:digest}),/signal/i);
 assert.throws(()=>verifyStorageReport({report:{...report,conditions:{...conditions,crashRecoveryKillSweep:{status:'FAIL'}}},commitSha:sha,exeSha256:digest}),/crashRecoveryKillSweep/);
+// Upstream baseline: isolation must pass; only localStorage durability of the
+// killed profile may FAIL, and the result is reported, not hidden.
+{
+ const {verifyUpstreamBaseline}=require('../tools/verify-stage0-isolation-ci');
+ const fields=['cookie','localStorage','indexedDB','cacheStorage','serviceWorker'];
+ const crashChecks=lost=>Object.fromEntries(fields.map(f=>[f,{aHadMarkerBeforeCrash:true,
+  aMarkerIntactAfterCrash:!lost.includes(f),bUnchangedByCrashOfA:true}]));
+ const sample=(offsetMs,ls)=>({offsetMs,gated:offsetMs>=500,
+  fields:{cookie:'last',localStorage:ls,indexedDB:'last'}});
+ const base={...report,conditions:{...conditions,
+  crashRecovery:{status:'FAIL',profileFunctionalAfterReopen:true,checks:crashChecks(['localStorage'])},
+  crashRecoveryKillSweep:{status:'FAIL',bUnchangedByKillsOfA:true,profileFunctionalAfterReopen:true,
+   samples:[sample(0,'other'),sample(1500,'other'),sample(6000,'last')]}}};
+ const ok=verifyUpstreamBaseline({report:base,commitSha:sha,exeSha256:digest});
+ assert.equal(ok.localStorageCrashDurability,'FAIL');
+ assert.deepEqual(ok.localStorageKeptAtOffsetsMs,[6000]);
+ assert.throws(()=>verifyStorageReport({report:base,commitSha:sha,exeSha256:digest}),/crashRecovery/);
+ const withCrash=patch=>({...base,conditions:{...base.conditions,crashRecovery:{...base.conditions.crashRecovery,...patch}}});
+ assert.throws(()=>verifyUpstreamBaseline({report:withCrash({checks:crashChecks(['localStorage','indexedDB'])}),
+  commitSha:sha,exeSha256:digest}),/indexedDB lost/);
+ const leak=crashChecks(['localStorage']);leak.cookie.bUnchangedByCrashOfA=false;
+ assert.throws(()=>verifyUpstreamBaseline({report:withCrash({checks:leak}),commitSha:sha,exeSha256:digest}),/other profile/);
+ assert.throws(()=>verifyUpstreamBaseline({report:{...base,conditions:{...base.conditions,
+  crashRecoveryKillSweep:{status:'FAIL',reason:'launch timeout'}}},commitSha:sha,exeSha256:digest}),/not measured/);
+ assert.throws(()=>verifyUpstreamBaseline({report:{...base,conditions:{...base.conditions,
+  crashRecoveryKillSweep:{...base.conditions.crashRecoveryKillSweep,samples:[{...sample(1500,'other'),
+   fields:{cookie:'other',localStorage:'other',indexedDB:'last'}}]}}},commitSha:sha,exeSha256:digest}),/cookie lost/);
+ assert.throws(()=>verifyUpstreamBaseline({report:{...base,conditions:{...base.conditions,
+  httpCache:{status:'FAIL'}}},commitSha:sha,exeSha256:digest}),/httpCache/);
+}
+assert(workflow.includes('node tools/verify-stage0-isolation-ci.js --upstream-baseline'));
+assert(/patched-engine-storage:[\s\S]*LHM_TEST_ENGINE_EXE_SHA256:[\s\S]*node tools\/verify-stage0-isolation-ci\.js\r?\n/.test(workflow),
+ 'Patched engine job must use the strict storage gate');
 console.log('CI storage scope excludes browser signal comparisons and binds evidence: PASS');

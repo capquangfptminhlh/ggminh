@@ -174,4 +174,4 @@ jobs:
         with:
           name: camoufox-156.0.1-beta.36-win.x86_64-lhm-lsflush-UNVERIFIED
           path: out/*
-          retention-days: 14
+          retention-days: 90

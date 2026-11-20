@@ -103,19 +103,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Measure synthetic local storage isolation without fingerprint comparison
+      - name: Measure synthetic local storage isolation without fingerprint comparison (upstream baseline)
         shell: pwsh
         timeout-minutes: 18
         run: |
           $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
           "LHM_CAMOUFOX_EXE_SHA256=$env:LHM_CAMOUFOX_EXE_SHA256" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           node stage0-measure/run-isolation.js
-          if ($LASTEXITCODE -ne 0) { throw 'Local storage isolation did not pass' }
-      - name: Bind storage-only report to this checkout and executable
+          # Exit 2 is expected here: the unmodified upstream engine keeps
+          # localStorage in memory for 5000 ms, so the crash durability checks
+          # FAIL. The next step gates everything else and reports that result.
+          Write-Host "run-isolation exit code (upstream engine): $LASTEXITCODE"
+      - name: Bind storage-only report to this checkout and executable (upstream baseline)
         shell: pwsh
         run: |
-          node tools/verify-stage0-isolation-ci.js
-          if ($LASTEXITCODE -ne 0) { throw 'Storage-only evidence incomplete or invalid' }
+          node tools/verify-stage0-isolation-ci.js --upstream-baseline
+          if ($LASTEXITCODE -ne 0) { throw 'Upstream isolation baseline incomplete or invalid' }
+          Write-Host 'Upstream engine: localStorage crash durability is reported, not gated; the release gate is the patched-engine job.'
           Write-Host 'Fingerprint comparison, network leak measurements and release acceptance: NOT_RUN.'
       - name: Publish only synthetic storage isolation report
         if: always()
@@ -137,3 +141,74 @@ jobs:
             throw 'Upstream CI browser unexpectedly included in installed application'
           }
           Write-Host 'Verified: no Camoufox binary was committed or packaged by the smoke test.'
+
+  # Full storage gate, including crash durability, against the LHM-patched
+  # engine (camoufox-engine-build.yml). The engine is pinned by build run and
+  # SHA-256; it is an UNSIGNED test build and is never packaged or published.
+  patched-engine-storage:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    env:
+      LHM_TEST_ENGINE_RUN_ID: '44736873136'
+      LHM_TEST_ENGINE_ARTIFACT: camoufox-156.0.1-beta.36-win.x86_64-lhm-lsflush-UNVERIFIED
+      LHM_TEST_ENGINE_ZIP_SHA256: c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee
+      LHM_TEST_ENGINE_EXE_SHA256: 1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js 22 for storage isolation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install app dependencies and pinned Playwright runtime (test runner only)
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Install pinned playwright-core failed' }
+      - name: Download pinned patched engine build
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.LHM_TEST_ENGINE_ARTIFACT }}
+          run-id: ${{ env.LHM_TEST_ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/lhm-test-engine
+      - name: Verify patched engine digests and extract
+        shell: pwsh
+        run: |
+          $base=Join-Path $env:RUNNER_TEMP 'lhm-test-engine'
+          $zip=Join-Path $base "$env:LHM_TEST_ENGINE_ARTIFACT.zip"
+          $actual=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:LHM_TEST_ENGINE_ZIP_SHA256) { throw "Patched engine ZIP digest mismatch: $actual" }
+          $root=Join-Path $base 'engine'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($zip,$root)
+          $exe=Join-Path $root 'camoufox.exe'
+          $exeSha=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($exeSha -ne $env:LHM_TEST_ENGINE_EXE_SHA256) { throw "Patched camoufox.exe digest mismatch: $exeSha" }
+          "LHM_CAMOUFOX_EXECUTABLE=$exe" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "LHM_CAMOUFOX_EXE_SHA256=$exeSha" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Patched engine verified: zip $actual, exe $exeSha (UNSIGNED test build)"
+      - name: Measure synthetic local storage isolation and crash durability (patched engine)
+        shell: pwsh
+        timeout-minutes: 25
+        run: |
+          node stage0-measure/run-isolation.js
+          if ($LASTEXITCODE -ne 0) { throw 'Patched-engine storage isolation or durability did not pass' }
+      - name: Bind storage-only report to this checkout and patched executable
+        shell: pwsh
+        run: |
+          node tools/verify-stage0-isolation-ci.js
+          if ($LASTEXITCODE -ne 0) { throw 'Patched-engine storage evidence incomplete or invalid' }
+          Write-Host 'Fingerprint comparison, network leak measurements and release acceptance: NOT_RUN.'
+      - name: Publish only synthetic storage isolation report (patched engine)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Stage0-Camoufox-Patched-Storage-Only
+          path: stage0-measure-results/stage0-isolation-report.json
+          if-no-files-found: ignore
+          retention-days: 7
