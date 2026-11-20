@@ -62,6 +62,7 @@ const {internalCamoufoxPreview,internalPreviewUserData}=require('./src/engine/ca
 const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
 const {CamoufoxInstallService,validateRelease}=require('./src/engine/camoufoxInstallService');
 const {loadCamoufoxPublisherKey}=require('./src/engine/camoufoxPublisherTrust');
+const {packagedCamoufoxTrust}=require('./src/engine/camoufoxProductionTrust');
 const {loadCapabilityPolicy,evaluateCapabilities}=
  require('./src/engine/camoufoxCapabilityPolicy');
 const {assessRuntime}=require('./src/engine/camoufoxRuntimeGate');
@@ -1546,6 +1547,14 @@ app.whenReady().then(async () => {
     publisherKey=loadCamoufoxPublisherKey(releaseAssets,{
       licenseKey:LICENSE_PUBLIC_KEY
     });
+    // Packaged builds run Camoufox only with the owner-pinned PRODUCTION
+    // publisher key; otherwise the whole Camoufox path stays disabled and
+    // Chromium profiles are unaffected.
+    const productionTrust=packagedCamoufoxTrust({packaged:app.isPackaged,publisherKey});
+    if(!productionTrust.allowed){
+      console.warn('[Engine]',productionTrust.reason);
+      publisherKey=null;
+    }
     if(publisherKey){
       camoufoxInstall=new CamoufoxInstallService(storageDir,{
         publicKey:publisherKey,

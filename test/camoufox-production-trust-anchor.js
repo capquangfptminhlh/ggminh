@@ -22,4 +22,4 @@ const license=crypto.createPublicKey(LICENSE_PUBLIC_KEY)
 assert(!spki.equals(license),'engine publisher key must differ from license key');
 assert(!/PRIVATE KEY/.test(fs.readFileSync(file,'utf8')));
 
-console.log('Camoufox production trust anchor: pinned independent Ed25519 SPKI PASS');
+console.log('Camoufox RC1 rehearsal trust anchor (not the production key): pinned independent Ed25519 SPKI PASS');

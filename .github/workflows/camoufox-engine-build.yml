@@ -169,6 +169,24 @@ jobs:
           rm camoufox.exe.extracted
           cat BUILD-INFO.txt
 
+      - name: Unsigned manifest for the owner's offline signing (no key used)
+        run: |
+          tree="$RUNNER_TEMP/engine-tree"
+          python3 -I -c 'import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' out/*.zip "$tree"
+          node lhm/tools/camoufox-engine/unsigned-manifest.js "$tree" 156.0.1 "$PWD/out/unsigned-manifest.json" | tee -a out/BUILD-INFO.txt
+          rm -rf "$tree"
+
+      - name: Source for MPL-2.0 (patches and pinned upstream refs)
+        run: |
+          mkdir -p out/source
+          cp lhm/tools/camoufox-engine/patches/*.patch out/source/
+          {
+            echo "Corresponding source for this build (MPL-2.0 files):"
+            echo "  Firefox: FIREFOX_156_0_1_RELEASE (firefox-156.0.1.source.tar.xz from archive.mozilla.org)"
+            echo "  Camoufox: https://github.com/$CAMOUFOX_REPO commit $CAMOUFOX_COMMIT (tag $CAMOUFOX_TAG)"
+            echo "  LHM patches: this folder, applied last by scripts/patch.py (patches/lhm/)"
+          } > out/source/SOURCE.txt
+
       - name: Upload test artifact (not a release)
         uses: actions/upload-artifact@v4
         with:
