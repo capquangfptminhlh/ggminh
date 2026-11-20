@@ -5,6 +5,8 @@ const root=path.join(__dirname,'..');
 const workflow=fs.readFileSync(path.join(root,'.github/workflows/camoufox-upstream-smoke.yml'),'utf8');
 const isolation=fs.readFileSync(path.join(root,'stage0-measure/run-isolation.js'),'utf8');
 assert(workflow.includes('node stage0-measure/run-isolation.js'));
+assert.match(workflow,/- name: Set up Node.js 22 for storage isolation\s+uses: actions\/setup-node@v4\s+with:\s+node-version: '22'\s+- name: Measure synthetic local storage isolation/,
+ 'Storage and backup require Node 22 with node:sqlite');
 assert(!workflow.includes('node stage0-measure/run.js'));
 assert(!workflow.includes('node stage0-measure/run-config.js'));
 assert(!workflow.includes('node tools/verify-stage0-ci-reports.js'));

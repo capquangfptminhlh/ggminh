@@ -99,6 +99,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
           }
+      - name: Set up Node.js 22 for storage isolation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Measure synthetic local storage isolation without fingerprint comparison
         shell: pwsh
         timeout-minutes: 18
