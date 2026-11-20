@@ -426,14 +426,33 @@ async function run(){
   controller=new CamoufoxPlaywrightController(root,options);
   const dirOf=id=>path.join(root,'camoufox-profiles',id);
   const launchPair=async()=>{
-   const a=await controller.launch(profile(IDS.a));
-   const b=await controller.launch(profile(IDS.b));
+   const a=await launchWithRetry(IDS.a);
+   const b=await launchWithRetry(IDS.b);
    const ap=await a.context.newPage(),bp=await b.context.newPage();
    await Promise.all([ap.goto(server.origin+'/probe'),bp.goto(server.origin+'/probe')]);
    return {ap,bp};
   };
   const stopQuiet=async id=>{
    try{if(controller.contextFor(id))await controller.stop(id)}catch(_){}
+  };
+  // The controller's launch limit is 30 s; Windows launches normally take
+  // 10-15 s but occasionally exceed it on both the upstream and the patched
+  // engine. One retry after reaping leftover processes keeps a slow launch
+  // from failing a storage condition. Every retry is recorded in the report
+  // (launchRetries), so launch reliability is reported, not hidden.
+  report.launchRetries=[];
+  const launchWithRetry=async id=>{
+   for(let attempt=1;;attempt++){
+    try{return await controller.launch(profile(id))}
+    catch(error){
+     report.launchRetries.push({profile:id,attempt,
+      error:String(error?.message||error).split('\n')[0].slice(0,160)});
+     if(attempt>=2)throw error;
+     await stopQuiet(id);
+     await reapProfileProcesses(dirOf(id));
+     await waitControllerReleased(controller,id);
+    }
+   }
   };
 
   let {ap,bp}=await launchPair();
@@ -476,7 +495,7 @@ async function run(){
    await new Promise(r=>setTimeout(r,1500)); // let the engine flush storage
    const aBefore=await readIso(ap),bBefore=await readIso(bp);
    const kill=await killEngineProcess(controller,IDS.a,dirOf(IDS.a));
-   const ra=await controller.launch(profile(IDS.a));
+   const ra=await launchWithRetry(IDS.a);
    ap=await ra.context.newPage();
    await ap.goto(server.origin+'/probe');
    const aAfter=await readIso(ap);
@@ -504,18 +523,18 @@ async function run(){
    await Promise.all([stopQuiet(IDS.a),stopQuiet(IDS.b)]);
    const snapshotDir=path.join(root,'snapshot-a');
    fs.cpSync(dirOf(IDS.a),snapshotDir,{recursive:true});
-   const ra=await controller.launch(profile(IDS.a));
+   const ra=await launchWithRetry(IDS.a);
    ap=await ra.context.newPage();
    await ap.goto(server.origin+'/probe');
    await writeIso(ap,snap.postSnapshot);
    await stopQuiet(IDS.a);
    fs.rmSync(dirOf(IDS.a),{recursive:true,force:true});
    fs.cpSync(snapshotDir,dirOf(IDS.a),{recursive:true});
-   const ra2=await controller.launch(profile(IDS.a));
+   const ra2=await launchWithRetry(IDS.a);
    ap=await ra2.context.newPage();
    await ap.goto(server.origin+'/probe');
    const restored=await readIso(ap);
-   const rb=await controller.launch(profile(IDS.b));
+   const rb=await launchWithRetry(IDS.b);
    bp=await rb.context.newPage();
    await bp.goto(server.origin+'/probe');
    const other=await readIso(bp);
@@ -533,7 +552,7 @@ async function run(){
    await new Promise(r=>setTimeout(r,10000)); // idle: let async storage flush
    const aBefore=await readIso(ap),bBefore=await readIso(bp);
    const kill=await killEngineProcess(controller,IDS.a,dirOf(IDS.a));
-   const ra=await controller.launch(profile(IDS.a));
+   const ra=await launchWithRetry(IDS.a);
    ap=await ra.context.newPage();
    await ap.goto(server.origin+'/probe');
    const aAfter=await readIso(ap);
@@ -560,22 +579,19 @@ async function run(){
    * delay protects a write the engine has not committed to disk yet. This
    * is a separate, labelled condition — it does not re-judge (b) or (b2). */
   const samples=[];
-  // One retry: a slow Windows runner can exceed the controller's 30s launch.
+  // Launch retries are handled (and recorded) by launchWithRetry.
   const relaunchA=async()=>{
-   let lastError=null;
-   for(let attempt=0;attempt<2;attempt++){
-    try{
-     await reapProfileProcesses(dirOf(IDS.a));
-     await waitControllerReleased(controller,IDS.a);
-     const ra=await controller.launch(profile(IDS.a));
-     const page=await ra.context.newPage();
-     await page.goto(server.origin+'/probe');
-     return {page,attempts:attempt+1};
-    }catch(error){lastError=error;await stopQuiet(IDS.a);}
-   }
-   throw lastError;
+   await reapProfileProcesses(dirOf(IDS.a));
+   await waitControllerReleased(controller,IDS.a);
+   const before=report.launchRetries.length;
+   const ra=await launchWithRetry(IDS.a);
+   const page=await ra.context.newPage();
+   await page.goto(server.origin+'/probe');
+   return {page,attempts:1+report.launchRetries.length-before};
   };
   try{
+   // A failure in an earlier condition may have left A closed.
+   if(!controller.contextFor(IDS.a)||ap.isClosed())ap=(await relaunchA()).page;
    const bBefore=await readIso(bp);
    let previous=null;
    for(let repeat=0;repeat<SWEEP_REPEATS;repeat++){
@@ -702,7 +718,7 @@ async function run(){
   engine:report.engine.version,engineSha256:(report.engine.sha256||'').slice(0,16),
   conditions:Object.fromEntries(Object.entries(report.conditions)
    .map(([k,v])=>[k,v.status])),
-  cleanup:report.cleanup,report:file};
+  launchRetries:(report.launchRetries||[]).length,cleanup:report.cleanup,report:file};
  console.log(JSON.stringify(summary));
  const anyFail=Object.values(report.conditions).some(c=>c.status==='FAIL')||
   report.preflight?.status==='FAIL';

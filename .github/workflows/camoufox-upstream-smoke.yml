@@ -114,6 +114,8 @@ jobs:
           # localStorage in memory for 5000 ms, so the crash durability checks
           # FAIL. The next step gates everything else and reports that result.
           Write-Host "run-isolation exit code (upstream engine): $LASTEXITCODE"
+          # The verdict is the next step; do not let pwsh propagate exit 2.
+          exit 0
       - name: Bind storage-only report to this checkout and executable (upstream baseline)
         shell: pwsh
         run: |
