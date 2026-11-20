@@ -59,7 +59,7 @@ function createApiServer(store, launcher, { apiKey = '', behaviorMonitor = null,
     next();
   });
   function fail(res, error) {
-    const resourceCodes=new Set(['RESOURCE_LIMIT','RESOURCE_UNMEASURED','RESOURCE_STATUS_INVALID']);
+    const resourceCodes=new Set(['RESOURCE_LIMIT','RESOURCE_UNMEASURED','RESOURCE_REVIEW','RESOURCE_STATUS_INVALID']);
     const resourceCode=resourceCodes.has(error?.code)?error.code:null;
     return res.status(resourceCode?409:400).json({ code: -1,
       msg: error.message || String(error),

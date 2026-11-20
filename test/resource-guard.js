@@ -7,11 +7,15 @@ let result=assessLaunch({totalBytes:16*GiB,availableBytes:6*GiB,predictedBytes:2
 assert.equal(result.allowed,true);
 assert.equal(result.code,'RESOURCE_OK');
 result=assessLaunch({totalBytes:16*GiB,availableBytes:4*GiB,predictedBytes:2*GiB});
-assert.equal(result.allowed,false);
-assert.equal(result.code,'RESOURCE_LIMIT');
+assert.equal(result.allowed,true);
+assert.equal(result.code,'RESOURCE_OK');
 result=assessLaunch({totalBytes:16*GiB,availableBytes:3*GiB,predictedBytes:0});
-assert.equal(result.allowed,false);
-assert.equal(result.code,'RESOURCE_LIMIT');
+assert.equal(result.allowed,true);
+assert.equal(result.code,'RESOURCE_OK');
+result=assessLaunch({totalBytes:16*GiB,availableBytes:GiB,predictedBytes:2*GiB});
+assert.equal(result.allowed,true);
+assert.equal(result.reviewRequired,true);
+assert.equal(result.code,'RESOURCE_REVIEW');
 result=assessLaunch({totalBytes:16*GiB,availableBytes:6*GiB,predictedBytes:null});
 assert.equal(result.allowed,true);
 assert.equal(result.reviewRequired,true);
@@ -39,5 +43,5 @@ for(const input of [null,{},
  const unmeasured=await guard.assess({profile:{engine_type:'camoufox'},active});
  assert.equal(unmeasured.code,'RESOURCE_UNMEASURED');
  assert.equal(unmeasured.reviewRequired,true);
- console.log('Resource Guard preserves 20% RAM headroom and never invents missing predictions');
+ console.log('Resource Guard does not enforce a 20% reserve and reports uncertain or insufficient RAM');
 })().catch(error=>{console.error(error);process.exitCode=1});
