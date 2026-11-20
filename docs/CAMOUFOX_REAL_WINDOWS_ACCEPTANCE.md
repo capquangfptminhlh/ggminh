@@ -77,6 +77,16 @@ Camoufox adapter owns the Playwright context returned by `Camoufox()`
 and must pass that context to any future authorized Automation Studio
 adapter. Chromium CDP and Firefox Playwright APIs must not be conflated.
 
+## Storage-only CI scope
+
+The upstream Windows workflow runs the synthetic local storage isolation
+runner and binds its report to the exact CI checkout and executable digest.
+The gate requires the core isolation, restart, crash and backup observations
+to pass; an unavailable favicon observation is recorded as `NOT_RUN`.
+Cross-profile browser signal comparisons and DNS, WebRTC, IPv6 or public-IP
+leak measurements are not run in this workflow. Its result does not replace
+publisher-signed release or installed-customer acceptance.
+
 ## Storage correction
 
 The existing `db-preview.sqlite` workflow is a comparison-only export.
