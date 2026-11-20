@@ -23,6 +23,9 @@ window.addEventListener('DOMContentLoaded',()=>{
    if(!info.packaged&&info.internalPreview===true){
     document.title+=' — Bản thử nội bộ';
     el('app-mode-message').textContent='Bản thử nội bộ · Camoufox chỉ kết nối trực tiếp · Dữ liệu riêng';
+    const warning=el('lhm-internal-preview-warning');
+    warning.textContent='Bản thử nội bộ: Camoufox chỉ kết nối trực tiếp. Hãy đóng hồ sơ bình thường; nếu Camoufox dừng đột ngột, có thể mất dữ liệu trang web mới ghi.';
+    warning.hidden=false;
    }
    document.body.dataset.versionReady='true';
   }catch(error){
