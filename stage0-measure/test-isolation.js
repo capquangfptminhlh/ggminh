@@ -88,5 +88,10 @@ assert.deepEqual(profilePidsFromWindowsSnapshot(winRows,winProfile),[4101,4102])
 assert.deepEqual(profilePidsFromWindowsSnapshot(JSON.stringify(
  {ProcessId:5101,Name:'camoufox.exe',CommandLine:'camoufox.exe --profile='+winProfile}),winProfile),[5101]);
 assert.throws(()=>profilePidsFromWindowsSnapshot('{bad json',winProfile),/process snapshot/i);
+// Raw control characters from an unrelated process must not break parsing.
+assert.deepEqual(profilePidsFromWindowsSnapshot('[{"ProcessId":7,"Name":"other.exe","CommandLine":"x\u0007\ty"},'+
+ JSON.stringify({ProcessId:5101,Name:'camoufox.exe',CommandLine:'camoufox.exe --profile='+winProfile})+']',winProfile),[5101]);
+assert.deepEqual(profilePidsFromWindowsSnapshot('',winProfile),[]);
+assert.deepEqual(profilePidsFromWindowsSnapshot('\r\n',winProfile),[]);
 
 console.log('Stage-0 isolation contract: PASS; real browser condition runs NOT_RUN until run-isolation.js executes');

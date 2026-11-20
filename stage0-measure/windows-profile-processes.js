@@ -14,8 +14,14 @@ function exactWindowsPathPattern(profileDir){
 function profilePidsFromWindowsSnapshot(stdout,profileDir){
  if(typeof profileDir!=='string'||!path.win32.isAbsolute(profileDir))
   throw Error('Windows profile directory must be absolute');
+ // Windows PowerShell 5.1 ConvertTo-Json can emit raw C0 control characters
+ // from an unrelated process's command line, which JSON.parse rejects. The
+ // output is -Compress (one line), so turning them into spaces cannot change
+ // structure; profile paths never contain them. No process -> empty output.
+ const text=String(stdout||'').replace(/^\uFEFF/,'').replace(/[\u0000-\u001f]/g,' ').trim();
+ if(text==='')return [];
  let parsed;
- try{parsed=JSON.parse(String(stdout||'').replace(/^\uFEFF/,''))}
+ try{parsed=JSON.parse(text)}
  catch(error){throw Error('Invalid Windows process snapshot: '+String(error.message||error))}
  const rows=Array.isArray(parsed)?parsed:(parsed&&typeof parsed==='object'?[parsed]:[]);
  const exact=exactWindowsPathPattern(profileDir);
@@ -26,7 +32,9 @@ function profilePidsFromWindowsSnapshot(stdout,profileDir){
 }
 
 function queryWindowsProfilePids(profileDir,{run=spawnSync}={}){
- const command='Get-CimInstance Win32_Process | Select-Object ProcessId,Name,CommandLine | ConvertTo-Json -Compress';
+ // Only camoufox.exe rows are relevant; filtering in WMI keeps unrelated
+ // processes (and their command lines) out of the snapshot entirely.
+ const command="Get-CimInstance Win32_Process -Filter \"Name='camoufox.exe'\" | Select-Object ProcessId,Name,CommandLine | ConvertTo-Json -Compress";
  const result=run('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],
   {encoding:'utf8',timeout:15000,windowsHide:true,maxBuffer:16*1024*1024});
  if(result?.error||result?.status!==0){
