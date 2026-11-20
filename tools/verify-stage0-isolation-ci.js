@@ -3,6 +3,7 @@
 // fingerprint comparison, network leak measurement or product release gate.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const REQUIRED=['baselineClassic','concurrentCrossWrite','crashRecovery','crashRecoveryIdleFlush',
+ 'crashRecoveryKillSweep',
  'dirSnapshotRestore','configBackupRestore','httpCache'];
 function verifyStorageReport({report,commitSha,exeSha256}={}){
  assert.match(commitSha||'',/^[a-f0-9]{40}$/i,'Exact CI commit required');

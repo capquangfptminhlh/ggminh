@@ -246,6 +246,69 @@ async function killEngineProcess(controller,id,profileDir){
  throw Error('Controller still holds the killed profile after 30s');
 }
 
+/* ---------------- kill-timing sweep helpers --------------------------- */
+// Delays (ms) between the last write returning and the kill being issued.
+const SWEEP_OFFSETS_MS=[0,50,100,250,500,1000,1500,2500,4000,6000];
+const SWEEP_REPEATS=2;
+// Gated from 500 ms: the patched engine flushes localStorage 100 ms after the
+// first pending write; the rest is margin for IPC, the SQLite transaction
+// (synchronous=FULL) and Windows timer granularity. Stock Firefox waits 5000 ms.
+const SWEEP_GATE_MS=500;
+const DURABLE_FIELDS=['cookie','localStorage','indexedDB'];
+function writeDurable(page,marker){
+ return page.evaluate(async m=>{
+  const key='stage0_lab_marker';
+  document.cookie=key+'='+m+'; Max-Age=3600; SameSite=Lax; Path=/';
+  localStorage.setItem(key,m);
+  await new Promise((resolve,reject)=>{
+   const open=indexedDB.open('stage0-lab-db',1);
+   open.onupgradeneeded=()=>open.result.createObjectStore('samples');
+   open.onerror=()=>reject(open.error||Error('IndexedDB unavailable'));
+   open.onsuccess=()=>{
+    const db=open.result,tx=db.transaction('samples','readwrite');
+    tx.objectStore('samples').put(m,key);
+    tx.oncomplete=()=>{db.close();resolve()};
+    tx.onerror=()=>{db.close();reject(tx.error||Error('IndexedDB write failed'))};
+   };
+  });
+ },marker);
+}
+function readDurable(page){
+ return page.evaluate(async()=>{
+  const key='stage0_lab_marker';
+  const cookie=(document.cookie.match(/(?:^|;\s*)stage0_lab_marker=([^;]*)/)||[])[1]||null;
+  const storage=localStorage.getItem(key);
+  const indexed=await new Promise((resolve,reject)=>{
+   const open=indexedDB.open('stage0-lab-db',1);
+   open.onupgradeneeded=()=>open.result.createObjectStore('samples');
+   open.onerror=()=>reject(open.error||Error('IndexedDB unavailable'));
+   open.onsuccess=()=>{
+    const db=open.result,request=db.transaction('samples','readonly').objectStore('samples').get(key);
+    request.onerror=()=>{db.close();reject(request.error||Error('IndexedDB read failed'))};
+    request.onsuccess=()=>{const v=request.result??null;db.close();resolve(v)};
+   };
+  });
+  return {cookie,localStorage:storage,indexedDB:indexed};
+ });
+}
+// Terminates every process of the profile at once (TerminateProcess on
+// Windows). PIDs are collected before the timed window because the Windows
+// process query takes about a second.
+function hardKill(pids){
+ const killed=[];
+ for(const pid of pids){
+  try{process.kill(pid,'SIGKILL');killed.push(pid)}catch(_){/* already gone */}
+ }
+ return killed;
+}
+async function waitControllerReleased(controller,id){
+ for(let i=0;i<60;i++){
+  if(!controller.contextFor(id))return;
+  await new Promise(r=>setTimeout(r,500));
+ }
+ throw Error('Controller still holds the killed profile after 30s');
+}
+
 /* ---------------- engine / runner setup ------------------------------- */
 function engineOptions(){
  if(process.platform==='win32'){
@@ -298,6 +361,7 @@ async function run(){
    concurrentCrossWrite:{status:'NOT_RUN'},
    crashRecovery:{status:'NOT_RUN'},
    crashRecoveryIdleFlush:{status:'NOT_RUN'},
+   crashRecoveryKillSweep:{status:'NOT_RUN'},
    dirSnapshotRestore:{status:'NOT_RUN'},
    configBackupRestore:{status:'NOT_RUN',
     note:'Separate Node-level run: node stage0-measure/backup-restore-isolation.js'},
@@ -474,6 +538,70 @@ async function run(){
     bServiceWorkerViaFreshPage:!!bSwFallback,
     observations:{aBefore,aAfter,bBefore,bAfter}};
   }catch(error){fail('crashRecoveryIdleFlush',error)}
+
+  /* (b3) Kill-timing sweep: several overwrites, then a hard kill of A at a
+   * fixed delay after the LAST write returned (no reload and no read in
+   * between). Every sample is reported raw. Samples at or above
+   * SWEEP_GATE_MS must keep the last localStorage, IndexedDB and cookie
+   * marker; samples below it are recorded but not gated, because no flush
+   * delay protects a write the engine has not committed to disk yet. This
+   * is a separate, labelled condition — it does not re-judge (b) or (b2). */
+  try{
+   const samples=[];
+   const bBefore=await readIso(bp);
+   let previous=null;
+   for(let repeat=0;repeat<SWEEP_REPEATS;repeat++){
+    for(const offsetMs of SWEEP_OFFSETS_MS){
+     const pids=new Set(pidsForProfileDir(dirOf(IDS.a)));
+     if(pids.size===0)throw notRun('No engine process found for the kill sweep');
+     const batch=[0,1,2].map(i=>'sweep-'+offsetMs+'-'+repeat+'-'+i+'-'+token());
+     for(let i=0;i<batch.length;i++){
+      await writeDurable(ap,batch[i]);
+      if(i<batch.length-1)await new Promise(r=>setTimeout(r,30));
+     }
+     const t0=performance.now();
+     if(offsetMs>0)await new Promise(r=>setTimeout(r,offsetMs));
+     const killIssuedAfterMs=Math.round(performance.now()-t0);
+     const killed=hardKill(pids);
+     const killReturnedAfterMs=Math.round(performance.now()-t0);
+     if(killed.length===0)throw notRun('Kill sweep could not terminate any engine process');
+     await waitControllerReleased(controller,IDS.a);
+     const ra=await controller.launch(profile(IDS.a));
+     ap=await ra.context.newPage();
+     await ap.goto(server.origin+'/probe');
+     const after=await readDurable(ap);
+     const last=batch[batch.length-1];
+     const classify=v=>v===last?'last':batch.includes(v)?'earlierInBatch':
+      (v!==null&&v===previous)?'previousSample':v===null?'missing':'other';
+     const fields=Object.fromEntries(DURABLE_FIELDS.map(f=>[f,classify(after[f])]));
+     samples.push({offsetMs,repeat,killIssuedAfterMs,killReturnedAfterMs,
+      gated:offsetMs>=SWEEP_GATE_MS,killedPids:killed,fields,
+      survived:Object.values(fields).every(v=>v==='last')});
+     previous=last;
+    }
+   }
+   const bAfter=await readIso(bp);
+   const bUnchanged=['cookie','localStorage','indexedDB'].every(f=>bAfter[f]===bBefore[f]&&bBefore[f]===crash.b);
+   const func='sweep-func-'+token();
+   await writeDurable(ap,func);
+   const aFunctional=Object.values(await readDurable(ap)).every(v=>v===func);
+   const gatedSamples=samples.filter(s=>s.gated);
+   const pass=gatedSamples.length>0&&gatedSamples.every(s=>s.survived)&&bUnchanged&&aFunctional;
+   const byOffset={};
+   for(const s of samples){
+    const k=String(s.offsetMs);
+    byOffset[k]=byOffset[k]||{runs:0,cookieLast:0,localStorageLast:0,indexedDBLast:0,gated:s.gated};
+    byOffset[k].runs++;
+    for(const f of DURABLE_FIELDS)if(s.fields[f]==='last')byOffset[k][f+'Last']++;
+   }
+   report.conditions.crashRecoveryKillSweep={status:pass?'PASS':'FAIL',
+    gateMs:SWEEP_GATE_MS,offsetsMs:SWEEP_OFFSETS_MS,repeats:SWEEP_REPEATS,
+    writesPerSample:3,writeGapMs:30,
+    killMethod:'TerminateProcess/SIGKILL on every profile process at once, no graceful shutdown',
+    bUnchangedByKillsOfA:bUnchanged,profileFunctionalAfterReopen:aFunctional,
+    byOffset,samples,
+    limitation:'Samples below gateMs are informative only. Any engine loses writes not yet flushed when it is killed; durability across power loss additionally depends on the OS and disk honouring fsync.'};
+  }catch(error){fail('crashRecoveryKillSweep',error)}
 
   /* (d) HTTP cache + favicon cache partitioning. */
   try{

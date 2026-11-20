@@ -14,7 +14,7 @@ for(const disallowed of ['captureEnvironment(', 'captureExtended(', 'equalAcross
  assert(!isolation.includes(disallowed),'Storage-only runner must not compare browser signals');
 const sha='a'.repeat(40),digest='b'.repeat(64);
 const conditions=Object.fromEntries(['baselineClassic','concurrentCrossWrite','crashRecovery',
- 'crashRecoveryIdleFlush','dirSnapshotRestore','configBackupRestore','httpCache'].map(k=>[k,{status:'PASS'}]));
+ 'crashRecoveryIdleFlush','crashRecoveryKillSweep','dirSnapshotRestore','configBackupRestore','httpCache'].map(k=>[k,{status:'PASS'}]));
 conditions.faviconCache={status:'NOT_RUN'};
 const report={classification:'LOCAL_STAGE0_ISOLATION_EXTENDED',platform:'win32',branchHead:sha,
  engine:{sha256:digest},conditions,cleanup:'PASS',network:{proxy:'NOT_RUN',dns:'NOT_RUN',webrtc:'NOT_RUN',externalEgress:'NOT_RUN'},
@@ -24,4 +24,5 @@ assert.throws(()=>verifyStorageReport({report:{...report,branchHead:'c'.repeat(4
 assert.throws(()=>verifyStorageReport({report:{...report,conditions:{...conditions,concurrentCrossWrite:{status:'NOT_RUN'}}},commitSha:sha,exeSha256:digest}),/concurrentCrossWrite/);
 assert.throws(()=>verifyStorageReport({report:{...report,network:{...report.network,dns:'PASS'}},commitSha:sha,exeSha256:digest}),/network/i);
 assert.throws(()=>verifyStorageReport({report:{...report,browserExposedValues:{}},commitSha:sha,exeSha256:digest}),/signal/i);
+assert.throws(()=>verifyStorageReport({report:{...report,conditions:{...conditions,crashRecoveryKillSweep:{status:'FAIL'}}},commitSha:sha,exeSha256:digest}),/crashRecoveryKillSweep/);
 console.log('CI storage scope excludes browser signal comparisons and binds evidence: PASS');
