@@ -301,6 +301,19 @@ function hardKill(pids){
  }
  return killed;
 }
+// After the timed kill: processes spawned after the PID snapshot (or slow to
+// exit) can keep the profile locked and make the next launch time out. Kill
+// stragglers until none remain. This happens after the measured window.
+async function reapProfileProcesses(dir){
+ let stragglers=0;
+ for(let i=0;i<40;i++){
+  const left=pidsForProfileDir(dir);
+  if(left.length===0)return stragglers;
+  stragglers+=hardKill(left).length;
+  await new Promise(r=>setTimeout(r,500));
+ }
+ throw Error('Profile processes still alive 20s after the sweep kill');
+}
 async function waitControllerReleased(controller,id){
  for(let i=0;i<60;i++){
   if(!controller.contextFor(id))return;
@@ -546,8 +559,23 @@ async function run(){
    * marker; samples below it are recorded but not gated, because no flush
    * delay protects a write the engine has not committed to disk yet. This
    * is a separate, labelled condition — it does not re-judge (b) or (b2). */
+  const samples=[];
+  // One retry: a slow Windows runner can exceed the controller's 30s launch.
+  const relaunchA=async()=>{
+   let lastError=null;
+   for(let attempt=0;attempt<2;attempt++){
+    try{
+     await reapProfileProcesses(dirOf(IDS.a));
+     await waitControllerReleased(controller,IDS.a);
+     const ra=await controller.launch(profile(IDS.a));
+     const page=await ra.context.newPage();
+     await page.goto(server.origin+'/probe');
+     return {page,attempts:attempt+1};
+    }catch(error){lastError=error;await stopQuiet(IDS.a);}
+   }
+   throw lastError;
+  };
   try{
-   const samples=[];
    const bBefore=await readIso(bp);
    let previous=null;
    for(let repeat=0;repeat<SWEEP_REPEATS;repeat++){
@@ -565,17 +593,15 @@ async function run(){
      const killed=hardKill(pids);
      const killReturnedAfterMs=Math.round(performance.now()-t0);
      if(killed.length===0)throw notRun('Kill sweep could not terminate any engine process');
-     await waitControllerReleased(controller,IDS.a);
-     const ra=await controller.launch(profile(IDS.a));
-     ap=await ra.context.newPage();
-     await ap.goto(server.origin+'/probe');
+     const reopened=await relaunchA();
+     ap=reopened.page;
      const after=await readDurable(ap);
      const last=batch[batch.length-1];
      const classify=v=>v===last?'last':batch.includes(v)?'earlierInBatch':
       (v!==null&&v===previous)?'previousSample':v===null?'missing':'other';
      const fields=Object.fromEntries(DURABLE_FIELDS.map(f=>[f,classify(after[f])]));
      samples.push({offsetMs,repeat,killIssuedAfterMs,killReturnedAfterMs,
-      gated:offsetMs>=SWEEP_GATE_MS,killedPids:killed,fields,
+      gated:offsetMs>=SWEEP_GATE_MS,killedPids:killed,relaunchAttempts:reopened.attempts,fields,
       survived:Object.values(fields).every(v=>v==='last')});
      previous=last;
     }
@@ -601,7 +627,17 @@ async function run(){
     bUnchangedByKillsOfA:bUnchanged,profileFunctionalAfterReopen:aFunctional,
     byOffset,samples,
     limitation:'Samples below gateMs are informative only. Any engine loses writes not yet flushed when it is killed; durability across power loss additionally depends on the OS and disk honouring fsync.'};
-  }catch(error){fail('crashRecoveryKillSweep',error)}
+  }catch(error){
+   fail('crashRecoveryKillSweep',error);
+   report.conditions.crashRecoveryKillSweep.partialSamples=samples;
+   // Never let a sweep failure take later conditions down with it.
+   try{
+    if(!controller.contextFor(IDS.a)||ap.isClosed())ap=(await relaunchA()).page;
+   }catch(restoreError){
+    report.conditions.crashRecoveryKillSweep.profileRestoreError=
+     String(restoreError?.message||restoreError).slice(0,200);
+   }
+  }
 
   /* (d) HTTP cache + favicon cache partitioning. */
   try{
