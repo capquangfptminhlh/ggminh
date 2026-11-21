@@ -61,13 +61,15 @@ async function main(){
  const {publicKey,privateKey}=crypto.generateKeyPairSync('ed25519');
  const signed={...manifest,signature:crypto.sign(null,signedPayload(manifest),privateKey).toString('base64url')};
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-native-durability-'));
- let gotRequest=false,session=null,adapter=null,manifestOwned=false,completed=false;
+ let gotRequest=false,storedAt=null,recovered=null,session=null,adapter=null,manifestOwned=false,completed=false,crashDelayMs=null;
  const tracked=new Set(),profileDirs=[path.join(root,'camoufox-profiles','synthetic'),
   path.join(fs.realpathSync(root),'camoufox-profiles','synthetic')];
  const server=http.createServer((req,res)=>{
-  if(req.url==='/stored'){gotRequest=true;res.end('ok');return;}
+  if(req.url==='/stored'){gotRequest=true;storedAt=performance.now();res.end('ok');return;}
+  if(req.url.startsWith('/value?')){recovered=new URL(req.url,'http://127.0.0.1').searchParams.get('v');res.end('ok');return;}
   res.setHeader('content-type','text/html');
-  res.end('<!doctype html><script>localStorage.setItem("lhm_synthetic","ok");fetch("/stored")</script>');
+  if(req.url==='/verify')res.end('<!doctype html><script>fetch("/value?v="+encodeURIComponent(localStorage.getItem("lhm_synthetic")))</script>');
+  else res.end('<!doctype html><script>localStorage.setItem("lhm_synthetic",'+JSON.stringify(req.url==='/crash'?'crash':'ok')+');fetch("/stored")</script>');
  });
  try{
   fs.writeFileSync(manifestFile,JSON.stringify(signed),{flag:'wx',mode:0o600});
@@ -92,8 +94,44 @@ async function main(){
   const profile=path.join(root,'camoufox-profiles','synthetic');
   for(const file of ['user.js','prefs.js'])
    assert.match(fs.readFileSync(path.join(profile,file),'utf8'),/user_pref\("dom\.storage\.flush_timeout_ms", 0\);/);
+  await waitForNativeExit(profileDirs,{tracked});
+  // Restart the same synthetic profile, write a new marker, and terminate
+  // only its captured native process tree 1.5 s after the write completed.
+  gotRequest=false;storedAt=null;tracked.clear();
+  const origin='http://127.0.0.1:'+server.address().port;
+  await adapter.start({id:'synthetic',name:'Synthetic native',engine:'gecko',
+   fingerprint:{mode:'native'},proxy:{type:'direct'},startUrl:origin+'/crash'});
+  trackProfileTree(windowsSnapshot(),profileDirs,tracked);
+  if(!tracked.size)throw Error('Cannot identify synthetic crash process tree');
+  const writeDeadline=Date.now()+30000;
+  while(!gotRequest&&Date.now()<writeDeadline)await new Promise(r=>setTimeout(r,200));
+  assert(gotRequest,'Native browser did not write crash marker');
+  await new Promise(r=>setTimeout(r,1500));
+  const rows=windowsSnapshot(),roots=profileDirs.flatMap(dir=>profilePidsFromWindowsSnapshot(JSON.stringify(rows),dir));
+  if(!roots.length)throw Error('Synthetic browser root not found before crash');
+  trackProfileTree(rows,profileDirs,tracked);
+  const crashPids=new Set(rows.map(row=>Number(row.ProcessId)).filter(pid=>tracked.has(pid)));
+  if(!crashPids.size)throw Error('No synthetic browser process to terminate');
+  crashDelayMs=Math.round(performance.now()-storedAt);
+  for(const pid of crashPids){try{process.kill(pid,'SIGKILL')}catch(error){if(error.code!=='ESRCH')throw error}}
+  const crashDeadline=Date.now()+45000;
+  while(adapter.isBusy('synthetic')&&Date.now()<crashDeadline)await new Promise(r=>setTimeout(r,200));
+  assert(!adapter.isBusy('synthetic'),'Native crash did not release profile');
+  await waitForNativeExit(profileDirs,{tracked});
+  tracked.clear();
+  await adapter.start({id:'synthetic',name:'Synthetic native',engine:'gecko',
+   fingerprint:{mode:'native'},proxy:{type:'direct'},startUrl:origin+'/verify'});
+  trackProfileTree(windowsSnapshot(),profileDirs,tracked);
+  if(!tracked.size)throw Error('Cannot identify reopened synthetic browser process tree');
+  const recoverDeadline=Date.now()+30000;
+  while(recovered===null&&Date.now()<recoverDeadline)await new Promise(r=>setTimeout(r,200));
+  assert.equal(recovered,'crash','Native profile lost the latest localStorage marker after crash');
+  assert(adapter.stop('synthetic').success);
+  const finalDeadline=Date.now()+45000;
+  while(adapter.isBusy('synthetic')&&Date.now()<finalDeadline)await new Promise(r=>setTimeout(r,200));
+  assert(!adapter.isBusy('synthetic'),'Reopened native browser did not close');
   console.log(JSON.stringify({result:'PASS',scope:'signed synthetic Windows native launch',configuredAndPersisted:true,
-   crashDurability:'NOT_RUN',installedAcceptance:'NOT_RUN'}));
+   crashDurability:'PASS_AFTER_AT_LEAST_1500MS_SINGLE_SAMPLE',crashDelayMs,installedAcceptance:'NOT_RUN'}));
   completed=true;
  }finally{
   const errors=[];
