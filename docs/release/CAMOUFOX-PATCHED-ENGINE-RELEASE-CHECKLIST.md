@@ -16,13 +16,13 @@ build có patch localStorage. Vì vậy mục 3 và 4 của checklist ngày phá
 |---|---|---|
 | Nguyên nhân gốc | Đã xác minh | Firefox `FIREFOX_156_0_1_RELEASE` `dom/localstorage/ActorsParent.cpp`: `kFlushTimeoutMs = 5000`, `Connection::ScheduleFlush`. Camoufox `7a4ac0d` (tag v156.0.1-beta.36) không patch đường này. |
 | Build engine sửa | PASS | Run 44736873136. ZIP `c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee`, `camoufox.exe` `1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331`, patch `3bb13fa6…247c0e`. |
-| Lưu trữ + độ bền khi kill, engine sửa, CI Windows | PASS | Job `patched-engine-storage` (workflow Camoufox real Windows compatibility). |
+| Lưu trữ + độ bền khi kill, engine sửa, CI Windows | PASS có giới hạn | Run 44872332491 với cấu hình yêu cầu 0 ms: các mốc kiểm bắt buộc đạt; các lượt trước từng mất dữ liệu tại 500 ms và 1000 ms. Một lần đạt không bảo đảm giới hạn mất dữ liệu. |
 | Cùng phép thử, engine upstream | FAIL ở localStorage (đã biết) | Chỉ mốc kill 6000 ms còn dữ liệu. Các trường khác và hồ sơ B đạt. |
 | Ký engine bằng khóa production | NOT_RUN | Việc của chủ dự án, mục 1–3. |
 | Nghiệm thu bản cài trên Windows sạch | NOT_RUN | Mục 6. |
 
 **Giới hạn phải giữ nguyên trong mọi tài liệu bán hàng hay hỗ trợ:**
-- Patch chỉ thu hẹp cửa sổ mất dữ liệu: từ 5000 ms xuống khoảng 100 ms cộng thời gian commit SQLite.
+- Patch cho phép rút ngắn thời gian chờ flush; cấu hình LHM yêu cầu 0 ms cho đúng cây engine đã xác minh. Thời gian commit thực tế không được bảo đảm và ảnh hưởng hiệu năng chưa đo.
 - Kill gần như ngay sau khi ghi vẫn có thể mất bản ghi cuối. Đo được: mốc 0 ms mất, mốc 50–100 ms mất một phần.
 - Mất điện còn phụ thuộc hệ điều hành và ổ đĩa có tôn trọng fsync hay không.
 - Không có kết quả nào ở đây chứng minh một website không thể liên kết các hồ sơ.
