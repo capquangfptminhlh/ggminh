@@ -18,14 +18,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LHM-Ads-Browser-Windows-x64
-          run-id: '44898132927'
+          run-id: '44904533507'
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/lhm-pinned-installer
       - name: Download exact build evidence
         uses: actions/download-artifact@v4
         with:
           name: LHM-Release-Evidence-Windows
-          run-id: '44898132927'
+          run-id: '44904533507'
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/lhm-pinned-evidence
       - name: Download engine test artifact
@@ -43,16 +43,14 @@ jobs:
           $evidence=@(Get-ChildItem "$env:RUNNER_TEMP/lhm-pinned-evidence" -Filter 'release-evidence.json' -File)
           $zip=@(Get-ChildItem "$env:RUNNER_TEMP/lhm-pinned-source" -Filter '*.zip' -File)
           if($installer.Count -ne 1 -or $evidence.Count -ne 1 -or $zip.Count -ne 1){throw 'Expected exactly one file per artifact'}
-          node tools/windows-clean-install-evidence.js verify-build --installer $installer[0].FullName --evidence $evidence[0].FullName --commit cedd1a754e46396d30850fb93738509489e406d5 --run-id 44898132927
+          node tools/windows-clean-install-evidence.js verify-build --installer $installer[0].FullName --evidence $evidence[0].FullName --commit 9d5327ab24dd672728c63a3a6687184b00325c0b --run-id 44904533507
           if($LASTEXITCODE -ne 0){throw 'Installer provenance failed'}
           if((Get-FileHash -LiteralPath $zip[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee'){throw 'Engine archive digest mismatch'}
-          $engine=Join-Path $env:RUNNER_TEMP 'lhm-pinned-engine'
-          [IO.Compression.ZipFile]::ExtractToDirectory($zip[0].FullName,$engine)
           $install=Join-Path $env:RUNNER_TEMP 'lhm-pinned-app'
           $p=Start-Process -FilePath $installer[0].FullName -ArgumentList @('/S',('/D='+$install)) -PassThru -Wait -WindowStyle Hidden
           if($p.ExitCode -ne 0){throw 'Synthetic installation failed'}
           "LHM_PACKAGED_EXE=$install\LHM Ads Browser.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "LHM_PINNED_ENGINE=$engine" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "LHM_PINNED_ENGINE=$($zip[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Exercise import, create, open and reopen after app restart
         shell: pwsh
         run: |

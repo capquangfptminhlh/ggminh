@@ -16,7 +16,10 @@ async function main(){
  }
  try{
   app=await launch();
-  await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[selected]})},engine);
+  await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async(_window,options)=>{
+   if(!options.properties.includes('openFile')||!options.filters.some(f=>f.extensions.includes('zip')))throw Error('ZIP selection expected');
+   return {canceled:false,filePaths:[selected]};
+  }},engine);
   let page=await app.firstWindow({timeout:60000});
   page.on('dialog',dialog=>dialog.accept());
   await page.locator('#lhm-tools-menu > summary').click();
@@ -45,7 +48,7 @@ async function main(){
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('running'),name,{timeout:150000});
   await row.locator('.btn-toggle-run').click();
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('stopped'),name,{timeout:60000});
-  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',localImport:true,create:true,openClose:true,restartOpenClose:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
+  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',zipImport:true,create:true,openClose:true,restartOpenClose:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
  }finally{if(app)await app.close().catch(()=>{})}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
