@@ -9,6 +9,9 @@ function digest(file){
  finally{fs.closeSync(fd)}
  return hash.digest('hex');
 }
+function existsEntry(file){
+ try{fs.lstatSync(file);return true}catch(error){if(error.code==='ENOENT')return false;throw error}
+}
 function installPinnedZip({archive,base,manifest,payloadPin,archivePin,archiveBytes,
  scriptPath=path.join(__dirname,'..','..','tools','extract-signed-engine.ps1')}){
  if(process.platform!=='win32')throw Error('ZIP import requires Windows');
@@ -22,7 +25,7 @@ function installPinnedZip({archive,base,manifest,payloadPin,archivePin,archiveBy
   throw Error('Engine manifest hash mismatch');
  base=fs.realpathSync(base);
  const dest=path.join(base,'camoufox');
- if(fs.existsSync(dest))throw Error('Camoufox installation already exists');
+ if(existsEntry(dest))throw Error('Camoufox installation already exists');
  if(fs.readdirSync(base).some(name=>name.startsWith('.lhm-camoufox-import-')))
   throw Error('Còn thư mục tạm từ lần nhập trước; đóng ứng dụng và kiểm tra thư mục engines-pinned trước khi thử lại');
  const disk=fs.statfsSync(base,{bigint:true}),required=manifest.files.reduce((n,f)=>n+BigInt(f.bytes),BigInt(archiveBytes));
@@ -37,7 +40,7 @@ function installPinnedZip({archive,base,manifest,payloadPin,archivePin,archiveBy
    '-Archive',copy,'-Manifest',manifestPath,'-Destination',payload],{windowsHide:true,encoding:'utf8',timeout:600000,maxBuffer:1024*1024});
   if(extract.error||extract.status!==0)throw Error('Không thể giải nén engine: '+String(extract.error?.message||extract.stderr||extract.status).slice(0,300));
   const verified=verifyPinnedTree(payload,manifest,payloadPin);
-  if(fs.existsSync(dest))throw Error('Camoufox installation already exists');
+  if(existsEntry(dest))throw Error('Camoufox installation already exists');
   fs.renameSync(payload,dest);
   return {...verified,root:dest,executable:path.join(dest,'camoufox.exe')};
  }finally{

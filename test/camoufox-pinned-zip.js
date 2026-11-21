@@ -11,6 +11,11 @@ try{
  const manifest={schema:1,engine:'camoufox',version:'156.0.1',entry:'camoufox.exe',files:[{path:'camoufox.exe',bytes:contents.length,sha256:crypto.createHash('sha256').update(contents).digest('hex')}]};
  const payload=crypto.createHash('sha256').update(signedPayload(manifest)).digest('hex');
  const archive=sha256File(zipFile);
+ const other=path.join(root,'blocked');fs.mkdirSync(other);
+ const junction=path.join(other,'camoufox');fs.symlinkSync(path.join(root,'missing-target'),junction,'junction');
+ assert.throws(()=>installPinnedZip({archive:zipFile,base:other,manifest,payloadPin:payload,archivePin:archive.sha256,archiveBytes:archive.bytes}),/already exists/i);
+ assert.equal(fs.lstatSync(junction).isSymbolicLink(),true,'existing junction must remain untouched');
+ assert.deepEqual(fs.readdirSync(other),['camoufox'],'no staging created for existing junction');
  assert.throws(()=>installPinnedZip({archive:zipFile,base,manifest,payloadPin:'f'.repeat(64),archivePin:archive.sha256,archiveBytes:archive.bytes}),/manifest.*hash/i);
  assert.throws(()=>installPinnedZip({archive:zipFile,base,manifest,payloadPin:payload,archivePin:'a'.repeat(64),archiveBytes:archive.bytes}),/hash/i);
  assert(!fs.existsSync(path.join(base,'camoufox')));
