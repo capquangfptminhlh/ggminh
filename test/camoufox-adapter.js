@@ -132,6 +132,20 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   assert(processes.at(-1).exited,'Window readiness timeout must terminate orphan');
   assert(!neverReady.isBusy(a.id));
   assert.strictEqual(noRelease.sessions.size,0);
+  let releasePreflight;
+  const preflightGate=new Promise(resolve=>{releasePreflight=resolve});
+  const slow=new CamoufoxAdapter(base,{bundleVerifier,spawnProcess:mockSpawn,platform:'win32',
+   capabilityResolver:()=>({manual:true,proxyTypes:[],evidence:'test',reason:null}),
+   windowProbe:async()=>true,beforeStart:()=>preflightGate,
+   closeWindow:async pid=>{const p=processes.find(x=>x.pid===pid);p.kill('SIGTERM');return true;}});
+  const opening=slow.start(a);
+  assert.equal(slow.isBusy(a.id),true,'Profile must be reserved during asynchronous verification');
+  await assert.rejects(()=>slow.start(a),/running or starting/);
+  releasePreflight();await opening;assert.equal(slow.stop(a.id).success,true);await flush();
+  const failed=new CamoufoxAdapter(base,{bundleVerifier,spawnProcess:mockSpawn,platform:'win32',
+   beforeStart:async()=>{throw Error('verification failed')}});
+  await assert.rejects(()=>failed.start(a),/verification failed/);
+  assert.equal(failed.isBusy(a.id),false,'Failed verification must release reservation');
   console.log('Native signed Camoufox spawn, isolated profile, GUI readiness, stop/restart, URL safety and proxy/GeoIP fail-closed passed');
  }finally{fs.rmSync(base,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});
