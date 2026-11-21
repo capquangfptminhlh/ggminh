@@ -32,6 +32,7 @@ const {spawnSync}=require('node:child_process');
 const core=require('./core');
 const {queryWindowsProfilePids}=require('./windows-profile-processes');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
+const {classifySnapshot}=require('./localstorage-snapshot');
 
 const IDS={a:'iso_a',b:'iso_b'};
 const token=()=>crypto.randomBytes(12).toString('hex');
@@ -628,6 +629,11 @@ async function run(){
      const killed=hardKill(pids);
      const killReturnedAfterMs=Math.round(performance.now()-t0);
      if(killed.length===0)throw notRun('Kill sweep could not terminate any engine process');
+     await waitControllerReleased(controller,IDS.a);
+     await reapProfileProcesses(dirOf(IDS.a));
+     const localOrigin='http+++127.0.0.1+'+new URL(server.origin).port;
+     const dbFile=path.join(dirOf(IDS.a),'storage','default',localOrigin,'ls','data.sqlite');
+     const diskBeforeRelaunch=classifySnapshot(dbFile,batch,previous);
      const reopened=await relaunchA();
      ap=reopened.page;
      const after=await readDurable(ap);
@@ -636,7 +642,7 @@ async function run(){
       (v!==null&&v===previous)?'previousSample':v===null?'missing':'other';
      const fields=Object.fromEntries(DURABLE_FIELDS.map(f=>[f,classify(after[f])]));
      samples.push({offsetMs,repeat,killIssuedAfterMs,killReturnedAfterMs,
-      gated:offsetMs>=SWEEP_GATE_MS,killedPids:killed,relaunchAttempts:reopened.attempts,fields,
+      gated:offsetMs>=SWEEP_GATE_MS,killedPids:killed,relaunchAttempts:reopened.attempts,fields,diskBeforeRelaunch,
       survived:Object.values(fields).every(v=>v==='last')});
      previous=last;
     }
