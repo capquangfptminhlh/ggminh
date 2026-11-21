@@ -79,6 +79,11 @@ jobs:
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: npm run build:win
+      - name: Check packaged Camoufox runtime files
+        shell: pwsh
+        run: |
+          node -e "const a=require('@electron/asar');const files=a.listPackage('dist/win-unpacked/resources/app.asar').map(x=>x.replace(/\\/g,'/'));for(const name of ['/src/engine/camoufoxPinnedWorker.js','/src/engine/camoufox-pinned-manifest.json','/node_modules/camoufox/package.json'])if(!files.includes(name))throw Error('Missing packaged runtime: '+name);console.log('Pinned worker, manifest and Camoufox package: present')"
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged Camoufox runtime files missing' }
       - name: Check Authenticode status
         shell: pwsh
         env:

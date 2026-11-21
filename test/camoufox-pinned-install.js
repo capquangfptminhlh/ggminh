@@ -19,5 +19,7 @@ try{
  assert.throws(()=>installPinnedTree({source,base:source,manifest,expectedPayloadSha256:pin}),/overlap/i);
  assert.throws(()=>installPinnedTree({source,base:other,manifest,expectedPayloadSha256:pin,
   availableBytes:()=>0}),/không đủ dung lượng/i);
+ fs.mkdirSync(path.join(other,'.lhm-camoufox-import-leftover'));
+ assert.throws(()=>installPinnedTree({source,base:other,manifest,expectedPayloadSha256:pin}),/thư mục tạm/i);
  console.log('Pinned local engine import checks source and destination, refusing overwrites: PASS');
 }finally{fs.rmSync(root,{recursive:true,force:true})}
