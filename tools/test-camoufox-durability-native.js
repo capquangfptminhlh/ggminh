@@ -7,16 +7,28 @@ const {BundledEngineManager,signedPayload}=require('../src/engine/bundledEngineM
 const {CamoufoxAdapter}=require('../src/engine/camoufoxAdapter');
 const manifest=require('./camoufox-engine/records/camoufox-156.0.1-beta.36-lhm-lsflush.unsigned-manifest.json');
 
+function testEngineDir(exe,runnerTemp){
+ if(!exe||!path.isAbsolute(exe)||path.basename(exe).toLowerCase()!=='camoufox.exe'||
+    !runnerTemp||!path.isAbsolute(runnerTemp))throw Error('Absolute CI test paths required');
+ const stat=fs.lstatSync(exe),dir=path.dirname(exe),dirStat=fs.lstatSync(dir);
+ if(!stat.isFile()||stat.isSymbolicLink()||!dirStat.isDirectory()||dirStat.isSymbolicLink())
+  throw Error('Test engine must be a real file in a real directory');
+ const root=fs.realpathSync(runnerTemp),actual=fs.realpathSync(dir);
+ const relative=path.relative(root,actual);
+ if(!relative||relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative))
+  throw Error('Test engine must reside inside runner temp');
+ return actual;
+}
 async function main(){
  if(process.platform!=='win32')throw Error('Windows CI required');
+ if(process.env.CI!=='true')throw Error('Synthetic native test requires CI');
  const exe=process.env.LHM_CAMOUFOX_EXECUTABLE;
- if(!exe||!path.isAbsolute(exe)||path.basename(exe).toLowerCase()!=='camoufox.exe')throw Error('Absolute test engine required');
- const engine=path.dirname(exe),manifestFile=path.join(engine,'manifest.json');
+ const engine=testEngineDir(exe,process.env.RUNNER_TEMP),manifestFile=path.join(engine,'manifest.json');
  if(fs.existsSync(manifestFile))throw Error('Refusing to replace an existing engine manifest');
  const {publicKey,privateKey}=crypto.generateKeyPairSync('ed25519');
  const signed={...manifest,signature:crypto.sign(null,signedPayload(manifest),privateKey).toString('base64url')};
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-native-durability-'));
- let gotRequest=false,session=null,adapter=null,manifestOwned=false;
+ let gotRequest=false,session=null,adapter=null,manifestOwned=false,completed=false;
  const server=http.createServer((req,res)=>{
   if(req.url==='/stored'){gotRequest=true;res.end('ok');return;}
   res.setHeader('content-type','text/html');
@@ -45,11 +57,23 @@ async function main(){
    assert.match(fs.readFileSync(path.join(profile,file),'utf8'),/user_pref\("dom\.storage\.flush_timeout_ms", 0\);/);
   console.log(JSON.stringify({result:'PASS',scope:'signed synthetic Windows native launch',configuredAndPersisted:true,
    crashDurability:'NOT_RUN',installedAcceptance:'NOT_RUN'}));
+  completed=true;
  }finally{
-  if(adapter?.isBusy('synthetic'))adapter.stop('synthetic');
+  const errors=[];
+  if(adapter?.isBusy('synthetic')){
+   try{adapter.stop('synthetic')}catch(error){errors.push(error)}
+   const deadline=Date.now()+45000;
+   while(adapter.isBusy('synthetic')&&Date.now()<deadline)await new Promise(r=>setTimeout(r,200));
+   if(adapter.isBusy('synthetic'))errors.push(Error('Synthetic browser did not exit; profile retained'));
+  }
   if(server.listening)await new Promise(resolve=>server.close(resolve));
-  if(manifestOwned)try{fs.rmSync(manifestFile,{force:true})}catch(_){}
-  try{fs.rmSync(root,{recursive:true,force:true,maxRetries:20,retryDelay:300})}catch(_){}
+  if(manifestOwned)try{fs.rmSync(manifestFile,{force:true})}catch(error){errors.push(error)}
+  if(!adapter?.isBusy('synthetic'))try{fs.rmSync(root,{recursive:true,force:true,maxRetries:20,retryDelay:300})}catch(error){errors.push(error)}
+  if(errors.length){
+   console.error('Synthetic cleanup incomplete:',errors.map(error=>error.message).join('; '));
+   if(completed)throw Error('Synthetic native test cleanup failed');
+  }
  }
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
+module.exports={testEngineDir};
