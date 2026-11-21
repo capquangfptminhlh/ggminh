@@ -111,6 +111,7 @@ class CamoufoxAdapter{
   closeWindow=requestWindowClose,platform=process.platform,
   startupTimeoutMs=20000,store=null,proxyVault=null,
   prepareProxy=prepareCamoufoxProxy,
+  beforeStart=null,
   capabilityResolver=()=>({manual:false,proxyTypes:[],evidence:null,
    reason:'No approved capability policy'}),
   labProxyOverride=false,downloadsRoot=null,peerGuardFactory,
@@ -121,6 +122,8 @@ class CamoufoxAdapter{
   if(!Number.isInteger(startupTimeoutMs)||startupTimeoutMs<MIN_STARTUP_MS||
      startupTimeoutMs>MAX_STARTUP_MS)throw Error('Invalid Camoufox startup timeout');
   this.baseDir=baseDir;this.bundleVerifier=bundleVerifier;
+  if(beforeStart!==null&&typeof beforeStart!=='function')throw Error('Invalid Camoufox preflight');
+  this.beforeStart=beforeStart;
   this.spawnProcess=spawnProcess;this.windowProbe=windowProbe;
   // Proxy gateway accepts only this browser's process tree (real spawns only).
   this.peerGuardFactory=peerGuardFactory!==undefined?peerGuardFactory
@@ -164,7 +167,7 @@ class CamoufoxAdapter{
    ready:signed.valid===true&&this.platform==='win32'&&capabilities.manual===true,
    approvedProxyTypes:[...capabilities.proxyTypes],evidence:capabilities.evidence||null,
    note:signed.valid&&capabilities.manual?
-    'Signed native EXE and version-bound manual capability available.':
+    'Verified native EXE and version-bound manual capability available.':
     signed.valid?(capabilities.reason||'Signed Camoufox version is not approved for manual release.'):
     'Independent publisher-signed Camoufox EXE is not installed or verified.'};
  }
@@ -173,6 +176,9 @@ class CamoufoxAdapter{
  async start(profile,{url,onClosed}={}){
   const id=assertProfileId(profile?.id);
   if(this.isBusy(id))throw Error('Camoufox profile is already running or starting');
+  const reservation={};this.pending.set(id,reservation);
+  try{
+  if(this.beforeStart)await this.beforeStart();
   const {profileDir,identity}=validateCamoufoxProfile(profile,this.baseDir,{
    requirePinnedIdentity:this.requirePinnedIdentity,
    existingProfiles:this.store?.data?.profiles||null
@@ -191,6 +197,7 @@ class CamoufoxAdapter{
   this.pending.set(id,task);
   try{return await task;}
   finally{if(this.pending.get(id)===task)this.pending.delete(id);}
+  }finally{if(this.pending.get(id)===reservation)this.pending.delete(id)}
  }
  async _startVerified({profile,id,profileDir,target,onClosed,identity=null,engineSha256=null,manifestPayloadSha256=null}){
   if(this.platform!=='win32')

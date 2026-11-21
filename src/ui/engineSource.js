@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  const installInfo=el('camoufox-install-info');
  const installButton=el('camoufox-install-button');
  let releaseAvailable=false;
+ let localPinned=false;
  let busy=false;
  // The runtime gate reports raw English technical reasons; translate the
  // known ones into an explanation plus what the user can actually do.
@@ -51,7 +52,19 @@ window.addEventListener('DOMContentLoaded',()=>{
    selector.value=source;
    geckoChoice.value=geckoProvider;
    const availability=await window.api.camoufoxInstallStatus();
+   localPinned=availability.mode==='local-pinned';
    releaseAvailable=availability.available&&!availability.alreadyInstalled;
+   if(localPinned){
+    installButton.textContent='Chọn thư mục Camoufox';
+    installInfo.textContent=availability.alreadyInstalled?
+     'Camoufox đã được kiểm tra theo hash của gói. Có thể tạo hồ sơ và mở trình duyệt.':
+     'Chọn thư mục chứa engine Camoufox 156.0.1 đã được cung cấp. Ứng dụng sẽ kiểm tra hash từng file; gói không có chữ ký publisher.';
+    geckoResult.textContent=camoufox.ready?
+     'Camoufox đã kiểm tra hash và sẵn sàng dùng trực tiếp. Proxy chưa được hỗ trợ.':
+     'Camoufox chưa sẵn sàng; hãy chọn thư mục engine để cài.';
+    result.textContent=bundle.valid?'Engine Chromium đóng gói hợp lệ · '+bundle.version:bundledEngineGuidance(bundle.reason);
+    return;
+   }
    installButton.disabled=busy||!releaseAvailable;
    installInfo.textContent=availability.alreadyInstalled?
      availability.runtime?.manualReady?
@@ -112,7 +125,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  installButton.addEventListener('click',async()=>{
   if(busy||!releaseAvailable)return;
   busyState(true);
-  installInfo.textContent='Đang thực hiện quy trình tải và xác minh engine đã ký…';
+  installInfo.textContent=localPinned?'Đang sao chép và kiểm tra hash engine…':'Đang thực hiện quy trình tải và xác minh engine đã ký…';
   try{
    const result=await window.api.installCamoufoxEngine();
    if(result.canceled)installInfo.textContent='Đã hủy cài đặt.';

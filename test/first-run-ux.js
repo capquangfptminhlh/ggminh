@@ -136,6 +136,7 @@ const engineWindow = {
       camoufox: { ready: false },
     }),
     camoufoxInstallStatus: async () => installStatus,
+    installCamoufoxEngine: async () => ({installed:true,version:'156.0.1'}),
   },
 };
 const engineSandbox = {
@@ -150,6 +151,13 @@ domReady();
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 
 (async () => {
+  installStatus={mode:'local-pinned',available:true,alreadyInstalled:false,
+    runtime:{manualReady:false,canInstall:true}};
+  await engineElement('btn-engine-source').click();await flush();
+  assert.equal(engineElement('camoufox-install-button').disabled,false);
+  assert.ok(engineElement('camoufox-install-info').textContent.includes('không có chữ ký'));
+  await engineElement('camoufox-install-button').click();await flush();
+  assert.ok(engineElement('camoufox-install-info').textContent.includes('Đã cài'));
   installStatus = {
     available: false, alreadyInstalled: false,
     runtime: { ready: false, reason: 'Separately publisher-signed Camoufox EXE not available' },

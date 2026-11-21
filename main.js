@@ -57,6 +57,7 @@ const { inspectFingerprint } = require('./src/privacy/fingerprintAudit');
 const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
+const {PinnedCamoufoxManager}=require('./src/engine/camoufoxPinnedManager');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {internalCamoufoxPreview,internalPreviewUserData}=require('./src/engine/camoufoxInternalPreview');
 const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
@@ -102,6 +103,7 @@ let runtimeRegistry = null;
 let bundledEngine = null;
 let camoufoxAdapter = null;
 let camoufoxInstall = null;
+let pinnedCamoufox = null;
 let camoufoxApprovedRelease = null;
 let publisherKey = null;
 let behaviorMonitor = null;
@@ -752,14 +754,22 @@ function initIPC() {
   });
   ipcMain.handle('diagnose-browser-engines', () => diagnoseBrowsers(store.getSettings()));
   ipcMain.handle('engine-runtime-status', () => runtimeRegistry.status());
-  ipcMain.handle('bundled-engine-status', () => ({
+  ipcMain.handle('bundled-engine-status', async () => {
+    if(app.isPackaged&&pinnedCamoufox&&!pinnedCamoufox.running)await pinnedCamoufox.refreshAsync();
+    return ({
     source:store.getSettings().engineSource==='bundled'?'bundled':'system',
     bundle:bundledEngine.status(),
     geckoProvider:store.getSettings().geckoProvider==='camoufox'?'camoufox':'firefox',
     camoufox:camoufoxAdapter.status()
-  }));
+  })});
   ipcMain.handle('camoufox-install-status',()=>{
     const adapterStatus=camoufoxAdapter.status();
+    if(app.isPackaged&&pinnedCamoufox){
+      const installed=adapterStatus.binaryVerified===true;
+      return {available:process.platform==='win32',version:'156.0.1',alreadyInstalled:installed,
+        installInProgress:pinnedCamoufox.running,mode:'local-pinned',
+        runtime:{manualReady:adapterStatus.ready,canInstall:process.platform==='win32',reason:adapterStatus.note}};
+    }
     const runtime=assessRuntime({
       publisherTrusted:!!publisherKey,
       releaseConfigured:!!camoufoxApprovedRelease,
@@ -781,6 +791,15 @@ function initIPC() {
     };
   });
   ipcMain.handle('camoufox-install',async()=>{
+    if(app.isPackaged&&pinnedCamoufox){
+      if(process.platform!=='win32')throw Error('Camoufox chỉ hỗ trợ cài trên Windows.');
+      if(launcher.listActive().length||launcher.pendingStarts.size)throw Error('Đóng tất cả trình duyệt trước khi cài engine.');
+      if(pinnedCamoufox.running)throw Error('Đang cài đặt engine.');
+      const selection=await dialog.showOpenDialog(mainWindow,{title:'Chọn thư mục engine Camoufox',properties:['openDirectory']});
+      if(selection.canceled||selection.filePaths.length!==1)return {canceled:true};
+      const installed=await pinnedCamoufox.importAsync(selection.filePaths[0]);
+      return {installed:true,version:installed.version,status:camoufoxAdapter.status()};
+    }
     if(!camoufoxApprovedRelease||!camoufoxInstall)
       throw Error('Chưa có bản Camoufox được nhà phát hành LHM phê duyệt, ký số.');
     const runtime=assessRuntime({publisherTrusted:!!publisherKey,
@@ -1253,6 +1272,8 @@ function initIPC() {
       // generator/engine never blocks creation; the outcome is
       // recorded on the profile (fingerprint.identityProvisioning).
       try{
+        if(app.isPackaged&&pinnedCamoufox&&resolveEngineType(profile,store.getSettings())==='camoufox')
+          await pinnedCamoufox.refreshAsync();
         provisioning=await provisionCamoufoxIdentity(profile,{
           existingProfiles:store.data.profiles,
           resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
@@ -1294,6 +1315,7 @@ function initIPC() {
   ipcMain.handle('start-browser', async (_, id, options) => {
     const preProfile = store.getProfile(id);
     if (preProfile && resolveEngineType(preProfile, store.getSettings()) === 'camoufox' && !preProfile.fingerprint?.identity) {
+      if(app.isPackaged&&pinnedCamoufox)await pinnedCamoufox.refreshAsync();
       const prov = await provisionCamoufoxIdentity(preProfile, {
         existingProfiles: store.data.profiles,
         resolveExecutable: () => { if (!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }
@@ -1413,6 +1435,7 @@ function initIPC() {
   ipcMain.handle('provision-camoufox-identity', async (_, id) => {
     const profile = store.getProfile(id);
     if (!profile) throw Error('Profile not found');
+    if(app.isPackaged&&pinnedCamoufox)await pinnedCamoufox.refreshAsync();
     const result = await provisionCamoufoxIdentity(profile, {
       existingProfiles: store.data.profiles,
       resolveExecutable:()=>{ if(!camoufoxExecutableResolver) throw Error('Camoufox resolver not ready'); return camoufoxExecutableResolver(); }});
@@ -1537,6 +1560,12 @@ app.whenReady().then(async () => {
   const releaseAssets=app.isPackaged
     ?path.join(process.resourcesPath,'lhm-camoufox')
     :path.join(__dirname,'resources','camoufox-engine');
+  if(app.isPackaged&&process.platform==='win32'){
+    // A separate root keeps earlier signed installations intact.
+    const pinnedBase=path.join(storageDir,'engines-pinned');
+    fs.mkdirSync(pinnedBase,{recursive:true,mode:0o700});
+    pinnedCamoufox=new PinnedCamoufoxManager(pinnedBase);
+  }
   const camoufoxCapabilityPolicy=loadCapabilityPolicy(
     path.join(releaseAssets,'capabilities.json'));
   // Never use the app-license signing key to trust a downloadable browser.
@@ -1594,6 +1623,7 @@ app.whenReady().then(async () => {
   let cachedCamoufoxExe=null;
   const verifiedProviders={
     status(){
+      if(app.isPackaged&&pinnedCamoufox)return pinnedCamoufox.status();
       if(!publisherKey)
         return {valid:false,available:false,
           reason:'Independent Camoufox publisher trust anchor missing'};
@@ -1608,6 +1638,7 @@ app.whenReady().then(async () => {
       return camoufoxInstall.status();
     },
     resolve(engine){
+      if(app.isPackaged&&pinnedCamoufox)return pinnedCamoufox.resolve(engine);
       if(engine!=='camoufox'||!publisherKey)
         throw Error('Camoufox publisher signature is not trusted');
       if(cachedCamoufoxExe&&fs.existsSync(cachedCamoufoxExe))return cachedCamoufoxExe;
@@ -1630,7 +1661,13 @@ app.whenReady().then(async () => {
   };
   camoufoxAdapter=new CamoufoxAdapter(storageDir,{
     bundleVerifier:verifiedProviders,store,proxyVault,downloadsRoot,
-    capabilityResolver:({engineVersion,engineSha256})=>internalCamoufoxPreview({
+    beforeStart:app.isPackaged&&pinnedCamoufox?async()=>{
+      const status=await pinnedCamoufox.refreshAsync();
+      if(!status.valid)throw Error('Không thể kiểm tra engine Camoufox: '+status.reason);
+    }:null,
+    capabilityResolver:({engineVersion,engineSha256})=>app.isPackaged&&pinnedCamoufox&&
+      engineVersion==='156.0.1'&&engineSha256==='1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331'
+      ?{manual:true,proxyTypes:[],evidence:'local-pinned-engine',reason:null}:internalCamoufoxPreview({
       packaged:app.isPackaged,enabled:process.env.LHM_CAMOUFOX_INTERNAL,
       directory:internalDir,platform:process.platform,version:engineVersion,sha256:engineSha256
     })||evaluateCapabilities({engineVersion,policy:camoufoxCapabilityPolicy}),
