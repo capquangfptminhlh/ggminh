@@ -158,6 +158,11 @@ const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => s
   assert.ok(engineElement('camoufox-install-info').textContent.includes('không có chữ ký'));
   await engineElement('camoufox-install-button').click();await flush();
   assert.ok(engineElement('camoufox-install-info').textContent.includes('Đã cài'));
+  installStatus={mode:'local-pinned',available:false,alreadyInstalled:false,invalidExisting:true,
+    runtime:{manualReady:false,canInstall:true}};
+  await engineElement('engine-source-refresh').click();await flush();
+  assert.equal(engineElement('camoufox-install-button').disabled,true);
+  assert.ok(engineElement('camoufox-install-info').textContent.includes('sao lưu'));
   installStatus = {
     available: false, alreadyInstalled: false,
     runtime: { ready: false, reason: 'Separately publisher-signed Camoufox EXE not available' },

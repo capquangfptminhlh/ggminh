@@ -1,5 +1,6 @@
 'use strict';
 const path=require('node:path');
+const fs=require('node:fs');
 const {Worker}=require('node:worker_threads');
 const manifest=require('./camoufox-pinned-manifest.json');
 const {verifyPinnedTree}=require('./camoufoxPinnedTree');
@@ -15,6 +16,7 @@ class PinnedCamoufoxManager{
  status(){
   return {...this.cached};
  }
+ hasExisting(){try{fs.lstatSync(this.root);return true}catch(error){if(error.code==='ENOENT')return false;throw error}}
  resolve(engine){if(engine!=='camoufox')throw Error('Wrong engine');if(!this.cached.valid)throw Error('Engine chưa được kiểm tra');return path.join(this.root,'camoufox.exe')}
  async refreshAsync(){
   if(this.running)throw Error('Camoufox import in progress');

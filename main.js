@@ -766,7 +766,8 @@ function initIPC() {
     const adapterStatus=camoufoxAdapter.status();
     if(app.isPackaged&&pinnedCamoufox){
       const installed=adapterStatus.binaryVerified===true;
-      return {available:process.platform==='win32',version:'156.0.1',alreadyInstalled:installed,
+      return {available:process.platform==='win32'&&!pinnedCamoufox.hasExisting(),version:'156.0.1',alreadyInstalled:installed,
+        invalidExisting:pinnedCamoufox.hasExisting()&&!installed,
         installInProgress:pinnedCamoufox.running,mode:'local-pinned',
         runtime:{manualReady:adapterStatus.ready,canInstall:process.platform==='win32',reason:adapterStatus.note}};
     }

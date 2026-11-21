@@ -56,7 +56,9 @@ window.addEventListener('DOMContentLoaded',()=>{
    releaseAvailable=availability.available&&!availability.alreadyInstalled;
    if(localPinned){
     installButton.textContent='Chọn thư mục Camoufox';
-    installInfo.textContent=availability.alreadyInstalled?
+    installInfo.textContent=availability.invalidExisting?
+     'Thư mục engine Camoufox hiện có không vượt qua kiểm tra. Hãy đóng trình duyệt và sao lưu thư mục engines-pinned/camoufox trước khi liên hệ hỗ trợ; ứng dụng không tự ghi đè.':
+     availability.alreadyInstalled?
      'Camoufox đã được kiểm tra theo hash của gói. Có thể tạo hồ sơ và mở trình duyệt.':
      'Chọn thư mục chứa engine Camoufox 156.0.1 đã được cung cấp. Ứng dụng sẽ kiểm tra hash từng file; gói không có chữ ký publisher.';
     geckoResult.textContent=camoufox.ready?
