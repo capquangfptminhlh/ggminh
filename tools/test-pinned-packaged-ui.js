@@ -19,6 +19,7 @@ async function main(){
   await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[selected]})},engine);
   let page=await app.firstWindow({timeout:60000});
   page.on('dialog',dialog=>dialog.accept());
+  await page.locator('#lhm-tools-menu > summary').click();
   await page.locator('#btn-engine-source').click();
   const button=page.locator('#camoufox-install-button');
   await button.waitFor({state:'visible',timeout:30000});
