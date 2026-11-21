@@ -1,0 +1,67 @@
+diff --git a/dom/localstorage/ActorsParent.cpp b/dom/localstorage/ActorsParent.cpp
+index 7327b41..c34f9d1 100644
+--- a/dom/localstorage/ActorsParent.cpp
++++ b/dom/localstorage/ActorsParent.cpp
+@@ -270,10 +270,16 @@ static const uint32_t kUsageFileSize = 12;
+ static const uint32_t kUsageFileCookie = 0x420a420a;
+ 
+ /**
+- * How long between the first moment we know we have data to be written on a
+- * `Connection` and when we should actually perform the write.  This helps
+- * limit disk churn under silly usage patterns and is historically consistent
+- * with the previous, legacy implementation.
++ * Upper bound for how long we wait between the first moment we know we have
++ * data to be written on a `Connection` and when we actually perform the write.
++ * Stock Firefox always waits this long, which helps limit disk churn under
++ * silly usage patterns and is historically consistent with the previous,
++ * legacy implementation.
++ *
++ * LHM: the effective delay is the `dom.storage.flush_timeout_ms` pref, clamped
++ * to this bound so a bad value can never make durability worse than stock.
++ * Writes still pending when the parent process is killed are lost; a shorter
++ * delay only narrows that window, it does not close it.
+  *
+  * Note that flushing happens downstream of Snapshot checkpointing and its
+  * batch mechanism which helps avoid wasteful IPC in the case of silly content
+@@ -281,6 +287,11 @@ static const uint32_t kUsageFileCookie = 0x420a420a;
+  */
+ const uint32_t kFlushTimeoutMs = 5000;
+ 
++uint32_t FlushTimeoutMs() {
++  const uint32_t pref = StaticPrefs::dom_storage_flush_timeout_ms();
++  return pref < kFlushTimeoutMs ? pref : kFlushTimeoutMs;
++}
++
+ const bool kDefaultShadowWrites = false;
+ const uint32_t kDefaultSnapshotPrefill = 16384;
+ const uint32_t kDefaultSnapshotGradualPrefill = 4096;
+@@ -4265,7 +4276,7 @@ void Connection::ScheduleFlush() {
+   }
+ 
+   MOZ_ALWAYS_SUCCEEDS(mFlushTimer->InitWithNamedFuncCallback(
+-      FlushTimerCallback, this, kFlushTimeoutMs, nsITimer::TYPE_ONE_SHOT,
++      FlushTimerCallback, this, FlushTimeoutMs(), nsITimer::TYPE_ONE_SHOT,
+       "Connection::FlushTimerCallback"_ns));
+ 
+   mFlushScheduled = true;
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+index 72a14fa..22e58d5 100644
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -5287,6 +5287,16 @@
+   value: true
+   mirror: always
+ 
++# LHM: milliseconds between the first pending localStorage (LSNG) write on a
++# datastore connection and its SQLite flush. Stock Firefox hard-codes 5000 ms
++# (kFlushTimeoutMs in dom/localstorage/ActorsParent.cpp); values above that are
++# clamped to it. A shorter delay narrows, but does not close, the window in
++# which a killed parent process loses committed-in-memory localStorage writes.
++- name: dom.storage.flush_timeout_ms
++  type: RelaxedAtomicUint32
++  value: 100
++  mirror: always
++
+ - name: dom.urlpattern.enabled
+   type: RelaxedAtomicBool
+   value: true

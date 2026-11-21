@@ -1,0 +1,195 @@
+name: Camoufox patched engine build (TEST ONLY, NO release)
+# Rebuilds Camoufox v156.0.1-beta.36 for Windows x86_64 from its exact upstream
+# commit plus the LHM patches in tools/camoufox-engine/patches, using the same
+# steps as upstream's build-browser job (daijro/camoufox .github/workflows/
+# release.yml at that commit). Upstream's own Windows x86_64 job for this
+# commit ran 2h25m on ubuntu-24.04 (build step 2h14m).
+#
+# The output is an UNSIGNED, UNVERIFIED test artifact. It is never published as
+# a release, never referenced by resources/camoufox-engine/release.json, and
+# must not reach customers until it passes the Windows storage checks and a
+# separate signing/release decision.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'engine-build/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: camoufox-engine-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CAMOUFOX_REPO: daijro/camoufox
+  # Commit that tag v156.0.1-beta.36 points to.
+  CAMOUFOX_COMMIT: 7a4ac0d4dca2dfdeb277f521824a26efb0b6a7b6
+  CAMOUFOX_TAG: v156.0.1-beta.36
+  PYTHON_VERSION: "3.12"
+  BUILD_TARGET: windows,x86_64
+
+jobs:
+  build-windows-x86_64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - name: Disk before cleanup
+        run: df -h /
+
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@8831c82abf29b34eb2caac48d5f999ecfc0d8eef # v4.1
+        with:
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          remove-cached-tools: "true"
+          remove-swapfile: "true"
+          verbose: "false"
+
+      - name: Remove unwanted tools
+        run: |
+          sudo apt-get remove -y '^aspnetcore-.*' > /dev/null || true
+          sudo apt-get remove -y '^dotnet-.*' > /dev/null || true
+          sudo apt-get remove -y '^llvm-.*' > /dev/null || true
+          sudo apt-get remove -y 'php.*' > /dev/null || true
+          sudo apt-get remove -y '^mongodb-.*' > /dev/null || true
+          sudo apt-get remove -y '^mysql-.*' > /dev/null || true
+          sudo apt-get remove -y azure-cli google-chrome-stable firefox mono-devel libgl1-mesa-dri --fix-missing > /dev/null || true
+          sudo apt-get autoremove -y > /dev/null
+          sudo apt-get clean > /dev/null
+
+      - name: Require enough free disk before spending build time
+        run: |
+          df -h /
+          avail=$(df -BG --output=avail / | tail -1 | tr -dc '0-9')
+          echo "free GiB: $avail"
+          # source + toolchains + Windows obj dir + fonts + 24G swap file
+          if [ "$avail" -lt 70 ]; then echo "::error::only ${avail}G free; need >= 70G"; exit 1; fi
+
+      - name: Check out LHM patches
+        uses: actions/checkout@v4
+        with:
+          path: lhm
+
+      - name: Check out Camoufox at the pinned commit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CAMOUFOX_REPO }}
+          ref: ${{ env.CAMOUFOX_COMMIT }}
+          path: camoufox
+
+      - name: Verify pinned commit and add LHM patches
+        working-directory: camoufox
+        run: |
+          test "$(git rev-parse HEAD)" = "$CAMOUFOX_COMMIT"
+          mkdir -p patches/lhm
+          cp -v ../lhm/tools/camoufox-engine/patches/*.patch patches/lhm/
+          sha256sum patches/lhm/*.patch | tee ../patches.sha256
+          python3 -m ci.release set-build --tag "$CAMOUFOX_TAG"
+          grep '^release=' upstream.sh
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          sudo apt-get install -y lld-18 clang-18
+          sudo update-alternatives --install /usr/bin/ld.lld ld.lld /usr/bin/ld.lld-18 100
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y msitools p7zip-full aria2 ccache fontconfig
+
+      - name: Fetch the font bundle
+        working-directory: camoufox
+        run: make fonts-extract
+
+      - name: Verify the font bundle matches the manifest
+        working-directory: camoufox
+        run: python3 scripts/verify-fonts.py
+
+      - name: Prepare the source tree (applies all patches, fails on rejects)
+        working-directory: camoufox
+        run: python3 -m ci.run_prepare
+
+      - name: Prove the LHM patch is in the prepared tree
+        working-directory: camoufox
+        run: |
+          src=$(ls -d camoufox-156.0.1-*/ | head -1)
+          grep -n 'FlushTimeoutMs(), nsITimer::TYPE_ONE_SHOT' "$src/dom/localstorage/ActorsParent.cpp"
+          grep -n -A3 'name: dom.storage.flush_timeout_ms' "$src/modules/libpref/init/StaticPrefList.yaml"
+          if grep -n 'kFlushTimeoutMs, nsITimer' "$src/dom/localstorage/ActorsParent.cpp"; then
+            echo "::error::stock 5000 ms timer still in use"; exit 1
+          fi
+
+      - name: Create swap space
+        run: |
+          sudo fallocate -l 24G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+          df -h /
+
+      - name: Build
+        working-directory: camoufox
+        env:
+          CARGO_BUILD_JOBS: "1"
+        run: python3 ./multibuild.py --target windows --arch x86_64
+
+      - name: Record digests
+        working-directory: camoufox
+        run: |
+          ls -la dist
+          zip=$(ls dist/camoufox-*-win.x86_64.zip | head -1)
+          mkdir -p ../out
+          cd ../out
+          mv "../camoufox/$zip" "$(basename "$zip" .zip)-lhm-lsflush-UNVERIFIED.zip"
+          unzip -p ./*.zip camoufox.exe > camoufox.exe.extracted
+          {
+            echo "camoufox_repo=$CAMOUFOX_REPO"
+            echo "camoufox_commit=$CAMOUFOX_COMMIT"
+            echo "camoufox_tag_base=$CAMOUFOX_TAG"
+            echo "lhm_commit=$GITHUB_SHA"
+            echo "run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "status=UNSIGNED_UNVERIFIED_TEST_BUILD"
+          } > BUILD-INFO.txt
+          cat ../patches.sha256 >> BUILD-INFO.txt
+          sha256sum ./*.zip camoufox.exe.extracted | tee SHA256SUMS
+          rm camoufox.exe.extracted
+          cat BUILD-INFO.txt
+
+      - name: Unsigned manifest for the owner's offline signing (no key used)
+        run: |
+          tree="$RUNNER_TEMP/engine-tree"
+          python3 -I -c 'import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' out/*.zip "$tree"
+          node lhm/tools/camoufox-engine/unsigned-manifest.js "$tree" 156.0.1 "$PWD/out/unsigned-manifest.json" | tee -a out/BUILD-INFO.txt
+          rm -rf "$tree"
+
+      - name: Source for MPL-2.0 (patches and pinned upstream refs)
+        run: |
+          mkdir -p out/source
+          cp lhm/tools/camoufox-engine/patches/*.patch out/source/
+          {
+            echo "Corresponding source for this build (MPL-2.0 files):"
+            echo "  Firefox: FIREFOX_156_0_1_RELEASE (firefox-156.0.1.source.tar.xz from archive.mozilla.org)"
+            echo "  Camoufox: https://github.com/$CAMOUFOX_REPO commit $CAMOUFOX_COMMIT (tag $CAMOUFOX_TAG)"
+            echo "  LHM patches: this folder, applied last by scripts/patch.py (patches/lhm/)"
+          } > out/source/SOURCE.txt
+
+      - name: Upload test artifact (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: camoufox-156.0.1-beta.36-win.x86_64-lhm-lsflush-UNVERIFIED
+          path: out/*
+          retention-days: 90

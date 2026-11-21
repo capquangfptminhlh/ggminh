@@ -114,7 +114,7 @@
       <div class="brand">
         <div class="brand-text">
           <h1>LHM Ads Browser <span id="lhm-header-version" aria-label="Phiên bản ứng dụng">Đang tải…</span></h1>
-          <p class="subtitle">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
+          <p class="subtitle" id="app-mode-message">Quản lý hồ sơ và tự động hóa · Dữ liệu trên máy của bạn</p>
         </div>
       </div>
       <button type="button" id="lhm-v7-command-open" class="lhm-v7-command-open" aria-haspopup="dialog" aria-controls="lhm-v7-command-palette" title="Lệnh nhanh · Ctrl Shift P"><span data-lhm-icon="command" aria-hidden="true"></span><span>Lệnh nhanh</span></button>
@@ -173,6 +173,7 @@
         <button type="button" class="btn btn-primary" id="btn-create-profile"><span data-lhm-icon="plus"></span> Tạo hồ sơ</button>
       </div>
     </header>
+    <div id="lhm-internal-preview-warning" class="lhm-internal-preview-warning" role="status" hidden></div>
 
     <p id="behavior-inline-notice" class="behavior-inline-notice" hidden role="status"></p>
 
@@ -1126,7 +1127,7 @@
               <option value="chromium">Chrome / Edge — Tương thích chuẩn Chromium trên máy</option>
               <option value="camoufox">Camoufox / Gecko — Thử nghiệm riêng từng profile (cần cài gói Engine)</option>
             </select>
-            <p class="lhm-field-help">Mặc định chọn Firefox/Gecko: tự động cấp phần cứng WebGL/CPU riêng theo từng hồ sơ ở tầng C++, ngắt WebRTC và tách biệt hoàn toàn khỏi Chrome của Google.</p>
+            <p class="lhm-field-help">Mặc định chọn Firefox/Gecko. Mỗi hồ sơ sử dụng thư mục dữ liệu riêng; các thông số thiết bị do trình duyệt và cấu hình thực tế quyết định.</p>
             <details class="lhm-field-more">
               <summary>Chi tiết về các loại trình duyệt</summary>
               <p>Engine lưu theo từng profile. Camoufox cần launcher và binary riêng được kiểm chứng, chưa hỗ trợ proxy/RPA trong bản preview. Đổi engine không mang theo phiên đăng nhập. Với Camoufox, khi lưu hồ sơ ứng dụng sẽ thử cấp một danh tính đã ghim bằng cơ chế chính thức của Camoufox; kết quả được thông báo ngay sau khi lưu và hiển thị tại hàng của hồ sơ.</p>
@@ -1136,7 +1137,7 @@
           <div class="form-group" id="gecko-path-control" hidden>
             <label for="field-gecko-path">Đường dẫn Firefox <span class="lhm-label-hint">để trống nếu cài ở thư mục chuẩn</span></label>
             <input id="field-gecko-path" type="text" placeholder="C:\Program Files\Mozilla Firefox\firefox.exe">
-            <p class="lhm-field-help">Để trống để tự động nhận Firefox trên máy. Hỗ trợ đầy đủ proxy HTTP/SOCKS5 (có mật khẩu qua Proxy Center) và chống rò rỉ WebRTC/DNS ở tầng C++.</p>
+            <p class="lhm-field-help">Để trống để tự động tìm Firefox trên máy. Proxy HTTP/SOCKS5 có thể được cấu hình qua Proxy Center; tình trạng mạng thực tế cần kiểm tra riêng.</p>
           </div>
           <div class="form-group">
             <label for="field-starturl">Trang khởi động <span class="lhm-label-hint">1–5 URL, mỗi dòng một URL</span></label>
@@ -1279,7 +1280,7 @@
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="field-fp-webrtc" checked>
-              <span>Chống rò rỉ WebRTC (Ẩn IP thực, định tuyến qua Proxy)</span>
+              <span>Yêu cầu hạn chế WebRTC (cần kiểm tra theo trình duyệt và kết nối)</span>
             </label>
           </div>
           </div><!-- fingerprint-custom-fields -->

@@ -32,6 +32,7 @@ const {spawnSync}=require('node:child_process');
 const core=require('./core');
 const {queryWindowsProfilePids}=require('./windows-profile-processes');
 const {CamoufoxPlaywrightController}=require('../src/engine/CamoufoxPlaywrightController');
+const {classifySnapshot}=require('./localstorage-snapshot');
 
 const IDS={a:'iso_a',b:'iso_b'};
 const token=()=>crypto.randomBytes(12).toString('hex');
@@ -246,6 +247,82 @@ async function killEngineProcess(controller,id,profileDir){
  throw Error('Controller still holds the killed profile after 30s');
 }
 
+/* ---------------- kill-timing sweep helpers --------------------------- */
+// Delays (ms) between the last write returning and the kill being issued.
+const SWEEP_OFFSETS_MS=[0,50,100,250,500,1000,1500,2500,4000,6000];
+const SWEEP_REPEATS=2;
+// Gated from 500 ms: the patched engine flushes localStorage 100 ms after the
+// first pending write; the rest is margin for IPC, the SQLite transaction
+// (synchronous=FULL) and Windows timer granularity. Stock Firefox waits 5000 ms.
+const SWEEP_GATE_MS=500;
+const DURABLE_FIELDS=['cookie','localStorage','indexedDB'];
+function writeDurable(page,marker){
+ return page.evaluate(async m=>{
+  const key='stage0_lab_marker';
+  document.cookie=key+'='+m+'; Max-Age=3600; SameSite=Lax; Path=/';
+  localStorage.setItem(key,m);
+  await new Promise((resolve,reject)=>{
+   const open=indexedDB.open('stage0-lab-db',1);
+   open.onupgradeneeded=()=>open.result.createObjectStore('samples');
+   open.onerror=()=>reject(open.error||Error('IndexedDB unavailable'));
+   open.onsuccess=()=>{
+    const db=open.result,tx=db.transaction('samples','readwrite');
+    tx.objectStore('samples').put(m,key);
+    tx.oncomplete=()=>{db.close();resolve()};
+    tx.onerror=()=>{db.close();reject(tx.error||Error('IndexedDB write failed'))};
+   };
+  });
+ },marker);
+}
+function readDurable(page){
+ return page.evaluate(async()=>{
+  const key='stage0_lab_marker';
+  const cookie=(document.cookie.match(/(?:^|;\s*)stage0_lab_marker=([^;]*)/)||[])[1]||null;
+  const storage=localStorage.getItem(key);
+  const indexed=await new Promise((resolve,reject)=>{
+   const open=indexedDB.open('stage0-lab-db',1);
+   open.onupgradeneeded=()=>open.result.createObjectStore('samples');
+   open.onerror=()=>reject(open.error||Error('IndexedDB unavailable'));
+   open.onsuccess=()=>{
+    const db=open.result,request=db.transaction('samples','readonly').objectStore('samples').get(key);
+    request.onerror=()=>{db.close();reject(request.error||Error('IndexedDB read failed'))};
+    request.onsuccess=()=>{const v=request.result??null;db.close();resolve(v)};
+   };
+  });
+  return {cookie,localStorage:storage,indexedDB:indexed};
+ });
+}
+// Terminates every process of the profile at once (TerminateProcess on
+// Windows). PIDs are collected before the timed window because the Windows
+// process query takes about a second.
+function hardKill(pids){
+ const killed=[];
+ for(const pid of pids){
+  try{process.kill(pid,'SIGKILL');killed.push(pid)}catch(_){/* already gone */}
+ }
+ return killed;
+}
+// After the timed kill: processes spawned after the PID snapshot (or slow to
+// exit) can keep the profile locked and make the next launch time out. Kill
+// stragglers until none remain. This happens after the measured window.
+async function reapProfileProcesses(dir){
+ let stragglers=0;
+ for(let i=0;i<40;i++){
+  const left=pidsForProfileDir(dir);
+  if(left.length===0)return stragglers;
+  stragglers+=hardKill(left).length;
+  await new Promise(r=>setTimeout(r,500));
+ }
+ throw Error('Profile processes still alive 20s after the sweep kill');
+}
+async function waitControllerReleased(controller,id){
+ for(let i=0;i<60;i++){
+  if(!controller.contextFor(id))return;
+  await new Promise(r=>setTimeout(r,500));
+ }
+ throw Error('Controller still holds the killed profile after 30s');
+}
+
 /* ---------------- engine / runner setup ------------------------------- */
 function engineOptions(){
  if(process.platform==='win32'){
@@ -274,6 +351,19 @@ function engineVersion(realPath){
   return (ini.match(/^Version=(.+)$/m)||[])[1]?.trim()||null;
  }catch(_){return null}
 }
+function verifiedDiagnosticPayload(realPath,exeSha){
+ const expectedExe='1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331';
+ if(exeSha!==expectedExe)return null;
+ const manager=require('../src/engine/bundledEngineManager');
+ const manifest=require('../tools/camoufox-engine/records/camoufox-156.0.1-beta.36-lhm-lsflush.unsigned-manifest.json');
+ const root=path.dirname(realPath);
+ assert.deepEqual(manager.listFiles(root),manifest.files.map(f=>f.path).sort(),'Diagnostic engine file list mismatch');
+ for(const f of manifest.files){
+  const actual=manager.sha256File(path.join(root,...f.path.split('/')));
+  assert.deepEqual(actual,{sha256:f.sha256,bytes:f.bytes},'Diagnostic engine file mismatch: '+f.path);
+ }
+ return crypto.createHash('sha256').update(manager.signedPayload(manifest)).digest('hex');
+}
 function currentHead(){
  const r=spawnSync('git',['rev-parse','HEAD'],{
   cwd:path.resolve(__dirname,'..'),encoding:'utf8',timeout:5000,windowsHide:true});
@@ -298,6 +388,7 @@ async function run(){
    concurrentCrossWrite:{status:'NOT_RUN'},
    crashRecovery:{status:'NOT_RUN'},
    crashRecoveryIdleFlush:{status:'NOT_RUN'},
+   crashRecoveryKillSweep:{status:'NOT_RUN'},
    dirSnapshotRestore:{status:'NOT_RUN'},
    configBackupRestore:{status:'NOT_RUN',
     note:'Separate Node-level run: node stage0-measure/backup-restore-isolation.js'},
@@ -341,22 +432,47 @@ async function run(){
   }
   const verifier={resolve:engine=>{assert.equal(engine,'camoufox');return exeForController;}};
   const options={verifier,enabled:true,labApproved:false};
-  if(process.platform!=='win32'){
+  const payloadSha256=verifiedDiagnosticPayload(realPath,verifiedDigest);
+  const prefs=require('../src/engine/camoufoxDurability').preferencesForEngine(verifiedDigest,payloadSha256);
+  if(process.platform!=='win32'||Object.keys(prefs).length){
    const pw=require('playwright-core');
+   report.engine.manifestPayloadSha256=payloadSha256;
+   report.engine.requestedDurabilityPreferences=prefs;
    options.launchPersistentContext=(dir,launchOptions)=>
-    pw.firefox.launchPersistentContext(dir,{...launchOptions,headless:true,timeout:120000});
+    pw.firefox.launchPersistentContext(dir,{...launchOptions,
+     ...(process.platform!=='win32'?{headless:true,timeout:120000}:{}),
+     firefoxUserPrefs:{...launchOptions.firefoxUserPrefs,...prefs}});
   }
   controller=new CamoufoxPlaywrightController(root,options);
   const dirOf=id=>path.join(root,'camoufox-profiles',id);
   const launchPair=async()=>{
-   const a=await controller.launch(profile(IDS.a));
-   const b=await controller.launch(profile(IDS.b));
+   const a=await launchWithRetry(IDS.a);
+   const b=await launchWithRetry(IDS.b);
    const ap=await a.context.newPage(),bp=await b.context.newPage();
    await Promise.all([ap.goto(server.origin+'/probe'),bp.goto(server.origin+'/probe')]);
    return {ap,bp};
   };
   const stopQuiet=async id=>{
    try{if(controller.contextFor(id))await controller.stop(id)}catch(_){}
+  };
+  // The controller's launch limit is 30 s; Windows launches normally take
+  // 10-15 s but occasionally exceed it on both the upstream and the patched
+  // engine. One retry after reaping leftover processes keeps a slow launch
+  // from failing a storage condition. Every retry is recorded in the report
+  // (launchRetries), so launch reliability is reported, not hidden.
+  report.launchRetries=[];
+  const launchWithRetry=async id=>{
+   for(let attempt=1;;attempt++){
+    try{return await controller.launch(profile(id))}
+    catch(error){
+     report.launchRetries.push({profile:id,attempt,
+      error:String(error?.message||error).split('\n')[0].slice(0,160)});
+     if(attempt>=2)throw error;
+     await stopQuiet(id);
+     await reapProfileProcesses(dirOf(id));
+     await waitControllerReleased(controller,id);
+    }
+   }
   };
 
   let {ap,bp}=await launchPair();
@@ -399,7 +515,7 @@ async function run(){
    await new Promise(r=>setTimeout(r,1500)); // let the engine flush storage
    const aBefore=await readIso(ap),bBefore=await readIso(bp);
    const kill=await killEngineProcess(controller,IDS.a,dirOf(IDS.a));
-   const ra=await controller.launch(profile(IDS.a));
+   const ra=await launchWithRetry(IDS.a);
    ap=await ra.context.newPage();
    await ap.goto(server.origin+'/probe');
    const aAfter=await readIso(ap);
@@ -427,18 +543,18 @@ async function run(){
    await Promise.all([stopQuiet(IDS.a),stopQuiet(IDS.b)]);
    const snapshotDir=path.join(root,'snapshot-a');
    fs.cpSync(dirOf(IDS.a),snapshotDir,{recursive:true});
-   const ra=await controller.launch(profile(IDS.a));
+   const ra=await launchWithRetry(IDS.a);
    ap=await ra.context.newPage();
    await ap.goto(server.origin+'/probe');
    await writeIso(ap,snap.postSnapshot);
    await stopQuiet(IDS.a);
    fs.rmSync(dirOf(IDS.a),{recursive:true,force:true});
    fs.cpSync(snapshotDir,dirOf(IDS.a),{recursive:true});
-   const ra2=await controller.launch(profile(IDS.a));
+   const ra2=await launchWithRetry(IDS.a);
    ap=await ra2.context.newPage();
    await ap.goto(server.origin+'/probe');
    const restored=await readIso(ap);
-   const rb=await controller.launch(profile(IDS.b));
+   const rb=await launchWithRetry(IDS.b);
    bp=await rb.context.newPage();
    await bp.goto(server.origin+'/probe');
    const other=await readIso(bp);
@@ -456,7 +572,7 @@ async function run(){
    await new Promise(r=>setTimeout(r,10000)); // idle: let async storage flush
    const aBefore=await readIso(ap),bBefore=await readIso(bp);
    const kill=await killEngineProcess(controller,IDS.a,dirOf(IDS.a));
-   const ra=await controller.launch(profile(IDS.a));
+   const ra=await launchWithRetry(IDS.a);
    ap=await ra.context.newPage();
    await ap.goto(server.origin+'/probe');
    const aAfter=await readIso(ap);
@@ -474,6 +590,95 @@ async function run(){
     bServiceWorkerViaFreshPage:!!bSwFallback,
     observations:{aBefore,aAfter,bBefore,bAfter}};
   }catch(error){fail('crashRecoveryIdleFlush',error)}
+
+  /* (b3) Kill-timing sweep: several overwrites, then a hard kill of A at a
+   * fixed delay after the LAST write returned (no reload and no read in
+   * between). Every sample is reported raw. Samples at or above
+   * SWEEP_GATE_MS must keep the last localStorage, IndexedDB and cookie
+   * marker; samples below it are recorded but not gated, because no flush
+   * delay protects a write the engine has not committed to disk yet. This
+   * is a separate, labelled condition — it does not re-judge (b) or (b2). */
+  const samples=[];
+  // Launch retries are handled (and recorded) by launchWithRetry.
+  const relaunchA=async()=>{
+   await reapProfileProcesses(dirOf(IDS.a));
+   await waitControllerReleased(controller,IDS.a);
+   const before=report.launchRetries.length;
+   const ra=await launchWithRetry(IDS.a);
+   const page=await ra.context.newPage();
+   await page.goto(server.origin+'/probe');
+   return {page,attempts:1+report.launchRetries.length-before};
+  };
+  try{
+   // A failure in an earlier condition may have left A closed.
+   if(!controller.contextFor(IDS.a)||ap.isClosed())ap=(await relaunchA()).page;
+   const bBefore=await readIso(bp);
+   let previous=null;
+   for(let repeat=0;repeat<SWEEP_REPEATS;repeat++){
+    for(const offsetMs of SWEEP_OFFSETS_MS){
+     const pids=new Set(pidsForProfileDir(dirOf(IDS.a)));
+     if(pids.size===0)throw notRun('No engine process found for the kill sweep');
+     const batch=[0,1,2].map(i=>'sweep-'+offsetMs+'-'+repeat+'-'+i+'-'+token());
+     for(let i=0;i<batch.length;i++){
+      await writeDurable(ap,batch[i]);
+      if(i<batch.length-1)await new Promise(r=>setTimeout(r,30));
+     }
+     const t0=performance.now();
+     if(offsetMs>0)await new Promise(r=>setTimeout(r,offsetMs));
+     const killIssuedAfterMs=Math.round(performance.now()-t0);
+     const killed=hardKill(pids);
+     const killReturnedAfterMs=Math.round(performance.now()-t0);
+     if(killed.length===0)throw notRun('Kill sweep could not terminate any engine process');
+     await waitControllerReleased(controller,IDS.a);
+     await reapProfileProcesses(dirOf(IDS.a));
+     const localOrigin='http+++127.0.0.1+'+new URL(server.origin).port;
+     const dbFile=path.join(dirOf(IDS.a),'storage','default',localOrigin,'ls','data.sqlite');
+     const diskBeforeRelaunch=classifySnapshot(dbFile,batch,previous);
+     const reopened=await relaunchA();
+     ap=reopened.page;
+     const after=await readDurable(ap);
+     const last=batch[batch.length-1];
+     const classify=v=>v===last?'last':batch.includes(v)?'earlierInBatch':
+      (v!==null&&v===previous)?'previousSample':v===null?'missing':'other';
+     const fields=Object.fromEntries(DURABLE_FIELDS.map(f=>[f,classify(after[f])]));
+     samples.push({offsetMs,repeat,killIssuedAfterMs,killReturnedAfterMs,
+      gated:offsetMs>=SWEEP_GATE_MS,killedPids:killed,relaunchAttempts:reopened.attempts,fields,diskBeforeRelaunch,
+      survived:Object.values(fields).every(v=>v==='last')});
+     previous=last;
+    }
+   }
+   const bAfter=await readIso(bp);
+   const bUnchanged=['cookie','localStorage','indexedDB'].every(f=>bAfter[f]===bBefore[f]&&bBefore[f]===crash.b);
+   const func='sweep-func-'+token();
+   await writeDurable(ap,func);
+   const aFunctional=Object.values(await readDurable(ap)).every(v=>v===func);
+   const gatedSamples=samples.filter(s=>s.gated);
+   const pass=gatedSamples.length>0&&gatedSamples.every(s=>s.survived)&&bUnchanged&&aFunctional;
+   const byOffset={};
+   for(const s of samples){
+    const k=String(s.offsetMs);
+    byOffset[k]=byOffset[k]||{runs:0,cookieLast:0,localStorageLast:0,indexedDBLast:0,gated:s.gated};
+    byOffset[k].runs++;
+    for(const f of DURABLE_FIELDS)if(s.fields[f]==='last')byOffset[k][f+'Last']++;
+   }
+   report.conditions.crashRecoveryKillSweep={status:pass?'PASS':'FAIL',
+    gateMs:SWEEP_GATE_MS,offsetsMs:SWEEP_OFFSETS_MS,repeats:SWEEP_REPEATS,
+    writesPerSample:3,writeGapMs:30,
+    killMethod:'TerminateProcess/SIGKILL on every profile process at once, no graceful shutdown',
+    bUnchangedByKillsOfA:bUnchanged,profileFunctionalAfterReopen:aFunctional,
+    byOffset,samples,
+    limitation:'Samples below gateMs are informative only. Any engine loses writes not yet flushed when it is killed; durability across power loss additionally depends on the OS and disk honouring fsync.'};
+  }catch(error){
+   fail('crashRecoveryKillSweep',error);
+   report.conditions.crashRecoveryKillSweep.partialSamples=samples;
+   // Never let a sweep failure take later conditions down with it.
+   try{
+    if(!controller.contextFor(IDS.a)||ap.isClosed())ap=(await relaunchA()).page;
+   }catch(restoreError){
+    report.conditions.crashRecoveryKillSweep.profileRestoreError=
+     String(restoreError?.message||restoreError).slice(0,200);
+   }
+  }
 
   /* (d) HTTP cache + favicon cache partitioning. */
   try{
@@ -538,7 +743,7 @@ async function run(){
   engine:report.engine.version,engineSha256:(report.engine.sha256||'').slice(0,16),
   conditions:Object.fromEntries(Object.entries(report.conditions)
    .map(([k,v])=>[k,v.status])),
-  cleanup:report.cleanup,report:file};
+  launchRetries:(report.launchRetries||[]).length,cleanup:report.cleanup,report:file};
  console.log(JSON.stringify(summary));
  const anyFail=Object.values(report.conditions).some(c=>c.status==='FAIL')||
   report.preflight?.status==='FAIL';

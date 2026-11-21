@@ -145,12 +145,15 @@
   async function confirmLaunch(profile) {
     const assessment=await api.resourceGuardStatus(profile.id);
     if(!assessment?.allowed){
-      alert('Không thể mở hồ sơ vì giới hạn RAM an toàn 20%.\n\n'+
+      alert('Không thể kiểm tra tài nguyên để mở hồ sơ.\n\n'+
         String(assessment?.reason||'Không đọc được trạng thái tài nguyên.'));
       return {approved:false,allowResourceReview:false};
     }
     if(assessment.code==='RESOURCE_UNMEASURED'||assessment.reviewRequired){
-      const approved=confirm('Chưa có phép đo P95 cho engine/workload này. '+
+      const explanation=assessment.code==='RESOURCE_REVIEW'
+        ? 'Ước lượng RAM cần dùng cao hơn RAM hiện còn.'
+        : 'Chưa có phép đo P95 cho engine/workload này.';
+      const approved=confirm(explanation+' '+
         'RAM khả dụng hiện tại: '+bytes(assessment.snapshot?.availableBytes)+'.\n\n'+
         'Bạn có muốn mở một hồ sơ trong lần này và tự theo dõi tài nguyên không?');
       return {approved,allowResourceReview:approved};

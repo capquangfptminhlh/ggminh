@@ -105,6 +105,19 @@ const {PUBLIC_KEY:APP_LICENSE_KEY}=require('../src/licensing/manager');
   const again=await service.install(releaseDoc);
   assert.strictEqual(again.alreadyPresent,true);
   assert.strictEqual(downloads,1);
+  const originalOverride=process.env.LHM_CAMOUFOX_DIR;
+  try{
+   process.env.LHM_CAMOUFOX_DIR=service.root;
+   const otherStore=new CamoufoxInstallService(path.join(root,'fresh-store'),{
+    publicKey:keys.publicKey,platform:'win32',
+    inspect:(_engine,filename)=>sha256File(filename)
+   });
+   assert.equal(otherStore.status().valid,false,
+    'A verified engine in another store is not installed in this store');
+  }finally{
+   if(originalOverride===undefined)delete process.env.LHM_CAMOUFOX_DIR;
+   else process.env.LHM_CAMOUFOX_DIR=originalOverride;
+  }
   fs.appendFileSync(path.join(service.root,'omni.ja'),'tamper');
   assert.strictEqual(service.status().valid,false);
   await assert.rejects(()=>service.install(releaseDoc),/do not overwrite/);

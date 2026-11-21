@@ -435,7 +435,8 @@ const isolationResult={
 };
 const crashResult={
  idleFlush:{status:'PASS',idleMs:10000},
- shortCrash:{status:'PASS',idleMs:1500}
+ shortCrash:{status:'PASS',idleMs:1500},
+ killSweep:{status:'PASS',gateMs:500,gatedSamples:12}
 };
 const graphicsResult={
  headful:true,realGpu:true,
@@ -826,41 +827,40 @@ test('crash durability ignores safe unknown fields on ordinary evidence shapes',
  const result=detachedGate(evaluateCrashDurability,'crash',{
   futureEvidence:{revision:7},
   idleFlush:{status:'PASS',idleMs:10000,futureEvidence:'flush note'},
-  shortCrash:{status:'PASS',idleMs:1500,futureEvidence:'recovery note'}
+  shortCrash:{status:'PASS',idleMs:1500,futureEvidence:'recovery note'},
+  killSweep:{status:'PASS',gateMs:500,gatedSamples:12,futureEvidence:'sweep note'}
  });
  assert.strictEqual(result.status,'PASS');
  assert(!JSON.stringify(result).includes('futureEvidence'));
 });
-test('crash durability accepts and names only the bounded localStorage known finding',()=>{
+test('crash durability no longer accepts the upstream localStorage known finding',()=>{
  const result=detachedGate(evaluateCrashDurability,'crash',{
   idleFlush:{status:'PASS',idleMs:10000},
   shortCrash:{status:'KNOWN_FINDING',idleMs:1500,
    revertedFields:['localStorage'],aLocalStorageEqualsPriorCommitted:true,
-   allOtherAFieldsPersisted:true,allBFieldsUnchanged:true,crossedProfileMarkers:0}
+   allOtherAFieldsPersisted:true,allBFieldsUnchanged:true,crossedProfileMarkers:0},
+  killSweep:{status:'PASS',gateMs:500,gatedSamples:12}
  });
- assert.strictEqual(result.status,'PASS');
- assert.match(result.reason,/bounded 1\.5-second localStorage finding/i);
+ assert.strictEqual(result.status,'BLOCKED');
+});
+test('crash durability names the kill-sweep bound and its limitation',()=>{
+ const result=detachedGate(evaluateCrashDurability,'crash',crashResult);
+ assert.match(result.reason,/kill sweep from 500 ms passed/i);
+ assert.match(result.reason,/earlier kills can still lose unflushed writes/i);
 });
 for(const [label,change] of [
- ['extra reverted A field',r=>r.shortCrash.revertedFields.push('cookieJar')],
- ['missing reverted A field',r=>delete r.shortCrash.revertedFields],
- ['different reverted A field',r=>r.shortCrash.revertedFields=['sessionStorage']],
- ['localStorage not prior committed',r=>r.shortCrash.aLocalStorageEqualsPriorCommitted=false],
- ['missing other A persistence',r=>r.shortCrash.allOtherAFieldsPersisted=false],
- ['changed B field',r=>r.shortCrash.allBFieldsUnchanged=false],
- ['crossed marker',r=>r.shortCrash.crossedProfileMarkers=1],
- ['extra known-finding key',r=>r.shortCrash.note='broader issue'],
- ['missing known-finding key',r=>delete r.shortCrash.allBFieldsUnchanged],
+ ['missing kill sweep',r=>delete r.killSweep],
+ ['failed kill sweep',r=>r.killSweep.status='FAIL'],
+ ['kill sweep gated too late',r=>r.killSweep.gateMs=1000],
+ ['kill sweep gate zero',r=>r.killSweep.gateMs=0],
+ ['too few gated samples',r=>r.killSweep.gatedSamples=3],
+ ['missing gated sample count',r=>delete r.killSweep.gatedSamples],
  ['wrong short idle time',r=>r.shortCrash.idleMs=2000],
  ['wrong idle-flush time',r=>r.idleFlush.idleMs=9000],
  ['idle-flush failure',r=>r.idleFlush.status='FAIL'],
- ['broader short-crash failure',r=>r.shortCrash.status='FAIL']
+ ['short-crash failure',r=>r.shortCrash.status='FAIL']
 ]) test('crash durability blocks '+label,()=>{
- const input={idleFlush:{status:'PASS',idleMs:10000},shortCrash:{
-  status:'KNOWN_FINDING',idleMs:1500,revertedFields:['localStorage'],
-  aLocalStorageEqualsPriorCommitted:true,allOtherAFieldsPersisted:true,
-  allBFieldsUnchanged:true,crossedProfileMarkers:0
- }};
+ const input=JSON.parse(JSON.stringify(crashResult));
  change(input);
  assert.strictEqual(detachedGate(evaluateCrashDurability,'crash',input).status,'BLOCKED');
 });

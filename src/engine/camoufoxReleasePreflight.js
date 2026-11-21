@@ -261,25 +261,25 @@ function evaluateStorageIsolation(envelope,options={}){
  'All six required storage isolation conditions passed');
 }
 
+// Crash durability is a hard gate. The upstream engine's 5000 ms localStorage
+// flush delay (reported as KNOWN_FINDING by earlier evidence) is no longer
+// accepted: a release candidate must keep localStorage after the 1.5-second
+// kill, and its kill sweep (run-isolation.js crashRecoveryKillSweep) must pass
+// every sample from 500 ms onward. Kills sooner than that remain a documented
+// limitation, not a pass.
+const MAX_SWEEP_GATE_MS=500;
 function evaluateCrashDurability(envelope,options={}){
  return evaluateEvidenceGate(envelope,options,'crash-durability','crash',result=>{
-  if(!hasFields(result,['idleFlush','shortCrash'])||
+  if(!hasFields(result,['idleFlush','shortCrash','killSweep'])||
    !hasFields(result.idleFlush,['status','idleMs'])||result.idleFlush.status!=='PASS'||result.idleFlush.idleMs!==10000||
-   !result.shortCrash||typeof result.shortCrash!=='object'||Array.isArray(result.shortCrash))return false;
-  if(hasFields(result.shortCrash,['status','idleMs'])&&
-   result.shortCrash.status==='PASS'&&result.shortCrash.idleMs===1500)return true;
-  return exactKeys(result.shortCrash,[
-   'status','idleMs','revertedFields','aLocalStorageEqualsPriorCommitted',
-   'allOtherAFieldsPersisted','allBFieldsUnchanged','crossedProfileMarkers'
-  ])&&result.shortCrash.status==='KNOWN_FINDING'&&result.shortCrash.idleMs===1500&&
-   Array.isArray(result.shortCrash.revertedFields)&&result.shortCrash.revertedFields.length===1&&
-   result.shortCrash.revertedFields[0]==='localStorage'&&
-   result.shortCrash.aLocalStorageEqualsPriorCommitted===true&&
-   result.shortCrash.allOtherAFieldsPersisted===true&&result.shortCrash.allBFieldsUnchanged===true&&
-   result.shortCrash.crossedProfileMarkers===0;
- },result=>result.shortCrash.status==='KNOWN_FINDING'?
-  'The 10-second idle-flush recovery passed; the bounded 1.5-second localStorage finding was observed':
-  'The 10-second idle-flush recovery and 1.5-second crash recovery passed');
+   !hasFields(result.shortCrash,['status','idleMs'])||
+   result.shortCrash.status!=='PASS'||result.shortCrash.idleMs!==1500||
+   !hasFields(result.killSweep,['status','gateMs','gatedSamples'])||result.killSweep.status!=='PASS')return false;
+  return Number.isInteger(result.killSweep.gateMs)&&result.killSweep.gateMs>0&&
+   result.killSweep.gateMs<=MAX_SWEEP_GATE_MS&&
+   Number.isInteger(result.killSweep.gatedSamples)&&result.killSweep.gatedSamples>=10;
+ },result=>'The 10-second idle-flush recovery, 1.5-second crash recovery and kill sweep from '+
+  result.killSweep.gateMs+' ms passed; earlier kills can still lose unflushed writes');
 }
 
 /* Graphics result schema: {headful,realGpu,profiles:[{vendorCompared,rendererCompared,

@@ -55,7 +55,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    installButton.disabled=busy||!releaseAvailable;
    installInfo.textContent=availability.alreadyInstalled?
      availability.runtime?.manualReady?
-       'Engine Camoufox đã được xác minh trong thư mục dữ liệu ứng dụng. '+
+       'Engine Camoufox đã được xác minh trên máy này. '+
        'Bạn có thể tạo hồ sơ Camoufox; ứng dụng sẽ thử cấp danh tính đã ghim khi tạo hồ sơ.':
        camoufoxRuntimeGuidance(availability.runtime?.reason):
      !availability.runtime?.canInstall?

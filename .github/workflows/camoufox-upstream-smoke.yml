@@ -4,7 +4,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/camoufox-upstream-smoke.yml'
-      - 'tools/verify-stage0-ci-reports.js'
+      - 'tools/verify-stage0-isolation-ci.js'
+      - 'test/camoufox-ci-storage-scope.js'
       - 'tools/stage-camoufox-upstream-smoke.ps1'
       - 'tools/test-camoufox-*.js'
       - 'tools/test-camoufox-*.mjs'
@@ -98,91 +99,38 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Real Camoufox SOCKS5 auth gateway fail-closed integration failed'
           }
-      - name: Stage-0 two-profile real Camoufox local storage and restart measurement
+      - name: Set up Node.js 22 for storage isolation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Measure synthetic local storage isolation without fingerprint comparison (upstream baseline)
         shell: pwsh
-        timeout-minutes: 11
+        timeout-minutes: 18
         run: |
           $env:LHM_CAMOUFOX_EXE_SHA256 = (Get-FileHash -LiteralPath $env:LHM_CAMOUFOX_EXECUTABLE -Algorithm SHA256).Hash.ToLowerInvariant()
           "LHM_CAMOUFOX_EXE_SHA256=$env:LHM_CAMOUFOX_EXE_SHA256" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          # EXE comes from the upstream ZIP verified against the pinned official hash in an earlier step.
-          node stage0-measure/run.js
-          if ($LASTEXITCODE -ne 0) { throw 'Real Camoufox Stage-0 isolation result was not PASS' }
-      - name: Publish only synthetic Stage-0 measurements (never browser binaries)
+          node stage0-measure/run-isolation.js
+          # Exit 2 is expected here: the unmodified upstream engine keeps
+          # localStorage in memory for 5000 ms, so the crash durability checks
+          # FAIL. The next step gates everything else and reports that result.
+          Write-Host "run-isolation exit code (upstream engine): $LASTEXITCODE"
+          # The verdict is the next step; do not let pwsh propagate exit 2.
+          exit 0
+      - name: Bind storage-only report to this checkout and executable (upstream baseline)
+        shell: pwsh
+        run: |
+          node tools/verify-stage0-isolation-ci.js --upstream-baseline
+          if ($LASTEXITCODE -ne 0) { throw 'Upstream isolation baseline incomplete or invalid' }
+          Write-Host 'Upstream engine: localStorage crash durability is reported, not gated; the release gate is the patched-engine job.'
+          Write-Host 'Fingerprint comparison, network leak measurements and release acceptance: NOT_RUN.'
+      - name: Publish only synthetic storage isolation report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LHM-Stage0-Camoufox-Synthetic-Report
-          path: stage0-measure-results/stage0-local-report.json
-          if-no-files-found: ignore
-      - name: Switch to Node 22.16+ for official Camoufox fingerprint generator
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.16.0'
-      - name: Assert zstd decompression available in generator runtime
-        shell: pwsh
-        run: |
-          node -e "if(typeof require('node:zlib').zstdDecompressSync!=='function')process.exit(2)"
-          if ($LASTEXITCODE -ne 0) { throw 'Camoufox fingerprint model requires Node >=22.15 with zstd' }
-      - name: Generate two pinned identities with the official launcher
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          $runtime=Join-Path $env:RUNNER_TEMP 'lhm-camoufox-runtime'
-          if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
-           npm install --prefix $runtime --no-save --no-package-lock `
-            --ignore-scripts --no-audit --no-fund camoufox@0.5.8 playwright-core@1.62.0
-           if($LASTEXITCODE -ne 0){throw 'Install pinned launcher runtime failed'}
-          }
-          if(!(Test-Path (Join-Path $runtime 'node_modules/camoufox'))){
-           throw 'Pinned camoufox launcher runtime missing'
-          }
-          # The generator imports the official package and this repo's pure
-          # identity validator; stage both inside the runtime prefix so ESM
-          # resolution finds the pinned package without touching repo deps.
-          New-Item -ItemType Directory -Force `
-           (Join-Path $runtime 'tools'),(Join-Path $runtime 'src/engine'),`
-           (Join-Path $runtime 'src/health')|Out-Null
-          Copy-Item tools/generate-camoufox-identity.mjs (Join-Path $runtime 'tools/')
-          Copy-Item src/engine/camoufoxIdentity.js (Join-Path $runtime 'src/engine/')
-          Copy-Item src/health/signalChain.js,src/health/proxyValidation.js `
-           (Join-Path $runtime 'src/health/')
-          $gen=Join-Path $runtime 'tools/generate-camoufox-identity.mjs'
-          node $gen --executable-path "$env:LHM_CAMOUFOX_EXECUTABLE" `
-           --os windows --locale en-US --timezone America/New_York `
-           --out (Join-Path $env:RUNNER_TEMP 'identity-a.json')
-          if($LASTEXITCODE -ne 0){throw 'Identity A generation failed'}
-          node $gen --executable-path "$env:LHM_CAMOUFOX_EXECUTABLE" `
-           --os windows --locale vi-VN --timezone Asia/Ho_Chi_Minh `
-           --out (Join-Path $env:RUNNER_TEMP 'identity-b.json')
-          if($LASTEXITCODE -ne 0){throw 'Identity B generation failed'}
-      - name: Return to Electron 33-compatible Node 20 for in-process Playwright measurement
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Measure two configured Camoufox profiles through the selective controller
-        shell: pwsh
-        timeout-minutes: 11
-        env:
-          LHM_STAGE0_IDENTITY_A: ${{ runner.temp }}\identity-a.json
-          LHM_STAGE0_IDENTITY_B: ${{ runner.temp }}\identity-b.json
-        run: |
-          node stage0-measure/run-config.js
-          if($LASTEXITCODE -ne 0){
-           throw "Configured Stage-0 measurement failed with exit code $LASTEXITCODE"
-          }
-      - name: Publish only the configured Stage-0 report (never browser binaries)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: LHM-Stage0-Camoufox-Configured-Report
-          path: stage0-measure-results/stage0-config-report.json
+          name: LHM-Stage0-Camoufox-Storage-Only
+          path: stage0-measure-results/stage0-isolation-report.json
           if-no-files-found: ignore
           retention-days: 7
-      - name: Bind both Stage-0 reports to exact CI checkout and upstream executable
-        shell: pwsh
-        run: |
-          node tools/verify-stage0-ci-reports.js
-          if ($LASTEXITCODE -ne 0) { throw 'Stage-0 report authenticity or result check failed' }
       - name: Verify no upstream browser binary entered the shipping source tree
         shell: pwsh
         run: |
@@ -195,3 +143,91 @@ jobs:
             throw 'Upstream CI browser unexpectedly included in installed application'
           }
           Write-Host 'Verified: no Camoufox binary was committed or packaged by the smoke test.'
+
+  # Full storage gate, including crash durability, against the LHM-patched
+  # engine (camoufox-engine-build.yml). The engine is pinned by build run and
+  # SHA-256; it is an UNSIGNED test build and is never packaged or published.
+  patched-engine-storage:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    env:
+      LHM_TEST_ENGINE_RUN_ID: '44736873136'
+      LHM_TEST_ENGINE_ARTIFACT: camoufox-156.0.1-beta.36-win.x86_64-lhm-lsflush-UNVERIFIED
+      LHM_TEST_ENGINE_ZIP_SHA256: c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee
+      LHM_TEST_ENGINE_EXE_SHA256: 1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js 22 for storage isolation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install app dependencies and pinned Playwright runtime (test runner only)
+        shell: pwsh
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Install pinned playwright-core failed' }
+      - name: Verify patched-engine durability preferences
+        shell: pwsh
+        run: |
+          node test/camoufox-durability-preference.js
+          if ($LASTEXITCODE -ne 0) { throw 'Durability preference test failed' }
+          node test/camoufox-native-test-scope.js
+          if ($LASTEXITCODE -ne 0) { throw 'Native test scope validation failed' }
+          node test/stage0-localstorage-snapshot.js
+          if ($LASTEXITCODE -ne 0) { throw 'Local storage diagnostic test failed' }
+          node test/camoufox-adapter.js
+          if ($LASTEXITCODE -ne 0) { throw 'Camoufox adapter preference test failed' }
+      - name: Download pinned patched engine build
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.LHM_TEST_ENGINE_ARTIFACT }}
+          run-id: ${{ env.LHM_TEST_ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/lhm-test-engine
+      - name: Verify patched engine digests and extract
+        shell: pwsh
+        run: |
+          $base=Join-Path $env:RUNNER_TEMP 'lhm-test-engine'
+          $zip=Join-Path $base "$env:LHM_TEST_ENGINE_ARTIFACT.zip"
+          $actual=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:LHM_TEST_ENGINE_ZIP_SHA256) { throw "Patched engine ZIP digest mismatch: $actual" }
+          $root=Join-Path $base 'engine'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($zip,$root)
+          $exe=Join-Path $root 'camoufox.exe'
+          $exeSha=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($exeSha -ne $env:LHM_TEST_ENGINE_EXE_SHA256) { throw "Patched camoufox.exe digest mismatch: $exeSha" }
+          "LHM_CAMOUFOX_EXECUTABLE=$exe" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "LHM_CAMOUFOX_EXE_SHA256=$exeSha" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Patched engine verified: zip $actual, exe $exeSha (UNSIGNED test build)"
+      - name: Test native launcher with ephemeral signed engine and synthetic profile
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          node tools/test-camoufox-durability-native.js
+          if ($LASTEXITCODE -ne 0) { throw 'Signed synthetic native durability preference test failed' }
+      - name: Measure synthetic local storage isolation and crash durability (patched engine)
+        shell: pwsh
+        timeout-minutes: 25
+        run: |
+          node stage0-measure/run-isolation.js
+          if ($LASTEXITCODE -ne 0) { throw 'Patched-engine storage isolation or durability did not pass' }
+      - name: Bind storage-only report to this checkout and patched executable
+        shell: pwsh
+        run: |
+          node tools/verify-stage0-isolation-ci.js
+          if ($LASTEXITCODE -ne 0) { throw 'Patched-engine storage evidence incomplete or invalid' }
+          Write-Host 'Fingerprint comparison, network leak measurements and release acceptance: NOT_RUN.'
+      - name: Publish only synthetic storage isolation report (patched engine)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHM-Stage0-Camoufox-Patched-Storage-Only
+          path: stage0-measure-results/stage0-isolation-report.json
+          if-no-files-found: ignore
+          retention-days: 7
