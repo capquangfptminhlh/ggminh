@@ -418,10 +418,14 @@ async function run(){
   }
   const verifier={resolve:engine=>{assert.equal(engine,'camoufox');return exeForController;}};
   const options={verifier,enabled:true,labApproved:false};
-  if(process.platform!=='win32'){
+  if(process.platform!=='win32'||Object.keys(require('../src/engine/camoufoxDurability').preferencesForEngine(verifiedDigest)).length){
    const pw=require('playwright-core');
+   const prefs=require('../src/engine/camoufoxDurability').preferencesForEngine(verifiedDigest);
+   report.engine.durabilityPreferences=prefs;
    options.launchPersistentContext=(dir,launchOptions)=>
-    pw.firefox.launchPersistentContext(dir,{...launchOptions,headless:true,timeout:120000});
+    pw.firefox.launchPersistentContext(dir,{...launchOptions,
+     ...(process.platform!=='win32'?{headless:true,timeout:120000}:{}),
+     firefoxUserPrefs:{...launchOptions.firefoxUserPrefs,...prefs}});
   }
   controller=new CamoufoxPlaywrightController(root,options);
   const dirOf=id=>path.join(root,'camoufox-profiles',id);

@@ -42,7 +42,7 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   const exe=path.join(base,'signed-camoufox','camoufox.exe');
   const bundleVerifier={resolve:engine=>{
    assert.strictEqual(engine,'camoufox');return exe;
-  },status:()=>({valid:true,version:'156.0.1'})};
+  },status:()=>({valid:true,version:'156.0.1',sha256:'1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331'})};
   const adapter=new CamoufoxAdapter(base,{
    bundleVerifier,spawnProcess:mockSpawn,platform:'win32',
    capabilityResolver:({engineVersion})=>({
@@ -76,6 +76,10 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   assert(invocations.every(i=>i.args.includes('-wait-for-browser')));
   const profilePath=call=>call.args[call.args.indexOf('-profile')+1];
   assert.notStrictEqual(profilePath(invocations[0]),profilePath(invocations[1]));
+  for(const call of invocations){
+   const prefs=fs.readFileSync(path.join(profilePath(call),'user.js'),'utf8');
+   assert.match(prefs,/user_pref\("dom\.storage\.flush_timeout_ms", 0\);/);
+  }
   assert(invocations.every(i=>i.executable===exe));
   assert(invocations.every(i=>i.options.cwd===path.dirname(exe)));
   assert(!fs.existsSync(path.join(base,'camoufox-profiles',a.id,'config.json')));
