@@ -224,7 +224,8 @@ class BundledEngineManager{
   if(binary.sha256!==declared.sha256||binary.bytes!==declared.bytes)
    throw Error('Bundled browser executable changed during verification');
   return {executable,version:doc.version,fileCount:doc.files.length,
-   sha256:declared.sha256,engine:this.engine,manifestSha256:signedManifestSha256(doc)};
+   sha256:declared.sha256,engine:this.engine,manifestSha256:signedManifestSha256(doc),
+   manifestPayloadSha256:crypto.createHash('sha256').update(signed).digest('hex')};
  }
  resolve(engine){
   if(engine!==this.engine)throw Error('Bundled engine not available for this browser family');
@@ -237,7 +238,7 @@ class BundledEngineManager{
  status(){
   try{
    const r=this.verify();
-   return {available:true,valid:true,version:r.version,sha256:r.sha256,
+   return {available:true,valid:true,version:r.version,sha256:r.sha256,manifestPayloadSha256:r.manifestPayloadSha256,
     fileCount:r.fileCount,name:path.basename(r.executable)};
   }catch(error){
    return {available:false,valid:false,reason:String(error.message).slice(0,220)};
