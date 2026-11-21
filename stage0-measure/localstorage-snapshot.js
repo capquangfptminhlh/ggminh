@@ -16,14 +16,17 @@ function classifySnapshot(file,batch,previous){
    if(!info.isFile()||info.isSymbolicLink()||info.size>32*1024*1024)throw Error('Unsafe synthetic SQLite file');
    fs.copyFileSync(source,path.join(scratch,'data.sqlite'+suffix));
   }
-  db=new DatabaseSync(path.join(scratch,'data.sqlite'),{readOnly:true});
+  // SQLite may need to recover a hot rollback journal after the forced kill.
+  // Recovery is permitted only in the isolated copy, never in the source profile.
+  db=new DatabaseSync(path.join(scratch,'data.sqlite'));
   const row=db.prepare('SELECT conversion_type,compression_type,value FROM data WHERE key=?').get('stage0_lab_marker');
   if(!row)return {status:'missing'};
   if(row.conversion_type!==1||row.compression_type!==0)return {status:'unsupportedEncoding'};
   const value=Buffer.from(row.value).toString('utf8'),last=batch[batch.length-1];
   return {status:value===last?'last':batch.includes(value)?'earlierInBatch':
    (value===previous&&value!==null)?'previousSample':'other'};
- }catch(error){return {status:'unavailable',reason:String(error.code||error.name||'Error').slice(0,60)}}
+ }catch(error){return {status:'unavailable',reason:String(error.code||error.name||'Error').slice(0,60),
+  detail:String(error.message||'').replace(/[\r\n]+/g,' ').slice(0,160)}}
  finally{
   if(db)db.close();
   const resolved=fs.realpathSync(scratch);
