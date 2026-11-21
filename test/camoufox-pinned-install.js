@@ -17,5 +17,7 @@ try{
  assert(!fs.existsSync(path.join(other,'camoufox')));
  fs.writeFileSync(path.join(source,'camoufox.exe'),'synthetic-executable');
  assert.throws(()=>installPinnedTree({source,base:source,manifest,expectedPayloadSha256:pin}),/overlap/i);
+ assert.throws(()=>installPinnedTree({source,base:other,manifest,expectedPayloadSha256:pin,
+  availableBytes:()=>0}),/không đủ dung lượng/i);
  console.log('Pinned local engine import checks source and destination, refusing overwrites: PASS');
 }finally{fs.rmSync(root,{recursive:true,force:true})}

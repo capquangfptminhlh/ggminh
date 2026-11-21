@@ -8,6 +8,8 @@ function verifyPinnedTree(root,manifest,expectedPayloadSha256){
   throw Error('Engine root must be a real absolute directory');
  if(!/^[a-f0-9]{64}$/.test(expectedPayloadSha256||''))throw Error('Invalid pinned payload hash');
  if(!manifest||manifest.engine!=='camoufox'||manifest.entry!=='camoufox.exe')throw Error('Unexpected engine manifest');
+ try{fs.lstatSync(path.join(root,'manifest.json'));throw Error('Unexpected external engine manifest')}
+ catch(error){if(error.code!=='ENOENT')throw error}
  const payloadSha256=crypto.createHash('sha256').update(signedPayload(manifest)).digest('hex');
  if(payloadSha256!==expectedPayloadSha256)throw Error('Engine manifest pin mismatch');
  const expected=manifest.files.map(f=>f.path).sort();

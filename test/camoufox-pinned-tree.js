@@ -16,5 +16,8 @@ try{
  fs.writeFileSync(path.join(root,'engine.dll'),'synthetic-library');
  fs.writeFileSync(path.join(root,'extra.dll'),'unexpected');
  assert.throws(()=>verifyPinnedTree(root,manifest,pin),/file list/i);
+ fs.rmSync(path.join(root,'extra.dll'));
+ fs.writeFileSync(path.join(root,'manifest.json'),'untrusted extra');
+ assert.throws(()=>verifyPinnedTree(root,manifest,pin),/manifest/i);
  console.log('Pinned unsigned tree verifies the complete manifest and rejects modifications: PASS');
 }finally{fs.rmSync(root,{recursive:true,force:true})}

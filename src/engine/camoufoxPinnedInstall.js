@@ -3,7 +3,9 @@
 // this module never accepts a trust anchor from an imported engine directory.
 const fs=require('node:fs'),path=require('node:path');
 const {verifyPinnedTree}=require('./camoufoxPinnedTree');
-function installPinnedTree({source,base,manifest,expectedPayloadSha256}){
+function installPinnedTree({source,base,manifest,expectedPayloadSha256,availableBytes=dir=>{
+ const stats=fs.statfsSync(dir,{bigint:true});return stats.bavail*stats.bsize;
+}}){
  if(!path.isAbsolute(source)||!path.isAbsolute(base))throw Error('Absolute source and installation base are required');
  const baseStat=fs.lstatSync(base);
  if(!baseStat.isDirectory()||baseStat.isSymbolicLink())throw Error('Installation base must be a real directory');
@@ -17,6 +19,9 @@ function installPinnedTree({source,base,manifest,expectedPayloadSha256}){
  const destination=path.join(base,'camoufox');
  if(fs.existsSync(destination))throw Error('Camoufox installation already exists');
  verifyPinnedTree(source,manifest,expectedPayloadSha256);
+ const free=BigInt(availableBytes(base));
+ const required=manifest.files.reduce((sum,entry)=>sum+BigInt(entry.bytes),0n);
+ if(free<required)throw Error('Không đủ dung lượng để sao chép Camoufox');
  const stage=fs.mkdtempSync(path.join(base,'.lhm-camoufox-import-'));
  try{
   const payload=path.join(stage,'payload');
