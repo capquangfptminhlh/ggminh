@@ -171,6 +171,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Install app dependencies failed' }
           npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.62.0
           if ($LASTEXITCODE -ne 0) { throw 'Install pinned playwright-core failed' }
+      - name: Verify patched-engine durability preferences
+        shell: pwsh
+        run: |
+          node test/camoufox-durability-preference.js
+          if ($LASTEXITCODE -ne 0) { throw 'Durability preference test failed' }
+          node test/camoufox-adapter.js
+          if ($LASTEXITCODE -ne 0) { throw 'Camoufox adapter preference test failed' }
       - name: Download pinned patched engine build
         uses: actions/download-artifact@v4
         with:

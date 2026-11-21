@@ -12,6 +12,7 @@ const {safeWebUrl}=require('./launchArgs');
 const {normalizedProxy,prepareCamoufoxProxy}=require('./camoufoxProxyPlan');
 const {identityEnvForProfile,assertIdentityMatchesProfile,hasIdentityCollision}=require('./camoufoxIdentity');
 const {applyGeckoDownloadDir}=require('./downloadDirectory');
+const {applyCamoufoxDurability}=require('./camoufoxDurability');
 const {createPeerGuard}=require('../security/loopbackPeerGuard');
 
 const MIN_STARTUP_MS=1000;
@@ -186,12 +187,12 @@ class CamoufoxAdapter{
    throw Error('NETWORK_BLOCKED: Camoufox '+proxyType+
     ' proxy is not approved for this signed engine version; no direct fallback');
   const target=safeWebUrl(url||profile.startUrl||'https://example.com/');
-  const task=this._startVerified({profile,id,profileDir,target,onClosed,identity});
+  const task=this._startVerified({profile,id,profileDir,target,onClosed,identity,engineSha256:release.signed.sha256});
   this.pending.set(id,task);
   try{return await task;}
   finally{if(this.pending.get(id)===task)this.pending.delete(id);}
  }
- async _startVerified({profile,id,profileDir,target,onClosed,identity=null}){
+ async _startVerified({profile,id,profileDir,target,onClosed,identity=null,engineSha256=null}){
   if(this.platform!=='win32')
    throw Error('Native Camoufox desktop process is supported only on Windows');
   if(!this.bundleVerifier||typeof this.bundleVerifier.resolve!=='function')
@@ -235,6 +236,7 @@ class CamoufoxAdapter{
     store:this.store,proxyVault:this.proxyVault,peerGuard
    });
    if(this.downloadsRoot)applyGeckoDownloadDir(profileDir,this.downloadsRoot,id);
+   applyCamoufoxDurability(profileDir,engineSha256);
    child=this.spawnProcess(executable,args,{
     cwd:path.dirname(executable),windowsHide:false,
     detached:false,stdio:['ignore','pipe','pipe'],
