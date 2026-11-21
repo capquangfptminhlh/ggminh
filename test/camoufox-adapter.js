@@ -42,7 +42,7 @@ const {CamoufoxAdapter,nativeArgs}=require('../src/engine/camoufoxAdapter');
   const exe=path.join(base,'signed-camoufox','camoufox.exe');
   const bundleVerifier={resolve:engine=>{
    assert.strictEqual(engine,'camoufox');return exe;
-  },status:()=>({valid:true,version:'156.0.1',sha256:'1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331'})};
+  },status:()=>({valid:true,version:'156.0.1',sha256:'1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331',manifestPayloadSha256:'c0595098721d0ca47e88e62a7cce7752b7e7ce8b5f421e7cfc4e4fcc5d6f19be'})};
   const adapter=new CamoufoxAdapter(base,{
    bundleVerifier,spawnProcess:mockSpawn,platform:'win32',
    capabilityResolver:({engineVersion})=>({

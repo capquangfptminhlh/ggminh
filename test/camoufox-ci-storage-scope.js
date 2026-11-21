@@ -22,9 +22,10 @@ const report={classification:'LOCAL_STAGE0_ISOLATION_EXTENDED',platform:'win32',
 assert.equal(verifyStorageReport({report,commitSha:sha,exeSha256:digest}).result,'PASS_STORAGE_ONLY');
 const patched='1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331';
 const patchedReport={...report,engine:{sha256:patched}};
-assert.throws(()=>verifyStorageReport({report:patchedReport,commitSha:sha,exeSha256:patched}),/durability settings mismatch/);
+assert.throws(()=>verifyStorageReport({report:patchedReport,commitSha:sha,exeSha256:patched}),/engine content mismatch/);
 assert.equal(verifyStorageReport({report:{...patchedReport,engine:{...patchedReport.engine,
- durabilityPreferences:{'dom.storage.flush_timeout_ms':0}}},commitSha:sha,exeSha256:patched}).result,'PASS_STORAGE_ONLY');
+ manifestPayloadSha256:'c0595098721d0ca47e88e62a7cce7752b7e7ce8b5f421e7cfc4e4fcc5d6f19be',
+ requestedDurabilityPreferences:{'dom.storage.flush_timeout_ms':0}}},commitSha:sha,exeSha256:patched}).result,'PASS_STORAGE_ONLY');
 assert.throws(()=>verifyStorageReport({report:{...report,branchHead:'c'.repeat(40)},commitSha:sha,exeSha256:digest}),/commit/i);
 assert.throws(()=>verifyStorageReport({report:{...report,conditions:{...conditions,concurrentCrossWrite:{status:'NOT_RUN'}}},commitSha:sha,exeSha256:digest}),/concurrentCrossWrite/);
 assert.throws(()=>verifyStorageReport({report:{...report,network:{...report.network,dns:'PASS'}},commitSha:sha,exeSha256:digest}),/network/i);

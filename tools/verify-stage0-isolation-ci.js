@@ -23,9 +23,12 @@ function commonChecks({report,commitSha,exeSha256}){
  assert.equal(report.platform,'win32','Windows evidence required');
  assert.equal(report.branchHead,commitSha,'CI commit mismatch');
  assert.equal(report.engine?.sha256,exeSha256.toLowerCase(),'Engine digest mismatch');
- const expectedPrefs=require('../src/engine/camoufoxDurability').preferencesForEngine(exeSha256);
- if(Object.keys(expectedPrefs).length)
-  assert.deepEqual(report.engine?.durabilityPreferences,expectedPrefs,'Patched engine durability settings mismatch');
+ const knownExe='1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331';
+ if(exeSha256.toLowerCase()===knownExe){
+  const expectedPrefs=require('../src/engine/camoufoxDurability').preferencesForEngine(exeSha256,report.engine?.manifestPayloadSha256);
+  assert.ok(Object.keys(expectedPrefs).length,'Patched engine content mismatch');
+  assert.deepEqual(report.engine?.requestedDurabilityPreferences,expectedPrefs,'Patched engine durability settings mismatch');
+ }
  assert.equal(report.cleanup,'PASS','Synthetic cleanup incomplete');
  assert(['PASS','NOT_RUN'].includes(report.conditions?.faviconCache?.status),'faviconCache failed');
  for(const key of ['proxy','dns','webrtc','externalEgress'])

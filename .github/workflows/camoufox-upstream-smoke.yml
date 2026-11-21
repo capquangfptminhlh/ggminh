@@ -201,6 +201,12 @@ jobs:
           "LHM_CAMOUFOX_EXECUTABLE=$exe" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "LHM_CAMOUFOX_EXE_SHA256=$exeSha" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Patched engine verified: zip $actual, exe $exeSha (UNSIGNED test build)"
+      - name: Test native launcher with ephemeral signed engine and synthetic profile
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          node tools/test-camoufox-durability-native.js
+          if ($LASTEXITCODE -ne 0) { throw 'Signed synthetic native durability preference test failed' }
       - name: Measure synthetic local storage isolation and crash durability (patched engine)
         shell: pwsh
         timeout-minutes: 25

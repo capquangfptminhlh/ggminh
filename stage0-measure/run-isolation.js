@@ -350,6 +350,19 @@ function engineVersion(realPath){
   return (ini.match(/^Version=(.+)$/m)||[])[1]?.trim()||null;
  }catch(_){return null}
 }
+function verifiedDiagnosticPayload(realPath,exeSha){
+ const expectedExe='1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331';
+ if(exeSha!==expectedExe)return null;
+ const manager=require('../src/engine/bundledEngineManager');
+ const manifest=require('../tools/camoufox-engine/records/camoufox-156.0.1-beta.36-lhm-lsflush.unsigned-manifest.json');
+ const root=path.dirname(realPath);
+ assert.deepEqual(manager.listFiles(root),manifest.files.map(f=>f.path).sort(),'Diagnostic engine file list mismatch');
+ for(const f of manifest.files){
+  const actual=manager.sha256File(path.join(root,...f.path.split('/')));
+  assert.deepEqual(actual,{sha256:f.sha256,bytes:f.bytes},'Diagnostic engine file mismatch: '+f.path);
+ }
+ return crypto.createHash('sha256').update(manager.signedPayload(manifest)).digest('hex');
+}
 function currentHead(){
  const r=spawnSync('git',['rev-parse','HEAD'],{
   cwd:path.resolve(__dirname,'..'),encoding:'utf8',timeout:5000,windowsHide:true});
@@ -418,10 +431,12 @@ async function run(){
   }
   const verifier={resolve:engine=>{assert.equal(engine,'camoufox');return exeForController;}};
   const options={verifier,enabled:true,labApproved:false};
-  if(process.platform!=='win32'||Object.keys(require('../src/engine/camoufoxDurability').preferencesForEngine(verifiedDigest)).length){
+  const payloadSha256=verifiedDiagnosticPayload(realPath,verifiedDigest);
+  const prefs=require('../src/engine/camoufoxDurability').preferencesForEngine(verifiedDigest,payloadSha256);
+  if(process.platform!=='win32'||Object.keys(prefs).length){
    const pw=require('playwright-core');
-   const prefs=require('../src/engine/camoufoxDurability').preferencesForEngine(verifiedDigest);
-   report.engine.durabilityPreferences=prefs;
+   report.engine.manifestPayloadSha256=payloadSha256;
+   report.engine.requestedDurabilityPreferences=prefs;
    options.launchPersistentContext=(dir,launchOptions)=>
     pw.firefox.launchPersistentContext(dir,{...launchOptions,
      ...(process.platform!=='win32'?{headless:true,timeout:120000}:{}),
