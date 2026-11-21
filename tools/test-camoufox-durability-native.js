@@ -92,9 +92,9 @@ async function main(){
   while(adapter.isBusy('synthetic')&&Date.now()<closeDeadline)await new Promise(r=>setTimeout(r,200));
   assert(!adapter.isBusy('synthetic'),'Native browser did not close');
   const profile=path.join(root,'camoufox-profiles','synthetic');
+  await waitForNativeExit(profileDirs,{tracked});
   for(const file of ['user.js','prefs.js'])
    assert.match(fs.readFileSync(path.join(profile,file),'utf8'),/user_pref\("dom\.storage\.flush_timeout_ms", 0\);/);
-  await waitForNativeExit(profileDirs,{tracked});
   // Restart the same synthetic profile, write a new marker, and terminate
   // only its captured native process tree 1.5 s after the write completed.
   gotRequest=false;storedAt=null;tracked.clear();
