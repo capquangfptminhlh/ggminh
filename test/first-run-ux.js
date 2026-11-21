@@ -155,6 +155,7 @@ const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => s
     runtime:{manualReady:false,canInstall:true}};
   await engineElement('btn-engine-source').click();await flush();
   assert.equal(engineElement('camoufox-install-button').disabled,false);
+  assert.equal(engineElement('camoufox-install-button').textContent,'Chọn file ZIP Camoufox');
   assert.ok(engineElement('camoufox-install-info').textContent.includes('không có chữ ký'));
   await engineElement('camoufox-install-button').click();await flush();
   assert.ok(engineElement('camoufox-install-info').textContent.includes('Đã cài'));

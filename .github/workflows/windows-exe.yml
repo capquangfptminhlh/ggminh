@@ -41,6 +41,8 @@ jobs:
         run: npx install-electron --no
       - name: Run verification tests
         run: npm test
+      - name: Test pinned Camoufox ZIP installation
+        run: node test/camoufox-pinned-zip.js
       - name: Verify vendor-pinned license endpoint and safe Preview defaults
         run: node test/license-packaged-authority.js
       - name: Gate 3 exact-build operator packet regression (synthetic EXE only)
@@ -82,8 +84,9 @@ jobs:
       - name: Check packaged Camoufox runtime files
         shell: pwsh
         run: |
-          node -e "const a=require('@electron/asar');const files=a.listPackage('dist/win-unpacked/resources/app.asar').map(x=>x.replace(/\\/g,'/'));for(const name of ['/src/engine/camoufoxPinnedWorker.js','/src/engine/camoufox-pinned-manifest.json','/node_modules/camoufox/package.json'])if(!files.includes(name))throw Error('Missing packaged runtime: '+name);console.log('Pinned worker, manifest and Camoufox package: present')"
+          node -e "const a=require('@electron/asar');const files=a.listPackage('dist/win-unpacked/resources/app.asar').map(x=>x.replace(/\\/g,'/'));for(const name of ['/src/engine/camoufoxPinnedWorker.js','/src/engine/camoufoxPinnedZip.js','/src/engine/camoufox-pinned-manifest.json','/node_modules/camoufox/package.json'])if(!files.includes(name))throw Error('Missing packaged runtime: '+name);console.log('Pinned worker, manifest and Camoufox package: present')"
           if ($LASTEXITCODE -ne 0) { throw 'Packaged Camoufox runtime files missing' }
+          if (-not (Test-Path '.\dist\win-unpacked\resources\app.asar.unpacked\tools\extract-signed-engine.ps1')) { throw 'Packaged ZIP extractor missing' }
       - name: Check Authenticode status
         shell: pwsh
         env:

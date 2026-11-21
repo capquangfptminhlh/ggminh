@@ -796,9 +796,9 @@ function initIPC() {
       if(process.platform!=='win32')throw Error('Camoufox chỉ hỗ trợ cài trên Windows.');
       if(launcher.listActive().length||launcher.pendingStarts.size)throw Error('Đóng tất cả trình duyệt trước khi cài engine.');
       if(pinnedCamoufox.running)throw Error('Đang cài đặt engine.');
-      const selection=await dialog.showOpenDialog(mainWindow,{title:'Chọn thư mục engine Camoufox',properties:['openDirectory']});
+      const selection=await dialog.showOpenDialog(mainWindow,{title:'Chọn file ZIP engine Camoufox',properties:['openFile'],filters:[{name:'Tệp ZIP',extensions:['zip']}]});
       if(selection.canceled||selection.filePaths.length!==1)return {canceled:true};
-      const installed=await pinnedCamoufox.importAsync(selection.filePaths[0]);
+      const installed=await pinnedCamoufox.importZipAsync(selection.filePaths[0]);
       return {installed:true,version:installed.version,status:camoufoxAdapter.status()};
     }
     if(!camoufoxApprovedRelease||!camoufoxInstall)
@@ -1565,7 +1565,7 @@ app.whenReady().then(async () => {
     // A separate root keeps earlier signed installations intact.
     const pinnedBase=path.join(storageDir,'engines-pinned');
     fs.mkdirSync(pinnedBase,{recursive:true,mode:0o700});
-    pinnedCamoufox=new PinnedCamoufoxManager(pinnedBase);
+    pinnedCamoufox=new PinnedCamoufoxManager(pinnedBase,{scriptPath:path.join(process.resourcesPath,'app.asar.unpacked','tools','extract-signed-engine.ps1')});
   }
   const camoufoxCapabilityPolicy=loadCapabilityPolicy(
     path.join(releaseAssets,'capabilities.json'));

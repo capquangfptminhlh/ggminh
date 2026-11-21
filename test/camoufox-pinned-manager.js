@@ -13,6 +13,7 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-pinned-manager-test-'));
  assert.throws(()=>manager.resolve('chromium'),/engine/i);
  assert.equal((await manager.refreshAsync()).valid,false);
  await assert.rejects(()=>manager.importAsync(path.join(root,'missing')));
+ await assert.rejects(()=>manager.importZipAsync(path.join(root,'missing.zip')));
  assert.equal(manager.running,false);
  manager.running=true;
  await assert.rejects(()=>manager.refreshAsync(),/import/i);

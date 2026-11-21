@@ -5,11 +5,12 @@ const {Worker}=require('node:worker_threads');
 const manifest=require('./camoufox-pinned-manifest.json');
 const {verifyPinnedTree}=require('./camoufoxPinnedTree');
 const {installPinnedTree}=require('./camoufoxPinnedInstall');
+const {installPinnedZip}=require('./camoufoxPinnedZip');
 const PIN='c0595098721d0ca47e88e62a7cce7752b7e7ce8b5f421e7cfc4e4fcc5d6f19be';
 class PinnedCamoufoxManager{
- constructor(base){
+ constructor(base,{scriptPath}={}){
   if(typeof base!=='string'||!path.isAbsolute(base))throw Error('Absolute engine installation base required');
-  this.base=base;this.root=path.join(base,'camoufox');this.running=false;
+  this.base=base;this.root=path.join(base,'camoufox');this.running=false;this.scriptPath=scriptPath;
   this.cached={available:false,valid:false,reason:'Engine chưa được kiểm tra'};this.pendingVerification=null;
  }
  verify(){return verifyPinnedTree(this.root,manifest,PIN)}
@@ -44,12 +45,24 @@ class PinnedCamoufoxManager{
   try{return installPinnedTree({source,base:this.base,manifest,expectedPayloadSha256:PIN})}
   finally{this.running=false}
  }
+ importZip(archive){return installPinnedZip({archive,base:this.base,manifest,payloadPin:PIN,
+  archivePin:'c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee',
+  archiveBytes:1311755175,scriptPath:this.scriptPath})}
  async importAsync(source){
   if(this.running)throw Error('Camoufox import already in progress');
   if(this.pendingVerification)throw Error('Camoufox verification in progress');
   if(typeof source!=='string'||!path.isAbsolute(source))throw Error('Absolute source required');
   this.running=true;
   try{const result=await this.runWorker({operation:'import',source,base:this.base});
+   this.cached={available:true,valid:true,version:result.version,sha256:result.sha256,
+    manifestPayloadSha256:result.payloadSha256,fileCount:result.fileCount};return result;
+  }finally{this.running=false}
+ }
+ async importZipAsync(archive){
+  if(this.running||this.pendingVerification)throw Error('Camoufox import or verification in progress');
+  if(typeof archive!=='string'||!path.isAbsolute(archive))throw Error('Absolute archive required');
+  this.running=true;
+  try{const result=await this.runWorker({operation:'importZip',archive,base:this.base,scriptPath:this.scriptPath});
    this.cached={available:true,valid:true,version:result.version,sha256:result.sha256,
     manifestPayloadSha256:result.payloadSha256,fileCount:result.fileCount};return result;
   }finally{this.running=false}
