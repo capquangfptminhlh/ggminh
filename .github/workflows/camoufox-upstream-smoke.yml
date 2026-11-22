@@ -56,3 +56,68 @@ jobs:
         run: |
           node tools/test-pinned-packaged-ui.js
           if($LASTEXITCODE -ne 0){throw 'Packaged synthetic Camoufox acceptance failed'}
+  synthetic-upgrade:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download baseline installer
+        uses: actions/download-artifact@v4
+        with:
+          name: LHM-Ads-Browser-Windows-x64
+          run-id: '43921502417'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/upgrade/baseline
+      - name: Download baseline evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: LHM-Release-Evidence-Windows
+          run-id: '43921502417'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/upgrade/baseline-evidence
+      - name: Download candidate installer
+        uses: actions/download-artifact@v4
+        with:
+          name: LHM-Ads-Browser-Windows-x64
+          run-id: '44904533507'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/upgrade/candidate
+      - name: Download candidate evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: LHM-Release-Evidence-Windows
+          run-id: '44904533507'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/upgrade/candidate-evidence
+      - name: Verify inputs and exercise synthetic upgrade and retention
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          function OneFile($dir,$pattern) {
+            $files=@(Get-ChildItem -LiteralPath $dir -Filter $pattern -File)
+            if($files.Count -ne 1){throw 'Expected exactly one input file'}
+            return $files[0].FullName
+          }
+          $root=Join-Path $env:RUNNER_TEMP 'upgrade'
+          $baseline=OneFile (Join-Path $root 'baseline') '*.exe'
+          $baselineEvidence=OneFile (Join-Path $root 'baseline-evidence') 'release-evidence.json'
+          $candidate=OneFile (Join-Path $root 'candidate') '*.exe'
+          $candidateEvidence=OneFile (Join-Path $root 'candidate-evidence') 'release-evidence.json'
+          node tools/windows-clean-install-evidence.js verify-build --installer $baseline --evidence $baselineEvidence --commit 0ac746245f7de38ee79e41b05b7b96f85f4c457f --run-id 43921502417
+          if($LASTEXITCODE -ne 0){throw 'Baseline provenance failed'}
+          node tools/windows-clean-install-evidence.js verify-build --installer $candidate --evidence $candidateEvidence --commit 9d5327ab24dd672728c63a3a6687184b00325c0b --run-id 44904533507
+          if($LASTEXITCODE -ne 0){throw 'Candidate provenance failed'}
+          & ./tools/run-windows-clean-install-acceptance.ps1 -BaselineInstaller $baseline -BaselineEvidence $baselineEvidence -CandidateInstaller $candidate -CandidateEvidence $candidateEvidence -OutputDirectory (Join-Path $root 'output') -ExpectedCandidateVersion '5.8.0'
+      - name: Upload synthetic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinned-zip-synthetic-upgrade-evidence
+          path: |
+            ${{ runner.temp }}/upgrade/output/measurement.json
+            ${{ runner.temp }}/upgrade/output/diagnostic.log
+          if-no-files-found: warn
+          retention-days: 30
