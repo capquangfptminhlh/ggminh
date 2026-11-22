@@ -48,7 +48,28 @@ async function main(){
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('running'),name,{timeout:150000});
   await row.locator('.btn-toggle-run').click();
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('stopped'),name,{timeout:60000});
-  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',zipImport:true,create:true,openClose:true,restartOpenClose:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
+  const browsers=[
+   {engine:'chromium',name:'Synthetic packaged Chromium',paths:[
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe']},
+   {engine:'gecko',name:'Synthetic packaged Firefox',paths:[
+    'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
+    'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe']},
+  ];
+  for(const browser of browsers){
+   if(!browser.paths.some(file=>fs.existsSync(file)))throw Error('Required CI browser not installed: '+browser.engine);
+   await page.locator('#btn-create-profile').click();
+   await page.locator('#field-name').fill(browser.name);
+   await page.locator('#field-browser-engine').selectOption(browser.engine);
+   await page.locator('#field-starturl').fill('http://127.0.0.1:1/');
+   await page.locator('#btn-save-profile').click();
+   const browserRow=page.locator('tr').filter({hasText:browser.name});await browserRow.waitFor({timeout:90000});
+   await browserRow.locator('.btn-toggle-run').click();
+   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('running'),browser.name,{timeout:120000});
+   await browserRow.locator('.btn-toggle-run').click();
+   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('stopped'),browser.name,{timeout:60000});
+  }
+  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',zipImport:true,camoufoxRestart:true,chromium:true,firefox:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
  }finally{if(app)await app.close().catch(()=>{})}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
