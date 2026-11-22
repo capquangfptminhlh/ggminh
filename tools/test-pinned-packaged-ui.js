@@ -14,7 +14,10 @@ async function main(){
  const invalid=path.join(root,'lhm-pinned-invalid.zip');
  if(fs.existsSync(invalid))throw Error('Invalid ZIP fixture already exists');
  fs.mkdirSync(legacy,{recursive:true});fs.writeFileSync(legacyMarker,'legacy-engine-preserved',{flag:'wx'});
- fs.writeFileSync(invalid,'invalid synthetic ZIP',{flag:'wx'});
+ fs.copyFileSync(engine,invalid,fs.constants.COPYFILE_EXCL);
+ const fd=fs.openSync(invalid,'r+');
+ try{const first=Buffer.alloc(1);assert.equal(fs.readSync(fd,first,0,1,0),1);first[0]^=1;assert.equal(fs.writeSync(fd,first,0,1,0),1)}finally{fs.closeSync(fd)}
+ assert.equal(fs.statSync(invalid).size,fs.statSync(engine).size,'tampered ZIP must keep original size');
  const assertLegacyPreserved=()=>assert.equal(fs.readFileSync(legacyMarker,'utf8'),'legacy-engine-preserved');
  let app,server,phase='write';const results=[],marker='synthetic-camoufox-upgrade';
  async function launch(){
@@ -55,8 +58,10 @@ async function main(){
   await button.waitFor({state:'visible',timeout:30000});
   await page.waitForFunction(()=>!document.querySelector('#camoufox-install-button').disabled,null,{timeout:60000});
   await button.click();
-  await page.waitForFunction(()=>document.querySelector('#camoufox-install-info')?.textContent.includes('Cài Camoufox không thành công'),null,{timeout:60000});
+  await page.waitForFunction(()=>document.querySelector('#camoufox-install-info')?.textContent.includes('ZIP hash mismatch'),null,{timeout:240000});
   assert.equal(fs.existsSync(path.join(data,'storage','engines-pinned','camoufox')),false,'invalid ZIP must not install an engine');
+  const pinnedBase=path.join(data,'storage','engines-pinned');
+  assert(!fs.readdirSync(pinnedBase).some(n=>n.startsWith('.lhm-camoufox-import-')),'failed ZIP staging must be removed');
   assertLegacyPreserved();
   await page.waitForFunction(()=>!document.querySelector('#camoufox-install-button').disabled,null,{timeout:60000});
   await button.click();
@@ -115,7 +120,7 @@ async function main(){
   await waitResult('read');await row.locator('.btn-toggle-run').click();
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('stopped'),name,{timeout:90000});
   assertLegacyPreserved();
-  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',invalidZipRejected:true,legacyEnginePreserved:true,zipImport:true,camoufoxRestart:true,camoufoxReinstallData:['cookie','localStorage','IndexedDB'],chromium:true,firefox:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
+  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',sameSizeTamperedZipRejected:true,failedStagingRemoved:true,legacyEnginePreserved:true,zipImport:true,camoufoxRestart:true,camoufoxReinstallData:['cookie','localStorage','IndexedDB'],chromium:true,firefox:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
  }finally{if(app)await app.close().catch(()=>{});if(server)await new Promise(r=>server.close(r))}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
