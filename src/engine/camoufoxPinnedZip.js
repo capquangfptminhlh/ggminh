@@ -27,7 +27,7 @@ function installPinnedZip({archive,base,manifest,payloadPin,archivePin,archiveBy
  const dest=path.join(base,'camoufox');
  if(existsEntry(dest))throw Error('Camoufox installation already exists');
  if(fs.readdirSync(base).some(name=>name.startsWith('.lhm-camoufox-import-')))
-  throw Error('Còn thư mục tạm từ lần nhập trước; đóng ứng dụng và kiểm tra thư mục engines-pinned trước khi thử lại');
+  throw Error('Còn thư mục tạm từ lần nhập trước; đóng ứng dụng và kiểm tra thư mục engine bản thử trước khi thử lại');
  const disk=fs.statfsSync(base,{bigint:true}),required=manifest.files.reduce((n,f)=>n+BigInt(f.bytes),BigInt(archiveBytes));
  if(disk.bavail*disk.bsize<required)throw Error('Không đủ dung lượng để giải nén Camoufox');
  const stage=fs.mkdtempSync(path.join(base,'.lhm-camoufox-import-'));

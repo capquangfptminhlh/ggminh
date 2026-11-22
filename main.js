@@ -1563,7 +1563,9 @@ app.whenReady().then(async () => {
     :path.join(__dirname,'resources','camoufox-engine');
   if(app.isPackaged&&process.platform==='win32'){
     // A separate root keeps earlier signed installations intact.
-    const pinnedBase=path.join(storageDir,'engines-pinned');
+    // This non-release font-review candidate uses a distinct root so the
+    // original pinned engine survives an experimental install unchanged.
+    const pinnedBase=path.join(storageDir,'engines-pinned-font-review');
     fs.mkdirSync(pinnedBase,{recursive:true,mode:0o700});
     pinnedCamoufox=new PinnedCamoufoxManager(pinnedBase,{scriptPath:path.join(process.resourcesPath,'app.asar.unpacked','tools','extract-signed-engine.ps1')});
   }

@@ -4,7 +4,7 @@ const {PinnedCamoufoxManager}=require('../src/engine/camoufoxPinnedManager');
 const crypto=require('node:crypto'),{signedPayload}=require('../src/engine/bundledEngineManager');
 const manifest=require('../src/engine/camoufox-pinned-manifest.json');
 assert.equal(crypto.createHash('sha256').update(signedPayload(manifest)).digest('hex'),
- 'c0595098721d0ca47e88e62a7cce7752b7e7ce8b5f421e7cfc4e4fcc5d6f19be');
+ '0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'lhm-pinned-manager-test-'));
 (async()=>{try{
  const manager=new PinnedCamoufoxManager(root);

@@ -19,7 +19,7 @@ function installPinnedTree({source,base,manifest,expectedPayloadSha256,available
  const destination=path.join(base,'camoufox');
  if(fs.existsSync(destination))throw Error('Camoufox installation already exists');
  if(fs.readdirSync(base).some(name=>name.startsWith('.lhm-camoufox-import-')))
-  throw Error('Còn thư mục tạm từ lần nhập trước; đóng ứng dụng và kiểm tra thư mục engines-pinned trước khi thử lại');
+  throw Error('Còn thư mục tạm từ lần nhập trước; đóng ứng dụng và kiểm tra thư mục engine bản thử trước khi thử lại');
  verifyPinnedTree(source,manifest,expectedPayloadSha256);
  const free=BigInt(availableBytes(base));
  const required=manifest.files.reduce((sum,entry)=>sum+BigInt(entry.bytes),0n);
