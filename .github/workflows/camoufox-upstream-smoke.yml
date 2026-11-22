@@ -1,11 +1,17 @@
 name: Pinned Camoufox packaged synthetic acceptance (no release)
 on:
   workflow_dispatch:
+    inputs:
+      source_only:
+        description: Reconstruct source only, without downloading an engine
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
 jobs:
   packaged-pinned-local:
+    if: ${{ !inputs.source_only }}
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -57,6 +63,7 @@ jobs:
           node tools/test-pinned-packaged-ui.js
           if($LASTEXITCODE -ne 0){throw 'Packaged synthetic Camoufox acceptance failed'}
   synthetic-upgrade:
+    if: ${{ !inputs.source_only }}
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -122,6 +129,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
   synthetic-storage-isolation:
+    if: ${{ !inputs.source_only }}
     runs-on: windows-latest
     timeout-minutes: 20
     strategy:
@@ -163,4 +171,51 @@ jobs:
             ${{ runner.temp }}/storage-only-${{ matrix.engine }}/storage-isolation-report.json
             ${{ runner.temp }}/storage-only-${{ matrix.engine }}/storage-isolation-cleanup.json
           if-no-files-found: warn
+          retention-days: 30
+  source-reconstruction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9d5327ab24dd672728c63a3a6687184b00325c0b
+          path: lhm
+      - uses: actions/checkout@v4
+        with:
+          repository: daijro/camoufox
+          ref: 7a4ac0d4dca2dfdeb277f521824a26efb0b6a7b6
+          path: camoufox
+      - name: Reconstruct changed files from exact Firefox source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C camoufox rev-parse HEAD)" = 7a4ac0d4dca2dfdeb277f521824a26efb0b6a7b6
+          patch="$GITHUB_WORKSPACE/lhm/tools/camoufox-engine/patches/zz-lhm-localstorage-flush.patch"
+          echo "3bb13fa640f0d94ef0aa5ce1e844ea8e50fad81199fb21f7db0bcea464247c0e  $patch" | sha256sum -c -
+          if git -C camoufox grep -I -i -n -E 'ActorsParent\.cpp|StaticPrefList\.yaml' -- patches additions settings; then
+            echo 'Unexpected upstream source reference; manual review required' >&2; exit 1
+          fi
+          if git -C camoufox ls-tree -r --name-only HEAD -- patches additions settings | grep -Ei '(^|/)(ActorsParent\.cpp|StaticPrefList\.yaml)$'; then
+            echo 'Unexpected upstream source file; manual review required' >&2; exit 1
+          fi
+          archive="$RUNNER_TEMP/firefox-156.0.1.source.tar.xz"
+          curl --fail --location --retry 3 --output "$archive" https://archive.mozilla.org/pub/firefox/releases/156.0.1/source/firefox-156.0.1.source.tar.xz
+          echo "f8b0bf733efebebf9af98ead537598c2cf56c2c1b9c06bf89220ea6731b64724  $archive" | sha256sum -c -
+          out="$RUNNER_TEMP/source-reconstruction"
+          mkdir -p "$out/dom/localstorage" "$out/modules/libpref/init"
+          tar -xJOf "$archive" --wildcards '*/dom/localstorage/ActorsParent.cpp' > "$out/dom/localstorage/ActorsParent.cpp"
+          tar -xJOf "$archive" --wildcards '*/modules/libpref/init/StaticPrefList.yaml' > "$out/modules/libpref/init/StaticPrefList.yaml"
+          git -C "$out" apply --check "$patch"
+          git -C "$out" apply "$patch"
+          git -C "$out" apply --reverse --check "$patch"
+          cd "$out"
+          printf '%s\n' 'a17789e3c9ffa237f2412976a2fdebf8907fb818bac060575619b5c4206a1586  dom/localstorage/ActorsParent.cpp' '1436a88a6314947024962f72c5b3f5e75dc6545501caa2f4d0da49f0dbc61d25  modules/libpref/init/StaticPrefList.yaml' | sha256sum -c -
+          cp "$patch" ./zz-lhm-localstorage-flush.patch
+          printf '%s\n' 'Reconstruction from Firefox source archive and pinned LHM patch. The original 44736873136 build did not preserve hashes for these two files; this is not a byte comparison with its original workspace.' > RECONSTRUCTION.txt
+      - name: Upload source reconstruction evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: camoufox-source-reconstruction-only
+          path: ${{ runner.temp }}/source-reconstruction/
+          if-no-files-found: error
           retention-days: 30
