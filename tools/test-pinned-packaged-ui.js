@@ -58,7 +58,7 @@ async function main(){
   await button.waitFor({state:'visible',timeout:30000});
   await page.waitForFunction(()=>!document.querySelector('#camoufox-install-button').disabled,null,{timeout:60000});
   await button.click();
-  await page.waitForFunction(()=>document.querySelector('#camoufox-install-info')?.textContent.includes('ZIP hash mismatch'),null,{timeout:240000});
+  await page.waitForFunction(()=>document.querySelector('#camoufox-install-info')?.textContent.includes('Tệp ZIP Camoufox không khớp'),null,{timeout:240000});
   assert.equal(fs.existsSync(path.join(data,'storage','engines-pinned','camoufox')),false,'invalid ZIP must not install an engine');
   const pinnedBase=path.join(data,'storage','engines-pinned');
   assert(!fs.readdirSync(pinnedBase).some(n=>n.startsWith('.lhm-camoufox-import-')),'failed ZIP staging must be removed');

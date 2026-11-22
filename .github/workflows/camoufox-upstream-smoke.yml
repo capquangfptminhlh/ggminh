@@ -28,14 +28,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LHM-Ads-Browser-Windows-x64
-          run-id: '44904533507'
+          run-id: '45036272946'
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/lhm-pinned-installer
       - name: Download exact build evidence
         uses: actions/download-artifact@v4
         with:
           name: LHM-Release-Evidence-Windows
-          run-id: '44904533507'
+          run-id: '45036272946'
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/lhm-pinned-evidence
       - name: Download engine test artifact
@@ -53,7 +53,7 @@ jobs:
           $evidence=@(Get-ChildItem "$env:RUNNER_TEMP/lhm-pinned-evidence" -Filter 'release-evidence.json' -File)
           $zip=@(Get-ChildItem "$env:RUNNER_TEMP/lhm-pinned-source" -Filter '*.zip' -File)
           if($installer.Count -ne 1 -or $evidence.Count -ne 1 -or $zip.Count -ne 1){throw 'Expected exactly one file per artifact'}
-          node tools/windows-clean-install-evidence.js verify-build --installer $installer[0].FullName --evidence $evidence[0].FullName --commit 9d5327ab24dd672728c63a3a6687184b00325c0b --run-id 44904533507
+          node tools/windows-clean-install-evidence.js verify-build --installer $installer[0].FullName --evidence $evidence[0].FullName --commit 2b3305356628a33c1578c0a9e72077f399a52b3c --run-id 45036272946
           if($LASTEXITCODE -ne 0){throw 'Installer provenance failed'}
           if((Get-FileHash -LiteralPath $zip[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee'){throw 'Engine archive digest mismatch'}
           $install=Join-Path $env:RUNNER_TEMP 'lhm-pinned-app'
@@ -94,14 +94,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LHM-Ads-Browser-Windows-x64
-          run-id: '44904533507'
+          run-id: '45036272946'
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/upgrade/candidate
       - name: Download candidate evidence
         uses: actions/download-artifact@v4
         with:
           name: LHM-Release-Evidence-Windows
-          run-id: '44904533507'
+          run-id: '45036272946'
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/upgrade/candidate-evidence
       - name: Verify inputs and exercise synthetic upgrade and retention
@@ -120,7 +120,7 @@ jobs:
           $candidateEvidence=OneFile (Join-Path $root 'candidate-evidence') 'release-evidence.json'
           node tools/windows-clean-install-evidence.js verify-build --installer $baseline --evidence $baselineEvidence --commit 0ac746245f7de38ee79e41b05b7b96f85f4c457f --run-id 43921502417
           if($LASTEXITCODE -ne 0){throw 'Baseline provenance failed'}
-          node tools/windows-clean-install-evidence.js verify-build --installer $candidate --evidence $candidateEvidence --commit 9d5327ab24dd672728c63a3a6687184b00325c0b --run-id 44904533507
+          node tools/windows-clean-install-evidence.js verify-build --installer $candidate --evidence $candidateEvidence --commit 2b3305356628a33c1578c0a9e72077f399a52b3c --run-id 45036272946
           if($LASTEXITCODE -ne 0){throw 'Candidate provenance failed'}
           & ./tools/run-windows-clean-install-acceptance.ps1 -BaselineInstaller $baseline -BaselineEvidence $baselineEvidence -CandidateInstaller $candidate -CandidateEvidence $candidateEvidence -OutputDirectory (Join-Path $root 'output') -ExpectedCandidateVersion '5.8.0'
       - run: npm ci --ignore-scripts --no-audit --no-fund
@@ -152,7 +152,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 9d5327ab24dd672728c63a3a6687184b00325c0b
+          ref: 2b3305356628a33c1578c0a9e72077f399a52b3c
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -192,7 +192,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 9d5327ab24dd672728c63a3a6687184b00325c0b
+          ref: 2b3305356628a33c1578c0a9e72077f399a52b3c
           path: lhm
       - uses: actions/checkout@v4
         with:
