@@ -10,6 +10,12 @@ async function main(){
  const exe=process.env.LHM_PACKAGED_EXE,engine=process.env.LHM_PINNED_ENGINE,installer=process.env.LHM_CANDIDATE_INSTALLER;
  const data=path.join(root,'lhm-pinned-packaged-data');
  if(!inside(exe)||!inside(engine)||!inside(installer)||!inside(data)||fs.existsSync(data))throw Error('Unsafe CI paths or existing data');
+ const legacy=path.join(data,'storage','engines','camoufox'),legacyMarker=path.join(legacy,'legacy-synthetic-marker.txt');
+ const invalid=path.join(root,'lhm-pinned-invalid.zip');
+ if(fs.existsSync(invalid))throw Error('Invalid ZIP fixture already exists');
+ fs.mkdirSync(legacy,{recursive:true});fs.writeFileSync(legacyMarker,'legacy-engine-preserved',{flag:'wx'});
+ fs.writeFileSync(invalid,'invalid synthetic ZIP',{flag:'wx'});
+ const assertLegacyPreserved=()=>assert.equal(fs.readFileSync(legacyMarker,'utf8'),'legacy-engine-preserved');
  let app,server,phase='write';const results=[],marker='synthetic-camoufox-upgrade';
  async function launch(){
   return _electron.launch({executablePath:exe,args:[],env:{...process.env,
@@ -37,10 +43,10 @@ async function main(){
   });
   await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port+'/';
   app=await launch();
-  await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async(_window,options)=>{
+  await app.evaluate(({dialog},selected)=>{let calls=0;dialog.showOpenDialog=async(_window,options)=>{
    if(!options.properties.includes('openFile')||!options.filters.some(f=>f.extensions.includes('zip')))throw Error('ZIP selection expected');
-   return {canceled:false,filePaths:[selected]};
-  }},engine);
+   return {canceled:false,filePaths:[calls++===0?selected.invalid:selected.valid]};
+  }},{invalid,valid:engine});
   let page=await app.firstWindow({timeout:60000});
   page.on('dialog',dialog=>dialog.accept());
   await page.locator('#lhm-tools-menu > summary').click();
@@ -49,7 +55,13 @@ async function main(){
   await button.waitFor({state:'visible',timeout:30000});
   await page.waitForFunction(()=>!document.querySelector('#camoufox-install-button').disabled,null,{timeout:60000});
   await button.click();
+  await page.waitForFunction(()=>document.querySelector('#camoufox-install-info')?.textContent.includes('Cài Camoufox không thành công'),null,{timeout:60000});
+  assert.equal(fs.existsSync(path.join(data,'storage','engines-pinned','camoufox')),false,'invalid ZIP must not install an engine');
+  assertLegacyPreserved();
+  await page.waitForFunction(()=>!document.querySelector('#camoufox-install-button').disabled,null,{timeout:60000});
+  await button.click();
   await page.waitForFunction(()=>document.querySelector('#camoufox-install-info')?.textContent.includes('Đã cài'),null,{timeout:240000});
+  assertLegacyPreserved();
   await page.locator('#engine-source-done').click();
   await page.locator('#btn-create-profile').click();
   const name='Synthetic packaged Camoufox';
@@ -102,7 +114,8 @@ async function main(){
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('running'),name,{timeout:150000});
   await waitResult('read');await row.locator('.btn-toggle-run').click();
   await page.waitForFunction(n=>[...document.querySelectorAll('tr')].find(r=>r.textContent.includes(n))?.querySelector('.status-pill')?.classList.contains('stopped'),name,{timeout:90000});
-  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',zipImport:true,camoufoxRestart:true,camoufoxReinstallData:['cookie','localStorage','IndexedDB'],chromium:true,firefox:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
+  assertLegacyPreserved();
+  console.log(JSON.stringify({result:'PASS',scope:'packaged Windows CI synthetic profile',invalidZipRejected:true,legacyEnginePreserved:true,zipImport:true,camoufoxRestart:true,camoufoxReinstallData:['cookie','localStorage','IndexedDB'],chromium:true,firefox:true,proxy:'NOT_RUN',releaseAcceptance:'NOT_RUN'}));
  }finally{if(app)await app.close().catch(()=>{});if(server)await new Promise(r=>server.close(r))}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

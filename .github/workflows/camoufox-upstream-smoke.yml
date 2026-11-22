@@ -6,6 +6,10 @@ on:
         description: Reconstruct source only, without downloading an engine
         type: boolean
         default: false
+      packaged_only:
+        description: Exercise packaged UI only
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -64,7 +68,7 @@ jobs:
           node tools/test-pinned-packaged-ui.js
           if($LASTEXITCODE -ne 0){throw 'Packaged synthetic Camoufox acceptance failed'}
   synthetic-upgrade:
-    if: ${{ !inputs.source_only }}
+    if: ${{ !inputs.source_only && !inputs.packaged_only }}
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -138,7 +142,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
   synthetic-storage-isolation:
-    if: ${{ !inputs.source_only }}
+    if: ${{ !inputs.source_only && !inputs.packaged_only }}
     runs-on: windows-latest
     timeout-minutes: 20
     strategy:
