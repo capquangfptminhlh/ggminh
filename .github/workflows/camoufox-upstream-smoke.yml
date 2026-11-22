@@ -118,6 +118,14 @@ jobs:
           node tools/windows-clean-install-evidence.js verify-build --installer $candidate --evidence $candidateEvidence --commit 9d5327ab24dd672728c63a3a6687184b00325c0b --run-id 44904533507
           if($LASTEXITCODE -ne 0){throw 'Candidate provenance failed'}
           & ./tools/run-windows-clean-install-acceptance.ps1 -BaselineInstaller $baseline -BaselineEvidence $baselineEvidence -CandidateInstaller $candidate -CandidateEvidence $candidateEvidence -OutputDirectory (Join-Path $root 'output') -ExpectedCandidateVersion '5.8.0'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify browser profile data survives packaged upgrade
+        shell: pwsh
+        run: |
+          $env:LHM_BASELINE_INSTALLER=(Get-ChildItem "$env:RUNNER_TEMP/upgrade/baseline" -Filter '*.exe' -File).FullName
+          $env:LHM_CANDIDATE_INSTALLER=(Get-ChildItem "$env:RUNNER_TEMP/upgrade/candidate" -Filter '*.exe' -File).FullName
+          node tools/test-packaged-profile-upgrade.js
+          if($LASTEXITCODE -ne 0){throw 'Packaged synthetic profile upgrade failed'}
       - name: Upload synthetic evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -173,6 +181,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
   source-reconstruction:
+    if: ${{ inputs.source_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
