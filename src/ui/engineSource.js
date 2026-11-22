@@ -37,6 +37,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   return 'Chưa có engine đóng gói được xác thực'+(detail?' ('+detail+')':'')+
    '. Chế độ System vẫn hoạt động.';
  }
+ function localZipInstallGuidance(reason){
+  const raw=String(reason||'');
+  if(/ZIP hash mismatch|Invalid ZIP archive size or path/i.test(raw))
+   return 'Tệp ZIP Camoufox không khớp với gói được hỗ trợ. Hãy chọn lại ZIP đã được cung cấp hoặc liên hệ hỗ trợ để nhận đúng tệp.';
+  if(/không đủ dung lượng|ENOSPC/i.test(raw))
+   return 'Không đủ dung lượng để cài Camoufox. Hãy giải phóng dung lượng trên ổ cài dữ liệu và thử lại.';
+  if(/installation already exists/i.test(raw))
+   return 'Thư mục engine Camoufox đã tồn tại. Hãy bấm Làm mới; nếu có cảnh báo, sao lưu thư mục trước khi liên hệ hỗ trợ.';
+  if(/thư mục tạm từ lần nhập trước/i.test(raw))
+   return 'Lần nhập trước còn thư mục tạm. Hãy đóng trình duyệt và liên hệ hỗ trợ để kiểm tra trước khi thử lại.';
+  return 'Không thể cài Camoufox từ ZIP. Hãy thử lại; nếu vẫn lỗi, liên hệ hỗ trợ.';
+ }
  window.LHMEngineGuidance={camoufoxRuntimeGuidance,bundledEngineGuidance};
  function busyState(value){
   busy=value;
@@ -138,7 +150,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     releaseAvailable=false;
    }
   }catch(error){
-   installInfo.textContent='Cài Camoufox không thành công: '+error.message+
+   installInfo.textContent=localPinned?localZipInstallGuidance(error.message):'Cài Camoufox không thành công: '+error.message+
     '. Kiểm tra kết nối mạng và dung lượng trống rồi thử lại; nếu vẫn lỗi, '+
     'hãy ghi lại thông báo này khi liên hệ hỗ trợ.';
   }finally{busyState(false);}
