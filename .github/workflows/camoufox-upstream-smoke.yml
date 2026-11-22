@@ -121,3 +121,46 @@ jobs:
             ${{ runner.temp }}/upgrade/output/diagnostic.log
           if-no-files-found: warn
           retention-days: 30
+  synthetic-storage-isolation:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, gecko]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9d5327ab24dd672728c63a3a6687184b00325c0b
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Measure synthetic profile storage isolation only
+        shell: pwsh
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if($env:ENGINE -eq 'gecko') {
+            $choices=@('C:\Program Files\Mozilla Firefox\firefox.exe','C:\Program Files (x86)\Mozilla Firefox\firefox.exe')
+          } else {
+            $choices=@('C:\Program Files\Google\Chrome\Application\chrome.exe','C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe')
+          }
+          $browser=@($choices | Where-Object {Test-Path -LiteralPath $_ -PathType Leaf} | Select-Object -First 1)
+          if($browser.Count -ne 1){throw 'Required test browser missing'}
+          $output=Join-Path $env:RUNNER_TEMP ('storage-only-'+$env:ENGINE)
+          node tools/concurrent-storage-isolation.js $output $browser[0] $env:ENGINE
+          if($LASTEXITCODE -ne 0){throw 'Synthetic storage isolation failed'}
+          $report=Get-Content -Raw -LiteralPath (Join-Path $output 'storage-isolation-report.json') | ConvertFrom-Json
+          if($report.verdict -ne 'PASS'){throw 'Storage verdict not PASS'}
+      - name: Upload synthetic storage reports only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storage-only-${{ matrix.engine }}
+          path: |
+            ${{ runner.temp }}/storage-only-${{ matrix.engine }}/storage-isolation-report.json
+            ${{ runner.temp }}/storage-only-${{ matrix.engine }}/storage-isolation-cleanup.json
+          if-no-files-found: warn
+          retention-days: 30
