@@ -41,8 +41,8 @@
     "electron-builder": "26.18.0"
   },
   "build": {
-    "appId": "vn.lhm.adsbrowser",
-    "productName": "LHM Ads Browser",
+    "appId": "vn.lhm.adsbrowser.fontreview.ci",
+    "productName": "LHM Font Review CI",
     "directories": {
       "output": "dist"
     },
@@ -107,7 +107,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "LHM-Ads-Browser-${version}-Preview-Setup-${arch}.${ext}"
+      "artifactName": "LHM-Font-Review-CI-${version}-${arch}.${ext}"
     },
     "extraResources": [
       {

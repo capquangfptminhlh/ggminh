@@ -10,6 +10,7 @@ const ProxyCredentialVault = require('./src/security/proxyCredentialVault');
 const path = require('path');
 const { resolveQaCaptureDir } = require('./src/ops/qaCapturePath');
 const {resolveCiAcceptanceUserData}=require('./src/ops/ciAcceptancePath');
+const {fontReviewPaths}=require('./src/ops/fontReviewCiGuard');
 const { copyTextVerified } = require('./src/ops/clipboardCopy');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -1470,6 +1471,8 @@ app.on('second-instance', () => {
 // Installed-build acceptance owns an explicit runner-temp data folder. This
 // path is accepted only inside GitHub Actions and before Electron becomes
 // ready; invalid input fails closed instead of touching the normal userData.
+// This experimental branch is CI-only; never initialize a real user's data.
+try{fontReviewPaths(process.env,app.commandLine.getSwitchValue('user-data-dir'))}catch(error){console.error(error.message);app.exit(1);throw error}
 const previewUserData=internalPreviewUserData({packaged:app.isPackaged,
   enabled:process.env.LHM_CAMOUFOX_INTERNAL,platform:process.platform,appData:app.getPath('appData')});
 if(previewUserData){
@@ -1551,7 +1554,7 @@ app.whenReady().then(async () => {
   licensePolicy.onlineVerifier=onlineLicenseVerifier;
   store.licensePolicy = licensePolicy;
   // Per-profile download folders live where customers look for files.
-  const downloadsRoot = path.join(app.getPath('downloads'), 'LHM Ads Browser');
+  const downloadsRoot = fontReviewPaths(process.env,app.commandLine.getSwitchValue('user-data-dir')).downloads;
   resourceGuard=createResourceGuard();
   launcher = new BrowserLauncher(store,{proxyVault,downloadsRoot,resourceGuard});
   bundledEngine=new BundledEngineManager(app.isPackaged
