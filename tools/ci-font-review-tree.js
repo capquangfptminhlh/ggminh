@@ -7,7 +7,7 @@ const PIN='0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d';
 if(process.env.GITHUB_ACTIONS!=='true'||!path.isAbsolute(process.env.RUNNER_TEMP||''))throw Error('Disposable CI runner required');
 const root=fs.realpathSync(process.env.RUNNER_TEMP),args=process.argv.slice(2);
 if(args.length!==2||!args.every(path.isAbsolute))throw Error('Absolute input and output required');
-const [source,dest]=args.map(path.resolve);
+const [source,dest]=args.map(value=>path.resolve(value));
 const inside=p=>{const r=path.relative(root,p);return r!==''&&r!=='..'&&!r.startsWith('..'+path.sep)&&!path.isAbsolute(r)};
 if(!inside(source)||!inside(dest)||fs.existsSync(dest))throw Error('Unsafe CI paths');
 fs.mkdirSync(dest);
