@@ -23,6 +23,8 @@ class OriginVerificationTest(unittest.TestCase):
         with self.assertRaises(ValueError):source_url('untrusted','ofl/a.ttf')
         self.assertIn('/notofonts/noto-fonts/',source_url(commit,'archive/unhinted/a.ttf','notofonts/noto-fonts'))
         self.assertIn('/notofonts/noto-cjk/',source_url(commit,'Sans/OTC/a.ttc','notofonts/noto-cjk'))
+        self.assertIn('/stipub/stixfonts/',source_url(commit,'archive/STIXv1.1.0/Fonts/example.otf','stipub/stixfonts'))
+        with self.assertRaises(ValueError):source_url(commit,'other/a.otf','stipub/stixfonts')
         with self.assertRaises(ValueError):source_url(commit,'Sans/a.ttf','other/repo')
         with self.assertRaises(ValueError):source_url(commit,'other/a.ttf','notofonts/noto-cjk')
 

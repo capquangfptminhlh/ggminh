@@ -313,7 +313,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        source: [google, noto-fonts, noto-cjk, noto-2018, noto-2020]
+        source: [google, noto-fonts, noto-cjk, noto-2018, noto-2020, stix]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

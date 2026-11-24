@@ -1,0 +1,385 @@
+{
+  "schema": "lhm.font-origin-reference.v1",
+  "source_repo": "stipub/stixfonts",
+  "source_commit": "bea1dc9a3cc2d8b57e412dfd0f448a84382dfe46",
+  "candidate_payload": "0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d",
+  "files": [
+    {
+      "candidate_path": "fonts/1024__STIXIntSmReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsSm-Regular.otf",
+      "bytes": 17416,
+      "sha256": "33f533027dc4d46384005ab30dbc9de345ea167c1626f64e48c5ffb6c824a2a3",
+      "git_blob_sha1": "1cc141294a2bc7b1fe921ba37b12e09bb7ee0787",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/1036__STIXIntUpBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsUp-Bold.otf",
+      "bytes": 16576,
+      "sha256": "835a0736be951f58d6496ea601b72436fa54c2394835c68430ffa9cb60585486",
+      "git_blob_sha1": "5e8d71fb1d66e34f600ead9229bf29ebbb8c908c",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/117__STIXNonUniIta.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXNonUnicode-Italic.otf",
+      "bytes": 46268,
+      "sha256": "03ae0dce5764007238471a83e91e5a1397253efcb2e9ff0c4a3eaa7b188a8b64",
+      "git_blob_sha1": "971d1e2af2643f8c08a19df56cc0c9450d06f223",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/213__STIXIntUpSmBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsUpSm-Bold.otf",
+      "bytes": 16916,
+      "sha256": "d776a6661019d0e65129c11ca4f5130de80135f8b0c2d014e2109ea3735bd06a",
+      "git_blob_sha1": "1128af0cdf1c17de8c4a8c8b92b9894b582680ab",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/215__STIXGeneralBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXGeneral-Bold.otf",
+      "bytes": 186612,
+      "sha256": "7e4dfb4979e9bb79a0bdedc56f055eab615fb9a3dff8788a52992ae65e8f572d",
+      "git_blob_sha1": "421db4bfa7d85664947251525a6f75604d5adcb3",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/251__STIXIntUpReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsUp-Regular.otf",
+      "bytes": 16856,
+      "sha256": "ba1b5dc603956384a8e33141efe684a468c78f8371ce059e4c4ba96247171df5",
+      "git_blob_sha1": "2690501e2cc21102415e6639c3a7dbcc8746e847",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/267__STIXGeneralItalic.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXGeneral-Italic.otf",
+      "bytes": 141844,
+      "sha256": "7f6bf9cab728febe4ce111bbfbcd16253806dcab0bbe1940ede2782cfc319a72",
+      "git_blob_sha1": "e67b25369a0dcb0106491e082e2b09acd5fc6efb",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/278__STIXIntDReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsD-Regular.otf",
+      "bytes": 17500,
+      "sha256": "4f16d3dfe5fbc80f19611555c6deffdd5214d75a19a059cd007f75c34cb9726b",
+      "git_blob_sha1": "d50a5c3a07158fdc7212d00909bce2459b5179ad",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/289__STIXSizFourSymReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeFourSym-Regular.otf",
+      "bytes": 15656,
+      "sha256": "ac0827e53a11de79587a9a5dfde7d31b80d2aa039988f576fa063d47814c9604",
+      "git_blob_sha1": "17871238182156cb7ada144f4b028336d0c81c79",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/345__STIXNonUni.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXNonUnicode-Regular.otf",
+      "bytes": 54556,
+      "sha256": "26c141bf3cbb7058246771eeaf8d5b49949a49e00f7cb12535e6848d28a89eff",
+      "git_blob_sha1": "47e7eba6826e83456457c2dd5b84a1a859956d5c",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/760__STIXVar.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXVariants-Regular.otf",
+      "bytes": 21776,
+      "sha256": "e0b9fbd5ebb9e936fd01903998b27267d5a02d6f6e777151787a1a169b4f264d",
+      "git_blob_sha1": "68a45bcf7022cd6c91edd28f5050c8b314c4b096",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/795__STIXNonUniBolIta.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXNonUnicode-BoldItalic.otf",
+      "bytes": 41188,
+      "sha256": "7809b69d7d0ccb3e43e0c54c20adc269233e2b039eeacf2e0efa17d7d384ccfa",
+      "git_blob_sha1": "b7057292289408fcc5b398e7f9355995852c2f24",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/805__STIXSizThreeSymReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeThreeSym-Regular.otf",
+      "bytes": 15648,
+      "sha256": "a5cd32b5f14b8cf224e1f546be4549013aa6e6042580ef7151d40022203682ab",
+      "git_blob_sha1": "f38086c914a2181520b0b9611dcd1156438eb826",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/863__STIXIntDBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsD-Bold.otf",
+      "bytes": 16992,
+      "sha256": "8e9adaa55e482c0568a0fb0cbeb76c6ca79e6a99eb43b8f4b720e9d048eaeac0",
+      "git_blob_sha1": "aa81bcfaa3ed2fcb9270d48c8c521d229cdcaa64",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/86__STIXIntSmBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsSm-Bold.otf",
+      "bytes": 16608,
+      "sha256": "317f480d4af5468aed9f81e92787092cdee211c47b635ac1f83e241d5d7509d7",
+      "git_blob_sha1": "cc411f7dfbff90a3d9cab944b29037cac6c6af9c",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/870__STIXIntUpDBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsUpD-Bold.otf",
+      "bytes": 16932,
+      "sha256": "c7579768726c86674b6395e387d0100aee304617a2f6d0e9c80f665db5f2fda1",
+      "git_blob_sha1": "b341f4fe1999f7e2d362d21e0b17151b3969408c",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/873__STIXSizFiveSymReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeFiveSym-Regular.otf",
+      "bytes": 13464,
+      "sha256": "ceea484bfe98f42e48f4b3c0fa7c32d8e20002408c8d2dde7e0044b082f000a8",
+      "git_blob_sha1": "cf9e273946a9622668cfc60ab19bf3c341091152",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/878__STIXNonUniBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXNonUnicode-Bold.otf",
+      "bytes": 25508,
+      "sha256": "405fd126348781471350cbd4517ebf2f39ab6d324a55691a68b63a0b13d1b768",
+      "git_blob_sha1": "51814244c5dbc97d6078ce0d103f1bbc5667a516",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/909__STIXSizThreeSymBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeThreeSym-Bold.otf",
+      "bytes": 12636,
+      "sha256": "6aca1c8cfdadee711a124a504bed27155aa6e15b740e66be92948f3184353860",
+      "git_blob_sha1": "b0424e1ca113e9adc58cae40aeb71a3798f8999b",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/912__STIXIntUpDReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsUpD-Regular.otf",
+      "bytes": 16964,
+      "sha256": "602ed39c8479f7a54eb9eddb13c343f393656b2b5690f5768b3169cfa1f688b8",
+      "git_blob_sha1": "f310a0e50d3aabfc380263a4a55db30a7c49bbfe",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/916__STIXGeneralBolIta.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXGeneral-BoldItalic.otf",
+      "bytes": 143764,
+      "sha256": "4585fcdd3aa1a6f3451c03d4f587134b9fc8a0835380ffec25f3105908ddf31a",
+      "git_blob_sha1": "35cb7901626ef2d7e483783278698d191455c30c",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/940__STIXSizTwoSymReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeTwoSym-Regular.otf",
+      "bytes": 15620,
+      "sha256": "c9802f7e4fcfc1fcba89396716bc20a06886ac550242d6fdf7c20cc629ee6428",
+      "git_blob_sha1": "661e592ab1b5057b4eca7de7eb81f106ab26311d",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/949__STIXSizFourSymBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeFourSym-Bold.otf",
+      "bytes": 12628,
+      "sha256": "91e8f6703a26b9eef0bc8bcd9e294876bab4db94d70aa282c3a38bb606d4f386",
+      "git_blob_sha1": "69e5bcac30cc36ba634955df4518b972bd061952",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/94__STIXGeneral.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXGeneral-Regular.otf",
+      "bytes": 369156,
+      "sha256": "5add3f3f2bd7fd897d2fa5ccbe468607c52111dc44cdfaaf2d851a574f5357a7",
+      "git_blob_sha1": "ef6bc2798c8061d1f4cbe1d8e748bfff0c98b538",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/951__STIXVarBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXVariants-Bold.otf",
+      "bytes": 14808,
+      "sha256": "8dfc1801a43f780c5eee90364c30c1aafa4187676a0d137a2853ea34b8461eaf",
+      "git_blob_sha1": "f1f0f2baf2e395ff3c61bb1100c6a83a637bef08",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/953__STIXIntUpSmReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXIntegralsUpSm-Regular.otf",
+      "bytes": 17184,
+      "sha256": "5e86eb813bc83daa0fc83f5e7814a9ac54fc27a050d14e408f8acbfb639c2fe9",
+      "git_blob_sha1": "a72cfb72fbe4648e9dd8b79d36e548c0f797aef0",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/976__STIXSizOneSymReg.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeOneSym-Regular.otf",
+      "bytes": 19004,
+      "sha256": "389a22dfe3c7a097e4b24224dbd62952fc25218640e35f1530ff6bbabe640b25",
+      "git_blob_sha1": "1815a9c45b3b8876a049be04cd61422ee4fa244a",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/984__STIXSizOneSymBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeOneSym-Bold.otf",
+      "bytes": 12924,
+      "sha256": "6af0b03b7833028678c44e90d93c98dd2e3ac9ff119052e1e3c3c30645ec3e7f",
+      "git_blob_sha1": "9a3c46f27e13838503bcf34173c9210d6e2b6273",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/985__STIXSizTwoSymBol.otf",
+      "source_path": "archive/STIXv1.1.0/Fonts/STIX-General/STIXSizeTwoSym-Bold.otf",
+      "bytes": 12576,
+      "sha256": "eba25ebafe86908f1488028253f5c077d8055155b932dcf186e69c7322ae82a6",
+      "git_blob_sha1": "bb37b8f75ad5c1fc948a7a70a0b3e2eef7c82883",
+      "licenses": [
+        {
+          "path": "archive/STIXv1.1.0/License/STIX Font License 2010.pdf",
+          "git_blob_sha1": "45f6d31b66aec245cfda805dd3f1e1ccbc7b150d"
+        }
+      ]
+    }
+  ]
+}

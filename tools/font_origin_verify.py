@@ -15,7 +15,8 @@ def source_url(commit, source_path, repo='google/fonts'):
     p = PurePosixPath(source_path)
     allowed = {'google/fonts':{'ofl','apache','ufl'},
                'notofonts/noto-fonts':{'archive','hinted','unhinted','LICENSE'},
-               'notofonts/noto-cjk':{'Sans','Serif'}}
+               'notofonts/noto-cjk':{'Sans','Serif'},
+               'stipub/stixfonts':{'archive'}}
     if (not re.fullmatch(r'[0-9a-f]{40}', commit) or p.is_absolute() or
         repo not in allowed or not p.parts or p.parts[0] not in allowed[repo] or
         any(part in {'..', '.'} for part in p.parts) or '\\' in source_path or
@@ -86,7 +87,8 @@ def main():
                 'noto-fonts':('test/fixtures/font-origin-noto-fonts-reference.json',38,'lhm-font-origin-noto-fonts','notofonts/noto-fonts','ffebf8c1ee449e544955a7e813c54f9b73848eac'),
                 'noto-cjk':('test/fixtures/font-origin-noto-cjk-reference.json',2,'lhm-font-origin-noto-cjk','notofonts/noto-cjk','f8d157532fbfaeda587e826d4cd5b21a49186f7c'),
                 'noto-2018':('test/fixtures/font-origin-noto-2018-reference.json',47,'lhm-font-origin-noto-2018','notofonts/noto-fonts','dbfc8a1858732279842454cac5da2ea1ff691a24'),
-                'noto-2020':('test/fixtures/font-origin-noto-2020-reference.json',2,'lhm-font-origin-noto-2020','notofonts/noto-fonts','20bc5918912503bc1537a407a694738c33c048aa')}
+                'noto-2020':('test/fixtures/font-origin-noto-2020-reference.json',2,'lhm-font-origin-noto-2020','notofonts/noto-fonts','20bc5918912503bc1537a407a694738c33c048aa'),
+                'stix':('test/fixtures/font-origin-stix-reference.json',29,'lhm-font-origin-stix','stipub/stixfonts','bea1dc9a3cc2d8b57e412dfd0f448a84382dfe46')}
     if kind not in fixtures:
         raise SystemExit('Unsupported source fixture')
     fixture_path, expected_count, output_name, expected_repo, expected_commit = fixtures[kind]
