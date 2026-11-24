@@ -1,0 +1,281 @@
+{
+  "schema": "lhm.iosevka-reference.v1",
+  "release": "v33.2.7",
+  "source_commit": "7c9b0bcffabedf834c421ab9b3958283c401afcb",
+  "archive": "PkgTTF-Iosevka-33.2.7.zip",
+  "archive_size": 153494971,
+  "archive_sha256": "e03a65db743025e85dd888e7f6c91db2a2b39a4eb158e837ba5def29f886d011",
+  "candidate_payload": "0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d",
+  "files": [
+    {
+      "candidate_path": "fonts/101__Iosevka-ExtraLight.ttf",
+      "archive_basename": "Iosevka-ExtraLight.ttf",
+      "sha256": "76430594e85665aba509387948b74bd4ad1cb21bb09116dff0ea007a7ea951ba"
+    },
+    {
+      "candidate_path": "fonts/105__Iosevka-Light.ttf",
+      "archive_basename": "Iosevka-Light.ttf",
+      "sha256": "5c9fbcc18a979fe4ee566361e7ad7879fe25cb8f8829e9246306f56b8aa1de6b"
+    },
+    {
+      "candidate_path": "fonts/109__Iosevka-Italic.ttf",
+      "archive_basename": "Iosevka-Italic.ttf",
+      "sha256": "171245b05b7788690a43cffa9d3f3a7c16fc5d22f7a7845dd53da6af63949301"
+    },
+    {
+      "candidate_path": "fonts/111__Iosevka-ThinItalic.ttf",
+      "archive_basename": "Iosevka-ThinItalic.ttf",
+      "sha256": "47763a0c02cfdcc207b98b2260365384fc7256cfa871f6125d6a28cea9f53af6"
+    },
+    {
+      "candidate_path": "fonts/126__Iosevka-ExtendedExtraLightOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedExtraLightOblique.ttf",
+      "sha256": "42732a970533181e1714878d61ce4b6398c79520a85f89f689162eba800e1509"
+    },
+    {
+      "candidate_path": "fonts/131__Iosevka-ExtendedExtraBoldOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedExtraBoldOblique.ttf",
+      "sha256": "9e8346738e001f10d8cdad780cc2e6b6f1e9465b64365beb1dbe966776cfa044"
+    },
+    {
+      "candidate_path": "fonts/137__Iosevka-ExtraLightOblique.ttf",
+      "archive_basename": "Iosevka-ExtraLightOblique.ttf",
+      "sha256": "8f8b632d988457ef0746863f67f4efc7718da99349dca5df307b8c7d8c7674fe"
+    },
+    {
+      "candidate_path": "fonts/143__Iosevka-HeavyOblique.ttf",
+      "archive_basename": "Iosevka-HeavyOblique.ttf",
+      "sha256": "eb493409e021fcf9de8da01dca12c789996976c7b48f52ac8c9948976cad86cb"
+    },
+    {
+      "candidate_path": "fonts/159__Iosevka-ExtendedLightOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedLightOblique.ttf",
+      "sha256": "19913c1b849094b22d8aad71091c0795d159f0ba58b8ff8be14ce18e3bbaa673"
+    },
+    {
+      "candidate_path": "fonts/172__Iosevka-Thin.ttf",
+      "archive_basename": "Iosevka-Thin.ttf",
+      "sha256": "63301e983b2bf708bddcdf470f97c5501c80283b5b681e0b67de4702215c099a"
+    },
+    {
+      "candidate_path": "fonts/186__Iosevka-ExtraBoldOblique.ttf",
+      "archive_basename": "Iosevka-ExtraBoldOblique.ttf",
+      "sha256": "b7fa5c886fbe0cf13bf33b5e7a460e88941ef419e02a179def214914ee292b6c"
+    },
+    {
+      "candidate_path": "fonts/191__Iosevka-ExtendedBoldOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedBoldOblique.ttf",
+      "sha256": "fae81f6b8c3adf97341fd50400348522cd2d59a3986fce0de2fbc514e023a8df"
+    },
+    {
+      "candidate_path": "fonts/195__Iosevka-ExtendedThinOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedThinOblique.ttf",
+      "sha256": "fbdee1d8056889efb36bde7e8781a0454ba2a1ab29f71980743a68ec3c3e7f76"
+    },
+    {
+      "candidate_path": "fonts/202__Iosevka-ExtendedMediumOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedMediumOblique.ttf",
+      "sha256": "424787c57165ad351c540228ce17a3aa8a273de08a85edaa5a46959a91d04ab1"
+    },
+    {
+      "candidate_path": "fonts/246__Iosevka-LightOblique.ttf",
+      "archive_basename": "Iosevka-LightOblique.ttf",
+      "sha256": "0c3393f03e0586de5627840ab1925094fae9112b6c22d48c702c42bb7abf25c7"
+    },
+    {
+      "candidate_path": "fonts/249__Iosevka-ExtendedMediumItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedMediumItalic.ttf",
+      "sha256": "0ecfd0ab15d43a7d56ce58e53bf44681d7d8740fa01b6e321aefafa21dbfa899"
+    },
+    {
+      "candidate_path": "fonts/260__Iosevka-SemiBoldItalic.ttf",
+      "archive_basename": "Iosevka-SemiBoldItalic.ttf",
+      "sha256": "84e1db34b114bf778e43c955729b3ec614f2b277179f2d528b664259c0ba17ee"
+    },
+    {
+      "candidate_path": "fonts/265__Iosevka-Medium.ttf",
+      "archive_basename": "Iosevka-Medium.ttf",
+      "sha256": "5d10beb85c7b447252ed08f24682aa2676d0188057c6473ec27b981f52c7d4cc"
+    },
+    {
+      "candidate_path": "fonts/266__Iosevka-ExtendedThinItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedThinItalic.ttf",
+      "sha256": "f276f5e3b4a3daada367d7b92ea854502add7c2e5892a8d80c23a1ec3cdee8ed"
+    },
+    {
+      "candidate_path": "fonts/270__Iosevka-Bold.ttf",
+      "archive_basename": "Iosevka-Bold.ttf",
+      "sha256": "4e4585baec3126e64a84e355605223864bd0fcef70933a8515e5512e363d90cc"
+    },
+    {
+      "candidate_path": "fonts/287__Iosevka-ExtendedExtraBoldItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedExtraBoldItalic.ttf",
+      "sha256": "e640e6205fc85f486dd021c1ebbdca745a2c43f45764fb73f4179fb9f838f554"
+    },
+    {
+      "candidate_path": "fonts/293__Iosevka-ExtendedExtraLightItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedExtraLightItalic.ttf",
+      "sha256": "a94264956de7293d57db58b66f3ad934cfb8eb46c4b811035487477b66a60a7a"
+    },
+    {
+      "candidate_path": "fonts/302__Iosevka-ExtendedBoldItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedBoldItalic.ttf",
+      "sha256": "db4e6fb179c13f4b77612fd28709b43de3e519a5fc418e89a68d7b4ab135c08c"
+    },
+    {
+      "candidate_path": "fonts/323__Iosevka-ExtendedBold.ttf",
+      "archive_basename": "Iosevka-ExtendedBold.ttf",
+      "sha256": "74e3d662de189d5e1a78f1482c2d718a3b315bc3b94c8f6a01fffe14131b40c6"
+    },
+    {
+      "candidate_path": "fonts/340__Iosevka-Extended.ttf",
+      "archive_basename": "Iosevka-Extended.ttf",
+      "sha256": "29840530f5be2f669046f4506aad29586b89da40f27620b3449f11162da16dad"
+    },
+    {
+      "candidate_path": "fonts/351__Iosevka-SemiBoldOblique.ttf",
+      "archive_basename": "Iosevka-SemiBoldOblique.ttf",
+      "sha256": "f4018239c59461884f4372328eb089d2d955dd1d4927651c380c973d96774f0f"
+    },
+    {
+      "candidate_path": "fonts/355__Iosevka-BoldOblique.ttf",
+      "archive_basename": "Iosevka-BoldOblique.ttf",
+      "sha256": "961ab54baf4f1fae6b847dc498f6d81051d043705de1649b13ff4e4c1c93a651"
+    },
+    {
+      "candidate_path": "fonts/357__Iosevka-ExtendedExtraLight.ttf",
+      "archive_basename": "Iosevka-ExtendedExtraLight.ttf",
+      "sha256": "83c350cedd2cf9c8805ad514d9938e88f60d75ebbf62f9bbd8aa8ac2197f2b48"
+    },
+    {
+      "candidate_path": "fonts/364__Iosevka-ExtraBold.ttf",
+      "archive_basename": "Iosevka-ExtraBold.ttf",
+      "sha256": "02f30588001b596f0029f44fe9be4b68b5de658b090c4768737b49b7d7609302"
+    },
+    {
+      "candidate_path": "fonts/372__Iosevka-ExtendedSemiBoldItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedSemiBoldItalic.ttf",
+      "sha256": "d3ddeeecef9221501471eb9867ed033a481def6c87efda5410a7c2c1af4e8c02"
+    },
+    {
+      "candidate_path": "fonts/378__Iosevka-MediumItalic.ttf",
+      "archive_basename": "Iosevka-MediumItalic.ttf",
+      "sha256": "e1fec375a585289e52aa4102e911bd3b98f18eb8aa61ab908fd42325a90e08fc"
+    },
+    {
+      "candidate_path": "fonts/383__Iosevka-ExtraLightItalic.ttf",
+      "archive_basename": "Iosevka-ExtraLightItalic.ttf",
+      "sha256": "7835de224e93e909c62ab3f0cef2cc2809a30f09eb3d0831f7f5f1a8c94e43f8"
+    },
+    {
+      "candidate_path": "fonts/392__Iosevka-ExtraBoldItalic.ttf",
+      "archive_basename": "Iosevka-ExtraBoldItalic.ttf",
+      "sha256": "8241f847d8b3c2e564e943e81e8d1aed327ea115cc3131d911c40a2763608988"
+    },
+    {
+      "candidate_path": "fonts/394__Iosevka-ExtendedSemiBoldOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedSemiBoldOblique.ttf",
+      "sha256": "b8fb4f4b4a7a885e86b7f92db7c03010e4de58dae87399e027589d81f82e40b4"
+    },
+    {
+      "candidate_path": "fonts/401__Iosevka-Regular.ttf",
+      "archive_basename": "Iosevka-Regular.ttf",
+      "sha256": "7cb77a35396a7336aaf0c43b0b74db263fa8f029848a8ad09edb9032dbe9bc42"
+    },
+    {
+      "candidate_path": "fonts/410__Iosevka-ExtendedThin.ttf",
+      "archive_basename": "Iosevka-ExtendedThin.ttf",
+      "sha256": "bd544596be647cc2e41f415aae0d5436ebfe6285103f670eeceff5b2f2ed6cc9"
+    },
+    {
+      "candidate_path": "fonts/418__Iosevka-HeavyItalic.ttf",
+      "archive_basename": "Iosevka-HeavyItalic.ttf",
+      "sha256": "38e5039f68276853b8704bae1443dab8343776d73cc85884f41906f8b8dd61e1"
+    },
+    {
+      "candidate_path": "fonts/430__Iosevka-ExtendedSemiBold.ttf",
+      "archive_basename": "Iosevka-ExtendedSemiBold.ttf",
+      "sha256": "a66a938a8cafa6f4607adbfffd2958482b0caf8b119433a6aa316c178fc083bb"
+    },
+    {
+      "candidate_path": "fonts/434__Iosevka-Heavy.ttf",
+      "archive_basename": "Iosevka-Heavy.ttf",
+      "sha256": "69ea16e36aa32bf0e1f9d2e1e7eac541354e172c32085369c0efc05132bfab61"
+    },
+    {
+      "candidate_path": "fonts/438__Iosevka-ExtendedLightItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedLightItalic.ttf",
+      "sha256": "d1b55b92b09990a2f75f772fbac9a20c4dfcc15ba464ccd87b39695e1c13e07c"
+    },
+    {
+      "candidate_path": "fonts/442__Iosevka-ExtendedHeavyItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedHeavyItalic.ttf",
+      "sha256": "798a96edbd659e71c4e26e1f61a7f73fa54a86caa6cafc128baf58ac61dcd58c"
+    },
+    {
+      "candidate_path": "fonts/443__Iosevka-SemiBold.ttf",
+      "archive_basename": "Iosevka-SemiBold.ttf",
+      "sha256": "38a3cf52dc61569d505629a5cc400e98897610d3c89b43037a05938872316885"
+    },
+    {
+      "candidate_path": "fonts/448__Iosevka-BoldItalic.ttf",
+      "archive_basename": "Iosevka-BoldItalic.ttf",
+      "sha256": "97c18b274cf5813aee3fd7e5a24dc08eef670422f3c5d9dd1d5347217d3cef86"
+    },
+    {
+      "candidate_path": "fonts/469__Iosevka-ExtendedItalic.ttf",
+      "archive_basename": "Iosevka-ExtendedItalic.ttf",
+      "sha256": "aad0b6dab960cdc6cd02a415cdaf3aa97294965b8d510a727fba50f8cda8ac12"
+    },
+    {
+      "candidate_path": "fonts/479__Iosevka-ThinOblique.ttf",
+      "archive_basename": "Iosevka-ThinOblique.ttf",
+      "sha256": "ddec953b4269fffee6843067af23dcfe78e6067b5a9344a3789d88999dd2a5ed"
+    },
+    {
+      "candidate_path": "fonts/499__Iosevka-MediumOblique.ttf",
+      "archive_basename": "Iosevka-MediumOblique.ttf",
+      "sha256": "a0aa39cff87bf68b8ab3dc88693fb33dc0b2db7f92854bade8790db7d664b40a"
+    },
+    {
+      "candidate_path": "fonts/517__Iosevka-ExtendedHeavyOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedHeavyOblique.ttf",
+      "sha256": "8b37992d0023c5eab8f61f2c0bf889ac4a8f0a6fe80895bce8318192bc8266b6"
+    },
+    {
+      "candidate_path": "fonts/527__Iosevka-Oblique.ttf",
+      "archive_basename": "Iosevka-Oblique.ttf",
+      "sha256": "9885254ac174b64966e70f1b457920ed55e2a737f23c1f23be8ae4dddd52deb4"
+    },
+    {
+      "candidate_path": "fonts/528__Iosevka-LightItalic.ttf",
+      "archive_basename": "Iosevka-LightItalic.ttf",
+      "sha256": "1812e0646259c42241226f2295e6e67debb1155d2a17b20fbe1bc60c2820cda5"
+    },
+    {
+      "candidate_path": "fonts/535__Iosevka-ExtendedMedium.ttf",
+      "archive_basename": "Iosevka-ExtendedMedium.ttf",
+      "sha256": "c19958628ddc94698ba93c6532ab7286c3c099c074d5a3020a79c527fab00420"
+    },
+    {
+      "candidate_path": "fonts/536__Iosevka-ExtendedLight.ttf",
+      "archive_basename": "Iosevka-ExtendedLight.ttf",
+      "sha256": "e2b4e7ed911c351a8c71df74788f39f194c482d4928a1c9d37d3b24c003a8a69"
+    },
+    {
+      "candidate_path": "fonts/539__Iosevka-ExtendedOblique.ttf",
+      "archive_basename": "Iosevka-ExtendedOblique.ttf",
+      "sha256": "41335edd3cdc3287796acc509fb420f9cc0da17acc9f40cb759901a9cc42c8fa"
+    },
+    {
+      "candidate_path": "fonts/87__Iosevka-ExtendedHeavy.ttf",
+      "archive_basename": "Iosevka-ExtendedHeavy.ttf",
+      "sha256": "1e60b32f950fb124869f6fdbf373c94da7683740ba63a63141eed4b371fc7303"
+    },
+    {
+      "candidate_path": "fonts/88__Iosevka-ExtendedExtraBold.ttf",
+      "archive_basename": "Iosevka-ExtendedExtraBold.ttf",
+      "sha256": "6d33a9c42081f22a5c790fde8b5b2edd8251ebae0a14a1c2fa213c13f9285c8b"
+    }
+  ]
+}

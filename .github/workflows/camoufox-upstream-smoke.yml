@@ -10,6 +10,10 @@ on:
         description: Verify upstream font sources without browser or engine
         type: boolean
         default: false
+      font_iosevka_only:
+        description: Verify only the official Iosevka release
+        type: boolean
+        default: false
   pull_request:
     paths:
       - '.github/workflows/camoufox-upstream-smoke.yml'
@@ -32,7 +36,7 @@ concurrency:
 
 jobs:
   real-windows-camoufox:
-    if: ${{ !inputs.font_review_only && !inputs.font_origin_only }}
+    if: ${{ !inputs.font_review_only && !inputs.font_origin_only && !inputs.font_iosevka_only }}
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -159,7 +163,7 @@ jobs:
   # engine (camoufox-engine-build.yml). The engine is pinned by build run and
   # SHA-256; it is an UNSIGNED test build and is never packaged or published.
   patched-engine-storage:
-    if: ${{ !inputs.font_review_only && !inputs.font_origin_only }}
+    if: ${{ !inputs.font_review_only && !inputs.font_origin_only && !inputs.font_iosevka_only }}
     runs-on: windows-latest
     timeout-minutes: 45
     permissions:
@@ -245,7 +249,7 @@ jobs:
           retention-days: 7
 
   disposable-windows:
-    if: ${{ inputs.font_review_only && !inputs.font_origin_only }}
+    if: ${{ inputs.font_review_only && !inputs.font_origin_only && !inputs.font_iosevka_only }}
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -303,7 +307,7 @@ jobs:
           node tools/test-font-review-packaged.js
           if($LASTEXITCODE -ne 0){throw 'CI-only packaged acceptance failed'}
   font-origin:
-    if: ${{ inputs.font_origin_only && !inputs.font_review_only }}
+    if: ${{ inputs.font_origin_only && !inputs.font_review_only && !inputs.font_iosevka_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -326,3 +330,25 @@ jobs:
           path: ${{ runner.temp }}/lhm-font-origin-*/
           if-no-files-found: warn
           retention-days: 30
+
+  font-origin-iosevka:
+    if: ${{ inputs.font_iosevka_only && !inputs.font_origin_only && !inputs.font_review_only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python test/font_origin_iosevka_test.py
+      - name: Fetch pinned upstream release in disposable runner
+        run: curl --fail --location --retry 3 --output "$RUNNER_TEMP/iosevka.zip" https://github.com/be5invis/Iosevka/releases/download/v33.2.7/PkgTTF-Iosevka-33.2.7.zip
+      - name: Verify official release and candidate font bytes
+        run: python tools/font_origin_iosevka.py "$RUNNER_TEMP/iosevka.zip"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: font-origin-verification-iosevka
+          path: ${{ runner.temp }}/lhm-font-origin-iosevka/
+          if-no-files-found: warn
+          retention-days: 14
