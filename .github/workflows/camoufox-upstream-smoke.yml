@@ -6,6 +6,10 @@ on:
         description: Run only the isolated font review candidate
         type: boolean
         default: false
+      font_origin_only:
+        description: Verify upstream font sources without browser or engine
+        type: boolean
+        default: false
   pull_request:
     paths:
       - '.github/workflows/camoufox-upstream-smoke.yml'
@@ -28,7 +32,7 @@ concurrency:
 
 jobs:
   real-windows-camoufox:
-    if: ${{ !inputs.font_review_only }}
+    if: ${{ !inputs.font_review_only && !inputs.font_origin_only }}
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -155,7 +159,7 @@ jobs:
   # engine (camoufox-engine-build.yml). The engine is pinned by build run and
   # SHA-256; it is an UNSIGNED test build and is never packaged or published.
   patched-engine-storage:
-    if: ${{ !inputs.font_review_only }}
+    if: ${{ !inputs.font_review_only && !inputs.font_origin_only }}
     runs-on: windows-latest
     timeout-minutes: 45
     permissions:
@@ -241,7 +245,7 @@ jobs:
           retention-days: 7
 
   disposable-windows:
-    if: ${{ inputs.font_review_only }}
+    if: ${{ inputs.font_review_only && !inputs.font_origin_only }}
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -298,3 +302,23 @@ jobs:
         run: |
           node tools/test-font-review-packaged.js
           if($LASTEXITCODE -ne 0){throw 'CI-only packaged acceptance failed'}
+  font-origin:
+    if: ${{ inputs.font_origin_only && !inputs.font_review_only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python test/font_origin_verify_test.py
+      - name: Verify exact upstream font bytes and license documents
+        run: python tools/font_origin_verify.py
+      - name: Upload source verification reports and license texts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: font-origin-verification-only
+          path: ${{ runner.temp }}/lhm-font-origin-evidence/
+          if-no-files-found: warn
+          retention-days: 30
