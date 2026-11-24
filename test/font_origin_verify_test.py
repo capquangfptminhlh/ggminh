@@ -21,6 +21,10 @@ class OriginVerificationTest(unittest.TestCase):
         for bad in ('../../evil','ofl/../evil','https://other/font.ttf','other/a.ttf','ofl/a\\b.ttf'):
             with self.assertRaises(ValueError):source_url(commit,bad)
         with self.assertRaises(ValueError):source_url('untrusted','ofl/a.ttf')
+        self.assertIn('/notofonts/noto-fonts/',source_url(commit,'archive/unhinted/a.ttf','notofonts/noto-fonts'))
+        self.assertIn('/notofonts/noto-cjk/',source_url(commit,'Sans/OTC/a.ttc','notofonts/noto-cjk'))
+        with self.assertRaises(ValueError):source_url(commit,'Sans/a.ttf','other/repo')
+        with self.assertRaises(ValueError):source_url(commit,'other/a.ttf','notofonts/noto-cjk')
 
 if __name__ == '__main__':
     unittest.main()

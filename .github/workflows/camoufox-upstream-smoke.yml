@@ -306,6 +306,10 @@ jobs:
     if: ${{ inputs.font_origin_only && !inputs.font_review_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [google, noto-fonts, noto-cjk]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -313,12 +317,12 @@ jobs:
           python-version: '3.12'
       - run: python test/font_origin_verify_test.py
       - name: Verify exact upstream font bytes and license documents
-        run: python tools/font_origin_verify.py
+        run: python tools/font_origin_verify.py ${{ matrix.source }}
       - name: Upload source verification reports and license texts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: font-origin-verification-only
-          path: ${{ runner.temp }}/lhm-font-origin-evidence/
+          name: font-origin-verification-${{ matrix.source }}
+          path: ${{ runner.temp }}/lhm-font-origin-*/
           if-no-files-found: warn
           retention-days: 30

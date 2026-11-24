@@ -1,0 +1,34 @@
+{
+  "schema": "lhm.font-origin-reference.v1",
+  "source_repo": "notofonts/noto-cjk",
+  "source_commit": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+  "candidate_payload": "0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d",
+  "files": [
+    {
+      "candidate_path": "fonts/289__NotoSansCJK-Bold.ttc",
+      "source_path": "Sans/OTC/NotoSansCJK-Bold.ttc",
+      "bytes": 20050760,
+      "sha256": "faa5f3656a78b2e2d450d27fe8382c778bc2b6bb5ea29c986664a6a435056ceb",
+      "git_blob_sha1": "ce48b99a84eb3300774353f1f15ce686e53b6734",
+      "licenses": [
+        {
+          "path": "Sans/LICENSE",
+          "git_blob_sha1": "d952d62c065f3f35fb83a173496e90b21525aef3"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/513__NotoSerifCJK-Regular.ttc",
+      "source_path": "Serif/OTC/NotoSerifCJK-Regular.ttc",
+      "bytes": 26411360,
+      "sha256": "5d9c31a059600193c9d7968a998bde886ccdc77e934006ad243b41794c496a7d",
+      "git_blob_sha1": "e72653a3a41fc9a8930e0cb40af310c4472a753b",
+      "licenses": [
+        {
+          "path": "Serif/LICENSE",
+          "git_blob_sha1": "d952d62c065f3f35fb83a173496e90b21525aef3"
+        }
+      ]
+    }
+  ]
+}
