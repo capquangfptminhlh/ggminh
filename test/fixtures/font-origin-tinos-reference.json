@@ -1,0 +1,60 @@
+{
+  "schema": "lhm.font-origin-reference.v1",
+  "source_repo": "googlefonts/tinos",
+  "source_commit": "3b4482a99b80ea5fc75f187b1be3120a3f5905b3",
+  "candidate_payload": "0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d",
+  "files": [
+    {
+      "candidate_path": "fonts/z__Tinos-Bold.ttf",
+      "source_path": "fonts/ttf/Tinos-Bold.ttf",
+      "bytes": 597880,
+      "sha256": "393269dbab8899f938db19783eca5eac92eb431f7ae0ab45b8349ca895f1a06b",
+      "git_blob_sha1": "887fc97a95d30a08190217b6075a5e0a0f92bec7",
+      "licenses": [
+        {
+          "path": "OFL.txt",
+          "git_blob_sha1": "e91137c77e543b84502bc37822aadff61b2de4e8"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/z__Tinos-BoldItalic.ttf",
+      "source_path": "fonts/ttf/Tinos-BoldItalic.ttf",
+      "bytes": 578976,
+      "sha256": "a5de79f0fe863ea0954757acb3d47b3ccd0a930ce3dd5b97230cd3866790a06e",
+      "git_blob_sha1": "a9abd086816f68d6eb3672f1d0babd1db1807d4a",
+      "licenses": [
+        {
+          "path": "OFL.txt",
+          "git_blob_sha1": "e91137c77e543b84502bc37822aadff61b2de4e8"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/z__Tinos-Italic.ttf",
+      "source_path": "fonts/ttf/Tinos-Italic.ttf",
+      "bytes": 565016,
+      "sha256": "5942266ed398b155d7dc23e36833e7ec6be988f2439bdbeb8ef1bede808eaa91",
+      "git_blob_sha1": "5aed4f3757537bf334ca89dd6893063a3ef9ecc9",
+      "licenses": [
+        {
+          "path": "OFL.txt",
+          "git_blob_sha1": "e91137c77e543b84502bc37822aadff61b2de4e8"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/z__Tinos-Regular.ttf",
+      "source_path": "fonts/ttf/Tinos-Regular.ttf",
+      "bytes": 521588,
+      "sha256": "60a0e8ef0c04dd5dd69ffe91025fa2ae5836cbd35600a82ba031977557e2cb61",
+      "git_blob_sha1": "893a1b525962984481aee5ce275516d384eb4865",
+      "licenses": [
+        {
+          "path": "OFL.txt",
+          "git_blob_sha1": "e91137c77e543b84502bc37822aadff61b2de4e8"
+        }
+      ]
+    }
+  ]
+}
