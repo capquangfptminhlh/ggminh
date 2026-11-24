@@ -84,7 +84,9 @@ def main():
     kind = sys.argv[1] if len(sys.argv)==2 else 'google'
     fixtures = {'google':('test/fixtures/font-origin-reference.json',336,'lhm-font-origin-evidence','google/fonts','06bfe0d62a98375cb09c942fa18e68bd32cff057'),
                 'noto-fonts':('test/fixtures/font-origin-noto-fonts-reference.json',38,'lhm-font-origin-noto-fonts','notofonts/noto-fonts','ffebf8c1ee449e544955a7e813c54f9b73848eac'),
-                'noto-cjk':('test/fixtures/font-origin-noto-cjk-reference.json',2,'lhm-font-origin-noto-cjk','notofonts/noto-cjk','f8d157532fbfaeda587e826d4cd5b21a49186f7c')}
+                'noto-cjk':('test/fixtures/font-origin-noto-cjk-reference.json',2,'lhm-font-origin-noto-cjk','notofonts/noto-cjk','f8d157532fbfaeda587e826d4cd5b21a49186f7c'),
+                'noto-2018':('test/fixtures/font-origin-noto-2018-reference.json',47,'lhm-font-origin-noto-2018','notofonts/noto-fonts','dbfc8a1858732279842454cac5da2ea1ff691a24'),
+                'noto-2020':('test/fixtures/font-origin-noto-2020-reference.json',2,'lhm-font-origin-noto-2020','notofonts/noto-fonts','20bc5918912503bc1537a407a694738c33c048aa')}
     if kind not in fixtures:
         raise SystemExit('Unsupported source fixture')
     fixture_path, expected_count, output_name, expected_repo, expected_commit = fixtures[kind]

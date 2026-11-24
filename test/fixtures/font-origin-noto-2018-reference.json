@@ -1,0 +1,619 @@
+{
+  "schema": "lhm.font-origin-reference.v1",
+  "source_repo": "notofonts/noto-fonts",
+  "source_commit": "dbfc8a1858732279842454cac5da2ea1ff691a24",
+  "candidate_payload": "0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d",
+  "files": [
+    {
+      "candidate_path": "fonts/1008__NotoSansLycian-Regular.ttf",
+      "source_path": "hinted/NotoSansLycian-Regular.ttf",
+      "bytes": 4556,
+      "sha256": "1a06d8d62b5d7e616c1caed04e2351f7d03d7e691f9a0ee9f4b5bf529014149d",
+      "git_blob_sha1": "8eb8cc679bad838e92d854ec329debdcf7949ce9",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/1011__NotoSansBrahmi-Regular.ttf",
+      "source_path": "hinted/NotoSansBrahmi-Regular.ttf",
+      "bytes": 39428,
+      "sha256": "c13211e5b1738428afbab18e77a21d859888738e75246891dae51641253db487",
+      "git_blob_sha1": "f62918a0b8f8a063541bed5537c60e6516f22df2",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/108__NotoSansImperialAramaic-Regular.ttf",
+      "source_path": "hinted/NotoSansImperialAramaic-Regular.ttf",
+      "bytes": 6500,
+      "sha256": "1d8dec133932014d3baceae6ece503aa52ecce3b17c64b2dff6ccd691d81c478",
+      "git_blob_sha1": "05502ba533d651d99561aaedebb4415d12705974",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/118__NotoSansLinearB-Regular.ttf",
+      "source_path": "hinted/NotoSansLinearB-Regular.ttf",
+      "bytes": 64828,
+      "sha256": "23275e2c7aacf0740c08e184525aa50d8312f9d3235be582549114e2ae2c506e",
+      "git_blob_sha1": "00b3f08bea8a1b81c560011a2f9cb5a167ce32af",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/13__NotoSansBuhid-Regular.ttf",
+      "source_path": "unhinted/NotoSansBuhid-Regular.ttf",
+      "bytes": 5612,
+      "sha256": "ce3f9e3c785f84fa29246e690e7ccccfe8daf07eb727f1feddec5fa10465a256",
+      "git_blob_sha1": "551c14070e3ba27a79b862168f2c9961040658c6",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/141__NotoSansOldSouthArabian-Regular.ttf",
+      "source_path": "hinted/NotoSansOldSouthArabian-Regular.ttf",
+      "bytes": 5232,
+      "sha256": "5d0b9191b80d23fbc22b4ea48d50e6cd53ffb6cbeea86644127ebe836ab96bb3",
+      "git_blob_sha1": "0cc6f3f724ebd3a1252b4551d48657a0e9f945fd",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/14__NotoSansSamaritan-Regular.ttf",
+      "source_path": "hinted/NotoSansSamaritan-Regular.ttf",
+      "bytes": 11164,
+      "sha256": "4740b58fe07816db1fc838a3004b62dd978b6ac20dbb43a792bef7f28debe0c5",
+      "git_blob_sha1": "cc5c9f9424d99d6df33ffaabf95fa8365447b140",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/156__NotoSansPhoenician-Regular.ttf",
+      "source_path": "hinted/NotoSansPhoenician-Regular.ttf",
+      "bytes": 6252,
+      "sha256": "47709d5c78988406ccada0d83d60a3dd58eb292e21bf0ef58d0212d20802d1b7",
+      "git_blob_sha1": "d7555ef737165cc340f5fe9bbe410e5f5c57f423",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/16__NotoSansMandaic-Regular.ttf",
+      "source_path": "unhinted/NotoSansMandaic-Regular.ttf",
+      "bytes": 18908,
+      "sha256": "4d17d30a0c47a4b2dc87a61f4751e9e54740d4fb3631a991e1c0369ee38c4f73",
+      "git_blob_sha1": "cf45c9d6ae53e44b833c8ca3a6c0fe0441c843e8",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/179__NotoSansCypriot-Regular.ttf",
+      "source_path": "unhinted/NotoSansCypriot-Regular.ttf",
+      "bytes": 8332,
+      "sha256": "3e2f2c2a051547937876ca00f43544450489e16e24501d0362c621dae9923b8b",
+      "git_blob_sha1": "ed31093189b4486a64bf20d3ad8d27290e6c72d3",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/19__NotoSansSaurashtra-Regular.ttf",
+      "source_path": "unhinted/NotoSansSaurashtra-Regular.ttf",
+      "bytes": 19792,
+      "sha256": "892db68ca8f826b6af8d13c8a4249e1fd74598c8dba73a478d6c3ad0efb23cb3",
+      "git_blob_sha1": "8a49d0b1ecfacba3ee0ab3415a2042295a26ee00",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/207__NotoSansInscriptionalPahlavi-Regular.ttf",
+      "source_path": "hinted/NotoSansInscriptionalPahlavi-Regular.ttf",
+      "bytes": 6032,
+      "sha256": "e571797e882fd8a93874f6a75810dd8016120f8112d6ffb469c5d45e56c2da5a",
+      "git_blob_sha1": "082b5949f3df38b70aeb9aad34dba5a554621005",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/22__NotoSerifBalinese-Regular.ttf",
+      "source_path": "hinted/NotoSerifBalinese-Regular.ttf",
+      "bytes": 51264,
+      "sha256": "009f6471b5d2f95172cf3e186d497386f1d2499d69daa6b188e04ced3def8aa1",
+      "git_blob_sha1": "c694922615fd0adbcc358b58a5ef2dc62e878aa9",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/230__NotoSansCuneiform-Regular.ttf",
+      "source_path": "hinted/NotoSansCuneiform-Regular.ttf",
+      "bytes": 820316,
+      "sha256": "bae49e30a541479cdc8040d6ed2aefe2e75570b3ac303ebece0f25d90fe25e1d",
+      "git_blob_sha1": "4050e66c22b9f2c73ac1c237f76ede8e3031cc88",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/249__NotoSansOldTurkic-Regular.ttf",
+      "source_path": "unhinted/NotoSansOldTurkic-Regular.ttf",
+      "bytes": 8372,
+      "sha256": "02f35911c7249d2412f819b013a4705a5477fa44d0912e70212313ec7f7ae2a2",
+      "git_blob_sha1": "b6e9d395dfa5f173e6915303378f3f32bd31fdd2",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/24__NotoSansTaiViet-Regular.ttf",
+      "source_path": "unhinted/NotoSansTaiViet-Regular.ttf",
+      "bytes": 18220,
+      "sha256": "4d3bd3ab7a8f0dd7276f8f8020a1f628098cd27f95a02966d4959af2cb50a8e3",
+      "git_blob_sha1": "33720e1c5223df8e5120dce70b9e1c464311e9cc",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/261__NotoSansEgyptianHieroglyphs-Regular.ttf",
+      "source_path": "hinted/NotoSansEgyptianHieroglyphs-Regular.ttf",
+      "bytes": 585444,
+      "sha256": "93889bf8a5563f87f70269fc546ca51cbbda6c617c6f3b417792bfe65d6b1165",
+      "git_blob_sha1": "2ab86a6c7c09b1da9aaeea5893758390a1d2caa4",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/29__NotoSansBuginese-Regular.ttf",
+      "source_path": "hinted/NotoSansBuginese-Regular.ttf",
+      "bytes": 7236,
+      "sha256": "1ade06c5d328f0978d173c18a061ec3b157ba7ced3f4449ad73e16add4f24eef",
+      "git_blob_sha1": "fd10862b4ca5b182db08cd355e5e4b543d8f3450",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/32__NotoSansHanunoo-Regular.ttf",
+      "source_path": "hinted/NotoSansHanunoo-Regular.ttf",
+      "bytes": 7896,
+      "sha256": "3f54af33b23863e6cbccdbadc206d3e1c8f3d04ac7154442b8635df5468d9cc4",
+      "git_blob_sha1": "784cdc2bb941df213e48d90b6726b3b6449ef147",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/349__NotoSansInscriptionalParthian-Regular.ttf",
+      "source_path": "hinted/NotoSansInscriptionalParthian-Regular.ttf",
+      "bytes": 7792,
+      "sha256": "1a9c98df07720413e51fd29bec966a4e0c9edcc0fba8e45038ef4974b255c074",
+      "git_blob_sha1": "e06e3324a02c954968328da285ccfd795682ee9d",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/47__NotoSansChakma-Regular.ttf",
+      "source_path": "unhinted/NotoSansChakma-Regular.ttf",
+      "bytes": 41592,
+      "sha256": "69a99548a7a1f36ec3ba6fe93f88749b66cf091087eba7a0d1934d27784dba91",
+      "git_blob_sha1": "510db06b827c95fba29fa1c00935121fe372453d",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/48__NotoSansBamum-Regular.ttf",
+      "source_path": "unhinted/NotoSansBamum-Regular.ttf",
+      "bytes": 148664,
+      "sha256": "ac11fedc2a73d0a9bfc3fc72ecd2e3e833107a1156797f3677945e320fd499d7",
+      "git_blob_sha1": "f58fdd3f9f166027315da28943a5665066905fee",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/50__NotoSansLisu-Regular.ttf",
+      "source_path": "unhinted/NotoSansLisu-Regular.ttf",
+      "bytes": 6516,
+      "sha256": "f78f3387e505fa6fbbe19fa1c6d20f2d96c141b17dacab33b9dfd45a5289ecd1",
+      "git_blob_sha1": "7ff088c04da17c23740d8f70bba04a15a2467d1e",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/53__NotoSansOsmanya-Regular.ttf",
+      "source_path": "unhinted/NotoSansOsmanya-Regular.ttf",
+      "bytes": 8604,
+      "sha256": "42b8ef4101c6cb45c85ea98c69d75be5838b6f86622bf8449e07312f9fa5db62",
+      "git_blob_sha1": "b04eb4b2e7d9c41134af0db92ff02d1132de863d",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/549__NotoSansCham-Regular.ttf",
+      "source_path": "hinted/NotoSansCham-Regular.ttf",
+      "bytes": 30208,
+      "sha256": "a02e3a71a31f6e38f504976ebbca80add502006a04d3ad62833ffc4e59142b4d",
+      "git_blob_sha1": "d49374d9bb74af0dcf7e1780f687235f536d1097",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/561__NotoSansCoptic-Regular.ttf",
+      "source_path": "unhinted/NotoSansCoptic-Regular.ttf",
+      "bytes": 28084,
+      "sha256": "28b6686a032e98205dfec91dcfe196eb4169ad758696b7c2932968b7cd5b6f66",
+      "git_blob_sha1": "0bfae4bebfa60f9c911d1f103622775efc400eb2",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/567__NotoSansKayahLi-Regular.ttf",
+      "source_path": "unhinted/NotoSansKayahLi-Regular.ttf",
+      "bytes": 9464,
+      "sha256": "8e3a92a485f062923f221f043c292d7bb8b0715617aabc5e4c88591f865a2307",
+      "git_blob_sha1": "9d3ef825b1f5815088a584393ade1701d4d5a532",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/56__NotoSansSundanese-Regular.ttf",
+      "source_path": "unhinted/NotoSansSundanese-Regular.ttf",
+      "bytes": 11512,
+      "sha256": "44116238e4f55dedf5a0232f6d6eadbeedd8896b8bee6a63fe949e4c2ec1cf29",
+      "git_blob_sha1": "53065e02710c938f933cb975d0c3a45ca641c373",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/577__NotoSansYi-Regular.ttf",
+      "source_path": "hinted/NotoSansYi-Regular.ttf",
+      "bytes": 134064,
+      "sha256": "1744f6ebb56f63c9c2276362bf3fcad69d15afcdd199018238ff39558eadf06e",
+      "git_blob_sha1": "08191f44a0a1c8e40ce3dcfbeae7f13a4c9d2f56",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/583__NotoSansRejang-Regular.ttf",
+      "source_path": "hinted/NotoSansRejang-Regular.ttf",
+      "bytes": 7620,
+      "sha256": "d4692c20ee33dadb2d1187dd2a6022e087dec011ccef869ab6553ff5771fb6fe",
+      "git_blob_sha1": "ab9a490c7eabed0913c88c6dfb0ec5ab6f7d6f49",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/58__NotoSansLepcha-Regular.ttf",
+      "source_path": "hinted/NotoSansLepcha-Regular.ttf",
+      "bytes": 24500,
+      "sha256": "6019ed0497ddf6d07bd9310976e591898f46ea3f4a45782b6e3e901ab3a53bdc",
+      "git_blob_sha1": "81507d963b4e76889bfc679692669b81bf2cadce",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/595__NotoSansLimbu-Regular.ttf",
+      "source_path": "hinted/NotoSansLimbu-Regular.ttf",
+      "bytes": 12912,
+      "sha256": "2c225a605c5a8aae3c05cf4e8aa710eedf3fa20d59578b1facb127e08ee47191",
+      "git_blob_sha1": "2efb2f5a033e26fda3a136f80e7366d75bc98460",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/59__NotoSansMeeteiMayek-Regular.ttf",
+      "source_path": "hinted/NotoSansMeeteiMayek-Regular.ttf",
+      "bytes": 16044,
+      "sha256": "cb3bf6030dfeaa765fc0b97469a98444ae6eff937162c1221b3cb368f7c6388a",
+      "git_blob_sha1": "43ff17e6820976d09c2ea0b30059dfc4ae45de56",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/601__NotoSansTagbanwa-Regular.ttf",
+      "source_path": "hinted/NotoSansTagbanwa-Regular.ttf",
+      "bytes": 6648,
+      "sha256": "7dedb32bfc8dc5ef05a222bc05ad4fc8f72e0e3fca2a9eb9841591102c040c48",
+      "git_blob_sha1": "3b0b81a64aeafd8e1dbcc250eee1ed08c0768913",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/62__NotoSansOlChiki-Regular.ttf",
+      "source_path": "unhinted/NotoSansOlChiki-Regular.ttf",
+      "bytes": 8860,
+      "sha256": "42020ef6e4bb0ebde8ecea0c85877fac817a49b69670d5ab755ac6cc16a351f1",
+      "git_blob_sha1": "15b73837ff17fadc421d23402b09992b00e71de0",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/64__NotoSansTaiLe-Regular.ttf",
+      "source_path": "unhinted/NotoSansTaiLe-Regular.ttf",
+      "bytes": 12072,
+      "sha256": "396016aacf92e480f369ba41ed9958bcceb002eaf057da65647ae9250d02b491",
+      "git_blob_sha1": "74f2fd299b2961fb5146a78e6f16060d01e311f1",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/65__NotoSansVai-Regular.ttf",
+      "source_path": "unhinted/NotoSansVai-Regular.ttf",
+      "bytes": 57764,
+      "sha256": "8730386f446879e610c2aa0cc1b98c56031594fbe94c07f26e515cf7c07a32b2",
+      "git_blob_sha1": "f76ddd9edf0859727a99d36c60956ae1196f5a2f",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/811__NotoSansPhagsPa-Regular.ttf",
+      "source_path": "hinted/NotoSansPhagsPa-Regular.ttf",
+      "bytes": 34176,
+      "sha256": "dc6975773e7c2707d36cd1018ec1c93a396a19d68ae484360b551ec5157dac2d",
+      "git_blob_sha1": "9919d421fa2d1d3fb61f9341f047ed6b481afdc9",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/830__NotoSansUgaritic-Regular.ttf",
+      "source_path": "hinted/NotoSansUgaritic-Regular.ttf",
+      "bytes": 7656,
+      "sha256": "4cab9c4e616e162fef49211db26dcd2d4452a6bf945770330d8571c4e7e6841e",
+      "git_blob_sha1": "ebdb0c6c2813810784324e8b226d3769a3b39f6f",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/857__NotoSansKaithi-Regular.ttf",
+      "source_path": "unhinted/NotoSansKaithi-Regular.ttf",
+      "bytes": 62716,
+      "sha256": "75b74f45f121e9fc7cf4a3b5fb765101d51d74a8b321f755b938c9f6f2bdc58e",
+      "git_blob_sha1": "6dc5ecaf0705a61fe1721edeb9485ad5bec4cda6",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/875__NotoSansCarian-Regular.ttf",
+      "source_path": "unhinted/NotoSansCarian-Regular.ttf",
+      "bytes": 6688,
+      "sha256": "d1631100e9b431e672401397465f00300acf1002a10e35d08d4fd0e7a416abae",
+      "git_blob_sha1": "387ab92ffc1f6e55b81e0ccf31959a83b5f59d8d",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/884__NotoSansGlagolitic-Regular.ttf",
+      "source_path": "unhinted/NotoSansGlagolitic-Regular.ttf",
+      "bytes": 23264,
+      "sha256": "fce75abc3b73e537d92e0bef60dc93d65a5cf9ae4d5b8bbb77222b30dc8125c4",
+      "git_blob_sha1": "6c4dd75c952b03f7d2af23b20c474b9e7ebcc8df",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/906__NotoSansGothic-Regular.ttf",
+      "source_path": "unhinted/NotoSansGothic-Regular.ttf",
+      "bytes": 6152,
+      "sha256": "8638a2c56f231dddb5c4a5be06cd62855718913275f5bc0af5113a87f227f3b5",
+      "git_blob_sha1": "a9df7741f1c1e38324974740d1c2fdbafce85ba9",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/924__NotoSansOldPersian-Regular.ttf",
+      "source_path": "hinted/NotoSansOldPersian-Regular.ttf",
+      "bytes": 13180,
+      "sha256": "fd46d52e32b296b6f2db73ed02c423d4384f3ae5c2f7e1de4f2df3ff4dbf0eb1",
+      "git_blob_sha1": "5cea0352d0eb888f3779ace756efa2d9c3eeb6de",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/928__NotoSansAvestan-Regular.ttf",
+      "source_path": "unhinted/NotoSansAvestan-Regular.ttf",
+      "bytes": 12888,
+      "sha256": "2a7dc1aba3bc403fa830c90d5755583ae6bdec8284ad6b5309001f16e00a4bbc",
+      "git_blob_sha1": "e35868854909edf1654aa80e3273c5ecb7b5ae7c",
+      "licenses": [
+        {
+          "path": "unhinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/970__NotoSansLydian-Regular.ttf",
+      "source_path": "hinted/NotoSansLydian-Regular.ttf",
+      "bytes": 4592,
+      "sha256": "1ccad3ff44c94446a65e5c15be2714acf12487d4e11a3dd39481f62667f43173",
+      "git_blob_sha1": "63d1eb2fc5a862e2e98d9a6645baeeafa7c57481",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    },
+    {
+      "candidate_path": "fonts/989__NotoSansKharoshthi-Regular.ttf",
+      "source_path": "hinted/NotoSansKharoshthi-Regular.ttf",
+      "bytes": 25388,
+      "sha256": "bfe057992a0f4e60b61a4cc977d10badb9036b635f184b28307192df1a1a4b76",
+      "git_blob_sha1": "8189aba4869e6683271f9778efdf40d43c4aa42e",
+      "licenses": [
+        {
+          "path": "hinted/LICENSE",
+          "git_blob_sha1": "ea5b60640b01f74e295037aa8a6b7d4ea278a739"
+        }
+      ]
+    }
+  ]
+}
