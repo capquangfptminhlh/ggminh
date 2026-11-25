@@ -69,7 +69,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    if(localPinned){
     installButton.textContent='Chọn file ZIP Camoufox';
     installInfo.textContent=availability.invalidExisting?
-     'Thư mục engine Camoufox hiện có không vượt qua kiểm tra. Hãy đóng trình duyệt và sao lưu thư mục engines-pinned/camoufox trước khi liên hệ hỗ trợ; ứng dụng không tự ghi đè.':
+     'Thư mục engine Camoufox hiện có không vượt qua kiểm tra. Hãy đóng trình duyệt và sao lưu thư mục engine Camoufox trước khi liên hệ hỗ trợ; ứng dụng không tự ghi đè.':
      availability.alreadyInstalled?
      'Camoufox đã được kiểm tra theo hash của gói. Có thể tạo hồ sơ và mở trình duyệt.':
      'Chọn file ZIP engine Camoufox 156.0.1 đã được cung cấp. Ứng dụng kiểm tra hash ZIP và từng file; gói không có chữ ký publisher.';

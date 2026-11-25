@@ -58,6 +58,7 @@ const { diagnoseBrowsers } = require('./src/engine/browserDiagnostics');
 const { RuntimeRegistry } = require('./src/engine/runtimeRegistry');
 const {BundledEngineManager}=require('./src/engine/bundledEngineManager');
 const {PinnedCamoufoxManager}=require('./src/engine/camoufoxPinnedManager');
+const {pinnedBaseFor508}=require('./src/engine/camoufoxVersionedBase');
 const {CamoufoxAdapter}=require('./src/engine/camoufoxAdapter');
 const {internalCamoufoxPreview,internalPreviewUserData}=require('./src/engine/camoufoxInternalPreview');
 const {CamoufoxPlaywrightController}=require('./src/engine/CamoufoxPlaywrightController');
@@ -1563,7 +1564,7 @@ app.whenReady().then(async () => {
     :path.join(__dirname,'resources','camoufox-engine');
   if(app.isPackaged&&process.platform==='win32'){
     // A separate root keeps earlier signed installations intact.
-    const pinnedBase=path.join(storageDir,'engines-pinned');
+    const pinnedBase=pinnedBaseFor508(storageDir);
     fs.mkdirSync(pinnedBase,{recursive:true,mode:0o700});
     pinnedCamoufox=new PinnedCamoufoxManager(pinnedBase,{scriptPath:path.join(process.resourcesPath,'app.asar.unpacked','tools','extract-signed-engine.ps1')});
   }
