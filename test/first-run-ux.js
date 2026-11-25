@@ -124,6 +124,7 @@ function engineElement(id) {
   return engineElements[id];
 }
 let installStatus = null;
+let installError = null;
 let bundleStatus = { valid: true, version: '5.8.0', fileCount: 3, sha256: 'a'.repeat(64) };
 let domReady = null;
 const engineWindow = {
@@ -136,6 +137,7 @@ const engineWindow = {
       camoufox: { ready: false },
     }),
     camoufoxInstallStatus: async () => installStatus,
+    installCamoufoxEngine: async () => { if(installError)throw Error(installError);return {installed:true,version:'156.0.1'}; },
   },
 };
 const engineSandbox = {
@@ -150,6 +152,32 @@ domReady();
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 
 (async () => {
+  installStatus={mode:'local-pinned',available:true,alreadyInstalled:false,
+    runtime:{manualReady:false,canInstall:true}};
+  await engineElement('btn-engine-source').click();await flush();
+  assert.equal(engineElement('camoufox-install-button').disabled,false);
+  assert.equal(engineElement('camoufox-install-button').textContent,'Chọn file ZIP Camoufox');
+  assert.ok(engineElement('camoufox-install-info').textContent.includes('không có chữ ký'));
+  installError="Error invoking remote method 'camoufox-install': ZIP hash mismatch in C:\\Users\\alice\\Downloads\\engine.zip";
+  await engineElement('camoufox-install-button').click();await flush();
+  let failure=engineElement('camoufox-install-info').textContent;
+  assert.ok(failure.includes('không khớp'),failure);
+  assert.ok(failure.includes('ZIP'),failure);
+  assert.ok(!/alice|kết nối mạng/i.test(failure),failure);
+  assert.equal(engineElement('camoufox-install-button').disabled,false,'retry stays enabled');
+  installError='Không đủ dung lượng để giải nén Camoufox';
+  await engineElement('camoufox-install-button').click();await flush();
+  failure=engineElement('camoufox-install-info').textContent;
+  assert.ok(failure.includes('dung lượng'),failure);
+  assert.ok(!/kết nối mạng/i.test(failure),failure);
+  installError=null;
+  await engineElement('camoufox-install-button').click();await flush();
+  assert.ok(engineElement('camoufox-install-info').textContent.includes('Đã cài'));
+  installStatus={mode:'local-pinned',available:false,alreadyInstalled:false,invalidExisting:true,
+    runtime:{manualReady:false,canInstall:true}};
+  await engineElement('engine-source-refresh').click();await flush();
+  assert.equal(engineElement('camoufox-install-button').disabled,true);
+  assert.ok(engineElement('camoufox-install-info').textContent.includes('sao lưu'));
   installStatus = {
     available: false, alreadyInstalled: false,
     runtime: { ready: false, reason: 'Separately publisher-signed Camoufox EXE not available' },

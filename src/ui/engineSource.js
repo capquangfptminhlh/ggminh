@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  const installInfo=el('camoufox-install-info');
  const installButton=el('camoufox-install-button');
  let releaseAvailable=false;
+ let localPinned=false;
  let busy=false;
  // The runtime gate reports raw English technical reasons; translate the
  // known ones into an explanation plus what the user can actually do.
@@ -36,6 +37,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   return 'Chưa có engine đóng gói được xác thực'+(detail?' ('+detail+')':'')+
    '. Chế độ System vẫn hoạt động.';
  }
+ function localZipInstallGuidance(reason){
+  const raw=String(reason||'');
+  if(/ZIP hash mismatch|Invalid ZIP archive size or path/i.test(raw))
+   return 'Tệp ZIP Camoufox không khớp với gói được hỗ trợ. Hãy chọn lại ZIP đã được cung cấp hoặc liên hệ hỗ trợ để nhận đúng tệp.';
+  if(/không đủ dung lượng|ENOSPC/i.test(raw))
+   return 'Không đủ dung lượng để cài Camoufox. Hãy giải phóng dung lượng trên ổ cài dữ liệu và thử lại.';
+  if(/installation already exists/i.test(raw))
+   return 'Thư mục engine Camoufox đã tồn tại. Hãy bấm Làm mới; nếu có cảnh báo, sao lưu thư mục trước khi liên hệ hỗ trợ.';
+  if(/thư mục tạm từ lần nhập trước/i.test(raw))
+   return 'Lần nhập trước còn thư mục tạm. Hãy đóng trình duyệt và liên hệ hỗ trợ để kiểm tra trước khi thử lại.';
+  return 'Không thể cài Camoufox từ ZIP. Hãy thử lại; nếu vẫn lỗi, liên hệ hỗ trợ.';
+ }
  window.LHMEngineGuidance={camoufoxRuntimeGuidance,bundledEngineGuidance};
  function busyState(value){
   busy=value;
@@ -51,7 +64,21 @@ window.addEventListener('DOMContentLoaded',()=>{
    selector.value=source;
    geckoChoice.value=geckoProvider;
    const availability=await window.api.camoufoxInstallStatus();
+   localPinned=availability.mode==='local-pinned';
    releaseAvailable=availability.available&&!availability.alreadyInstalled;
+   if(localPinned){
+    installButton.textContent='Chọn file ZIP Camoufox';
+    installInfo.textContent=availability.invalidExisting?
+     'Thư mục engine Camoufox hiện có không vượt qua kiểm tra. Hãy đóng trình duyệt và sao lưu thư mục engine Camoufox trước khi liên hệ hỗ trợ; ứng dụng không tự ghi đè.':
+     availability.alreadyInstalled?
+     'Camoufox đã được kiểm tra theo hash của gói. Có thể tạo hồ sơ và mở trình duyệt.':
+     'Chọn file ZIP engine Camoufox 156.0.1 đã được cung cấp. Ứng dụng kiểm tra hash ZIP và từng file; gói không có chữ ký publisher.';
+    geckoResult.textContent=camoufox.ready?
+     'Camoufox đã kiểm tra hash và sẵn sàng dùng trực tiếp. Proxy chưa được hỗ trợ.':
+     'Camoufox chưa sẵn sàng; hãy chọn file ZIP engine để cài.';
+    result.textContent=bundle.valid?'Engine Chromium đóng gói hợp lệ · '+bundle.version:bundledEngineGuidance(bundle.reason);
+    return;
+   }
    installButton.disabled=busy||!releaseAvailable;
    installInfo.textContent=availability.alreadyInstalled?
      availability.runtime?.manualReady?
@@ -112,7 +139,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  installButton.addEventListener('click',async()=>{
   if(busy||!releaseAvailable)return;
   busyState(true);
-  installInfo.textContent='Đang thực hiện quy trình tải và xác minh engine đã ký…';
+  installInfo.textContent=localPinned?'Đang kiểm tra và giải nén engine; việc này có thể mất vài phút…':'Đang thực hiện quy trình tải và xác minh engine đã ký…';
   try{
    const result=await window.api.installCamoufoxEngine();
    if(result.canceled)installInfo.textContent='Đã hủy cài đặt.';
@@ -123,7 +150,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     releaseAvailable=false;
    }
   }catch(error){
-   installInfo.textContent='Cài Camoufox không thành công: '+error.message+
+   installInfo.textContent=localPinned?localZipInstallGuidance(error.message):'Cài Camoufox không thành công: '+error.message+
     '. Kiểm tra kết nối mạng và dung lượng trống rồi thử lại; nếu vẫn lỗi, '+
     'hãy ghi lại thông báo này khi liên hệ hỗ trợ.';
   }finally{busyState(false);}
