@@ -1,0 +1,6890 @@
+[
+ {
+  "path": "AccessibleMarshal.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "application.ini",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "camoufox.cfg",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "camoufox.exe",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2180972544
+ },
+ {
+  "path": "chrome.css",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   38,
+   34
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "concrt140.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "CoreMessagingXP.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "dependentlibs.list",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "dxcompiler.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "firefox.VisualElementsManifest.xml",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "freebl3.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "gkcodecs.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "InstallationDirLayout.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "lgpllibs.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "libEGL.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "libGLESv2.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "marshal.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.InputStateManager.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.Internal.FrameworkUdk.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.UI.Composition.OSSupport.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.UI.Input.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.UI.Windowing.Core.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.UI.Windowing.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.WindowsAppRuntime.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "Microsoft.WindowsAppRuntime.Insights.Resource.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "mozavcodec.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "mozavutil.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "mozglue.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "mozinference.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "msvcp140.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "msvcp140_1.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "msvcp140_2.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "msvcp140_atomic_wait.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "msvcp140_codecvt_ids.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "nmhproxy.exe",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2180972544
+ },
+ {
+  "path": "notificationserver.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "nss3.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "omni.ja",
+  "date_time": [
+   2026,
+   11,
+   20,
+   14,
+   19,
+   30
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "onnxruntime.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "platform.ini",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "plugin-container.exe",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2180972544
+ },
+ {
+  "path": "precomplete",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "private_browsing.exe",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2180972544
+ },
+ {
+  "path": "private_browsing.VisualElementsManifest.xml",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "properties.json",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   38,
+   34
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "removed-files",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "softokn3.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "vccorlib140.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "vcruntime140.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "vcruntime140_1.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "vcruntime140_threads.dll",
+  "date_time": [
+   2026,
+   11,
+   20,
+   12,
+   49,
+   58
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "xul.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/blank.pdf",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/confused_fox.pdf",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/omni.ja",
+  "date_time": [
+   2026,
+   11,
+   20,
+   14,
+   19,
+   34
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/components/shell/assets/kit.gif",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/VisualElements/PrivateBrowsing_150.png",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/VisualElements/PrivateBrowsing_70.png",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/VisualElements/VisualElements_150.png",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "browser/VisualElements/VisualElements_70.png",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "defaults/pref/channel-prefs.js",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "desktop-launcher/desktop-launcher.exe",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2180972544
+ },
+ {
+  "path": "distribution/policies.json",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/1008__NotoSansLycian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/1011__NotoSansBrahmi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/101__Iosevka-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/1024__STIXIntSmReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/102__Inconsolata-ExtraExpandedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/1036__STIXIntUpBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/105__Iosevka-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/106__Raleway-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/107__Lato-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/108__NotoSansImperialAramaic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/108__Rubik[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/109__Iosevka-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/10__NotoSansPauCinHau-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/110__Inter-Italic[opsz,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/111__Iosevka-ThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/113__Inconsolata-SemiCondensedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/114__NotoSerifGeorgian[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/116__Raleway[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/117__STIXNonUniIta.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/118__Carlito-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/118__NotoSansLinearB-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/119__Inconsolata-ExpandedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/120__Inconsolata-UltraExpandedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/122__Nunito-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/124__FiraMono-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/125__Amiri-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/126__Iosevka-ExtendedExtraLightOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/128__Poppins-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/130__Amiri-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/131__Iosevka-ExtendedExtraBoldOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/133__Inconsolata-CondensedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/134__Poppins-Thin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/135__Barlow-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/137__Iosevka-ExtraLightOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/138__Carlito-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/139__TitilliumWeb-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/13__NotoSansBuhid-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/140__Nunito[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/141__NotoSansOldSouthArabian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/143__Iosevka-HeavyOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/144__Inconsolata-UltraCondensedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/145__FiraSans-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/148__Inconsolata-UltraExpandedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/14__NotoSansSamaritan-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/152__NotoSans[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/153__FiraSans-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/154__Poppins-ThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/156__FiraSans-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/156__NotoSansPhoenician-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/157__Poppins-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/159__Iosevka-ExtendedLightOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/160__Barlow-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/161__Heebo[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/162__Inconsolata-CondensedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/163__Oswald[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/164__NotoSansOldNorthArabian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/164__PlayfairDisplay-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/165__VictorMono-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/166__TitilliumWeb-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/168__Barlow-MediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/169__TitilliumWeb-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/16__NotoSansMandaic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/170__Karla[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/171__Inconsolata-UltraCondensedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/171__NotoSansLinearA-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/172__Iosevka-Thin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/173__Cantarell-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/175__Lato-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/176__Cantarell-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/177__Mukta-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/178__Inconsolata-SemiCondensedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/179__FiraSans-ExtraBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/179__NotoSansCypriot-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/180__Inconsolata-Expanded.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/181__Barlow-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/182__Inconsolata-ExpandedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/183__Barlow-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/184__Barlow-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/186__Iosevka-ExtraBoldOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/186__NotoSansDuployan-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/187__TitilliumWeb-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/189__Poppins-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/18__NotoSansTirhuta-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/190__Inconsolata-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/191__Iosevka-ExtendedBoldOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/192__Inconsolata-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/193__Inconsolata-SemiExpandedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/195__Iosevka-ExtendedThinOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/196__Inconsolata-SemiExpandedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/197__Mukta-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/198__WorkSans[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/199__OpenSans-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/19__NotoSansSaurashtra-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/200__Cabin-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/202__Iosevka-ExtendedMediumOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/203__NotoSansLao[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/205__Mukta-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/207__NotoSansInscriptionalPahlavi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/207__RobotoCondensed[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/208__Inconsolata-SemiCondensed.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/209__Inconsolata-CondensedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/210__Barlow-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/212__Inconsolata-UltraCondensedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/213__STIXIntUpSmBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/214__UbuntuSansMono-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/215__FiraSans-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/215__STIXGeneralBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/216__NotoSansPalmyrene-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/217__IBMPlexMono-Thin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/218__IBMPlexMono-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/219__TitilliumWeb-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/221__FiraSans-Black.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/222__Inconsolata-SemiCondensedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/223__IBMPlexMono-MediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/223__NotoSansMarchen-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/225__Inconsolata-ExtraCondensedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/226__Quicksand[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/229__SourceSans3-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/22__NotoSerifBalinese-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/230__Montserrat[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/230__NotoSansCuneiform-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/231__Amiri-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/232__Lato-ThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/233__RobotoMono[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/234__Inconsolata-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/236__Poppins-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/237__Inconsolata-SemiExpanded.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/241__SpaceMono-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/242__Cabin[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/243__Inconsolata-Condensed.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/244__RobotoSlab[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/245__NotoSerifHebrew[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/246__Iosevka-LightOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/247__Poppins-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/248__ReemKufi[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/249__Iosevka-ExtendedMediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/249__NotoSansOldTurkic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/24__NotoSansTaiViet-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/250__Lato-BlackItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/251__STIXIntUpReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/252__NotoSansHebrew[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/256__Inconsolata-SemiExpandedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/257__DavidLibre-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/259__Caladea-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/260__Iosevka-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/261__BebasNeue-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/261__NotoSansEgyptianHieroglyphs-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/262__IBMPlexMono-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/263__Inconsolata-SemiCondensedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/265__Iosevka-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/266__Iosevka-ExtendedThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/267__IBMPlexMono-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/267__STIXGeneralItalic.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/268__SourceCodePro[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/269__Lato-MediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/270__Iosevka-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/271__NotoSerif-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/273__Inconsolata-UltraExpanded.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/275__OpenSans[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/276__Lato-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/278__Inconsolata[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/278__STIXIntDReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/279__Poppins-BlackItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/280__NotoSansArabic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/281__Inconsolata-SemiExpandedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/282__Inconsolata-UltraExpandedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/285__Inconsolata-SemiCondensedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/286__FiraMono-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/287__Iosevka-ExtendedExtraBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/289__NotoSansCJK-Bold.ttc",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/289__STIXSizFourSymReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/290__FiraSans-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/292__Lato-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/293__Iosevka-ExtendedExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/294__NotoKufiArabic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/295__JetBrainsMono[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/296__NunitoSans-Italic[YTLC,opsz,wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/297__NotoSansMono[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/298__NotoSansLisu[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/29__NotoSansBuginese-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/300__Barlow-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/301__JosefinSans-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/302__Iosevka-ExtendedBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/303__Poppins-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/304__UbuntuSansMono[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/307__Inter[opsz,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/308__Inconsolata-UltraExpandedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/30__NotoSansNewa-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/312__IBMPlexMono-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/313__Inconsolata-Black.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/314__SourceCodePro-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/315__JetBrainsMono-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/316__JosefinSans[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/316__NotoSerifAhom-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/319__Lato-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/319__NotoSansOldHungarian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/31__NotoSansWarangCiti-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/320__NotoSansBhaiksuki-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/320__TitilliumWeb-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/321__TitilliumWeb-Black.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/323__Iosevka-ExtendedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/325__NotoSansCaucasianAlbanian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/327__AmiriQuran-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/328__Lato-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/329__Lato-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/32__NotoSansHanunoo-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/332__SourceSerif4[opsz,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/333__Poppins-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/334__Inconsolata-CondensedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/334__NotoSansPsalterPahlavi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/335__FiraSans-ThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/336__TitilliumWeb-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/337__Lato-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/338__Carlito-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/33__NotoSansSharada-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/340__Iosevka-Extended.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/341__NotoSansMeroitic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/341__Roboto[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/342__Inconsolata-SemiCondensedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/344__Montserrat-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/345__Cantarell-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/345__STIXNonUni.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/346__Inconsolata-SemiCondensedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/347__Lato-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/348__Mukta-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/349__NotoSansInscriptionalParthian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/350__Inconsolata-ExtraExpandedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/351__Iosevka-SemiBoldOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/353__IBMPlexMono-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/354__Inconsolata-ExtraExpandedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/355__Iosevka-BoldOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/356__NotoSansManichaean-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/356__NotoSerifArmenian[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/357__Iosevka-ExtendedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/358__Poppins-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/359__Inconsolata-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/35__NotoSansCanadianAboriginal-Regular.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/360__IBMPlexMono-ThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/361__SpaceMono-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/363__DMSans-Italic[opsz,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/364__Iosevka-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/365__DMSans[opsz,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/366__STIXTwoText-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/367__FiraSans-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/368__Inconsolata-UltraExpandedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/369__Inconsolata-ExtraCondensedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/369__NotoSerifNyiakengPuachueHmong-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/370__Inconsolata-ExtraCondensedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/371__Inconsolata-UltraCondensedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/372__Iosevka-ExtendedSemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/374__Merriweather[opsz,wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/375__FiraSans-MediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/376__FiraSans-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/377__Inconsolata-CondensedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/378__Iosevka-MediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/379__TitilliumWeb-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/37__NotoSansTakri-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/380__NotoNaskhArabic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/381__Barlow-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/383__Iosevka-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/384__Barlow-ThinItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/385__Inconsolata-ExpandedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/386__IBMPlexMono-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/388__Roboto-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/391__NotoSansGeorgian[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/392__Iosevka-ExtraBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/393__Inconsolata-UltraCondensed.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/394__Iosevka-ExtendedSemiBoldOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/396__Barlow-Black.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/397__Inconsolata-UltraCondensedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/398__UbuntuSans-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/400__FiraSans-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/401__Iosevka-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/405__DavidLibre-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/406__Mukta-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/407__Inconsolata-UltraExpandedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/408__Inconsolata-UltraExpandedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/409__SourceSerif4-Italic[opsz,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/40__NotoSansModi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/410__Iosevka-ExtendedThin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/412__WorkSans-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/414__Inconsolata-SemiExpandedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/415__Poppins-MediumItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/416__Poppins-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/417__Inconsolata-ExtraCondensedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/418__Iosevka-HeavyItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/420__SpaceMono-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/422__Barlow-Thin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/423__Inconsolata-UltraCondensedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/424__Inconsolata-ExpandedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/425__Inconsolata-CondensedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/426__Inconsolata-ExtraExpanded.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/428__FiraSans-BlackItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/429__Inconsolata-ExpandedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/430__Iosevka-ExtendedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/431__Inconsolata-UltraExpandedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/433__NunitoSans[YTLC,opsz,wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/434__Iosevka-Heavy.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/435__IBMPlexMono-ExtraLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/436__Inconsolata-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/438__Iosevka-ExtendedLightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/439__Cantarell-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/440__Inconsolata-ExtraCondensed.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/442__Iosevka-ExtendedHeavyItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/443__Iosevka-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/444__Inconsolata-SemiExpandedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/446__Barlow-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/447__IBMPlexMono-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/448__Iosevka-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/449__Inconsolata-SemiExpandedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/44__NotoSansOsage-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/450__Inconsolata-ExpandedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/451__Inconsolata-ExtraExpandedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/452__FiraCode[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/454__DavidLibre-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/456__Inconsolata-ExpandedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/457__UbuntuSans[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/459__FiraSans-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/460__Mukta-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/461__Lato-Thin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/462__PlayfairDisplay[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/463__Barlow-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/464__Lato-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/466__Lato-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/467__Inconsolata-ExtraCondensedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/469__Iosevka-ExtendedItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/470__RobotoCondensed-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/471__Poppins-ExtraBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/472__IBMPlexMono-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/474__Merriweather-Italic[opsz,wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/475__Inconsolata-ExtraExpandedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/476__Inconsolata-UltraCondensedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/479__Iosevka-ThinOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/47__NotoSansChakma-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/482__Karla-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/484__Inconsolata-ExpandedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/485__Carlito-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/486__Inconsolata-ExtraExpandedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/488__Inconsolata-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/489__TitilliumWeb-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/48__NotoSansBamum-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/490__SourceSans3[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/491__SpaceMono-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/492__FiraSans-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/493__Lato-Black.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/494__Inconsolata-SemiCondensedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/496__Poppins-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/497__RobotoMono-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/498__NotoSans-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/499__Iosevka-MediumOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/501__Caladea-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/502__NotoSerifLao[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/504__Inconsolata-ExtraCondensedSemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/505__Barlow-ExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/506__OverpassMono[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/509__Lato-ExtraBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/50__NotoSansLisu-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/511__Inconsolata-ExtraCondensedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/513__NotoSerifCJK-Regular.ttc",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/514__FiraMono-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/515__FiraSans-Light.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/517__Iosevka-ExtendedHeavyOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/519__FiraSans-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/521__Poppins-Black.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/522__VictorMono[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/523__IBMPlexMono-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/524__NotoSerif[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/525__Barlow-BlackItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/527__Iosevka-Oblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/528__Iosevka-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/529__Inconsolata-ExtraExpandedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/52__NotoSansKhudawadi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/530__Inconsolata-SemiExpandedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/532__Inconsolata-UltraCondensedBlack.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/534__Caladea-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/535__Iosevka-ExtendedMedium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/536__Iosevka-ExtendedLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/537__IBMPlexMono-SemiBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/539__Iosevka-ExtendedOblique.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/53__NotoSansOsmanya-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/540__Inconsolata-CondensedExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/541__Caladea-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/543__Mukta-Medium.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/544__Amiri-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/549__NotoSansCham-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/550__NotoSansMultani-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/556__NotoSansMiao-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/561__NotoSansCoptic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/564__NotoSansMro-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/567__NotoSansKayahLi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/568__NotoSansMendeKikakui-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/56__NotoSansSundanese-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/575__NotoSansKhojki-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/577__NotoSansYi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/579__NotoSansMahajani-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/582__NotoSansNewTaiLue-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/583__NotoSansRejang-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/584__NotoSansPahawhHmong-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/587__NotoSansElbasan-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/58__NotoSansLepcha-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/595__NotoSansLimbu-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/59__NotoSansMeeteiMayek-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/601__NotoSansTagbanwa-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/608__NotoSansWancho-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/61__NotoSansBassaVah-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/62__NotoSansOlChiki-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/64__NotoSansTaiLe-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/65__NotoSansVai-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/69__NotoSansSoraSompeng-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/6__NotoSansTaiTham-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/760__STIXVar.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/779__STIXTwoText.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/78__NotoSansArmenian[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/795__STIXNonUniBolIta.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/79__Barlow-ExtraBoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/805__STIXSizThreeSymReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/811__NotoSansPhagsPa-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/82__Poppins-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/830__NotoSansUgaritic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/83__Poppins-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/857__NotoSansKaithi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/85__FiraSans-Thin.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/863__STIXIntDBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/867__NotoSansNabataean-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/86__Rubik-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/86__STIXIntSmBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/870__STIXIntUpDBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/873__STIXSizFiveSymReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/875__NotoSansCarian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/878__STIXNonUniBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/87__Iosevka-ExtendedHeavy.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/884__NotoSansGlagolitic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/88__Iosevka-ExtendedExtraBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/89__NotoSansHatran-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/89__TitilliumWeb-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/906__NotoSansGothic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/909__STIXSizThreeSymBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/90__Inconsolata-ExtraLight.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/912__STIXIntUpDReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/916__STIXGeneralBolIta.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/91__Barlow-LightItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/924__NotoSansOldPersian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/926__NotoSansOldPermic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/928__NotoSansAvestan-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/92__Lato-SemiBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/940__STIXSizTwoSymReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/949__STIXSizFourSymBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/94__Inconsolata-ExtraCondensedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/94__STIXGeneral.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/951__STIXVarBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/953__STIXIntUpSmReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/95__Inconsolata-CondensedRegular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/96__Inconsolata-ExtraExpandedBold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   49,
+   54
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/970__NotoSansLydian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/976__STIXSizOneSymReg.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/983__NotoSansSiddham-Regular.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/984__STIXSizOneSymBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/985__STIXSizTwoSymBol.otf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/989__NotoSansKharoshthi-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   8,
+   12,
+   46
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Arimo-Italic[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Arimo[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Cousine-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Cousine-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Cousine-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Cousine-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansBalinese[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansBengali[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansCherokee[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansDeseret-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansEthiopic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansGrantha-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansGujarati[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansGurmukhi[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansKhmer[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansMalayalam[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansMedefaidrin[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansRunic-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansShavian-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansSinhala[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansSoyombo-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansSymbols2-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansSymbols[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansTamil[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansTelugu[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansThai[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSansZanabazarSquare-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifBengali[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifDevanagari[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifDogra-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifEthiopic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifGrantha-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifGujarati[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifGurmukhi[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifKannada[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifKhmer[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifKhojki[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifMalayalam[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifNPHmong[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifSinhala[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifTamil-Italic[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifTamil[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifTelugu[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifThai[wdth,wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__NotoSerifTibetan[wght].ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Tinos-Bold.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Tinos-BoldItalic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Tinos-Italic.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "fonts/z__Tinos-Regular.ttf",
+  "date_time": [
+   2026,
+   7,
+   8,
+   7,
+   50,
+   44
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "gmp-clearkey/0.1/clearkey.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "gmp-clearkey/0.1/manifest.json",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ },
+ {
+  "path": "installation_dir_layout/versioned/InstallationDirLayout.dll",
+  "date_time": [
+   2010,
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "external_attr": 2176188416
+ }
+]

@@ -6,7 +6,7 @@ const manifest=require('./camoufox-pinned-manifest.json');
 const {verifyPinnedTree}=require('./camoufoxPinnedTree');
 const {installPinnedTree}=require('./camoufoxPinnedInstall');
 const {installPinnedZip}=require('./camoufoxPinnedZip');
-const PIN='0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d';
+const PIN='9d8ed736963623977b9b56d9f6633e51b90edf33c97acce528552b57f0d825d4';
 class PinnedCamoufoxManager{
  constructor(base,{scriptPath}={}){
   if(typeof base!=='string'||!path.isAbsolute(base))throw Error('Absolute engine installation base required');
@@ -46,8 +46,8 @@ class PinnedCamoufoxManager{
   finally{this.running=false}
  }
  importZip(archive){return installPinnedZip({archive,base:this.base,manifest,payloadPin:PIN,
-  archivePin:'db7a36ff3936c5bd8aeea5652c643324b8c042a2085d85e7cd0b7d674e5ac025',
-  archiveBytes:509427523,scriptPath:this.scriptPath})}
+  archivePin:'53bbbadd0d166f0835d2be5fbcb88a22bef854f9f57cd4fe5389bf17039526d6',
+  archiveBytes:435717570,scriptPath:this.scriptPath})}
  async importAsync(source){
   if(this.running)throw Error('Camoufox import already in progress');
   if(this.pendingVerification)throw Error('Camoufox verification in progress');

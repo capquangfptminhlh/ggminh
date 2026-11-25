@@ -257,7 +257,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
       - run: npm ci --no-audit --no-fund
+      - run: python test/ci_clean508_zip_test.py
       - run: node test/font-review-ci-guard.js
       - run: node test/camoufox-durability-preference.js
       - run: node test/camoufox-pinned-manager.js
@@ -280,10 +284,11 @@ jobs:
           node tools/ci-font-review-tree.js $original $candidate
           if($LASTEXITCODE -ne 0){throw 'Candidate tree verification failed'}
           $zip=Join-Path $env:RUNNER_TEMP 'lhm-font-review.zip'
-          [IO.Compression.ZipFile]::CreateFromDirectory($candidate,$zip,[IO.Compression.CompressionLevel]::Optimal,$false)
+          python tools/ci_clean508_zip.py $candidate $zip
+          if($LASTEXITCODE -ne 0){throw 'Candidate ZIP reconstruction failed'}
           $digest=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
           Write-Host "Candidate ZIP SHA256=$digest bytes=$((Get-Item -LiteralPath $zip).Length)"
-          if($digest -ne 'db7a36ff3936c5bd8aeea5652c643324b8c042a2085d85e7cd0b7d674e5ac025'){throw 'Reconstructed ZIP digest differs from pinned local candidate'}
+          if($digest -ne '53bbbadd0d166f0835d2be5fbcb88a22bef854f9f57cd4fe5389bf17039526d6'){throw 'Reconstructed ZIP digest differs from pinned local candidate'}
           "LHM_PINNED_ENGINE=$zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - run: npx install-electron --no
       - name: Build CI-only app (never upload installer)

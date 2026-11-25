@@ -5,7 +5,8 @@ const fs=require('node:fs'),path=require('node:path');
 const PATCHED_SHA256='1f1df2f8a2681d45dc2b37d24b75f45fc294ca0bb84f7f0dfdb987bc399cd331';
 const PATCHED_PAYLOADS=new Set([
  'c0595098721d0ca47e88e62a7cce7752b7e7ce8b5f421e7cfc4e4fcc5d6f19be',
- '0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d'
+ '0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d',
+ '9d8ed736963623977b9b56d9f6633e51b90edf33c97acce528552b57f0d825d4'
 ]);
 const BEGIN='// LHM_MANAGED_CAMOUFOX_DURABILITY_BEGIN';
 const END='// LHM_MANAGED_CAMOUFOX_DURABILITY_END';

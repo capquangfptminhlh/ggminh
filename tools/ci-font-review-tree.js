@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path');
 const {verifyPinnedTree}=require('../src/engine/camoufoxPinnedTree');
 const manifest=require('../src/engine/camoufox-pinned-manifest.json');
-const PIN='0f8f588788079b9459bcaa0a4b56fbfcb3fdd50e012d7a14a583cd446ade769d';
+const PIN='9d8ed736963623977b9b56d9f6633e51b90edf33c97acce528552b57f0d825d4';
 if(process.env.GITHUB_ACTIONS!=='true'||!path.isAbsolute(process.env.RUNNER_TEMP||''))throw Error('Disposable CI runner required');
 const root=fs.realpathSync(process.env.RUNNER_TEMP),args=process.argv.slice(2);
 if(args.length!==2||!args.every(path.isAbsolute))throw Error('Absolute input and output required');
