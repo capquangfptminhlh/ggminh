@@ -17,7 +17,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   profile.replaceChildren();
   profile.add(new Option('Chọn hồ sơ đã đóng',''));
   for(const p of all.filter(x=>!live.has(x.id)))
-   profile.add(new Option(p.name+(p.engine==='gecko'?' · Firefox':' · Chromium'),p.id));
+   profile.add(new Option(p.name+(p.engine_type==='camoufox'?' · Camoufox':p.engine==='gecko'?' · Firefox':' · Chromium'),p.id));
   if([...profile.options].some(x=>x.value===old))profile.value=old;
  }
  async function refresh(){

@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const {isolatedPaths,rejectSymlinks,assertProfileId}=require('../privacy/isolation');
+const {resolveEngineType}=require('../engine/EngineFactory');
 const FORMAT='LHM-SESSION-1';
 const MAX_BYTES=32*1024*1024;
 const MAX_FILES=1200;
@@ -37,7 +38,7 @@ function enumerate(root){
    const full=path.join(dir,name),st=fs.lstatSync(full);
    if(st.isSymbolicLink())throw Error('Refusing snapshot: symbolic link in profile');
    if(!(st.isDirectory()||st.isFile()))throw Error('Refusing special files');
-   if(EXCLUDED.has(name))continue;
+   if(EXCLUDED.has(name)||(segments.length===0&&name==='startupCache'&&st.isDirectory()))continue;
    const next=[...segments,name];
    if(st.isDirectory()){walk(full,next);continue;}
    bytes+=st.size;
@@ -58,7 +59,7 @@ function enumerate(root){
 function decode(envelope,password){
  if(!envelope||envelope.format!==FORMAT||
     typeof envelope.profileId!=='string'||
-    !SNAPSHOT_ID.test(envelope.id)||!['chromium','gecko'].includes(envelope.engine))
+    !SNAPSHOT_ID.test(envelope.id)||!['chromium','gecko','camoufox'].includes(envelope.engine))
   throw Error('Not a valid LHM encrypted session snapshot');
  const salt=Buffer.from(envelope.salt||'','base64'),
   nonce=Buffer.from(envelope.nonce||'','base64'),
@@ -104,7 +105,8 @@ class SessionSnapshots{
   if(!profile)throw Error('Profile not found');
   if(this.launcher?.isBusy(profileId)||this.inUse(profileId))
    throw Error('Close the browser and finish RPA before changing session data');
-  const engine=profile.engine==='gecko'?'gecko':'chromium';
+  const engineType=resolveEngineType(profile,this.store.getSettings());
+  const engine=engineType==='firefox'?'gecko':engineType;
   const directory=isolatedPaths(this.store.baseDir,profileId,engine).profileDir;
   rejectSymlinks(this.store.baseDir,directory);
   return {profileId,engine,directory};

@@ -17,7 +17,7 @@ function recoverProfile(manager,source,password,name,confirmation){
   return manager.store.withProfileMutation(id,()=>recoverProfile(manager,source,password,name,confirmation));
  manager.store.assertCurrent?.();
  const engine=envelope?.engine;
- if(!['chromium','gecko'].includes(engine))throw Error('Engine của snapshot không hợp lệ');
+ if(!['chromium','gecko','camoufox'].includes(engine))throw Error('Engine của snapshot không hợp lệ');
  if(manager.store.getProfile(id))throw Error('Hồ sơ gốc còn tồn tại; hãy sử dụng Nhập file trong profile đó');
  if((manager.store.data.trash||[]).some(x=>x.profile?.id===id) ||
     (manager.store.data.cleanupQueue||[]).includes(id))
@@ -33,7 +33,8 @@ function recoverProfile(manager,source,password,name,confirmation){
  let created=false,imported=false;
  try{
   manager.store.saveProfile({
-   id,name:name.trim(),engine,group:'Recovered',startUrls:['https://example.com/'],
+   id,name:name.trim(),engine:engine==='camoufox'?'gecko':engine,
+   ...(engine==='camoufox'?{engine_type:'camoufox'}:{}),group:'Recovered',startUrls:['https://example.com/'],
    proxy:{type:'direct'},requiresProxySetup:true,fingerprint:{mode:'native'},
    notes:'Recovered from encrypted session snapshot; review proxy, settings and login state.'
   },{recovery:true});

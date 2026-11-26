@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs'),path=require('path');
 const {isolatedPaths,rejectSymlinks}=require('../privacy/isolation');
+const {resolveEngineType}=require('../engine/EngineFactory');
 const {uniqueIds}=require('./operations');
 const MAX_SELECTION=20;
 const TARGETS={
@@ -8,7 +9,8 @@ const TARGETS={
   ['Default','Cache'],['Default','Code Cache'],['Default','GPUCache'],
   ['ShaderCache'],['GrShaderCache'],['GraphiteDawnCache']
  ],
- gecko:[['cache2']]
+ gecko:[['cache2']],
+ camoufox:[['cache2']]
 };
 function statOrNull(file){
  try{return fs.lstatSync(file);}
@@ -39,7 +41,8 @@ function prepare(store,launcher,ids,requireStopped=true){
   if(!profile)throw Error('Profile missing or trashed: '+id);
   const busy=Boolean(launcher?.isBusy?.(id));
   if(requireStopped&&busy)throw Error('Close browser before cleaning its cache: '+profile.name);
-  const engine=profile.engine==='gecko'?'gecko':'chromium';
+  const engineType=resolveEngineType(profile,store.getSettings());
+  const engine=engineType==='firefox'?'gecko':engineType;
   const paths=isolatedPaths(store.baseDir,id,engine);
   rejectSymlinks(store.baseDir,paths.profileDir);
   const folders=[];
