@@ -23,6 +23,8 @@ jobs:
         run: npm ci
       - name: Run verification tests
         run: npm test
+      - name: Test Camoufox snapshot isolation
+        run: node test/camoufox-snapshot-isolation.js && node test/camoufox-snapshot-recovery.js && node test/snapshot-base64-validation.js
   windows-installer:
     runs-on: windows-latest
     steps:
@@ -43,6 +45,8 @@ jobs:
         run: npm test
       - name: Test pinned Camoufox ZIP installation
         run: node test/camoufox-pinned-zip.js
+      - name: Test Camoufox snapshot isolation
+        run: node test/camoufox-snapshot-isolation.js && node test/camoufox-snapshot-recovery.js && node test/snapshot-base64-validation.js
       - name: Test versioned Camoufox engine installation
         run: node test/camoufox-versioned-base.js
       - name: Verify vendor-pinned license endpoint and safe Preview defaults

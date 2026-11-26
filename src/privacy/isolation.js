@@ -8,9 +8,9 @@ function assertProfileId(id) {
 }
 function isolatedPaths(baseDir, id, engine = 'chromium') {
   assertProfileId(id);
-  if (engine !== 'chromium' && engine !== 'gecko') throw new Error('Unsupported engine');
+  if (!['chromium','gecko','camoufox'].includes(engine)) throw new Error('Unsupported engine');
   if (!path.isAbsolute(baseDir)) throw new Error('Profile storage root must be absolute');
-  const browserRoot = path.join(baseDir, engine === 'gecko' ? 'gecko-profiles' : 'profiles');
+  const browserRoot = path.join(baseDir, engine === 'camoufox' ? 'camoufox-profiles' : engine === 'gecko' ? 'gecko-profiles' : 'profiles');
   return {
     browserRoot,
     profileDir: path.join(browserRoot, id),
@@ -41,13 +41,16 @@ function ensureIsolatedDirectory(baseDir, directory) {
   return directory;
 }
 
-function auditIsolation(baseDir, profiles, { isRunning = () => false } = {}) {
+function auditIsolation(baseDir, profiles, { isRunning = () => false, settings = {} } = {}) {
   if (!Array.isArray(profiles)) throw new Error('Profile list must be an array');
   const entries = [];
   const seen = new Map();
   for (const profile of profiles) {
-    const report = { profileId: profile.id, name: profile.name, engine: profile.engine === 'gecko' ? 'gecko' : 'chromium', running: !!isRunning(profile.id), issues: [] };
+    const report = { profileId: profile.id, name: profile.name, engine: null, running: !!isRunning(profile.id), issues: [] };
     try {
+      const {resolveEngineType}=require('../engine/EngineFactory');
+      const type=resolveEngineType(profile,settings);
+      report.engine=type==='firefox'?'gecko':type;
       const paths = isolatedPaths(baseDir, profile.id, report.engine);
       rejectSymlinks(baseDir, paths.profileDir);
       if (report.engine === 'chromium') rejectSymlinks(baseDir, paths.extensionDir);

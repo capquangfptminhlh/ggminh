@@ -38,9 +38,8 @@ function checkEnvelope(info,raw,password){
   safePath(info.directory,rel);
   if(found.has(rel))throw Error('Đường dẫn snapshot bị lặp');
   found.add(rel);
-  // Canonical base64 prevents malformed encodings from being silently accepted.
-  if(!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(item.data))
-   throw Error('Mã hóa file trong snapshot không hợp lệ');
+  // Decode and round-trip to require canonical base64 without a repeating
+  // regular expression that can exhaust the stack on multi-megabyte files.
   const bytes=Buffer.from(item.data,'base64');
   if(bytes.toString('base64')!==item.data)throw Error('File snapshot không đúng định dạng');
   size+=bytes.length;

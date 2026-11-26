@@ -885,7 +885,7 @@ function initIPC() {
   });
 
   ipcMain.handle('audit-profile-isolation', () =>
-    auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id) }));
+    auditIsolation(store.baseDir, store.getProfiles(), { isRunning: id => launcher.isBusy(id), settings: store.getSettings() }));
   // Measurements contain aggregate numbers only. They are not browser
   // startup timings and never leave this computer automatically.
   let lastPerformanceEvidence=null;
