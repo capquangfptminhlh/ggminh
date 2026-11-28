@@ -108,7 +108,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y msitools p7zip-full aria2 ccache fontconfig
+          sudo apt-get install -y msitools p7zip-full aria2 ccache fontconfig zstd
 
       - name: Fetch the font bundle
         working-directory: camoufox
@@ -132,6 +132,35 @@ jobs:
             echo "::error::stock 5000 ms timer still in use"; exit 1
           fi
 
+      - name: Snapshot exact corresponding source tree (MPL-2.0)
+        run: |
+          BUILD_TARGET="$BUILD_TARGET" make -C camoufox set-target
+          mkdir -p out-source out/source
+          src_dir=$(ls -d camoufox/camoufox-156.0.1-*/ | head -1 | sed 's:/$::')
+          src_base=$(basename "$src_dir")
+          firefox_sha=$(sha256sum camoufox/firefox-156.0.1.source.tar.xz | awk '{print $1}')
+          echo "FIREFOX_TARBALL_SHA256=$firefox_sha" >> "$GITHUB_ENV"
+
+          cp -v lhm/tools/camoufox-engine/patches/*.patch out/source/
+          cp -rv camoufox/patches out/source/camoufox-patches
+          cp -rv camoufox/additions out/source/camoufox-additions
+          cp -rv camoufox/settings out/source/camoufox-settings
+          cp -v "$src_dir/mozconfig" out/source/mozconfig
+          mkdir -p out/source/modified/dom/localstorage out/source/modified/modules/libpref/init
+          cp -v "$src_dir/dom/localstorage/ActorsParent.cpp" out/source/modified/dom/localstorage/
+          cp -v "$src_dir/modules/libpref/init/StaticPrefList.yaml" out/source/modified/modules/libpref/init/
+          actors_sha=$(sha256sum "$src_dir/dom/localstorage/ActorsParent.cpp" | awk '{print $1}')
+          pref_sha=$(sha256sum "$src_dir/modules/libpref/init/StaticPrefList.yaml" | awk '{print $1}')
+          echo "ACTORS_PARENT_SHA256=$actors_sha" >> "$GITHUB_ENV"
+          echo "STATIC_PREF_SHA256=$pref_sha" >> "$GITHUB_ENV"
+
+          tar -C camoufox -I 'zstd -T0 -6' -cf "out-source/${src_base}-prepared-source.tar.zst" "$src_base"
+          prep_sha=$(sha256sum "out-source/${src_base}-prepared-source.tar.zst" | awk '{print $1}')
+          echo "PREPARED_SOURCE_SHA256=$prep_sha" >> "$GITHUB_ENV"
+          echo "PREPARED_SOURCE_NAME=${src_base}-prepared-source.tar.zst" >> "$GITHUB_ENV"
+          (cd out-source && sha256sum "${src_base}-prepared-source.tar.zst" > SHA256SUMS)
+          ls -lh out-source/
+
       - name: Create swap space
         run: |
           sudo fallocate -l 24G /swapfile
@@ -147,49 +176,76 @@ jobs:
           CARGO_BUILD_JOBS: "1"
         run: python3 ./multibuild.py --target windows --arch x86_64
 
-      - name: Record digests
-        working-directory: camoufox
+      - name: Package clean 508-font ZIP, unsigned manifest, and distribution notices
         run: |
-          ls -la dist
-          zip=$(ls dist/camoufox-*-win.x86_64.zip | head -1)
-          mkdir -p ../out
-          cd ../out
-          mv "../camoufox/$zip" "$(basename "$zip" .zip)-lhm-lsflush-UNVERIFIED.zip"
-          unzip -p ./*.zip camoufox.exe > camoufox.exe.extracted
+          rm -rf camoufox/camoufox-156.0.1-*/obj-*
+          zip=$(ls camoufox/dist/camoufox-*-win.x86_64.zip | head -1)
+          patch_sha=$(awk '{print $1}' patches.sha256 | head -1)
+          mkdir -p out/distribution-licenses "$RUNNER_TEMP/meta"
+          node -e '
+            const fs = require("fs");
+            fs.writeFileSync(process.argv[2], JSON.stringify({
+              firefox_tarball_sha256: process.env.FIREFOX_TARBALL_SHA256,
+              camoufox_commit: process.env.CAMOUFOX_COMMIT,
+              camoufox_tag: process.env.CAMOUFOX_TAG,
+              lhm_commit: process.env.GITHUB_SHA,
+              lhm_patch_sha256: process.argv[1],
+              prepared_source_sha256: process.env.PREPARED_SOURCE_SHA256,
+              actors_parent_sha256: process.env.ACTORS_PARENT_SHA256,
+              static_pref_sha256: process.env.STATIC_PREF_SHA256,
+              build_run_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+            }, null, 2));
+          ' "$patch_sha" "$RUNNER_TEMP/meta/build-meta.json"
+
+          clean_zip="$PWD/out/camoufox-156.0.1-win.x86_64-lhm-clean508.zip"
+          clean_tree="$RUNNER_TEMP/clean508-tree"
+          python3 lhm/tools/camoufox-engine/filter-clean508.py \
+            --input-zip "$zip" \
+            --notices-dir lhm/tools/camoufox-engine/licenses \
+            --out-zip "$clean_zip" \
+            --out-tree "$clean_tree" \
+            --licenses-out "$PWD/out/distribution-licenses" \
+            --meta-json "$RUNNER_TEMP/meta/build-meta.json" | tee out/clean508-summary.json
+
+          node lhm/tools/camoufox-engine/unsigned-manifest.js "$clean_tree" 156.0.1 "$PWD/out/clean508-unsigned-manifest.json" | tee out/unsigned-manifest-summary.json
+          payload_pin=$(node -p "JSON.parse(require('fs').readFileSync('out/unsigned-manifest-summary.json','utf8')).payloadSha256")
+          camoufox_exe_sha=$(node -p "JSON.parse(require('fs').readFileSync('out/unsigned-manifest-summary.json','utf8')).camoufoxExeSha256")
+          sed -i "s/PENDING_MANIFEST_GENERATION/$payload_pin/g" out/distribution-licenses/CAMOUFOX-MPL2-NOTICE.md
+          if grep -E 'PENDING_|UNSPECIFIED|\{\{' out/distribution-licenses/CAMOUFOX-MPL2-NOTICE.md; then
+            echo "::error::Unresolved template placeholder in CAMOUFOX-MPL2-NOTICE.md"; exit 1
+          fi
+
+          rm -rf "$clean_tree"
           {
             echo "camoufox_repo=$CAMOUFOX_REPO"
             echo "camoufox_commit=$CAMOUFOX_COMMIT"
             echo "camoufox_tag_base=$CAMOUFOX_TAG"
             echo "lhm_commit=$GITHUB_SHA"
             echo "run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-            echo "status=UNSIGNED_UNVERIFIED_TEST_BUILD"
-          } > BUILD-INFO.txt
-          cat ../patches.sha256 >> BUILD-INFO.txt
-          sha256sum ./*.zip camoufox.exe.extracted | tee SHA256SUMS
-          rm camoufox.exe.extracted
-          cat BUILD-INFO.txt
+            echo "firefox_tarball_sha256=$FIREFOX_TARBALL_SHA256"
+            echo "prepared_source_name=$PREPARED_SOURCE_NAME"
+            echo "prepared_source_sha256=$PREPARED_SOURCE_SHA256"
+            echo "actors_parent_sha256=$ACTORS_PARENT_SHA256"
+            echo "static_pref_sha256=$STATIC_PREF_SHA256"
+            echo "clean508_payload_pin=$payload_pin"
+            echo "camoufox_exe_sha256=$camoufox_exe_sha"
+            echo "status=UNSIGNED_PINNED_CLEAN508_WITH_CORRESPONDING_SOURCE"
+          } > out/BUILD-INFO.txt
+          cat patches.sha256 >> out/BUILD-INFO.txt
+          (cd out && sha256sum camoufox-156.0.1-win.x86_64-lhm-clean508.zip clean508-unsigned-manifest.json > SHA256SUMS)
+          cp out/BUILD-INFO.txt out-source/BUILD-INFO.txt
+          cat out/BUILD-INFO.txt
 
-      - name: Unsigned manifest for the owner's offline signing (no key used)
-        run: |
-          tree="$RUNNER_TEMP/engine-tree"
-          python3 -I -c 'import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' out/*.zip "$tree"
-          node lhm/tools/camoufox-engine/unsigned-manifest.js "$tree" 156.0.1 "$PWD/out/unsigned-manifest.json" | tee -a out/BUILD-INFO.txt
-          rm -rf "$tree"
-
-      - name: Source for MPL-2.0 (patches and pinned upstream refs)
-        run: |
-          mkdir -p out/source
-          cp lhm/tools/camoufox-engine/patches/*.patch out/source/
-          {
-            echo "Corresponding source for this build (MPL-2.0 files):"
-            echo "  Firefox: FIREFOX_156_0_1_RELEASE (firefox-156.0.1.source.tar.xz from archive.mozilla.org)"
-            echo "  Camoufox: https://github.com/$CAMOUFOX_REPO commit $CAMOUFOX_COMMIT (tag $CAMOUFOX_TAG)"
-            echo "  LHM patches: this folder, applied last by scripts/patch.py (patches/lhm/)"
-          } > out/source/SOURCE.txt
-
-      - name: Upload test artifact (not a release)
+      - name: Upload Clean-508 Engine + Licenses + Source Diff
         uses: actions/upload-artifact@v4
         with:
-          name: camoufox-156.0.1-beta.36-win.x86_64-lhm-lsflush-UNVERIFIED
+          name: camoufox-156.0.1-win.x86_64-lhm-clean508
           path: out/*
+          retention-days: 90
+
+      - name: Upload Exact Prepared Corresponding Source (MPL-2.0)
+        uses: actions/upload-artifact@v4
+        with:
+          name: camoufox-156.0.1-win.x86_64-lhm-clean508-source
+          path: out-source/*
           retention-days: 90
