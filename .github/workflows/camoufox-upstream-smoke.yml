@@ -1,6 +1,11 @@
 name: Camoufox real Windows compatibility (NO redistribution)
 on:
   workflow_dispatch:
+    inputs:
+      pr133_installed_only:
+        description: Test exact PR133 installer on disposable Windows runner
+        type: boolean
+        default: false
   pull_request:
     paths:
       - '.github/workflows/camoufox-upstream-smoke.yml'
@@ -15,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: upstream-camoufox-smoke-${{ github.ref }}
@@ -22,6 +28,7 @@ concurrency:
 
 jobs:
   real-windows-camoufox:
+    if: ${{ !inputs.pr133_installed_only }}
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -148,6 +155,7 @@ jobs:
   # engine (camoufox-engine-build.yml). The engine is pinned by build run and
   # SHA-256; it is an UNSIGNED test build and is never packaged or published.
   patched-engine-storage:
+    if: ${{ !inputs.pr133_installed_only }}
     runs-on: windows-latest
     timeout-minutes: 45
     permissions:
@@ -231,3 +239,86 @@ jobs:
           path: stage0-measure-results/stage0-isolation-report.json
           if-no-files-found: ignore
           retention-days: 7
+
+  exact-pr133-installed:
+    if: ${{ inputs.pr133_installed_only }}
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Validate provenance and free space
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $pr=gh api "repos/$env:GITHUB_REPOSITORY/pulls/133" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0 -or $pr.head.sha -ne 'bb3c5d05ea32d446bee11d9654a2621eaead058b' -or $pr.base.sha -ne 'd190f6a3ed8d1f8c70b8ca6b16a47dc5e72338c1'){throw 'PR moved; exact-build test refused'}
+          $run=gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/45765365745" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or $run.head_sha -ne $pr.head.sha -or $run.path -ne '.github/workflows/windows-exe.yml'){throw 'Unexpected candidate build provenance'}
+          $merge=gh api "repos/$env:GITHUB_REPOSITORY/commits/9281e5204ab547706d3d99b723334bbc05677cda" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0 -or @($merge.parents).Count -ne 2 -or $merge.parents[0].sha -ne $pr.base.sha -or $merge.parents[1].sha -ne $pr.head.sha){throw 'Unexpected build merge parents'}
+          $drive=Get-PSDrive -Name ([IO.Path]::GetPathRoot($env:RUNNER_TEMP).Substring(0,1))
+          if($drive.Free -lt 6GB){throw 'Insufficient free space for disposable engine reconstruction'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: python test/ci_clean508_zip_test.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: LHM-Ads-Browser-Windows-x64
+          run-id: '45765365745'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/pr133-installer
+      - uses: actions/download-artifact@v4
+        with:
+          name: LHM-Release-Evidence-Windows
+          run-id: '45765365745'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/pr133-evidence
+      - uses: actions/download-artifact@v4
+        with:
+          name: camoufox-156.0.1-beta.36-win.x86_64-lhm-lsflush-UNVERIFIED
+          run-id: '44736873136'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/lhm-original-artifact
+      - name: Verify installer and reconstruct pinned engine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $installers=@(Get-ChildItem "$env:RUNNER_TEMP/pr133-installer" -Filter '*.exe' -File -Recurse)
+          $evidences=@(Get-ChildItem "$env:RUNNER_TEMP/pr133-evidence" -Filter 'release-evidence.json' -File -Recurse)
+          if($installers.Count -ne 1 -or $evidences.Count -ne 1){throw 'Candidate artifact missing or ambiguous'}
+          $e=Get-Content -Raw -LiteralPath $evidences[0].FullName | ConvertFrom-Json
+          if($e.build.runId -ne '45765365745' -or $e.build.commit -ne '9281e5204ab547706d3d99b723334bbc05677cda' -or $e.build.windowsInstaller.name -ne $installers[0].Name -or $e.build.windowsInstaller.bytes -ne $installers[0].Length -or (Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $e.build.windowsInstaller.sha256){throw 'Installer bytes mismatch'}
+          $z=@(Get-ChildItem "$env:RUNNER_TEMP/lhm-original-artifact" -Filter '*.zip' -File -Recurse)
+          if($z.Count -ne 1 -or (Get-FileHash -LiteralPath $z[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c0837412fa7c1943c21806d9949994384603be7bf07a6630375190171d23eeee'){throw 'Original engine archive mismatch'}
+          $original=Join-Path $env:RUNNER_TEMP 'pr133-original-engine'
+          $candidate=Join-Path $env:RUNNER_TEMP 'pr133-candidate-engine'
+          [IO.Compression.ZipFile]::ExtractToDirectory($z[0].FullName,$original)
+          node tools/ci-font-review-tree.js $original $candidate
+          if($LASTEXITCODE -ne 0){throw 'Engine tree mismatch'}
+          $zip=Join-Path $env:RUNNER_TEMP 'pr133-candidate.zip'
+          python tools/ci_clean508_zip.py $candidate $zip
+          if($LASTEXITCODE -ne 0){throw 'Engine archive mismatch'}
+          "LHM_PINNED_ENGINE=$zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "LHM_CANDIDATE_INSTALLER=$($installers[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Install exact PR preview into disposable directory
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dir=Join-Path $env:RUNNER_TEMP 'pr133-installed-app'
+          $p=Start-Process -FilePath $env:LHM_CANDIDATE_INSTALLER -ArgumentList @('/S',('/D='+$dir)) -Wait -PassThru -WindowStyle Hidden
+          if($p.ExitCode -ne 0){throw 'Installer failed'}
+          $exe=Join-Path $dir 'LHM Ads Browser.exe'
+          if(-not (Test-Path -LiteralPath $exe -PathType Leaf)){throw 'Installed EXE missing'}
+          "LHM_PACKAGED_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Test real installed app with synthetic profiles
+        shell: pwsh
+        run: |
+          node tools/test-pr133-packaged.js
+          if($LASTEXITCODE -ne 0){throw 'Installed app acceptance failed'}
